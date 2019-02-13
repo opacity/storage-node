@@ -1,0 +1,161 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "appengine/cloudsql",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "Aex5jjSV5dcp8Hqk95EU5ctPxnE=",
+			"path": "github.com/caarlos0/env",
+			"revision": "515df9e9ee27b2dc58e4bc30b10598ebc54ffd36",
+			"revisionTime": "2018-10-24T00:58:29Z"
+		},
+		{
+			"checksumSHA1": "8mkiCRxM9VTKCzxz84Vmiu7YTVo=",
+			"path": "github.com/gin-contrib/cors",
+			"revision": "5e7acb10687f94a88d0d8e96297818fff2da8f88",
+			"revisionTime": "2019-01-01T12:32:55Z"
+		},
+		{
+			"checksumSHA1": "BhMowD2DIKSd9qq8Pzh7Y3mh2/w=",
+			"path": "github.com/gin-contrib/sse",
+			"revision": "a7658810eb745c2f22927282dea478278103a897",
+			"revisionTime": "2019-01-25T02:09:43Z"
+		},
+		{
+			"checksumSHA1": "8b/4nelIgoHV+XmTU2y2/qRDfZk=",
+			"path": "github.com/gin-gonic/gin",
+			"revision": "5acf6601170bb49a1958c055d66d54ba152dc34b",
+			"revisionTime": "2019-02-04T01:27:00Z"
+		},
+		{
+			"checksumSHA1": "vxHwT2DEuXbnT7u6KIHF/BGNTCU=",
+			"path": "github.com/gin-gonic/gin/binding",
+			"revision": "5acf6601170bb49a1958c055d66d54ba152dc34b",
+			"revisionTime": "2019-02-04T01:27:00Z"
+		},
+		{
+			"checksumSHA1": "gEtlV34SWTL6eC3N9E5bT/4+FsY=",
+			"path": "github.com/gin-gonic/gin/internal/json",
+			"revision": "5acf6601170bb49a1958c055d66d54ba152dc34b",
+			"revisionTime": "2019-02-04T01:27:00Z"
+		},
+		{
+			"checksumSHA1": "rRPUnuiXCTsK0+i4KBxqLjW/Bzg=",
+			"path": "github.com/gin-gonic/gin/render",
+			"revision": "5acf6601170bb49a1958c055d66d54ba152dc34b",
+			"revisionTime": "2019-02-04T01:27:00Z"
+		},
+		{
+			"checksumSHA1": "NsLphrlxGA/Ao+hIbk8qsZtXhT4=",
+			"path": "github.com/go-playground/locales",
+			"revision": "f63010822830b6fe52288ee52d5a1151088ce039",
+			"revisionTime": "2018-03-23T16:04:04Z"
+		},
+		{
+			"checksumSHA1": "6xgFcEYVu7ZWVUeK7Q3gPLJ8h4s=",
+			"path": "github.com/go-playground/locales/currency",
+			"revision": "f63010822830b6fe52288ee52d5a1151088ce039",
+			"revisionTime": "2018-03-23T16:04:04Z"
+		},
+		{
+			"checksumSHA1": "hplgY2pZFLa3jQpcSs9wTfjkk88=",
+			"path": "github.com/go-playground/universal-translator",
+			"revision": "71201497bace774495daed26a3874fd339e0b538",
+			"revisionTime": "2017-03-27T19:17:03Z"
+		},
+		{
+			"checksumSHA1": "dvvEeX53LOlpJ53zRv541qbp+Ec=",
+			"path": "github.com/go-sql-driver/mysql",
+			"revision": "1b9eda25029c206f36637dde8e2acad26df99dab",
+			"revisionTime": "2019-01-27T01:11:11Z"
+		},
+		{
+			"checksumSHA1": "Wp97rIwFg54dNwuCeR9Vslaehtw=",
+			"path": "github.com/golang/protobuf/proto",
+			"revision": "c823c79ea1570fb5ff454033735a8e68575d1d0f",
+			"revisionTime": "2019-02-05T22:20:52Z"
+		},
+		{
+			"checksumSHA1": "a2uATeQI5WnkJsLWkpm40a9C4EE=",
+			"path": "github.com/jinzhu/gorm",
+			"revision": "906799fef2f895116d915e1793314ab9053b400d",
+			"revisionTime": "2019-02-10T07:39:40Z"
+		},
+		{
+			"checksumSHA1": "mfb/EusMwfajCPq0lwLWM/pvqI4=",
+			"path": "github.com/jinzhu/inflection",
+			"revision": "04140366298a54a039076d798123ffa108fff46c",
+			"revisionTime": "2018-03-08T03:36:59Z"
+		},
+		{
+			"checksumSHA1": "TsYJAg5Rcy8Oq2YowemRNU3ce2g=",
+			"path": "github.com/joho/godotenv",
+			"revision": "5c0e6c6ab1a0a9ef0a8822cba3a05d62f7dad941",
+			"revisionTime": "2019-02-04T04:41:09Z"
+		},
+		{
+			"checksumSHA1": "VddpP6GHKu0gmnqc9V7CIOhN59o=",
+			"path": "github.com/json-iterator/go",
+			"revision": "5bc93205020f6311d7e4a34f82c5616a18ec35e5",
+			"revisionTime": "2019-02-08T07:56:42Z"
+		},
+		{
+			"checksumSHA1": "STo3TnkoYreaIlW7ORH3V6uy3ns=",
+			"path": "github.com/leodido/go-urn",
+			"revision": "a67a23e1c1af3c66528573bb86a87246477277c1",
+			"revisionTime": "2018-12-04T09:21:09Z"
+		},
+		{
+			"checksumSHA1": "LkbotKu3JQxXEZZ9P40yhnFOycY=",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "3fb116b820352b7f0c281308a4d6250c22d94e27",
+			"revisionTime": "2018-08-30T10:17:45Z"
+		},
+		{
+			"checksumSHA1": "R7UwDjqiaLRoaEanrANwPOfbgN4=",
+			"path": "github.com/modern-go/concurrent",
+			"revision": "bacd9c7ef1dd9b15be4a9909b8ac7a4e313eec94",
+			"revisionTime": "2018-03-06T01:26:44Z"
+		},
+		{
+			"checksumSHA1": "SnVnj87vJdiHFJUcwdL03T0ZMhI=",
+			"path": "github.com/modern-go/reflect2",
+			"revision": "94122c33edd36123c84d5368cfb2b69df93a0ec8",
+			"revisionTime": "2018-07-18T01:23:57Z"
+		},
+		{
+			"checksumSHA1": "RY7vJfJNX8K+bek5PkqZwPnzDP4=",
+			"path": "github.com/ugorji/go/codec",
+			"revision": "e444a5086c436778cf9281a7059a3d58b9e17935",
+			"revisionTime": "2019-02-04T20:13:41Z"
+		},
+		{
+			"checksumSHA1": "k8nyiVwbKd7N/Lo9z85y6v/03NE=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "983097b1a8a340cd1cc7df17d735154d89e10b1a",
+			"revisionTime": "2019-02-13T08:58:22Z"
+		},
+		{
+			"checksumSHA1": "W/pYxFe8/FHT10/wulwesJsOoUw=",
+			"path": "google.golang.org/appengine/cloudsql",
+			"revision": "99bc4335fe23898c0a61f5b35afabb6d11f29094",
+			"revisionTime": "2019-02-08T18:47:32Z"
+		},
+		{
+			"checksumSHA1": "q190bL03wQok3wVwYmMub2XhOiU=",
+			"path": "gopkg.in/go-playground/validator.v8",
+			"revision": "5f1438d3fca68893a817e4a66806cea46a9e4ebf",
+			"revisionTime": "2017-07-30T05:02:35Z"
+		},
+		{
+			"checksumSHA1": "oNqPrS2edE8peI3ah2INe379k8E=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "51d6538a90f86fe93ac480b35f37b2be17fef232",
+			"revisionTime": "2018-11-15T11:05:04Z"
+		}
+	],
+	"rootPath": "github.com/opacity/storage-node"
+}
