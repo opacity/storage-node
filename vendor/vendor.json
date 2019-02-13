@@ -7,10 +7,58 @@
 			"revision": ""
 		},
 		{
+			"checksumSHA1": "OMSvEo0D9bJ4WewmTcmMwY8yc1A=",
+			"path": "github.com/btcsuite/btcd/btcec",
+			"revision": "306aecffea325e97f513b3ff0cf7895a5310651d",
+			"revisionTime": "2019-02-13T02:52:34Z"
+		},
+		{
 			"checksumSHA1": "Aex5jjSV5dcp8Hqk95EU5ctPxnE=",
 			"path": "github.com/caarlos0/env",
 			"revision": "515df9e9ee27b2dc58e4bc30b10598ebc54ffd36",
 			"revisionTime": "2018-10-24T00:58:29Z"
+		},
+		{
+			"checksumSHA1": "aENNVxKxF9h9PfvTIstiAS5I3Lg=",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "d8f796af33cc11cb798c1aaeb27a4ebc5099927d",
+			"revisionTime": "2018-08-30T19:11:22Z"
+		},
+		{
+			"checksumSHA1": "7Z+xHvRCiZXLSWMCUkb81RRi8po=",
+			"path": "github.com/ethereum/go-ethereum/common",
+			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
+			"revisionTime": "2019-02-13T20:37:59Z"
+		},
+		{
+			"checksumSHA1": "zeRKAvn2TNueA0AbPl6bB+QLbXk=",
+			"path": "github.com/ethereum/go-ethereum/common/hexutil",
+			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
+			"revisionTime": "2019-02-13T20:37:59Z"
+		},
+		{
+			"checksumSHA1": "xllqAyODayQg/R7rFfYM0hA6nQo=",
+			"path": "github.com/ethereum/go-ethereum/common/math",
+			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
+			"revisionTime": "2019-02-13T20:37:59Z"
+		},
+		{
+			"checksumSHA1": "amvwJ03EDT4FdXE58itmlvhmzSU=",
+			"path": "github.com/ethereum/go-ethereum/crypto",
+			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
+			"revisionTime": "2019-02-13T20:37:59Z"
+		},
+		{
+			"checksumSHA1": "aOk4ecFb0nlqybP4Rh7Gyhh7vmI=",
+			"path": "github.com/ethereum/go-ethereum/crypto/secp256k1",
+			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
+			"revisionTime": "2019-02-13T20:37:59Z"
+		},
+		{
+			"checksumSHA1": "uTQILmvDRo43u2PqY/GbGYQKw64=",
+			"path": "github.com/ethereum/go-ethereum/rlp",
+			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
+			"revisionTime": "2019-02-13T20:37:59Z"
 		},
 		{
 			"checksumSHA1": "8mkiCRxM9VTKCzxz84Vmiu7YTVo=",
@@ -127,10 +175,28 @@
 			"revisionTime": "2018-07-18T01:23:57Z"
 		},
 		{
+			"checksumSHA1": "R3yk3OJzuq4MVfVGX5AhkkYv1ko=",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "5d4384ee4fb2527b0a1256a821ebfc92f91efefc",
+			"revisionTime": "2018-12-26T10:54:42Z"
+		},
+		{
+			"checksumSHA1": "Ahbij8wLM9v/u/wlqolDM6c7nnM=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "363ebb24d041ccea8068222281c2e963e997b9dc",
+			"revisionTime": "2019-01-09T08:30:14Z"
+		},
+		{
 			"checksumSHA1": "RY7vJfJNX8K+bek5PkqZwPnzDP4=",
 			"path": "github.com/ugorji/go/codec",
 			"revision": "e444a5086c436778cf9281a7059a3d58b9e17935",
 			"revisionTime": "2019-02-04T20:13:41Z"
+		},
+		{
+			"checksumSHA1": "hUsBzxJ8KTL4v0vpPT/mqvdJ46s=",
+			"path": "golang.org/x/crypto/sha3",
+			"revision": "74369b46fc6756741c016591724fd1cb8e26845f",
+			"revisionTime": "2019-02-10T12:59:10Z"
 		},
 		{
 			"checksumSHA1": "k8nyiVwbKd7N/Lo9z85y6v/03NE=",
