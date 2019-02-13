@@ -9,16 +9,16 @@ import (
 
 /*Account defines a model for managing a user subscription for uploads*/
 type Account struct {
-	UserID          string            `gorm:"primary_key" json:"user_id"` // some hash of the user's master handle
+	UserID          string            `gorm:"primary_key" json:"user_id" binding:"required,len=64"` // some hash of the user's master handle
 	CreatedAt       time.Time         `json:"createdAt"`
 	UpdatedAt       time.Time         `json:"updatedAt"`
-	ExpirationDate  time.Time         `json:"expirationDate"`  // when their subscription expires
-	StorageLocation string            `json:"storageLocation"` // where their files live, on S3 or elsewhere
-	StorageLimit    StorageLimitType  `json:"storageLimit"`    // how much storage they are allowed, in GB
-	PIN             int               `json:"pin"`             // the user's PIN (do we need this field?)
-	EthAddress      string            `json:"ethAddress"`      // the eth address they will send payment to
-	EthPrivateKey   string            `json:"ethPrivateKey"`   // the private key of the eth address
-	PaymentStatus   PaymentStatusType `json:"paymentStatus"`   // the status of their payment
+	ExpirationDate  time.Time         `json:"expirationDate" binding:"required,gte"`   // when their subscription expires
+	StorageLocation string            `json:"storageLocation" binding:"required,url"`  // where their files live, on S3 or elsewhere
+	StorageLimit    StorageLimitType  `json:"storageLimit" binding:"required,gte=100"` // how much storage they are allowed, in GB
+	PIN             int               `json:"pin" binding:"required"`                  // the user's PIN (do we need this field?)
+	EthAddress      string            `json:"ethAddress" binding:"required,len=42"`    // the eth address they will send payment to
+	EthPrivateKey   string            `json:"ethPrivateKey" binding:"required,len=96"` // the private key of the eth address
+	PaymentStatus   PaymentStatusType `json:"paymentStatus" binding:"required"`        // the status of their payment
 }
 
 /*StorageLimitType defines a type for the storage limits*/
@@ -66,6 +66,9 @@ func init() {
 
 /*BeforeCreate - callback called before the row is created*/
 func (account *Account) BeforeCreate(scope *gorm.Scope) error {
+	if account.PaymentStatus < InitialPaymentInProgress {
+		account.PaymentStatus = InitialPaymentInProgress
+	}
 	return nil
 }
 

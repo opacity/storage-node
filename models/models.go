@@ -7,14 +7,17 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
+	"gopkg.in/go-playground/validator.v8"
 )
 
 var (
-	/*DB is our database connection*/
-	DB *gorm.DB
+	DB        *gorm.DB
+	Validator *validator.Validate
 )
 
 func init() {
+	config := &validator.Config{TagName: "binding"}
+	Validator = validator.New(config)
 }
 
 /*Connect to a database*/
