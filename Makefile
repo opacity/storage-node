@@ -4,10 +4,9 @@ PACKAGE = github.com/opacity/storage-node
 
 govendor:
 	go get -u github.com/kardianos/govendor
-	govendor init
 	govendor sync
 
 # this is hacky, we should do something better
 ethereum-fix:
 	rm -rf ./vendor/github.com/ethereum/go-ethereum/crypto/secp256k1/
-	govendor add github.com/ethereum/go-ethereum/crypto/secp256k1/^
+	govendor fetch github.com/ethereum/go-ethereum/crypto/secp256k1/^
