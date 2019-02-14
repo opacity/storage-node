@@ -7,16 +7,17 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
+/*Eth is a struct specifying methods for our ethereum wrapper*/
 type Eth struct {
 	GenerateWallet
 }
 
-// GenerateWallet Generate Valid Ethereum Network Address and private key
+/*GenerateWallet Generate Valid Ethereum Network Address and private key*/
 type GenerateWallet func() (addr common.Address, privateKey string, err error)
 
 var (
+	/*EthWrapper is an instance of our ethereum wrapper*/
 	EthWrapper Eth
-	MAIN       = "mainnet"
 )
 
 func init() {

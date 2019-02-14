@@ -5,11 +5,14 @@ RUN go version
 
 # Install db client (assumes mysql)
 RUN apt-get update
-RUN apt-get install -y -q mysql-client
-RUN apt-get install -y -q netcat
+RUN apt-get install -y -q --no-install-recommends mysql-client
+RUN apt-get install -y -q --no-install-recommends netcat
+RUN apt autoremove -y
+RUN apt-get clean
+RUN rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p $GOPATH/src/github.com/opacity/storage-node
-WORKDIR $GOPATH/src/github.com/opacity/storage-node
+RUN mkdir -p "$GOPATH/src/github.com/opacity/storage-node"
+WORKDIR "$GOPATH/src/github.com/opacity/storage-node"
 
 RUN go get -u -v github.com/kardianos/govendor
 
