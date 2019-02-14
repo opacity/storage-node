@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+  app:
+    build: "."
+    restart: "always"
+    ports:
+    - ${APP_PORT:-3000}:3000
+    env_file:
+    - ".env"
+    links:
+    - db:db
+    depends_on:
+    - "db"
+    volumes:
+    - ".:/go/src/github.com/opacity/storage-node"
+    working_dir: "/go/src/github.com/opacity/storage-node"
+    command: >
+      bash -c "
+        echo waiting for db...;
+        while ! nc -z db 3306;
+        do
+          sleep 0.5;
+        done;
+        echo ${DEBUG}
+        if [ -z ${DEBUG} ]; then
+          echo \"Starting storage node in PROD mode\";
+          go build -o ./bin/brokernode && chmod +x ./bin/brokernode;
+          ./bin/brokernode;
+        else
+          echo \"Starting storage node in PROD mode\";
+          go dev;
+        fi
+      "
+
+  db:
+      container_name: mysql
+      image: mysql:5.7
+      restart: "always"
+      environment:
+          - MYSQL_DATABASE=test
+          - MYSQL_ROOT_USER=root
+          - MYSQL_ROOT_PASSWORD=secret
+      ports:
+          - "33060:3306"
+      volumes:
+          - "./data/db/mysql:/var/lib/mysql"
+
