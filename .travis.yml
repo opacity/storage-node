@@ -32,6 +32,7 @@ before_install:
 
 install:
   - rm -rf ./data
+  - make govendor
   - docker-compose up --build -d
 
 script:
