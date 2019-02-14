@@ -5,7 +5,7 @@ RUN go version
 
 # Install db client (assumes mysql)
 RUN apt-get update
-RUN apt-get install -y -q --no-install-recommends mysql-client=5.7.25-0ubuntu0.16.04.2
+RUN apt-get install -y -q --no-install-recommends mysql-client
 RUN apt-get install -y -q --no-install-recommends netcat-openbsd=1.105-7ubuntu1
 RUN apt-get install -y -q --no-install-recommends netcat-traditional=1.10-41
 RUN apt autoremove -y
