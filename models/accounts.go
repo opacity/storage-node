@@ -9,7 +9,7 @@ import (
 
 /*Account defines a model for managing a user subscription for uploads*/
 type Account struct {
-	UserID          string            `gorm:"primary_key" json:"user_id" binding:"required,len=64"` // some hash of the user's master handle
+	AccountID       string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
 	CreatedAt       time.Time         `json:"createdAt"`
 	UpdatedAt       time.Time         `json:"updatedAt"`
 	ExpirationDate  time.Time         `json:"expirationDate" binding:"required,gte"`   // when their subscription expires
@@ -19,6 +19,7 @@ type Account struct {
 	EthAddress      string            `json:"ethAddress" binding:"required,len=42"`    // the eth address they will send payment to
 	EthPrivateKey   string            `json:"ethPrivateKey" binding:"required,len=96"` // the private key of the eth address
 	PaymentStatus   PaymentStatusType `json:"paymentStatus" binding:"required"`        // the status of their payment
+	Files           []File            `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
 }
 
 /*StorageLimitType defines a type for the storage limits*/
@@ -50,6 +51,8 @@ const (
 
 	/*PaymentRetrievalComplete - we have retrieved their tokens*/
 	PaymentRetrievalComplete
+
+	// TODO: error states?  Not sure if we need them.
 )
 
 /*PaymentStatusMap is for pretty printing the PaymentStatus*/
@@ -75,8 +78,8 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the
 terminal*/
 func (account *Account) PrettyString() {
-	fmt.Print("UserID:                         ")
-	fmt.Println(account.UserID)
+	fmt.Print("AccountID:                         ")
+	fmt.Println(account.AccountID)
 
 	fmt.Print("CreatedAt:                      ")
 	fmt.Println(account.CreatedAt)
