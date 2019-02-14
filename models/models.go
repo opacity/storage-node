@@ -1,9 +1,10 @@
 package models
 
 import (
+	/*blank import to make drivers available*/
 	_ "database/sql"
 	"fmt"
-
+	/*blank import to make drivers available*/
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
@@ -11,7 +12,9 @@ import (
 )
 
 var (
-	DB        *gorm.DB
+	/*DB is our connection to the database*/
+	DB *gorm.DB
+	/*Validator will let us validate our structs*/
 	Validator *validator.Validate
 )
 
@@ -21,12 +24,14 @@ func init() {
 }
 
 /*Connect to a database*/
-func Connect(dbUrl string) {
+func Connect(dbURL string) {
 	var err error
-	fmt.Println("Attempting connection to: " + dbUrl)
+	fmt.Println("Attempting connection to: " + dbURL)
 
-	DB, err = gorm.Open("mysql", dbUrl)
+	DB, err = gorm.Open("mysql", dbURL)
 	utils.PanicOnError(err)
+
+	DB.AutoMigrate(&Account{})
 }
 
 /*Close a database connection*/

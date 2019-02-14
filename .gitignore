@@ -12,7 +12,8 @@
 *.out
 
 # Vendor
-vendor/*/
+vendor/*
+!vendor/vendor.json
 
 # Environment file
 .env
