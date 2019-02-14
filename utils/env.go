@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"errors"
 	"log"
+
+	"os"
 
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
@@ -23,8 +26,10 @@ func initEnv(filenames ...string) {
 	// Load ENV variables
 	err := godotenv.Load(filenames...)
 	if err != nil {
-		log.Fatal("Error loading .env file: " + err.Error())
-
+		lookupErr := tryLookUp()
+		if lookupErr != nil {
+			log.Fatal("Error loading environment variables: " + CollectErrors([]error{err, lookupErr}).Error())
+		}
 	}
 
 	storageNodeEnv := StorageNodeEnv{}
@@ -62,4 +67,29 @@ func SetTesting(filenames ...string) {
 /*IsTestEnv returns whether we are in the test environment*/
 func IsTestEnv() bool {
 	return Env.GoEnv == "test"
+}
+
+func tryLookUp() error {
+	// TODO: this is hacky, we should clean this up
+	prodDBUrl, exists := os.LookupEnv("PROD_DATABASE_URL")
+	if !exists {
+		return errors.New("failed to load .env variable PROD_DATABASE_URL in tryLookUp")
+	}
+	testDBUrl, exists := os.LookupEnv("TEST_DATABASE_URL")
+	if !exists {
+		return errors.New("failed to load .env variable TEST_DATABASE_URL in tryLookUp")
+	}
+	encryptionKey, exists := os.LookupEnv("ENCRYPTION_KEY")
+	if !exists {
+		return errors.New("failed to load .env variable ENCRYPTION_KEY in tryLookUp")
+	}
+
+	serverEnv := StorageNodeEnv{
+		ProdDatabaseURL: prodDBUrl,
+		TestDatabaseURL: testDBUrl,
+		EncryptionKey:   encryptionKey,
+	}
+
+	Env = serverEnv
+	return nil
 }
