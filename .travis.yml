@@ -28,8 +28,6 @@ before_install:
   - sudo mv docker-compose /usr/local/bin
   - docker-compose --version
 
-  - openssl aes-256-cbc -K $encrypted_2d5af0fd0db0_key -iv $encrypted_2d5af0fd0db0_iv -in ./travis/id_rsa.enc -out ./travis/id_rsa -d
-
 install:
   - rm -rf ./data
   - docker-compose up --build -d
