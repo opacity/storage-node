@@ -49,10 +49,14 @@
 			"revisionTime": "2019-02-13T20:37:59Z"
 		},
 		{
-			"checksumSHA1": "aOk4ecFb0nlqybP4Rh7Gyhh7vmI=",
+			"path": "github.com/ethereum/go-ethereum/crypto/libsecp256k1",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "phqhYleQxmDZv+TegJ76b3rIbh4=",
 			"path": "github.com/ethereum/go-ethereum/crypto/secp256k1",
-			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
-			"revisionTime": "2019-02-13T20:37:59Z"
+			"revision": "62e94895da80838ec694b4ba19eeac80c9dc88c1",
+			"revisionTime": "2018-08-29T15:27:43Z"
 		},
 		{
 			"checksumSHA1": "uTQILmvDRo43u2PqY/GbGYQKw64=",
