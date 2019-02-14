@@ -19,3 +19,7 @@ vendor/*/
 
 # IDE-generated files
 .idea
+
+# Docker stuff
+data/
+bin/

@@ -12,10 +12,6 @@ import (
 /*CreateRoutes creates our application's routes*/
 func CreateRoutes() {
 	router := returnEngine()
-	// Test app is running
-	router.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Gin app is running")
-	})
 
 	v2 := returnV2Group(router)
 

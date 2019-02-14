@@ -1,0 +1,39 @@
+sudo: required
+
+language: go
+
+go:
+ - 1.11.x
+ - "1.11"
+
+env:
+  - DOCKER_COMPOSE_VERSION=1.18.0
+
+addons:
+  apt:
+    packages:
+      - docker-ce
+
+before_install:
+  - sudo apt-get install -y -q netcat
+
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+  - sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+  - sudo apt-get update
+  - sudo apt-get -y install docker-ce
+  - docker --version
+
+  - sudo rm /usr/local/bin/docker-compose
+  - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
+  - chmod +x docker-compose
+  - sudo mv docker-compose /usr/local/bin
+  - docker-compose --version
+
+  - openssl aes-256-cbc -K $encrypted_2d5af0fd0db0_key -iv $encrypted_2d5af0fd0db0_iv -in ./travis/id_rsa.enc -out ./travis/id_rsa -d
+
+install:
+  - rm -rf ./data
+  - docker-compose up --build -d
+
+script:
+  - docker-compose exec app govendor test +local
