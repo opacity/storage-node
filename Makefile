@@ -4,4 +4,4 @@ PACKAGE = github.com/opacity/storage-node
 
 govendor:
 	go get -u github.com/kardianos/govendor
-	govendor sync ${PACKAGE}
+	govendor get
