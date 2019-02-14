@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 )
 
+/*Encrypt encrypts a secret using a key and a nonce*/
 func Encrypt(key string, secret string, nonce string) []byte {
 	keyInBytes, err := hex.DecodeString(key)
 	PanicOnError(err)
@@ -21,6 +22,7 @@ func Encrypt(key string, secret string, nonce string) []byte {
 	return data
 }
 
+/*Decrypt decrypts a secret using a key and a nonce*/
 func Decrypt(key string, cipherText string, nonce string) []byte {
 	keyInBytes, err := hex.DecodeString(key)
 	PanicOnError(err)
