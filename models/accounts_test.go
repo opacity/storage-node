@@ -17,7 +17,7 @@ func returnValidAccount() Account {
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
 	return Account{
-		UserID:          utils.RandSeqFromRunes(64, []rune("abcdefg01234567890")),
+		AccountID:       utils.RandSeqFromRunes(64, []rune("abcdefg01234567890")),
 		ExpirationDate:  time.Now().Add(1 * time.Minute),
 		StorageLocation: "https://someFileStoragePlace.com/12345",
 		StorageLimit:    BasicStorageLimit,
@@ -40,24 +40,24 @@ func Test_Valid_Account_Passes(t *testing.T) {
 	}
 }
 
-func Test_Empty_UserID_Fails(t *testing.T) {
+func Test_Empty_AccountID_Fails(t *testing.T) {
 	account := returnValidAccount()
-	account.UserID = ""
+	account.AccountID = ""
 
 	if err := Validator.Struct(account); err == nil {
 		t.Fatalf("account should have failed validation")
 	}
 }
 
-func Test_Invalid_UserID_Length_Fails(t *testing.T) {
+func Test_Invalid_AccountID_Length_Fails(t *testing.T) {
 	account := returnValidAccount()
-	account.UserID = utils.RandSeqFromRunes(63, []rune("abcdefg01234567890"))
+	account.AccountID = utils.RandSeqFromRunes(63, []rune("abcdefg01234567890"))
 
 	if err := Validator.Struct(account); err == nil {
 		t.Fatalf("account should have failed validation")
 	}
 
-	account.UserID = utils.RandSeqFromRunes(65, []rune("abcdefg01234567890"))
+	account.AccountID = utils.RandSeqFromRunes(65, []rune("abcdefg01234567890"))
 
 	if err := Validator.Struct(account); err == nil {
 		t.Fatalf("account should have failed validation")

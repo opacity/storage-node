@@ -32,6 +32,7 @@ func Connect(dbURL string) {
 	utils.PanicOnError(err)
 
 	DB.AutoMigrate(&Account{})
+	DB.AutoMigrate(&File{})
 }
 
 /*Close a database connection*/
