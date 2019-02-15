@@ -27,6 +27,9 @@ func Connect(dbUrl string) {
 
 	DB, err = gorm.Open("mysql", dbUrl)
 	utils.PanicOnError(err)
+
+	DB.AutoMigrate(&Account{})
+	DB.AutoMigrate(&File{})
 }
 
 /*Close a database connection*/
