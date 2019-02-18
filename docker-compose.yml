@@ -24,11 +24,11 @@ services:
         done;
         echo ${DEBUG}
         if [ -z ${DEBUG} ]; then
-          echo \"Starting storage node in PROD mode\";
-          go build -o ./bin/brokernode && chmod +x ./bin/brokernode;
-          ./bin/brokernode;
+          echo \"Starting Storage node in PROD mode\";
+          go build -o ./bin/storagenode && chmod +x ./bin/storagenode;
+          ./bin/storagenode;
         else
-          echo \"Starting storage node in PROD mode\";
+          echo \"Starting Storage node in PROD mode\";
           go dev;
         fi
       "
