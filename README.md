@@ -29,7 +29,8 @@ docker-compose up -d
 ```bash
 docker container ls # list all the running container
 docker ps # list all the running container too.
-docker logs brokernode_app_1 # print out the app's log message
+docker kill storage-node_app_1 # to kill current running instance
+docker logs storage-node_app_1 # print out the app's log message
 docker inspect --format='{{.LogPath}}' brokernode_app_1 # print out the log's location from the docker.
 sudo systemctl restart docker # restart docker
 ```
