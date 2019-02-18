@@ -41,3 +41,5 @@ App in docker may running this IP address locally: http://0.0.0.0:3000/
 
 # Reference library
 GORM: For querying database. See https://github.com/jinzhu/gorm
+Gin-Gonic: For HTTP server. See https://github.com/gin-gonic
+
