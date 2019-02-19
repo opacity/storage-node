@@ -35,6 +35,8 @@ func Test_Init_Accounts(t *testing.T) {
 func Test_Valid_Account_Passes(t *testing.T) {
 	account := returnValidAccount()
 
+	fmt.Println(account)
+
 	if err := Validator.Struct(account); err != nil {
 		t.Fatalf("account should have passed validation but didn't: " + err.Error())
 	}

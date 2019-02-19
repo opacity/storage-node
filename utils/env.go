@@ -33,6 +33,7 @@ func initEnv(filenames ...string) {
 		if lookupErr != nil {
 			log.Fatal("Error loading environment variables: " + CollectErrors([]error{err, lookupErr}).Error())
 		}
+		return
 	}
 
 	storageNodeEnv := StorageNodeEnv{}

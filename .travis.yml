@@ -33,7 +33,6 @@ before_install:
 install:
   - rm -rf ./data
   - make govendor
-  - govendor sync
   - make ethereum-fix
   - docker-compose up --build -d
 
