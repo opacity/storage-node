@@ -25,12 +25,6 @@
 			"revisionTime": "2018-08-30T19:11:22Z"
 		},
 		{
-			"checksumSHA1": "V14w8J29vtLTgSmWZET2mE6MWZY=",
-			"path": "github.com/ethereum/go-ethereum",
-			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
-			"revisionTime": "2019-02-18T15:44:50Z"
-		},
-		{
 			"checksumSHA1": "d/ZFOuXnxH0Cxngrwr/N0L2IwVw=",
 			"path": "github.com/ethereum/go-ethereum/accounts/abi",
 			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
@@ -41,10 +35,6 @@
 			"path": "github.com/ethereum/go-ethereum/accounts/abi/bind",
 			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
 			"revisionTime": "2019-02-18T15:44:50Z"
-		},
-		{
-			"path": "github.com/ethereum/go-ethereum/accounts/keystore",
-			"revision": ""
 		},
 		{
 			"checksumSHA1": "7Z+xHvRCiZXLSWMCUkb81RRi8po=",
@@ -63,12 +53,6 @@
 			"path": "github.com/ethereum/go-ethereum/common/math",
 			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
 			"revisionTime": "2019-02-13T20:37:59Z"
-		},
-		{
-			"checksumSHA1": "JroxtvjsqOVU96lQt7IAxcS4gXk=",
-			"path": "github.com/ethereum/go-ethereum/common/mclock",
-			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
-			"revisionTime": "2019-02-18T15:44:50Z"
 		},
 		{
 			"checksumSHA1": "BnXp6hFDL+wvwHaAw3SbKGRUXhs=",
@@ -105,28 +89,8 @@
 			"revisionTime": "2019-02-18T15:44:50Z"
 		},
 		{
-			"path": "github.com/ethereum/go-ethereum/log",
-			"revision": ""
-		},
-		{
 			"checksumSHA1": "/h73vDb08BekDFb4aOGqZFUprNY=",
 			"path": "github.com/ethereum/go-ethereum/params",
-			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
-			"revisionTime": "2019-02-18T15:44:50Z"
-		},
-		{
-			"checksumSHA1": "uTQILmvDRo43u2PqY/GbGYQKw64=",
-			"path": "github.com/ethereum/go-ethereum/rlp",
-			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
-			"revisionTime": "2019-02-13T20:37:59Z"
-		},
-		{
-			"path": "github.com/ethereum/go-ethereum/rpc",
-			"revision": ""
-		},
-		{
-			"checksumSHA1": "K9f449ToIVfcz2JQeK81ieaJBaQ=",
-			"path": "github.com/ethereum/go-ethereum/trie",
 			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
 			"revisionTime": "2019-02-18T15:44:50Z"
 		},
