@@ -25,10 +25,28 @@
 			"revisionTime": "2018-08-30T19:11:22Z"
 		},
 		{
+			"checksumSHA1": "V14w8J29vtLTgSmWZET2mE6MWZY=",
+			"path": "github.com/ethereum/go-ethereum",
+			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
+			"revisionTime": "2019-02-18T15:44:50Z"
+		},
+		{
+			"checksumSHA1": "d/ZFOuXnxH0Cxngrwr/N0L2IwVw=",
+			"path": "github.com/ethereum/go-ethereum/accounts/abi",
+			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
+			"revisionTime": "2019-02-18T15:44:50Z"
+		},
+		{
+			"checksumSHA1": "gDB/J0OKV1lWEpp4MoZGQdkfzAo=",
+			"path": "github.com/ethereum/go-ethereum/accounts/abi/bind",
+			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
+			"revisionTime": "2019-02-18T15:44:50Z"
+		},
+		{
 			"checksumSHA1": "7Z+xHvRCiZXLSWMCUkb81RRi8po=",
 			"path": "github.com/ethereum/go-ethereum/common",
-			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
-			"revisionTime": "2019-02-13T20:37:59Z"
+			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
+			"revisionTime": "2019-02-18T15:44:50Z"
 		},
 		{
 			"checksumSHA1": "zeRKAvn2TNueA0AbPl6bB+QLbXk=",
@@ -41,6 +59,12 @@
 			"path": "github.com/ethereum/go-ethereum/common/math",
 			"revision": "e9f70c906415469bf31a1d677f735bf36d6fa93a",
 			"revisionTime": "2019-02-13T20:37:59Z"
+		},
+		{
+			"checksumSHA1": "BnXp6hFDL+wvwHaAw3SbKGRUXhs=",
+			"path": "github.com/ethereum/go-ethereum/core/types",
+			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
+			"revisionTime": "2019-02-18T15:44:50Z"
 		},
 		{
 			"checksumSHA1": "amvwJ03EDT4FdXE58itmlvhmzSU=",
@@ -57,6 +81,24 @@
 			"path": "github.com/ethereum/go-ethereum/crypto/secp256k1",
 			"revision": "62e94895da80838ec694b4ba19eeac80c9dc88c1",
 			"revisionTime": "2018-08-29T15:27:43Z"
+		},
+		{
+			"checksumSHA1": "EYwAl2Yy6IpR62m3vCk5g3fbp94=",
+			"path": "github.com/ethereum/go-ethereum/ethclient",
+			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
+			"revisionTime": "2019-02-18T15:44:50Z"
+		},
+		{
+			"checksumSHA1": "v3414Lba/U9qqoxpTJuPhkIHxfc=",
+			"path": "github.com/ethereum/go-ethereum/event",
+			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
+			"revisionTime": "2019-02-18T15:44:50Z"
+		},
+		{
+			"checksumSHA1": "/h73vDb08BekDFb4aOGqZFUprNY=",
+			"path": "github.com/ethereum/go-ethereum/params",
+			"revision": "d88c6ce6b058ccd04b03d079d486b1d55fe5ef61",
+			"revisionTime": "2019-02-18T15:44:50Z"
 		},
 		{
 			"checksumSHA1": "uTQILmvDRo43u2PqY/GbGYQKw64=",
