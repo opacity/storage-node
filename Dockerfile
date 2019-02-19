@@ -19,4 +19,4 @@ RUN go get -u -v github.com/kardianos/govendor
 COPY . .
 
 RUN govendor sync -v
-RUN go install -v ./...
+RUN go build
