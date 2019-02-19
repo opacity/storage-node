@@ -4,6 +4,8 @@
 
 The broker node uses Docker to spin up a go app, [mysql, required download](https://dev.mysql.com/downloads/file/?id=479845), and private iota instance (TODO). You must first install [Docker](https://www.docker.com/community-edition).
 
+You should also install gopackage first and make sure you have $GOPATH set. And then clone this repo into $GOPATH/src/github.com/. This is important since we are using govendor and it only works within $GOPATH/src.
+
 ```bash
 # To setup this first time, you need to have .env file. By default, use .env.test for unit test.
 # Feel free to modify the .env file. Note: we don't check in .env file.
@@ -45,3 +47,4 @@ GORM: For querying database. See https://github.com/jinzhu/gorm
 
 Gin-Gonic: For HTTP server. See https://github.com/gin-gonic
 
+Govendor: For Package management. See https://github.com/kardianos/govendor
