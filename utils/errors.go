@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"strconv"
 )
 
@@ -30,13 +31,15 @@ func CollectErrors(arrayOfErrs []error) error {
 	}
 	var buffer bytes.Buffer
 	var errString string
-	for i, errInArray := range arrayOfErrs {
+	i := 0
+	for _, errInArray := range arrayOfErrs {
 		if errInArray != nil {
 			buffer.WriteString("Error ")
 			buffer.WriteString(strconv.Itoa(i + 1))
 			buffer.WriteString(": ")
 			buffer.WriteString(errInArray.Error())
 			buffer.WriteString("\n")
+			i++
 		}
 	}
 	errString = buffer.String()
@@ -44,4 +47,15 @@ func CollectErrors(arrayOfErrs []error) error {
 		return nil
 	}
 	return errors.New(errString)
+}
+
+/*LogIfError logs any error if it is not nil. Allow caller to provide additional freeform info.*/
+func LogIfError(err error) {
+	if err == nil {
+		return
+	}
+
+	// TODO: proper external logging
+
+	fmt.Println(err)
 }

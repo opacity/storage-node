@@ -4,7 +4,7 @@ PACKAGE = github.com/opacity/storage-node
 
 govendor:
 	go get -u github.com/kardianos/govendor
-	govendor sync
+	govendor sync -v
 
 # this is hacky, we should do something better
 ethereum-fix:
