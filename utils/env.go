@@ -17,6 +17,7 @@ type StorageNodeEnv struct {
 	DatabaseURL     string `envDefault:""`
 	EncryptionKey   string `env:"ENCRYPTION_KEY" envDefault:""`
 	GoEnv           string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
+	BucketName      string `env:"BUCKET_NAME" envDefault:""`
 }
 
 /*Env is the environment for a particular node while the application is running*/
