@@ -1,8 +1,8 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
-
 	"os"
 
 	"github.com/gin-contrib/cors"
@@ -18,7 +18,8 @@ func CreateRoutes() {
 	setupV2Paths(v2)
 
 	// Listen and Serve
-	router.Run(":" + os.Getenv("PORT"))
+	err := router.Run(":" + os.Getenv("PORT"))
+	fmt.Printf("Error in running %s", err)
 }
 
 func returnEngine() *gin.Engine {
