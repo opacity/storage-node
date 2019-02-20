@@ -4,13 +4,18 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
+var uptime time.Time
+
 /*CreateRoutes creates our application's routes*/
 func CreateRoutes() {
+	uptime = time.Now()
+
 	router := returnEngine()
 
 	v2 := returnV2Group(router)
@@ -32,9 +37,11 @@ func returnEngine() *gin.Engine {
 
 	// Test app is running
 	router.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Storage node is running")
+		c.JSON(http.StatusOK, map[string]interface{}{
+			"message": "Storage node is running",
+			"uptime":  fmt.Sprintf("%v", time.Now().Sub(uptime)),
+		})
 	})
-
 	return router
 }
 
