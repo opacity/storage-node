@@ -9,8 +9,8 @@ import (
 
 func returnValidFile() File {
 	return File{
-		FileID:              utils.RandSeqFromRunes(64, []rune("abcdefg01234567890")),
-		AccountID:           utils.RandSeqFromRunes(64, []rune("abcdefg01234567890")),
+		FileID:              utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		AccountID:           utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		FileSize:            10,
 		FileStorageLocation: "locationOfFile",
 		UploadStatus:        FileUploadNotStarted,
@@ -95,7 +95,7 @@ func Test_Empty_AccountID_In_File_Fails(t *testing.T) {
 
 func Test_Wrong_Length_AccountID_In_File_Fails(t *testing.T) {
 	file := returnValidFile()
-	file.AccountID = utils.RandSeqFromRunes(63, []rune("abcdefg01234567890"))
+	file.AccountID = utils.RandSeqFromRunes(63, []rune("abcdef01234567890"))
 
 	if err := Validator.Struct(file); err == nil {
 		t.Fatalf("account should have failed validation")

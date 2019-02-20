@@ -8,9 +8,16 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/utils"
 )
 
 var uptime time.Time
+
+const AccountsPath = "/accounts"
+const V1Path = "/api/v1"
+
+func init() {
+}
 
 /*CreateRoutes creates our application's routes*/
 func CreateRoutes() {
@@ -18,13 +25,13 @@ func CreateRoutes() {
 
 	router := returnEngine()
 
-	v2 := returnV2Group(router)
+	v1 := returnV1Group(router)
 
-	setupV2Paths(v2)
+	setupV1Paths(v1)
 
 	// Listen and Serve
 	err := router.Run(":" + os.Getenv("PORT"))
-	fmt.Printf("Error in running %s", err)
+	utils.LogIfError(err)
 }
 
 func returnEngine() *gin.Engine {
@@ -45,20 +52,18 @@ func returnEngine() *gin.Engine {
 	return router
 }
 
-func returnV2Group(router *gin.Engine) *gin.RouterGroup {
-	return router.Group("/v2")
+func returnV1Group(router *gin.Engine) *gin.RouterGroup {
+	return router.Group(V1Path)
 }
 
-func setupV2Paths(v2Router *gin.RouterGroup) {
-	v2Router.POST("/new-subscription", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "stub for creating a new subscription")
-	})
+func setupV1Paths(v1Router *gin.RouterGroup) {
+	v1Router.POST(AccountsPath, CreateAccountHandler())
 
-	v2Router.POST("/trial-upload", func(c *gin.Context) {
+	v1Router.POST("/trial-upload", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "stub for doing a trial upload")
 	})
 
-	v2Router.POST("/new-upload", func(c *gin.Context) {
+	v1Router.POST("/new-upload", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "stub for uploading a file with an existing subscription")
 	})
 }

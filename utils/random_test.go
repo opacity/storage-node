@@ -7,7 +7,7 @@ import (
 )
 
 func Test_RandSeqFromRunes(t *testing.T) {
-	randSeq := RandSeqFromRunes(6, []rune("abcdefg01234567890"))
+	randSeq := RandSeqFromRunes(6, []rune("abcdef01234567890"))
 	assert.Equal(t, 6, len(randSeq))
 }
 
