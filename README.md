@@ -23,6 +23,10 @@ DEBUG=1 docker-compose up -d
 docker-compose up --build -d
 docker-compose up -d
 
+# Run unit test
+govendor sync # make sure to include any dependence
+docker-compose exec app govendor test +local
+
 # Manage new dependence
 govendor list # will list all of new dependence. "m"=missing
 govendor fetch github.com/...  # fetch the dependence and add it to your local vendor folder
