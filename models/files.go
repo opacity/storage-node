@@ -29,7 +29,7 @@ type UploadStatusType int
 
 const (
 	/*FileUploadNotStarted is for files we haven't started uploading yet*/
-	FileUploadNotStarted UploadStatusType = 1
+	FileUploadNotStarted UploadStatusType = iota + 1
 
 	/*FileUploadStarted is for files we have started uploading*/
 	FileUploadStarted

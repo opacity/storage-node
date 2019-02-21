@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"math/big"
+
 	"github.com/jinzhu/gorm"
+	"github.com/opacity/storage-node/services"
+	"github.com/opacity/storage-node/utils"
 )
 
 /*Account defines a model for managing a user subscription for uploads*/
@@ -36,12 +40,12 @@ type PaymentStatusType int
 
 const (
 	/*BasicStorageLimit allows 100 GB on the basic plan*/
-	BasicStorageLimit StorageLimitType = 100
+	BasicStorageLimit StorageLimitType = iota + 100
 )
 
 const (
 	/*InitialPaymentInProgress - we have created the subscription and are awaiting their initial payment*/
-	InitialPaymentInProgress PaymentStatusType = 1
+	InitialPaymentInProgress PaymentStatusType = iota + 1
 
 	/*InitialPaymentReceived - we have received the payment*/
 	InitialPaymentReceived
@@ -112,6 +116,27 @@ func (account *Account) Cost() (float64, error) {
 		return 0, errors.New("no price established for that amount of storage")
 	}
 	return costForDefaultSubscriptionTerm * float64(account.MonthsInSubscription/DefaultMonthsPerSubscription), nil
+}
+
+/*GetTotalCostInWei gets the total cost in wei for a subscription*/
+func (account *Account) GetTotalCostInWei() *big.Int {
+	float64Cost, _ := account.Cost()
+	return utils.ConvertToWeiUnit(big.NewFloat(float64Cost))
+}
+
+/*CheckIfPaid returns whether the account has been paid for*/
+func (account *Account) CheckIfPaid() (bool, error) {
+	if account.PaymentStatus >= InitialPaymentReceived {
+		return true, nil
+	}
+	costInWei := account.GetTotalCostInWei()
+	paid, err := BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress),
+		costInWei)
+	if paid {
+		account.PaymentStatus = InitialPaymentReceived
+		DB.Update(&account)
+	}
+	return paid, err
 }
 
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the

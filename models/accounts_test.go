@@ -1,12 +1,16 @@
 package models
 
 import (
+	"errors"
 	"testing"
 
 	"encoding/hex"
 
 	"time"
 
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
@@ -172,4 +176,59 @@ func Test_Returns_Cost(t *testing.T) {
 	}
 
 	assert.Equal(t, BasicSubscriptionDefaultCost, cost)
+}
+
+func Test_GetTotalCostInWei(t *testing.T) {
+	account := returnValidAccount()
+	account.MonthsInSubscription = DefaultMonthsPerSubscription
+
+	if err := Validator.Struct(account); err != nil {
+		t.Fatalf("account should have passed validation")
+	}
+
+	costInWei := account.GetTotalCostInWei()
+
+	assert.Equal(t, big.NewInt(1560000000000000000).String(), costInWei.String())
+}
+
+func Test_CheckIfPaid_Has_Paid(t *testing.T) {
+	account := returnValidAccount()
+	account.MonthsInSubscription = DefaultMonthsPerSubscription
+
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return true, nil
+	}
+
+	paid, err := account.CheckIfPaid()
+	assert.True(t, paid)
+	assert.Nil(t, err)
+	assert.Equal(t, InitialPaymentReceived, account.PaymentStatus)
+}
+
+func Test_CheckIfPaid_Not_Paid(t *testing.T) {
+	account := returnValidAccount()
+	account.MonthsInSubscription = DefaultMonthsPerSubscription
+
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
+	paid, err := account.CheckIfPaid()
+	assert.False(t, paid)
+	assert.Nil(t, err)
+	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
+}
+
+func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
+	account := returnValidAccount()
+	account.MonthsInSubscription = DefaultMonthsPerSubscription
+
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, errors.New("some error")
+	}
+
+	paid, err := account.CheckIfPaid()
+	assert.False(t, paid)
+	assert.NotNil(t, err)
+	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
 }
