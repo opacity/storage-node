@@ -25,6 +25,12 @@
 			"revisionTime": "2019-02-13T20:37:15Z"
 		},
 		{
+			"checksumSHA1": "7utntLDRYE9aOApfdyuao2v1AFs=",
+			"path": "github.com/aws/aws-sdk-go/aws",
+			"revision": "182cda27d0921b14139ff6d352c09e0cb20e4578",
+			"revisionTime": "2019-02-20T19:25:59Z"
+		},
+		{
 			"checksumSHA1": "OMSvEo0D9bJ4WewmTcmMwY8yc1A=",
 			"path": "github.com/btcsuite/btcd/btcec",
 			"revision": "306aecffea325e97f513b3ff0cf7895a5310651d",

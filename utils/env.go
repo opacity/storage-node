@@ -20,7 +20,7 @@ type StorageNodeEnv struct {
 	ContractAddress   string `env:"TOKEN_CONTRACT_ADDRESS" envDefault:""`
 	EthNodeURL        string `env:"ETH_NODE_URL" envDefault:""`
 	MainWalletAddress string `env:"MAIN_WALLET_ADDRESS" envDefault:""`
-  BucketName      string `env:"BUCKET_NAME" envDefault:""`
+	BucketName        string `env:"BUCKET_NAME" envDefault:""`
 }
 
 /*Env is the environment for a particular node while the application is running*/
