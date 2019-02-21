@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -9,17 +10,22 @@ import (
 
 /*Account defines a model for managing a user subscription for uploads*/
 type Account struct {
-	AccountID       string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
-	CreatedAt       time.Time         `json:"createdAt"`
-	UpdatedAt       time.Time         `json:"updatedAt"`
-	ExpirationDate  time.Time         `json:"expirationDate" binding:"required,gte"`   // when their subscription expires
-	StorageLocation string            `json:"storageLocation" binding:"required,url"`  // where their files live, on S3 or elsewhere
-	StorageLimit    StorageLimitType  `json:"storageLimit" binding:"required,gte=100"` // how much storage they are allowed, in GB
-	PIN             int               `json:"pin" binding:"required"`                  // the user's PIN (do we need this field?)
-	EthAddress      string            `json:"ethAddress" binding:"required,len=42"`    // the eth address they will send payment to
-	EthPrivateKey   string            `json:"ethPrivateKey" binding:"required,len=96"` // the private key of the eth address
-	PaymentStatus   PaymentStatusType `json:"paymentStatus" binding:"required"`        // the status of their payment
-	Files           []File            `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
+	AccountID            string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
+	CreatedAt            time.Time         `json:"createdAt"`
+	UpdatedAt            time.Time         `json:"updatedAt"`
+	MonthsInSubscription int               `json:"monthsInSubscription" binding:"required,gte=1"` // number of months in their subscription
+	StorageLocation      string            `json:"storageLocation" binding:"required,url"`        // where their files live, on S3 or elsewhere
+	StorageLimit         StorageLimitType  `json:"storageLimit" binding:"required,gte=100"`       // how much storage they are allowed, in GB
+	EthAddress           string            `json:"ethAddress" binding:"required,len=42"`          // the eth address they will send payment to
+	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`       // the private key of the eth address
+	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`              // the status of their payment
+	Files                []File            `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
+}
+
+/*Invoice is the invoice object we will return to the client*/
+type Invoice struct {
+	Cost       float64 `json:"cost" binding:"required,gte=0"`
+	EthAddress string  `json:"ethAddress" binding:"required,len=42"`
 }
 
 /*StorageLimitType defines a type for the storage limits*/
@@ -55,16 +61,35 @@ const (
 	// TODO: error states?  Not sure if we need them.
 )
 
+/*DefaultMonthsPerSubscription is the number of months per year since our
+default subscription is a year*/
+const DefaultMonthsPerSubscription = 12
+
+/*BasicSubscriptionDefaultCost is the cost for a default-length term of the basic plan*/
+const BasicSubscriptionDefaultCost = 1.56
+
 /*PaymentStatusMap is for pretty printing the PaymentStatus*/
 var PaymentStatusMap = make(map[PaymentStatusType]string)
 
+/*StorageLimitMap maps the amount of storage passed in by the client
+to storage limits set by us.  Used for checking that they have passed in an allowed
+amount.*/
+var StorageLimitMap = make(map[int]StorageLimitType)
+
+/*CostMap is for mapping subscription plans to their prices, for a default length subscription*/
+var CostMap = make(map[StorageLimitType]float64)
+
 func init() {
+	StorageLimitMap[int(BasicStorageLimit)] = BasicStorageLimit
+
 	PaymentStatusMap[InitialPaymentInProgress] = "InitialPaymentInProgress"
 	PaymentStatusMap[InitialPaymentReceived] = "InitialPaymentReceived"
 	PaymentStatusMap[GasTransferInProgress] = "GasTransferInProgress"
 	PaymentStatusMap[GasTransferComplete] = "GasTransferComplete"
 	PaymentStatusMap[PaymentRetrievalInProgress] = "PaymentRetrievalInProgress"
 	PaymentStatusMap[PaymentRetrievalComplete] = "PaymentRetrievalComplete"
+
+	CostMap[BasicStorageLimit] = BasicSubscriptionDefaultCost
 }
 
 /*BeforeCreate - callback called before the row is created*/
@@ -75,10 +100,24 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	return nil
 }
 
+/*ExpirationDate returns the date the account expires*/
+func (account *Account) ExpirationDate() time.Time {
+	return account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
+}
+
+/*Cost returns the expected price of the subscription*/
+func (account *Account) Cost() (float64, error) {
+	costForDefaultSubscriptionTerm, ok := CostMap[account.StorageLimit]
+	if !ok {
+		return 0, errors.New("no price established for that amount of storage")
+	}
+	return costForDefaultSubscriptionTerm * float64(account.MonthsInSubscription/DefaultMonthsPerSubscription), nil
+}
+
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the
 terminal*/
 func (account *Account) PrettyString() {
-	fmt.Print("AccountID:                         ")
+	fmt.Print("AccountID:                      ")
 	fmt.Println(account.AccountID)
 
 	fmt.Print("CreatedAt:                      ")
@@ -88,7 +127,13 @@ func (account *Account) PrettyString() {
 	fmt.Println(account.UpdatedAt)
 
 	fmt.Print("ExpirationDate:                 ")
-	fmt.Println(account.ExpirationDate)
+	fmt.Println(account.ExpirationDate())
+
+	fmt.Print("MonthsInSubscription:           ")
+	fmt.Println(account.MonthsInSubscription)
+
+	fmt.Print("Cost:                           ")
+	fmt.Println(account.Cost())
 
 	fmt.Print("StorageLimit:                   ")
 	fmt.Println(account.StorageLimit)
@@ -104,7 +149,4 @@ func (account *Account) PrettyString() {
 
 	fmt.Print("EthPrivateKey:                  ")
 	fmt.Println(account.EthPrivateKey)
-
-	fmt.Print("PIN:                            ")
-	fmt.Println(account.PIN)
 }

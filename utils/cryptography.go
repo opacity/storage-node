@@ -22,6 +22,21 @@ func Encrypt(key string, secret string, nonce string) []byte {
 	return data
 }
 
+/*EncryptWithErrorReturn encrypts a secret using a key and a nonce and returns an error if it fails*/
+func EncryptWithErrorReturn(key string, secret string, nonce string) ([]byte, error) {
+	keyInBytes, errDecodeKey := hex.DecodeString(key)
+	secretInBytes, errDecodeSecret := hex.DecodeString(secret)
+	block, errNewCipher := aes.NewCipher(keyInBytes)
+	gcm, errNewGCM := cipher.NewGCM(block)
+	nonceInBytes, errDecodeNonce := hex.DecodeString(nonce[0 : 2*gcm.NonceSize()])
+	err := CollectErrors([]error{errDecodeKey, errDecodeSecret, errNewCipher, errNewGCM, errDecodeNonce})
+	if err != nil {
+		return []byte{}, err
+	}
+	data := gcm.Seal(nil, nonceInBytes, secretInBytes, nil)
+	return data, nil
+}
+
 /*Decrypt decrypts a secret using a key and a nonce*/
 func Decrypt(key string, cipherText string, nonce string) []byte {
 	keyInBytes, err := hex.DecodeString(key)
@@ -39,4 +54,22 @@ func Decrypt(key string, cipherText string, nonce string) []byte {
 		return nil
 	}
 	return data
+}
+
+/*DecryptWithErrorReturn decrypts a secret using a key and a nonce and returns an error if it fails*/
+func DecryptWithErrorReturn(key string, cipherText string, nonce string) ([]byte, error) {
+	keyInBytes, errDecodeKey := hex.DecodeString(key)
+	cipherTextInBytes, cipherTextDecodeSecret := hex.DecodeString(cipherText)
+	block, errNewCipher := aes.NewCipher(keyInBytes)
+	gcm, errNewGCM := cipher.NewGCM(block)
+	nonceInBytes, errDecodeNonce := hex.DecodeString(nonce[0 : 2*gcm.NonceSize()])
+	data, decryptErr := gcm.Open(nil, nonceInBytes, cipherTextInBytes, nil)
+	return data, CollectErrors([]error{
+		errDecodeKey,
+		cipherTextDecodeSecret,
+		errNewCipher,
+		errNewGCM,
+		errDecodeNonce,
+		decryptErr,
+	})
 }
