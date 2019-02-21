@@ -26,6 +26,7 @@ func returnValidAccount() Account {
 		MonthsInSubscription: 12,
 		StorageLocation:      "https://someFileStoragePlace.com/12345",
 		StorageLimit:         BasicStorageLimit,
+		StorageUsed:          10,
 		PaymentStatus:        InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, testNonce)),

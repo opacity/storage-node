@@ -38,6 +38,7 @@ func returnValidAccount() models.Account {
 		MonthsInSubscription: 12,
 		StorageLocation:      "https://someFileStoragePlace.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
+		StorageUsed:          10,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
