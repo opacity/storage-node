@@ -4,7 +4,7 @@
 
 The broker node uses Docker to spin up a go app, [mysql, required download](https://dev.mysql.com/downloads/file/?id=479845), and private iota instance (TODO). You must first install [Docker](https://www.docker.com/community-edition).
 
-You should also install gopackage first and make sure you have $GOPATH set. And then clone this repo into $GOPATH/src/github.com/. This is important since we are using govendor and it only works within $GOPATH/src.
+You should also install gopackage first and make sure you have $GOPATH set. And then clone this repo into $GOPATH/src/github.com/opacity/storage-node/<all of git repo>. This is important since we are using govendor and it only works within $GOPATH/src.
 
 ```bash
 # To setup this first time, you need to have .env file. By default, use .env.test for unit test.
@@ -22,6 +22,11 @@ DEBUG=1 docker-compose up -d
 # This will have less logs and no hot reloading.
 docker-compose up --build -d
 docker-compose up -d
+
+# Manage new dependence
+govendor list # will list all of new dependence. "m"=missing
+govendor fetch github.com/...  # fetch the dependence and add it to your local vendor folder
+govendor test +local # test to build it
 ```
 
 ---

@@ -12,12 +12,15 @@ import (
 
 /*StorageNodeEnv represents what our storage node environment should look like*/
 type StorageNodeEnv struct {
-	ProdDatabaseURL string `env:"PROD_DATABASE_URL" envDefault:""`
-	TestDatabaseURL string `env:"TEST_DATABASE_URL" envDefault:""`
-	DatabaseURL     string `envDefault:""`
-	EncryptionKey   string `env:"ENCRYPTION_KEY" envDefault:""`
-	GoEnv           string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
-	BucketName      string `env:"BUCKET_NAME" envDefault:""`
+	ProdDatabaseURL   string `env:"PROD_DATABASE_URL" envDefault:""`
+	TestDatabaseURL   string `env:"TEST_DATABASE_URL" envDefault:""`
+	DatabaseURL       string `envDefault:""`
+	EncryptionKey     string `env:"ENCRYPTION_KEY" envDefault:""`
+	GoEnv             string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
+	ContractAddress   string `env:"TOKEN_CONTRACT_ADDRESS" envDefault:""`
+	EthNodeURL        string `env:"ETH_NODE_URL" envDefault:""`
+	MainWalletAddress string `env:"MAIN_WALLET_ADDRESS" envDefault:""`
+  BucketName      string `env:"BUCKET_NAME" envDefault:""`
 }
 
 /*Env is the environment for a particular node while the application is running*/
@@ -31,6 +34,7 @@ func initEnv(filenames ...string) {
 		if lookupErr != nil {
 			log.Fatal("Error loading environment variables: " + CollectErrors([]error{err, lookupErr}).Error())
 		}
+		return
 	}
 
 	storageNodeEnv := StorageNodeEnv{}
@@ -71,26 +75,32 @@ func IsTestEnv() bool {
 }
 
 func tryLookUp() error {
-	// TODO: this is hacky, we should clean this up
-	prodDBUrl, exists := os.LookupEnv("PROD_DATABASE_URL")
-	if !exists {
-		return errors.New("failed to load .env variable PROD_DATABASE_URL in tryLookUp")
-	}
-	testDBUrl, exists := os.LookupEnv("TEST_DATABASE_URL")
-	if !exists {
-		return errors.New("failed to load .env variable TEST_DATABASE_URL in tryLookUp")
-	}
-	encryptionKey, exists := os.LookupEnv("ENCRYPTION_KEY")
-	if !exists {
-		return errors.New("failed to load .env variable ENCRYPTION_KEY in tryLookUp")
-	}
+	var collectedErrors []error
+	prodDBUrl := AppendLookupErrors("PROD_DATABASE_URL", &collectedErrors)
+	testDBUrl := AppendLookupErrors("TEST_DATABASE_URL", &collectedErrors)
+	encryptionKey := AppendLookupErrors("ENCRYPTION_KEY", &collectedErrors)
+	contractAddress := AppendLookupErrors("TOKEN_CONTRACT_ADDRESS", &collectedErrors)
+	ethNodeURL := AppendLookupErrors("ETH_NODE_URL", &collectedErrors)
+	mainWalletAddress := AppendLookupErrors("MAIN_WALLET_ADDRESS", &collectedErrors)
 
 	serverEnv := StorageNodeEnv{
-		ProdDatabaseURL: prodDBUrl,
-		TestDatabaseURL: testDBUrl,
-		EncryptionKey:   encryptionKey,
+		ProdDatabaseURL:   prodDBUrl,
+		TestDatabaseURL:   testDBUrl,
+		EncryptionKey:     encryptionKey,
+		ContractAddress:   contractAddress,
+		EthNodeURL:        ethNodeURL,
+		MainWalletAddress: mainWalletAddress,
 	}
 
 	Env = serverEnv
-	return nil
+	return CollectErrors(collectedErrors)
+}
+
+func AppendLookupErrors(property string, collectedErrors *[]error) string {
+	value, exists := os.LookupEnv(property)
+	if !exists {
+		*collectedErrors = append(*(collectedErrors),
+			errors.New("in tryLookup, failed to load .env variable: "+property))
+	}
+	return value
 }
