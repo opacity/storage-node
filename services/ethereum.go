@@ -341,3 +341,8 @@ func printTx(tx *types.Transaction) {
 	fmt.Printf("tx amount : %v\n", tx.Value())
 	fmt.Printf("tx cost   : %v\n", tx.Cost())
 }
+
+/*StringToAddress converts a string to a common.Address*/
+func StringToAddress(address string) common.Address {
+	return common.HexToAddress(address)
+}

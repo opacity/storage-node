@@ -14,7 +14,6 @@ type File struct {
 	restriction and can change the name to FileHandle if it is appropriate*/
 	FileID string `gorm:"primary_key" json:"fileID" binding:"required"`
 	/*AccountID associates an entry in the files table with an entry in the accounts table*/
-	AccountID string    `json:"accountID" binding:"required,len=64"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 	FileSize  int       `json:"fileSize" binding:"required"`
@@ -29,7 +28,7 @@ type UploadStatusType int
 
 const (
 	/*FileUploadNotStarted is for files we haven't started uploading yet*/
-	FileUploadNotStarted UploadStatusType = 1
+	FileUploadNotStarted UploadStatusType = iota + 1
 
 	/*FileUploadStarted is for files we have started uploading*/
 	FileUploadStarted
@@ -64,9 +63,6 @@ terminal*/
 func (file *File) PrettyString() {
 	fmt.Print("FileID:                         ")
 	fmt.Println(file.FileID)
-
-	fmt.Print("AccountID:                         ")
-	fmt.Println(file.AccountID)
 
 	fmt.Print("CreatedAt:                      ")
 	fmt.Println(file.CreatedAt)

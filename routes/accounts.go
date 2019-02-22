@@ -26,6 +26,13 @@ type accountCreateRes struct {
 	Invoice        models.Invoice `json:"invoice"`
 }
 
+type accountPaidRes struct {
+	Paid  bool  `json:"paid" binding:"required"`
+	Error error `json:"error"`
+}
+
+const noAccountResponse = "no account with that id"
+
 /*CreateAccountHandler is a handler for post requests to create accounts*/
 func CreateAccountHandler() gin.HandlerFunc {
 	fn := func(c *gin.Context) {
@@ -108,6 +115,27 @@ func CreateAccountHandler() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, response)
+	}
+
+	return gin.HandlerFunc(fn)
+}
+
+/*CheckAccountPaymentStatusHandler is a handler for requests checking the payment status*/
+func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
+	fn := func(c *gin.Context) {
+		slug := c.Param("accountID")
+
+		accounts := []models.Account{}
+		models.DB.Where("account_id = ?", slug).Find(&accounts)
+		if len(accounts) == 1 {
+			paid, err := accounts[0].CheckIfPaid()
+			c.JSON(http.StatusOK, accountPaidRes{
+				Paid:  paid,
+				Error: err,
+			})
+			return
+		}
+		c.JSON(http.StatusNotFound, noAccountResponse)
 	}
 
 	return gin.HandlerFunc(fn)

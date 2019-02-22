@@ -95,6 +95,8 @@ func tryLookUp() error {
 	return CollectErrors(collectedErrors)
 }
 
+/*AppendLookupErrors will look up an environment variable, and if there was an
+error, it will append it to the array of errors that are passed in*/
 func AppendLookupErrors(property string, collectedErrors *[]error) string {
 	value, exists := os.LookupEnv(property)
 	if !exists {

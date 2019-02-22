@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"math/big"
+
 	"github.com/jinzhu/gorm"
+	"github.com/opacity/storage-node/services"
+	"github.com/opacity/storage-node/utils"
 )
 
 /*Account defines a model for managing a user subscription for uploads*/
@@ -16,10 +20,10 @@ type Account struct {
 	MonthsInSubscription int               `json:"monthsInSubscription" binding:"required,gte=1"` // number of months in their subscription
 	StorageLocation      string            `json:"storageLocation" binding:"required,url"`        // where their files live, on S3 or elsewhere
 	StorageLimit         StorageLimitType  `json:"storageLimit" binding:"required,gte=100"`       // how much storage they are allowed, in GB
+	StorageUsed          float64           `json:"storageUsed" binding:"required"`                // how much storage they have used, in GB
 	EthAddress           string            `json:"ethAddress" binding:"required,len=42"`          // the eth address they will send payment to
 	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`       // the private key of the eth address
 	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`              // the status of their payment
-	Files                []File            `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
 }
 
 /*Invoice is the invoice object we will return to the client*/
@@ -36,12 +40,12 @@ type PaymentStatusType int
 
 const (
 	/*BasicStorageLimit allows 100 GB on the basic plan*/
-	BasicStorageLimit StorageLimitType = 100
+	BasicStorageLimit StorageLimitType = iota + 100
 )
 
 const (
 	/*InitialPaymentInProgress - we have created the subscription and are awaiting their initial payment*/
-	InitialPaymentInProgress PaymentStatusType = 1
+	InitialPaymentInProgress PaymentStatusType = iota + 1
 
 	/*InitialPaymentReceived - we have received the payment*/
 	InitialPaymentReceived
@@ -114,6 +118,27 @@ func (account *Account) Cost() (float64, error) {
 	return costForDefaultSubscriptionTerm * float64(account.MonthsInSubscription/DefaultMonthsPerSubscription), nil
 }
 
+/*GetTotalCostInWei gets the total cost in wei for a subscription*/
+func (account *Account) GetTotalCostInWei() *big.Int {
+	float64Cost, _ := account.Cost()
+	return utils.ConvertToWeiUnit(big.NewFloat(float64Cost))
+}
+
+/*CheckIfPaid returns whether the account has been paid for*/
+func (account *Account) CheckIfPaid() (bool, error) {
+	if account.PaymentStatus >= InitialPaymentReceived {
+		return true, nil
+	}
+	costInWei := account.GetTotalCostInWei()
+	paid, err := BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress),
+		costInWei)
+	if paid {
+		account.PaymentStatus = InitialPaymentReceived
+		DB.Update(&account)
+	}
+	return paid, err
+}
+
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the
 terminal*/
 func (account *Account) PrettyString() {
@@ -137,6 +162,9 @@ func (account *Account) PrettyString() {
 
 	fmt.Print("StorageLimit:                   ")
 	fmt.Println(account.StorageLimit)
+
+	fmt.Print("StorageUsed:                   ")
+	fmt.Println(account.StorageUsed)
 
 	fmt.Print("StorageLocation:                ")
 	fmt.Println(account.StorageLocation)

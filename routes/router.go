@@ -13,7 +13,10 @@ import (
 
 var uptime time.Time
 
+/*AccountsPath is the path for dealing with accounts*/
 const AccountsPath = "/accounts"
+
+/*V1Path is a router group for the v1 version of storage node*/
 const V1Path = "/api/v1"
 
 func init() {
@@ -58,6 +61,7 @@ func returnV1Group(router *gin.Engine) *gin.RouterGroup {
 
 func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(AccountsPath, CreateAccountHandler())
+	v1Router.GET(AccountsPath+"/:accountID", CheckAccountPaymentStatusHandler())
 
 	v1Router.POST("/trial-upload", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "stub for doing a trial upload")
