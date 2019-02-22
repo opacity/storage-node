@@ -229,6 +229,12 @@
 			"revisionTime": "2019-02-21T19:37:35Z"
 		},
 		{
+			"checksumSHA1": "LXl9eaV0VwdbuIdKRQLo4YQOupA=",
+			"path": "github.com/bamzi/jobrunner",
+			"revision": "273175f8b6ebabab8a639a4e6260a5c50fbf016a",
+			"revisionTime": "2016-10-19T14:30:21Z"
+		},
+		{
 			"checksumSHA1": "OMSvEo0D9bJ4WewmTcmMwY8yc1A=",
 			"path": "github.com/btcsuite/btcd/btcec",
 			"revision": "306aecffea325e97f513b3ff0cf7895a5310651d",
@@ -694,6 +700,12 @@
 			"path": "gopkg.in/natefinch/npipe.v2",
 			"revision": "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6",
 			"revisionTime": "2016-06-21T03:49:01Z"
+		},
+		{
+			"checksumSHA1": "CzLpoHWYgSP+mT3bcW/jt8epp5I=",
+			"path": "gopkg.in/robfig/cron.v2",
+			"revision": "be2e0b0deed5a68ffee390b4583a13aff8321535",
+			"revisionTime": "2015-01-07T22:02:07Z"
 		},
 		{
 			"checksumSHA1": "oNqPrS2edE8peI3ah2INe379k8E=",
