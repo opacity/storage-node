@@ -492,6 +492,12 @@
 			"revisionTime": "2018-03-08T03:36:59Z"
 		},
 		{
+			"checksumSHA1": "blwbl9vPvRLtL5QlZgfpLvsFiZ4=",
+			"path": "github.com/jmespath/go-jmespath",
+			"revision": "c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5",
+			"revisionTime": "2018-02-06T20:15:40Z"
+		},
+		{
 			"checksumSHA1": "TsYJAg5Rcy8Oq2YowemRNU3ce2g=",
 			"path": "github.com/joho/godotenv",
 			"revision": "5c0e6c6ab1a0a9ef0a8822cba3a05d62f7dad941",
