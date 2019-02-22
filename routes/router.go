@@ -67,6 +67,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 		c.JSON(http.StatusOK, "stub for doing a trial upload")
 	})
 
+	v1Router.POST("/uploads", UploadFileHandler())
 	v1Router.POST("/new-upload", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "stub for uploading a file with an existing subscription")
 	})
