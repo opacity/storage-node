@@ -30,6 +30,7 @@ docker-compose exec app govendor test +local
 # Manage new dependence
 govendor list # will list all of new dependence. "m"=missing
 govendor fetch github.com/...  # fetch the dependence and add it to your local vendor folder
+# Govendor is not smart enough to fetch all sub dependence, so you might end to manually fetching all its sub-dependence yourself.
 govendor test +local # test to build it
 ```
 
