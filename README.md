@@ -52,6 +52,13 @@ App in docker may running this IP address locally: http://0.0.0.0:3000/
 
 ---
 
+# Useful testing
+
+Use postman to do request. Send request as POST, 0.0.0.0:3000/api/v1/accounts with JSON as body:
+{"accountID":"abc", "storageLimit":8, "durationInMonths": 2}
+
+---
+
 # Reference library
 GORM: For querying database. See https://github.com/jinzhu/gorm
 
