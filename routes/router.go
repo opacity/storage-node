@@ -8,16 +8,22 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/jobs"
 	"github.com/opacity/storage-node/utils"
 )
 
 var uptime time.Time
 
-/*AccountsPath is the path for dealing with accounts*/
-const AccountsPath = "/accounts"
+const (
+	/*AccountsPath is the path for dealing with accounts*/
+	AccountsPath = "/accounts"
 
-/*V1Path is a router group for the v1 version of storage node*/
-const V1Path = "/api/v1"
+	/*V1Path is a router group for the v1 version of storage node*/
+	V1Path = "/api/v1"
+
+	/*AdminPath is a router group for admin task. */
+	AdminPath = "/admin"
+)
 
 func init() {
 }
@@ -28,9 +34,8 @@ func CreateRoutes() {
 
 	router := returnEngine()
 
-	v1 := returnV1Group(router)
-
-	setupV1Paths(v1)
+	setupV1Paths(returnV1Group(router))
+	setupAdminPaths(router)
 
 	// Listen and Serve
 	err := router.Run(":" + os.Getenv("PORT"))
@@ -71,4 +76,14 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST("/new-upload", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "stub for uploading a file with an existing subscription")
 	})
+}
+
+func setupAdminPaths(router *gin.Engine) {
+	g := router.Group(AdminPath)
+	g.GET("/jobrunner/json", jobs.JobJson)
+
+	// Load template file location relative to the current working directory
+	// Unable to find the file.
+	// g.GET("/jobrunner/html", jobs.JobHtml)
+	//router.LoadHTMLGlob("../../bamzi/jobrunner/views/Status.html")
 }
