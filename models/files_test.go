@@ -24,7 +24,7 @@ func Test_Init_Files(t *testing.T) {
 func Test_Valid_File_Passes(t *testing.T) {
 	file := returnValidFile()
 
-	if err := Validator.Struct(file); err != nil {
+	if err := utils.Validator.Struct(file); err != nil {
 		t.Fatalf("file should have passed validation but didn't: " + err.Error())
 	}
 }
@@ -75,7 +75,7 @@ func Test_Empty_FileID_Fails(t *testing.T) {
 	file := returnValidFile()
 	file.FileID = ""
 
-	if err := Validator.Struct(file); err == nil {
+	if err := utils.Validator.Struct(file); err == nil {
 		t.Fatalf("account should have failed validation")
 	}
 }
@@ -84,7 +84,7 @@ func Test_No_File_Size_Fails(t *testing.T) {
 	file := returnValidFile()
 	file.FileSize = 0
 
-	if err := Validator.Struct(file); err == nil {
+	if err := utils.Validator.Struct(file); err == nil {
 		t.Fatalf("account should have failed validation")
 	}
 }
@@ -93,7 +93,7 @@ func Test_No_Storage_Location_Data_Fails(t *testing.T) {
 	file := returnValidFile()
 	file.FileStorageLocation = ""
 
-	if err := Validator.Struct(file); err == nil {
+	if err := utils.Validator.Struct(file); err == nil {
 		t.Fatalf("account should have failed validation")
 	}
 }
@@ -102,7 +102,7 @@ func Test_No_UploadStatus_Fails(t *testing.T) {
 	file := returnValidFile()
 	file.UploadStatus = 0
 
-	if err := Validator.Struct(file); err == nil {
+	if err := utils.Validator.Struct(file); err == nil {
 		t.Fatalf("account should have failed validation")
 	}
 }

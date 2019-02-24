@@ -1,9 +1,11 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/utils"
 )
 
 type uploadFileReq struct {
@@ -17,5 +19,12 @@ func UploadFileHandler() gin.HandlerFunc {
 }
 
 func uploadFile(c *gin.Context) {
+	request := uploadFileReq{}
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
 	c.JSON(http.StatusOK, "stub for uploading a file with an existing subscription")
 }

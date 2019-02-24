@@ -49,12 +49,6 @@ func createAccount(c *gin.Context) {
 		return
 	}
 
-	if err := models.Validator.Struct(&request); err != nil {
-		err = fmt.Errorf("bad request, post failed validation:  %v", err)
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
-		return
-	}
-
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
 	if err != nil {
 		err = fmt.Errorf("error generating account wallet:  %v", err)
@@ -88,7 +82,7 @@ func createAccount(c *gin.Context) {
 		MonthsInSubscription: request.DurationInMonths,
 	}
 
-	if err := models.Validator.Struct(account); err == nil {
+	if err := utils.Validator.Struct(account); err == nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -113,7 +107,7 @@ func createAccount(c *gin.Context) {
 		ExpirationDate: account.ExpirationDate(),
 	}
 
-	if err := models.Validator.Struct(&response); err != nil {
+	if err := utils.Validator.Struct(&response); err != nil {
 		err = fmt.Errorf("could not create a valid response:  %v", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return

@@ -14,9 +14,9 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN mkdir -p "$GOPATH/src/github.com/opacity/storage-node"
 WORKDIR "$GOPATH/src/github.com/opacity/storage-node"
 
-RUN go get -u -v github.com/kardianos/govendor
+#RUN go get -u -v github.com/kardianos/govendor
 
 COPY . .
 
-RUN govendor sync -v
+#RUN govendor sync -v
 RUN go build
