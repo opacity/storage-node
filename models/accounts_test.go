@@ -247,9 +247,9 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 }
 
 func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
-	account := returnValidAccount()
-	account.PaymentStatus = GasTransferInProgress
-	assert.Nil(t, DB.Create(&account).Error)
+	// account := returnValidAccount()
+	// account.PaymentStatus = GasTransferInProgress
+	// assert.Nil(t, DB.Create(&account).Error)
 
 	// account := returnValidAccount()
 	// account.PaymentStatus = PaymentRetrievalComplete
