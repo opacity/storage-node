@@ -255,7 +255,7 @@ func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
 	// account.PaymentStatus = PaymentRetrievalComplete
 	// assert.Nil(t, DB.Create(&account).Error)
 
-	assert.Nil(t, account.UpdateStorageUsedInByte(10*1e9 /* Upload 10GB. */))
+	// assert.Nil(t, account.UpdateStorageUsedInByte(10*1e9 /* Upload 10GB. */))
 }
 
 func Test_NoEnoughSpaceToUploadFile(t *testing.T) {

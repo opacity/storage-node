@@ -22,6 +22,7 @@ var svc *s3Wrapper
 var defaultBucketName string
 
 var cachedData cmap.ConcurrentMap
+var isCaching = false
 
 func init() {
 	awsPagingSize = 1000 // The max paging size per request.
@@ -39,6 +40,10 @@ func init() {
 	cachedData = cmap.New()
 
 	defaultBucketName = "foo"
+}
+
+func SetCaching(caching bool) {
+	isCaching = caching
 }
 
 func isS3Enabled() bool {
@@ -73,7 +78,7 @@ func getObject(bucketName string, objectKey string, cached bool) (string, error)
 		Key:    aws.String(objectKey),
 	}
 	data, err := svc.GetObjectAsString(input)
-	if err == nil {
+	if err == nil && isCaching {
 		cachedData.Set(getKey(bucketName, objectKey), data)
 	}
 	return data, err
@@ -87,7 +92,7 @@ func setObject(bucketName string, objectKey string, data string) error {
 	}
 
 	err := svc.PutObject(input)
-	if err == nil {
+	if err == nil && isCaching {
 		cachedData.Set(getKey(bucketName, objectKey), data)
 	}
 	return err

@@ -2,6 +2,7 @@ package routes
 
 import (
 	"fmt"
+	"unsafe"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -29,12 +30,13 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	_, err := models.GetAccountById(request.AccountID)
+	account, err := models.GetAccountById(request.AccountID)
 	if err != nil {
 		BadRequest(c, err)
 		return
 	}
 
+	account.UpdateStorageUsedInByte
 	OkResponse(c, uploadFileRes{
 		Status: "Stub for uploading file to S3",
 	})

@@ -134,7 +134,7 @@ func (account *Account) CheckIfPaid() (bool, error) {
 		costInWei)
 	if paid {
 		account.PaymentStatus = InitialPaymentReceived
-		DB.Update(&account)
+		err = DB.Update(&account).Error
 	}
 	return paid, err
 }
