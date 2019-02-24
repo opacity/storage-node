@@ -151,9 +151,7 @@ func Test_Returns_Expiration_Date(t *testing.T) {
 	}
 
 	// Add account to DB
-	if err := DB.Create(&account).Error; err != nil {
-		t.Fatalf("should have created account but didn't: " + err.Error())
-	}
+	assert.Nil(t, DB.Create(&account).Error)
 
 	currentTime := time.Now()
 	expirationDate := account.ExpirationDate()
@@ -164,10 +162,7 @@ func Test_Returns_Expiration_Date(t *testing.T) {
 
 func Test_CreateAndGet_Account(t *testing.T) {
 	account := returnValidAccount()
-
-	// Add account to DB
-	err := DB.Create(&account).Error
-	assert.Nil(t, err)
+	assert.Nil(t, DB.Create(&account).Error)
 
 	savedAccount, err := GetAccountById(account.AccountID)
 
@@ -249,4 +244,20 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
+}
+
+func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
+	account := returnValidAccount()
+	account.PaymentStatus = PaymentRetrievalComplete
+	assert.Nil(t, DB.Create(&account).Error)
+
+	assert.Nil(t, account.UpdateStorageUsedInByte(10*1e9 /* Upload 10GB. */))
+}
+
+func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
+	account := returnValidAccount()
+	account.PaymentStatus = PaymentRetrievalComplete
+	assert.Nil(t, DB.Create(&account).Error)
+
+	assert.NotNil(t, account.UpdateStorageUsedInByte(95*1e9 /* Upload 95GB. */))
 }

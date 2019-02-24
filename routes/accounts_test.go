@@ -132,22 +132,6 @@ func Test_ExpectNoErrorIfAccountExists(t *testing.T) {
 	assert.Contains(t, w.Body.String(), `"paid":true`)
 }
 
-func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
-	// account := returnValidAccount()
-	// account.PaymentStatus = models.PaymentRetrievalComplete
-	// assert.Nil(t, models.DB.Create(&account).Error)
-
-	// assert.Nil(t, account.UpdateStorageUsedInByte(10*1e9 /* Upload 10GB. */))
-}
-
-func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
-	// account := returnValidAccount()
-	// account.PaymentStatus = models.PaymentRetrievalComplete
-	// assert.Nil(t, models.DB.Create(&account).Error)
-
-	// assert.NotNil(t, account.UpdateStorageUsedInByte(95*1e9 /* Upload 95GB. */))
-}
-
 func accountsTestHelperCreateAccount(t *testing.T, post accountCreateReq) *httptest.ResponseRecorder {
 	router := returnEngine()
 	v1 := returnV1Group(router)
