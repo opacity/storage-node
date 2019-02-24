@@ -162,6 +162,19 @@ func Test_Returns_Expiration_Date(t *testing.T) {
 	assert.Equal(t, currentTime.Month(), expirationDate.Month())
 }
 
+func Test_CreateAndGet_Account(t *testing.T) {
+	account := returnValidAccount()
+
+	// Add account to DB
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	savedAccount, err := GetAccountById(account.AccountID)
+	assert.Nil(t, err)
+	assert.Equal(t, account, savedAccount)
+}
+
 func Test_Returns_Cost(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
