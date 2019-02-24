@@ -119,15 +119,20 @@ func createAccount(c *gin.Context) {
 func checkAccountPaymentStatus(c *gin.Context) {
 	slug := c.Param("accountID")
 
-	accounts := []models.Account{}
-	models.DB.Where("account_id = ?", slug).Find(&accounts)
-	if len(accounts) == 1 {
-		paid, err := accounts[0].CheckIfPaid()
-		c.JSON(http.StatusOK, accountPaidRes{
-			Paid:  paid,
-			Error: err,
-		})
-		return
+	account, err := models.GetAccountById(slug)
+	if err != nil {
+		goto ErrorHandling
 	}
+	paid, err := account.CheckIfPaid()
+	if err != nil {
+		goto ErrorHandling
+	}
+	c.JSON(http.StatusOK, accountPaidRes{
+		Paid:  paid,
+		Error: err,
+	})
+	return
+
+ErrorHandling:
 	c.JSON(http.StatusNotFound, noAccountResponse)
 }
