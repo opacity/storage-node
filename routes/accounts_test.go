@@ -118,9 +118,7 @@ func Test_ExpectErrorIfNoAccount(t *testing.T) {
 func Test_ExpectNoErrorIfAccountExists(t *testing.T) {
 	account := returnValidAccount()
 	// Add account to DB
-	if err := models.DB.Create(&account).Error; err != nil {
-		t.Fatalf("should have created account but didn't: " + err.Error())
-	}
+	assert.Nil(t, models.DB.Create(&account).Error)
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return true, nil
@@ -139,6 +137,7 @@ func Test_ExpectNoErrorIfAccountExists(t *testing.T) {
 func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
 	account := returnValidAccount()
 	account.PaymentStatus = models.PaymentRetrievalComplete
+	assert.Nil(t, models.DB.Create(&account).Error)
 
 	assert.Nil(t, account.UpdateStorageUsedInByte(10*1e9 /* Upload 10GB. */))
 }
@@ -146,6 +145,7 @@ func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
 func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
 	account := returnValidAccount()
 	account.PaymentStatus = models.PaymentRetrievalComplete
+	assert.Nil(t, models.DB.Create(&account).Error)
 
 	assert.NotNil(t, account.UpdateStorageUsedInByte(95*1e9 /* Upload 95GB. */))
 }
