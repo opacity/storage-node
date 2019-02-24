@@ -13,6 +13,7 @@ func main() {
 	//utils.SetProduction()
 	utils.SetDevelopment()
 
+	utils.SlackLog("Begin to restart service!")
 	models.Connect(utils.Env.DatabaseURL)
 
 	jobs.StartJobs()

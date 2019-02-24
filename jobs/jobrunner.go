@@ -9,7 +9,7 @@ import (
 
 func StartJobs() {
 	jobrunner.Start()
-	jobrunner.Schedule("@every 5s", &PingStdOut{counter: 1})
+	jobrunner.Schedule("@every 60s", &PingStdOut{counter: 1})
 }
 
 func JobJson(c *gin.Context) {
@@ -28,6 +28,6 @@ type PingStdOut struct {
 }
 
 func (e *PingStdOut) Run() {
-	fmt.Printf("Pinging with count %d", e.counter)
+	fmt.Printf("Pinging with count %d\n", e.counter)
 	e.counter = e.counter + 1
 }

@@ -12,7 +12,11 @@ func ParseRequestBody(req *http.Request, dest interface{}) error {
 	body := req.Body
 	defer body.Close()
 
-	return parse(body, dest)
+	if err := parse(body, dest); err != nil {
+		return err
+	}
+
+	return Validator.Struct(dest)
 }
 
 /*ParseResponseBody take a response and parses the body to the target interface.*/
@@ -20,7 +24,10 @@ func ParseResponseBody(res *http.Response, dest interface{}) error {
 	body := res.Body
 	defer body.Close()
 
-	return parse(body, dest)
+	if err := parse(body, dest); err != nil {
+		return err
+	}
+	return Validator.Struct(dest)
 }
 
 func parse(body io.ReadCloser, dest interface{}) error {
