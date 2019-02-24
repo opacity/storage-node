@@ -40,6 +40,13 @@ func uploadFile(c *gin.Context) {
 		BadRequest(c, fmt.Errorf("Unable to update storage usage: %v", err))
 		return
 	}
+
+	err = utils.SetDefaultBucketObject(request.UploadID, request.FileData)
+	if err != nil {
+		InternalError(c, err)
+		return
+	}
+
 	OkResponse(c, uploadFileRes{
 		Status: "Stub for uploading file to S3",
 	})

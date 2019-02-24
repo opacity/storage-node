@@ -157,27 +157,27 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 }
 
 // Get Object operation on defaultBucketName
-func getDefaultBucketObject(objectKey string, cached bool) (string, error) {
+func GetDefaultBucketObject(objectKey string, cached bool) (string, error) {
 	return getObject(defaultBucketName, objectKey, cached)
 }
 
 // Set Object operation on defaultBucketName
-func setDefaultBucketObject(objectKey string, data string) error {
+func SetDefaultBucketObject(objectKey string, data string) error {
 	return setObject(defaultBucketName, objectKey, data)
 }
 
 // Delete Object operation on defaultBucketName with particular prefix
-func deleteDefaultBucketObject(objectKey string) error {
+func DeleteDefaultBucketObject(objectKey string) error {
 	return deleteObject(defaultBucketName, objectKey)
 }
 
 // List Object operation on defaultBucketName with particular prefix
-func listDefaultBucketObjectKeys(objectKeyPrefix string) ([]string, error) {
+func ListDefaultBucketObjectKeys(objectKeyPrefix string) ([]string, error) {
 	return listObjectKeys(defaultBucketName, objectKeyPrefix)
 }
 
 // Delete all the object operation on defaultBucketName with particular prefix
-func deleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
+func DeleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
 	return deleteObjectKeys(defaultBucketName, objectKeyPrefix)
 }
 

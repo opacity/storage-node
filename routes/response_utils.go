@@ -8,6 +8,10 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
+func InternalError(c *gin.Context, err error) {
+	c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+}
+
 func BadRequest(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 }
