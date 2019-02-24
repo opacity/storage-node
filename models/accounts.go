@@ -139,6 +139,23 @@ func (account *Account) CheckIfPaid() (bool, error) {
 	return paid, err
 }
 
+func (account *Account) UpdateStorageUsedInByte(planToUsedInByte int) error {
+	paid, err := account.CheckIfPaid()
+	if err != nil {
+		return err
+	}
+	if !paid {
+		return errors.New("Not payment. Unable to update the storage")
+	}
+
+	inGb := float64(planToUsedInByte) / float64(1e9)
+	if inGb+account.StorageUsed > float64(account.StorageLimit) {
+		return errors.New("Unable to store more data")
+	}
+	account.StorageUsed = account.StorageUsed + inGb
+	return DB.Update(&account).Error
+}
+
 /*Return Account object(first one) if there is not any error. */
 func GetAccountById(accountID string) (Account, error) {
 	account := Account{}
