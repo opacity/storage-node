@@ -233,3 +233,19 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
 }
+
+func Test_CreateAndGet_Account(t *testing.T) {
+	account := returnValidAccount()
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	savedAccount, err := GetAccountById(account.AccountID)
+
+	assert.Nil(t, err)
+
+	// Time maybe different since one is before saved. Just ignore the time field difference.
+	account.CreatedAt = savedAccount.CreatedAt
+	account.UpdatedAt = savedAccount.UpdatedAt
+	assert.Equal(t, account, savedAccount)
+}

@@ -139,6 +139,13 @@ func (account *Account) CheckIfPaid() (bool, error) {
 	return paid, err
 }
 
+/*Return Account object(first one) if there is not any error. */
+func GetAccountById(accountID string) (Account, error) {
+	account := Account{}
+	err := DB.Where("account_id = ?", accountID).First(&account).Error
+	return account, err
+}
+
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the
 terminal*/
 func (account *Account) PrettyString() {
