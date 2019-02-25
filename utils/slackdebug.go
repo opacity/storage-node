@@ -50,7 +50,10 @@ func SlackLogWithLevel(message string, level LogLevel) {
 	}
 
 	jsonValue, _ := json.Marshal(values)
-	http.Post(Env.SlackDebugUrl, "application/json", bytes.NewBuffer(jsonValue))
+	_, err := http.Post(Env.SlackDebugUrl, "application/json", bytes.NewBuffer(jsonValue))
+	if err != nil {
+		fmt.Printf("Unable to Post to Slack due to %v\n", err)
+	}
 }
 
 func getLogLevelColor(level LogLevel) string {
