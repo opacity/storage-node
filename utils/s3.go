@@ -19,7 +19,6 @@ type s3Wrapper struct {
 var awsPagingSize int64
 
 var svc *s3Wrapper
-var defaultBucketName string
 
 var cachedData cmap.ConcurrentMap
 
@@ -37,8 +36,6 @@ func init() {
 	}
 
 	cachedData = cmap.New()
-
-	defaultBucketName = "foo"
 }
 
 func isS3Enabled() bool {
@@ -153,27 +150,27 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 
 // Get Object operation on defaultBucketName
 func GetDefaultBucketObject(objectKey string, cached bool) (string, error) {
-	return getObject(defaultBucketName, objectKey, cached)
+	return getObject(Env.BucketName, objectKey, cached)
 }
 
 // Set Object operation on defaultBucketName
 func SetDefaultBucketObject(objectKey string, data string) error {
-	return setObject(defaultBucketName, objectKey, data)
+	return setObject(Env.BucketName, objectKey, data)
 }
 
 // Delete Object operation on defaultBucketName with particular prefix
 func DeleteDefaultBucketObject(objectKey string) error {
-	return deleteObject(defaultBucketName, objectKey)
+	return deleteObject(Env.BucketName, objectKey)
 }
 
 // List Object operation on defaultBucketName with particular prefix
 func ListDefaultBucketObjectKeys(objectKeyPrefix string) ([]string, error) {
-	return listObjectKeys(defaultBucketName, objectKeyPrefix)
+	return listObjectKeys(Env.BucketName, objectKeyPrefix)
 }
 
 // Delete all the object operation on defaultBucketName with particular prefix
 func DeleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
-	return deleteObjectKeys(defaultBucketName, objectKeyPrefix)
+	return deleteObjectKeys(Env.BucketName, objectKeyPrefix)
 }
 
 func getKey(bucketName string, objectKey string) string {
