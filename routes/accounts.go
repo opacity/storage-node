@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -29,8 +28,6 @@ type accountPaidRes struct {
 	Error error `json:"error"`
 }
 
-const noAccountResponse = "no account with that id"
-
 /*CreateAccountHandler is a handler for post requests to create accounts*/
 func CreateAccountHandler() gin.HandlerFunc {
 	return gin.HandlerFunc(createAccount)
@@ -45,20 +42,20 @@ func createAccount(c *gin.Context) {
 	request := accountCreateReq{}
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		BadRequest(c, err)
 		return
 	}
 
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
 	if err != nil {
 		err = fmt.Errorf("error generating account wallet:  %v", err)
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, err.Error())
+		BadRequest(c, err)
 		return
 	}
 
 	storageLimit, ok := models.StorageLimitMap[request.StorageLimit]
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusBadRequest, errors.New("storage not offered in that increment in GB"))
+		BadRequest(c, errors.New("storage not offered in that increment in GB"))
 		return
 	}
 
@@ -68,8 +65,7 @@ func createAccount(c *gin.Context) {
 		request.AccountID,
 	)
 	if encryptErr != nil {
-		err = fmt.Errorf("error encrypting private key:  %v", encryptErr)
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, err.Error())
+		ServiceUnavailable(c, fmt.Errorf("error encrypting private key:  %v", encryptErr))
 		return
 	}
 
@@ -83,19 +79,19 @@ func createAccount(c *gin.Context) {
 	}
 
 	if err := utils.Validator.Struct(account); err == nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		BadRequest(c, err)
 		return
 	}
 
 	cost, err := account.Cost()
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		BadRequest(c, err)
 		return
 	}
 
 	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		BadRequest(c, err)
 		return
 	}
 
@@ -109,25 +105,25 @@ func createAccount(c *gin.Context) {
 
 	if err := utils.Validator.Struct(&response); err != nil {
 		err = fmt.Errorf("could not create a valid response:  %v", err)
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		BadRequest(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	OkResponse(c, response)
 }
 
 func checkAccountPaymentStatus(c *gin.Context) {
 	slug := c.Param("accountID")
 
-	accounts := []models.Account{}
-	models.DB.Where("account_id = ?", slug).Find(&accounts)
-	if len(accounts) == 1 {
-		paid, err := accounts[0].CheckIfPaid()
-		c.JSON(http.StatusOK, accountPaidRes{
-			Paid:  paid,
-			Error: err,
-		})
+	account, err := models.GetAccountById(slug)
+	if err != nil {
+		AccountNotFound(c)
 		return
 	}
-	c.JSON(http.StatusNotFound, noAccountResponse)
+
+	paid, err := account.CheckIfPaid()
+	OkResponse(c, accountPaidRes{
+		Paid:  paid,
+		Error: err,
+	})
 }
