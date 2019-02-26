@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"testing"
 
+	"time"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,6 +30,26 @@ func Test_KVStore_MassBatchSet(t *testing.T) {
 
 	kvs, _ := BatchGet(&KVKeys{strconv.Itoa(guessedMaxBatchSize - 1)})
 	AssertTrue(len(*kvs) == 1, t, "Expect only an item")
+}
+
+func Test_KVStoreGetValueFromKV(t *testing.T) {
+	InitKvStore()
+	defer CloseKvStore()
+
+	key := "key"
+	valueSet := "opacity"
+
+	BatchSet(&KVPairs{key: valueSet}, TestValueTimeToLive)
+
+	value, expirationTime, err := GetValueFromKV(key)
+	assert.Nil(t, err)
+	assert.Equal(t, valueSet, value)
+	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Second(), expirationTime.Second())
+	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Minute(), expirationTime.Minute())
+	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Hour(), expirationTime.Hour())
+	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Day(), expirationTime.Day())
+	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Month(), expirationTime.Month())
+	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Year(), expirationTime.Year())
 }
 
 func Test_KVStoreBatchGet(t *testing.T) {

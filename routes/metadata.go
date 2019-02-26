@@ -47,6 +47,7 @@ func setMetadata(c *gin.Context) {
 	}
 
 	_, expirationTime, err := utils.GetValueFromKV(request.MetadataKey)
+
 	if err != nil {
 		c.JSON(http.StatusNotFound, err.Error())
 		return
