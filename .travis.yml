@@ -47,4 +47,4 @@ before_script:
   #   "
 
 script:
-  - docker-compose exec app govendor test +local
+  - docker-compose exec app govendor test +local -v
