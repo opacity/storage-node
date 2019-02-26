@@ -3,6 +3,8 @@ package routes
 import (
 	"fmt"
 
+	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -33,7 +35,7 @@ func uploadFile(c *gin.Context) {
 	_, err := models.GetAccountById(request.AccountID)
 
 	if err != nil {
-		AccountNotFound(c)
+		NotFound(c, errors.New("no account with id: "+request.AccountID))
 		return
 	}
 
