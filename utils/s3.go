@@ -19,7 +19,6 @@ type s3Wrapper struct {
 var awsPagingSize int64
 
 var svc *s3Wrapper
-var defaultBucketName string
 
 var cachedData cmap.ConcurrentMap
 var shouldCachedData bool
@@ -39,8 +38,6 @@ func init() {
 
 	shouldCachedData = false
 	cachedData = cmap.New()
-
-	defaultBucketName = "foo"
 }
 
 func SetS3DataCaching(isCaching bool) {
@@ -158,28 +155,28 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 }
 
 // Get Object operation on defaultBucketName
-func getDefaultBucketObject(objectKey string, cached bool) (string, error) {
-	return getObject(defaultBucketName, objectKey, cached)
+func GetDefaultBucketObject(objectKey string, cached bool) (string, error) {
+	return getObject(Env.BucketName, objectKey, cached)
 }
 
 // Set Object operation on defaultBucketName
-func setDefaultBucketObject(objectKey string, data string) error {
-	return setObject(defaultBucketName, objectKey, data)
+func SetDefaultBucketObject(objectKey string, data string) error {
+	return setObject(Env.BucketName, objectKey, data)
 }
 
 // Delete Object operation on defaultBucketName with particular prefix
-func deleteDefaultBucketObject(objectKey string) error {
-	return deleteObject(defaultBucketName, objectKey)
+func DeleteDefaultBucketObject(objectKey string) error {
+	return deleteObject(Env.BucketName, objectKey)
 }
 
 // List Object operation on defaultBucketName with particular prefix
-func listDefaultBucketObjectKeys(objectKeyPrefix string) ([]string, error) {
-	return listObjectKeys(defaultBucketName, objectKeyPrefix)
+func ListDefaultBucketObjectKeys(objectKeyPrefix string) ([]string, error) {
+	return listObjectKeys(Env.BucketName, objectKeyPrefix)
 }
 
 // Delete all the object operation on defaultBucketName with particular prefix
-func deleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
-	return deleteObjectKeys(defaultBucketName, objectKeyPrefix)
+func DeleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
+	return deleteObjectKeys(Env.BucketName, objectKeyPrefix)
 }
 
 func getKey(bucketName string, objectKey string) string {

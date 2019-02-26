@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -29,7 +30,19 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
+	_, err := models.GetAccountById(request.AccountID)
+
+	if err != nil {
+		AccountNotFound(c)
+		return
+	}
+
+	if err := utils.SetDefaultBucketObject(request.UploadID, request.FileData); err != nil {
+		InternalError(c, err)
+		return
+	}
+
 	OkResponse(c, uploadFileRes{
-		Status: "stub for uploading a file with an existing subscription",
+		Status: "File is uploaded",
 	})
 }
