@@ -153,7 +153,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 		return errors.New("Unable to store more data")
 	}
 	account.StorageUsed = account.StorageUsed + inGb
-	return DB.Update(*(&account)).Error
+	return DB.Model(&account).Updates(Account{StorageUsed: account.StorageUsed + inGb}).Error
 }
 
 /*Return Account object(first one) if there is not any error. */
