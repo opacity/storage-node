@@ -25,6 +25,7 @@ func returnValidCreateAccountReq() accountCreateReq {
 		AccountID:        utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		StorageLimit:     100,
 		DurationInMonths: 12,
+		MetaDataKey:      utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
 }
 

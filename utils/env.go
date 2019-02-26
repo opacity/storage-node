@@ -56,6 +56,7 @@ func SetProduction() {
 	initEnv()
 	Env.GoEnv = "production"
 	Env.DatabaseURL = Env.ProdDatabaseURL
+	InitKvStore()
 }
 
 /*SetDevelopment sets the development environment*/
@@ -64,6 +65,7 @@ func SetDevelopment() {
 	Env.GoEnv = "development"
 	// TODO: should we have a separate development database?
 	Env.DatabaseURL = Env.ProdDatabaseURL
+	InitKvStore()
 }
 
 /*SetTesting sets the testing environment*/
@@ -71,6 +73,7 @@ func SetTesting(filenames ...string) {
 	initEnv(filenames...)
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
+	InitKvStore()
 }
 
 /*IsTestEnv returns whether we are in the test environment*/

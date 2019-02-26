@@ -17,6 +17,7 @@ type accountCreateReq struct {
 	AccountID        string `json:"accountID" binding:"required,len=64"`
 	StorageLimit     int    `json:"storageLimit" binding:"required,gte=100"`
 	DurationInMonths int    `json:"durationInMonths" binding:"required,gte=1"`
+	MetaDataKey      string `json:"metaDataKey" binding:"required,len=64"`
 }
 
 type accountCreateRes struct {
@@ -95,6 +96,13 @@ func createAccount(c *gin.Context) {
 
 	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Create empty key:value data in badger DB
+	ttl := time.Until(account.ExpirationDate())
+	if err := utils.BatchSet(&utils.KVPairs{request.MetaDataKey: ""}, ttl); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 		return
 	}

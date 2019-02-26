@@ -50,12 +50,11 @@ func CollectErrors(arrayOfErrs []error) error {
 }
 
 /*LogIfError logs any error if it is not nil. Allow caller to provide additional freeform info.*/
-func LogIfError(err error) {
+func LogIfError(err error, extraInfo map[string]interface{}) {
 	if err == nil {
 		return
 	}
 
-	// TODO: proper external logging
-
 	fmt.Println(err)
+	fmt.Println(extraInfo)
 }
