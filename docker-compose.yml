@@ -27,11 +27,11 @@ services:
         echo ${DEBUG}
         if [ -z ${DEBUG} ]; then
           echo \"Starting Storage node in PROD mode\";
-          go build -o ./bin/storagenode && chmod +x ./bin/storagenode;
-          ./bin/storagenode;
+          go build -o ./bin/storage-node && chmod +x ./bin/storage-node;
+          ./bin/storage-node;
         else
-          echo \"Starting Storage node in PROD mode\";
-          go dev;
+          echo \"Starting Storage node in DEV mode\";
+          gin run main.go
         fi
       "
 

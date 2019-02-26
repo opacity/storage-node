@@ -15,6 +15,8 @@ RUN mkdir -p "$GOPATH/src/github.com/opacity/storage-node"
 WORKDIR "$GOPATH/src/github.com/opacity/storage-node"
 
 RUN go get -u -v github.com/kardianos/govendor
+RUN go get github.com/codegangsta/gin
+RUN gin -h
 
 COPY . .
 
