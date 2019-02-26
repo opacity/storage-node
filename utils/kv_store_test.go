@@ -12,8 +12,6 @@ import (
 // a very big number that will lead to ErrTxnTooBig for write.
 const guessedMaxBatchSize = 200000
 
-var testDBID = []string{"prefix", "genHash", "data"}
-
 func Test_KVStore_Init(t *testing.T) {
 	err := InitKvStore()
 
