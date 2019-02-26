@@ -99,7 +99,7 @@ func createAccount(c *gin.Context) {
 	// Create empty key:value data in badger DB
 	ttl := time.Until(account.ExpirationDate())
 	if err := utils.BatchSet(&utils.KVPairs{request.MetaDataKey: ""}, ttl); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		BadRequest(c, err)
 		return
 	}
 
@@ -121,11 +121,11 @@ func createAccount(c *gin.Context) {
 }
 
 func checkAccountPaymentStatus(c *gin.Context) {
-	slug := c.Param("accountID")
+	accountID := c.Param("accountID")
 
-	account, err := models.GetAccountById(slug)
+	account, err := models.GetAccountById(accountID)
 	if err != nil {
-		AccountNotFound(c)
+		NotFound(c, errors.New("no account with id: "+accountID))
 		return
 	}
 

@@ -1,11 +1,9 @@
 package routes
 
 import (
-	"net/http"
-
-	"time"
-
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
@@ -14,6 +12,10 @@ import (
 type updateMetadataReq struct {
 	MetadataKey string `json:"metadataKey" binding:"required,len=64"`
 	Metadata    string `json:"Metadata" binding:"required"`
+}
+
+type getMetadataRes struct {
+	Metadata string `json:"Metadata" binding:"required"`
 }
 
 /*GetMetadataHandler is a handler for getting the file metadata*/
@@ -31,10 +33,12 @@ func getMetadata(c *gin.Context) {
 
 	metadata, _, err := utils.GetValueFromKV(metadataKey)
 	if err != nil {
-		c.JSON(http.StatusNotFound, err.Error())
+		NotFound(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, metadata)
+	OkResponse(c, getMetadataRes{
+		Metadata: metadata,
+	})
 }
 
 func setMetadata(c *gin.Context) {
@@ -42,28 +46,28 @@ func setMetadata(c *gin.Context) {
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+		BadRequest(c, err)
 		return
 	}
 
 	_, expirationTime, err := utils.GetValueFromKV(request.MetadataKey)
 
 	if err != nil {
-		c.JSON(http.StatusNotFound, err.Error())
+		NotFound(c, err)
 		return
 	}
 
 	if expirationTime.Before(time.Now()) {
-		c.JSON(http.StatusForbidden, "subscription expired")
+		Forbidden(c, errors.New("subscription expired"))
 		return
 	}
 
 	ttl := time.Until(expirationTime)
 
 	if err := utils.BatchSet(&utils.KVPairs{request.MetadataKey: request.Metadata}, ttl); err != nil {
-		c.AbortWithStatusJSON(http.StatusServiceUnavailable, err.Error())
+		InternalError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, request)
+	OkResponse(c, request)
 }
