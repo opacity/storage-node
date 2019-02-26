@@ -20,6 +20,7 @@ type uploadFileRes struct {
 	Status string `json:"status"`
 }
 
+/*UploadFileHandler is a handler for the user to upload files*/
 func UploadFileHandler() gin.HandlerFunc {
 	return gin.HandlerFunc(uploadFile)
 }

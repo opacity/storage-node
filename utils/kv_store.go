@@ -15,7 +15,7 @@ const badgerDirProd = "/var/lib/badger/prod"
 
 /*TestValueTimeToLive is some default value we can use in unit
 tests for K:V pairs in badger*/
-const TestValueTimeToLive = 3 * time.Minute
+const TestValueTimeToLive = 1 * time.Minute
 
 // Singleton DB
 var badgerDB *badger.DB
@@ -90,6 +90,7 @@ func GetBadgerDb() *badger.DB {
 	return badgerDB
 }
 
+/*GetValueFromKV gets a single value from the provided key*/
 func GetValueFromKV(key string) (value string, expirationTime time.Time, err error) {
 	expirationTime = time.Now()
 	if badgerDB == nil {
