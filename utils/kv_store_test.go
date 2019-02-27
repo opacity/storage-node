@@ -13,6 +13,7 @@ import (
 const guessedMaxBatchSize = 200000
 
 func Test_KVStore_Init(t *testing.T) {
+	SetTesting("../.env")
 	err := InitKvStore()
 
 	assert.Nil(t, err)

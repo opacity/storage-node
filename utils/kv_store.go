@@ -3,10 +3,11 @@ package utils
 import (
 	"errors"
 	"io/ioutil"
-	"os"
 	"time"
 
 	"fmt"
+
+	"os"
 
 	"github.com/dgraph-io/badger"
 )
