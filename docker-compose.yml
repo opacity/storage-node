@@ -24,6 +24,7 @@ services:
         do
           sleep 0.5;
         done;
+        govendor sync
         echo ${DEBUG}
         if [ -z ${DEBUG} ]; then
           echo \"Starting Storage node in PROD mode\";
