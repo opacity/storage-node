@@ -16,7 +16,7 @@ type accountCreateReq struct {
 	AccountID        string `json:"accountID" binding:"required,len=64"`
 	StorageLimit     int    `json:"storageLimit" binding:"required,gte=100"`
 	DurationInMonths int    `json:"durationInMonths" binding:"required,gte=1"`
-	MetaDataKey      string `json:"metaDataKey" binding:"required,len=64"`
+	MetadataKey      string `json:"metaDataKey" binding:"required,len=64"`
 }
 
 type accountCreateRes struct {
@@ -72,6 +72,7 @@ func createAccount(c *gin.Context) {
 
 	account := models.Account{
 		AccountID:            request.AccountID,
+		MetadataKey:          request.MetadataKey,
 		StorageLimit:         storageLimit,
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
@@ -92,13 +93,6 @@ func createAccount(c *gin.Context) {
 
 	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
-		BadRequest(c, err)
-		return
-	}
-
-	// Create empty key:value data in badger DB
-	ttl := time.Until(account.ExpirationDate())
-	if err := utils.BatchSet(&utils.KVPairs{request.MetaDataKey: ""}, ttl); err != nil {
 		BadRequest(c, err)
 		return
 	}
@@ -130,6 +124,21 @@ func checkAccountPaymentStatus(c *gin.Context) {
 	}
 
 	paid, err := account.CheckIfPaid()
+
+	if paid && err == nil {
+		// Create empty key:value data in badger DB
+		ttl := time.Until(account.ExpirationDate())
+		if err := utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
+			BadRequest(c, err)
+			return
+		}
+		// Delete the metadata key on the account model
+		if err := models.DB.Model(&account).Updates(models.Account{MetadataKey: ""}).Error; err != nil {
+			BadRequest(c, err)
+			return
+		}
+	}
+
 	OkResponse(c, accountPaidRes{
 		Paid:  paid,
 		Error: err,

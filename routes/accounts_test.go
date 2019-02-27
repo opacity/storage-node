@@ -25,7 +25,7 @@ func returnValidCreateAccountReq() accountCreateReq {
 		AccountID:        utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		StorageLimit:     100,
 		DurationInMonths: 12,
-		MetaDataKey:      utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		MetadataKey:      utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
 }
 
@@ -43,6 +43,7 @@ func returnValidAccount() models.Account {
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
+		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
 }
 
