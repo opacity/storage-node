@@ -64,6 +64,16 @@ func deleteBucket(bucketName string) error {
 	return svc.DeleteBucket(input)
 }
 
+func doesObjectExist(bucketName string, objectKey string) bool {
+	input := &s3.HeadObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objectKey),
+	}
+
+	err := svc.HeadObject(input)
+	return err != nil
+}
+
 func getObject(bucketName string, objectKey string, cached bool) (string, error) {
 	if cached {
 		if value, ok := cachedData.Get(getKey(bucketName, objectKey)); ok {
@@ -152,6 +162,10 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 		return deleteErr
 	}
 	return err
+}
+
+func DoesDefaultBucketObjectExist(objectKey string) bool {
+	return doesObjectExist(Env.BucketName, objectKey)
 }
 
 // Get Object operation on defaultBucketName
@@ -257,5 +271,14 @@ func (svc *s3Wrapper) DeleteObjects(input *s3.DeleteObjectsInput) error {
 	}
 
 	_, err := svc.s3.DeleteObjects(input)
+	return err
+}
+
+func (svc *s3Wrapper) HeadObject(input *s3.HeadObjectInput) error {
+	if svc.s3 == nil {
+		return nil
+	}
+
+	_, err := svc.s3.HeadObject(input)
 	return err
 }

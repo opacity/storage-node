@@ -8,26 +8,30 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-func InternalError(c *gin.Context, err error) {
+func InternalErrorResponse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
 }
 
-func BadRequest(c *gin.Context, err error) {
+func BadRequestResponse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 }
 
-func ServiceUnavailable(c *gin.Context, err error) {
+func ServiceUnavailableResponse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusServiceUnavailable, err.Error())
 }
 
-func AccountNotFound(c *gin.Context) {
+func AccountNotFoundResponse(c *gin.Context) {
 	c.AbortWithStatusJSON(http.StatusNotFound, "no account with that id")
+}
+
+func NotFoundResponse(c *gin.Context, err error) {
+	c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
 }
 
 func OkResponse(c *gin.Context, response interface{}) {
 	if err := utils.Validator.Struct(response); err != nil {
 		err = fmt.Errorf("could not create a valid response:  %v", err)
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, response)

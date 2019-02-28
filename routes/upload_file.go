@@ -26,19 +26,19 @@ func uploadFile(c *gin.Context) {
 	request := uploadFileReq{}
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 
 	account, err := models.GetAccountById(request.AccountID)
 	if err != nil {
-		AccountNotFound(c)
+		AccountNotFoundResponse(c)
 		return
 	}
 
 	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.UploadID)
 	if err := utils.SetDefaultBucketObject(objectKey, request.FileData); err != nil {
-		InternalError(c, err)
+		InternalErrorResponse(c, err)
 		return
 	}
 
