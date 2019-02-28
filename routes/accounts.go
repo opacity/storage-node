@@ -119,7 +119,7 @@ func checkAccountPaymentStatus(c *gin.Context) {
 
 	account, err := models.GetAccountById(accountID)
 	if err != nil {
-		NotFoundResponse(c, errors.New("no account with id: "+accountID))
+		AccountNotFoundResponse(c, accountID)
 		return
 	}
 

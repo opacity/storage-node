@@ -35,7 +35,7 @@ func uploadFile(c *gin.Context) {
 
 	account, err := models.GetAccountById(request.AccountID)
 	if err != nil {
-		NotFoundResponse(c, errors.New("no account with id: "+request.AccountID))
+		AccountNotFoundResponse(c, request.AccountID)
 		return
 	}
 
