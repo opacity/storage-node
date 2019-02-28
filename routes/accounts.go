@@ -16,7 +16,7 @@ type accountCreateReq struct {
 	AccountID        string `json:"accountID" binding:"required,len=64"`
 	StorageLimit     int    `json:"storageLimit" binding:"required,gte=100"`
 	DurationInMonths int    `json:"durationInMonths" binding:"required,gte=1"`
-	MetadataKey      string `json:"metaDataKey" binding:"required,len=64"`
+	MetadataKey      string `json:"metadataKey" binding:"required,len=64"`
 }
 
 type accountCreateRes struct {
