@@ -3,6 +3,8 @@ package routes
 import (
 	"fmt"
 
+	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -18,6 +20,7 @@ type uploadFileRes struct {
 	Status string `json:"status"`
 }
 
+/*UploadFileHandler is a handler for the user to upload files*/
 func UploadFileHandler() gin.HandlerFunc {
 	return gin.HandlerFunc(uploadFile)
 }
@@ -32,7 +35,7 @@ func uploadFile(c *gin.Context) {
 
 	account, err := models.GetAccountById(request.AccountID)
 	if err != nil {
-		AccountNotFoundResponse(c)
+		NotFoundResponse(c, errors.New("no account with id: "+request.AccountID))
 		return
 	}
 

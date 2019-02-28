@@ -24,6 +24,7 @@ type Account struct {
 	EthAddress           string            `json:"ethAddress" binding:"required,len=42"`          // the eth address they will send payment to
 	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`       // the private key of the eth address
 	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`              // the status of their payment
+	MetadataKey          string            `json:"metadataKey" binding:"omitempty,len=64"`
 }
 
 /*Invoice is the invoice object we will return to the client*/
@@ -134,7 +135,7 @@ func (account *Account) CheckIfPaid() (bool, error) {
 		costInWei)
 	if paid {
 		account.PaymentStatus = InitialPaymentReceived
-		DB.Update(&account)
+		DB.Save(&account)
 	}
 	return paid, err
 }

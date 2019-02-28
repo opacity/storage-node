@@ -24,6 +24,10 @@ func AccountNotFoundResponse(c *gin.Context) {
 	c.AbortWithStatusJSON(http.StatusNotFound, "no account with that id")
 }
 
+func Forbidden(c *gin.Context, err error) {
+	c.AbortWithStatusJSON(http.StatusForbidden, err.Error())
+}
+
 func NotFoundResponse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
 }
