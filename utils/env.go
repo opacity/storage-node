@@ -22,6 +22,7 @@ type StorageNodeEnv struct {
 	MainWalletAddress string `env:"MAIN_WALLET_ADDRESS" envDefault:""`
 	BucketName        string `env:"AWS_BUCKET_NAME" envDefault:""`
 	DisplayName       string `env:"DISPLAY_NAME" envDefault:"storage-node-test"`
+	EnableJobs        bool   `env:"ENABLE_JOB" envDefault:"false"`
 
 	// Debug purpose
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
