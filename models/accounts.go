@@ -156,6 +156,10 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 	return DB.Model(&account).Updates(Account{StorageUsed: account.StorageUsed + inGb}).Error
 }
 
+func (account *Account) S3Prefix() string {
+	return fmt.Sprintf("%s/", account.AccountID)
+}
+
 /*Return Account object(first one) if there is not any error. */
 func GetAccountById(accountID string) (Account, error) {
 	account := Account{}
