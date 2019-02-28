@@ -30,14 +30,14 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	_, err := models.GetAccountById(request.AccountID)
-
+	account, err := models.GetAccountById(request.AccountID)
 	if err != nil {
 		AccountNotFound(c)
 		return
 	}
 
-	if err := utils.SetDefaultBucketObject(request.UploadID, request.FileData); err != nil {
+	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.UploadID)
+	if err := utils.SetDefaultBucketObject(objectKey, request.FileData); err != nil {
 		InternalError(c, err)
 		return
 	}
