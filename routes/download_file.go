@@ -4,12 +4,13 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
 type downloadFileReq struct {
-	AccountID string `json:"accountID" binding:"required,len=64"`
-	UploadID  string `json:"uploadID" binding:"required"`
+	AccountID string `binding:"required,len=64"`
+	UploadID  string `binding:"required"`
 }
 
 type downloadFileRes struct {
@@ -19,19 +20,29 @@ type downloadFileRes struct {
 }
 
 func DownloadFileHandler() gin.HandlerFunc {
-	return gin.HandlerFunc(uploadFile)
+	return gin.HandlerFunc(downloadFile)
 }
 
 func downloadFile(c *gin.Context) {
-	request := downloadFileReq{}
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
+	request := downloadFileReq{
+		AccountID: c.Param("accountID"),
+		UploadID:  c.Param("uploadID"),
+	}
+	if err := utils.Validator.Struct(request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		BadRequest(c, err)
 		return
 	}
 
+	// validate user
+	if _, err := models.GetAccountById(request.AccountID); err != nil {
+		AccountNotFound(c)
+		return
+	}
+
+	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, request.UploadID)
 	OkResponse(c, downloadFileRes{
 		// Redirect to a different URL that client would have authorization to download it.
-		FileDownloadUrl: "http://barfoo.com",
+		FileDownloadUrl: url,
 	})
 }
