@@ -20,8 +20,11 @@ type StorageNodeEnv struct {
 	ContractAddress   string `env:"TOKEN_CONTRACT_ADDRESS" envDefault:""`
 	EthNodeURL        string `env:"ETH_NODE_URL" envDefault:""`
 	MainWalletAddress string `env:"MAIN_WALLET_ADDRESS" envDefault:""`
-	BucketName        string `env:"AWS_BUCKET_NAME" envDefault:""`
 	DisplayName       string `env:"DISPLAY_NAME" envDefault:"storage-node-test"`
+
+	// Aws configuration
+	BucketName string `env:"AWS_BUCKET_NAME" envDefault:""`
+	AwsRegion  string `env:"AWS_REGION" envDefault:"us-east-2"`
 
 	// Debug purpose
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`

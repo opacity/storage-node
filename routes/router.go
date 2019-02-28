@@ -73,7 +73,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	})
 
 	v1Router.POST("/upload", UploadFileHandler())
-	v1Router.GET("/download", DownloadFileHandler())
+	v1Router.GET("/download/:accountID/:uploadID", DownloadFileHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {
