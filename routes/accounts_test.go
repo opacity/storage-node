@@ -25,6 +25,7 @@ func returnValidCreateAccountReq() accountCreateReq {
 		AccountID:        utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		StorageLimit:     100,
 		DurationInMonths: 12,
+		MetadataKey:      utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
 }
 
@@ -42,6 +43,7 @@ func returnValidAccount() models.Account {
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
+		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
 }
 
@@ -112,7 +114,7 @@ func Test_ExpectErrorIfNoAccount(t *testing.T) {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
 	}
 
-	assert.Contains(t, w.Body.String(), "no account with that id")
+	assert.Contains(t, w.Body.String(), "no account with id")
 }
 
 func Test_ExpectNoErrorIfAccountExists(t *testing.T) {

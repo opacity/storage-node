@@ -20,8 +20,12 @@ func ServiceUnavailable(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusServiceUnavailable, err.Error())
 }
 
-func AccountNotFound(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusNotFound, "no account with that id")
+func Forbidden(c *gin.Context, err error) {
+	c.AbortWithStatusJSON(http.StatusForbidden, err.Error())
+}
+
+func NotFound(c *gin.Context, err error) {
+	c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
 }
 
 func OkResponse(c *gin.Context, response interface{}) {

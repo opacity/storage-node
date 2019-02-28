@@ -15,14 +15,16 @@ import (
 var uptime time.Time
 
 const (
-	/*AccountsPath is the path for dealing with accounts*/
-	AccountsPath = "/accounts"
-
 	/*V1Path is a router group for the v1 version of storage node*/
 	V1Path = "/api/v1"
 
+	/*AccountsPath is the path for dealing with accounts*/
+	AccountsPath = "/accounts"
+
 	/*AdminPath is a router group for admin task. */
 	AdminPath = "/admin"
+
+	MetadataPath = "/metadata"
 )
 
 func init() {
@@ -39,7 +41,7 @@ func CreateRoutes() {
 
 	// Listen and Serve
 	err := router.Run(":" + os.Getenv("PORT"))
-	utils.LogIfError(err)
+	utils.LogIfError(err, map[string]interface{}{"error": err})
 }
 
 func returnEngine() *gin.Engine {
@@ -67,6 +69,9 @@ func returnV1Group(router *gin.Engine) *gin.RouterGroup {
 func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(AccountsPath, CreateAccountHandler())
 	v1Router.GET(AccountsPath+"/:accountID", CheckAccountPaymentStatusHandler())
+
+	v1Router.POST(MetadataPath, UpdateMetadataHandler())
+	v1Router.GET(MetadataPath+"/:metadataKey", GetMetadataHandler())
 
 	v1Router.POST("/trial-upload", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "stub for doing a trial upload")

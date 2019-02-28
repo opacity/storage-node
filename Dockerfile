@@ -20,5 +20,5 @@ RUN gin -h
 
 COPY . .
 
-RUN govendor sync -v
+RUN govendor sync
 RUN go build

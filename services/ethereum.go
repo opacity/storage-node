@@ -108,7 +108,7 @@ func sharedClient() (c *ethclient.Client, err error) {
 
 	c, err = ethclient.Dial(utils.Env.EthNodeURL)
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 		return
 	}
 	// Sets Singleton
@@ -120,7 +120,7 @@ func sharedClient() (c *ethclient.Client, err error) {
 func generateWallet() (addr common.Address, privateKey string, err error) {
 	ethAccount, err := crypto.GenerateKey()
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 		return addr, "", err
 	}
 	addr = crypto.PubkeyToAddress(ethAccount.PublicKey)
@@ -136,7 +136,7 @@ func getTokenBalance(addr common.Address) *big.Int {
 	// connect ethereum client
 	client, err := sharedClient()
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 		return big.NewInt(-1)
 	}
 
@@ -144,13 +144,13 @@ func getTokenBalance(addr common.Address) *big.Int {
 	OpacityAddress := common.HexToAddress(utils.Env.ContractAddress)
 	Opacity, err := NewOpacity(OpacityAddress, client)
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 		return big.NewInt(-1)
 	}
 	callOpts := bind.CallOpts{Pending: false, From: OpacityAddress}
 	balance, err := Opacity.BalanceOf(&callOpts, addr)
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 		return big.NewInt(-1)
 	}
 	return balance
@@ -161,12 +161,12 @@ func getETHBalance(addr common.Address) *big.Int {
 	// connect ethereum client
 	client, err := sharedClient()
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 	}
 
 	balance, err := client.BalanceAt(context.Background(), addr, nil)
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 		return big.NewInt(-1)
 	}
 	return balance
@@ -186,13 +186,13 @@ func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.
 	Opacity, err := NewOpacity(common.HexToAddress(utils.Env.ContractAddress), client)
 
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 	}
 
 	// initialize transactor // may need to move this to a session based transactor
 	auth := bind.NewKeyedTransactor(&msg.PrivateKey)
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 	}
 
 	log.Printf("authorized transactor : %v\n", auth.From.Hex())
@@ -211,7 +211,7 @@ func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.
 
 	tx, err := Opacity.Transfer(&opts, msg.To, &msg.Amount)
 	if err != nil {
-		utils.LogIfError(errors.New(fmt.Sprintf("transfer failed: %v", err.Error())))
+		utils.LogIfError(errors.New(fmt.Sprintf("transfer failed: %v", err.Error())), nil)
 		return false, "", int64(-1)
 	}
 
@@ -262,7 +262,7 @@ func transferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAd
 	// sign transaction
 	signedTx, err := types.SignTx(tx, signer, fromPrivKey)
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 		return types.Transactions{}, "", -1, err
 	}
 
@@ -270,7 +270,7 @@ func transferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAd
 	err = client.SendTransaction(ctx, signedTx)
 	if err != nil {
 		utils.LogIfError(fmt.Errorf("error sending transaction from %s to %s.  Error:  %v",
-			fromAddress.String(), signedTx.To().String(), err))
+			fromAddress.String(), signedTx.To().String(), err), nil)
 		return types.Transactions{}, "", -1, err
 	}
 
@@ -317,13 +317,13 @@ func getGasPrice() (*big.Int, error) {
 	// connect ethereum client
 	client, err := sharedClient()
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 	}
 
 	// there is no guarantee with estimate gas price
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
-		utils.LogIfError(err)
+		utils.LogIfError(err, nil)
 	}
 	return gasPrice, nil
 }

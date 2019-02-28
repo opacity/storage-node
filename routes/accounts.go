@@ -16,6 +16,7 @@ type accountCreateReq struct {
 	AccountID        string `json:"accountID" binding:"required,len=64"`
 	StorageLimit     int    `json:"storageLimit" binding:"required,gte=100"`
 	DurationInMonths int    `json:"durationInMonths" binding:"required,gte=1"`
+	MetadataKey      string `json:"metaDataKey" binding:"required,len=64"`
 }
 
 type accountCreateRes struct {
@@ -71,6 +72,7 @@ func createAccount(c *gin.Context) {
 
 	account := models.Account{
 		AccountID:            request.AccountID,
+		MetadataKey:          request.MetadataKey,
 		StorageLimit:         storageLimit,
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
@@ -113,15 +115,30 @@ func createAccount(c *gin.Context) {
 }
 
 func checkAccountPaymentStatus(c *gin.Context) {
-	slug := c.Param("accountID")
+	accountID := c.Param("accountID")
 
-	account, err := models.GetAccountById(slug)
+	account, err := models.GetAccountById(accountID)
 	if err != nil {
-		AccountNotFound(c)
+		NotFound(c, errors.New("no account with id: "+accountID))
 		return
 	}
 
 	paid, err := account.CheckIfPaid()
+
+	if paid && err == nil {
+		// Create empty key:value data in badger DB
+		ttl := time.Until(account.ExpirationDate())
+		if err := utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
+			BadRequest(c, err)
+			return
+		}
+		// Delete the metadata key on the account model
+		if err := models.DB.Model(&account).Updates(models.Account{MetadataKey: ""}).Error; err != nil {
+			BadRequest(c, err)
+			return
+		}
+	}
+
 	OkResponse(c, accountPaidRes{
 		Paid:  paid,
 		Error: err,
