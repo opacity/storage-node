@@ -46,6 +46,7 @@ func downloadFile(c *gin.Context) {
 	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.UploadID)
 	if !utils.DoesDefaultBucketObjectExist(objectKey) {
 		NotFoundResponse(c, errors.New("Such data does not exist"))
+		return
 	}
 
 	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, objectKey)
