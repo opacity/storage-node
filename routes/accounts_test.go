@@ -114,7 +114,7 @@ func Test_ExpectErrorIfNoAccount(t *testing.T) {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
 	}
 
-	assert.Contains(t, w.Body.String(), "no account with id")
+	assert.Contains(t, w.Body.String(), "no account with that id")
 }
 
 func Test_ExpectNoErrorIfAccountExists(t *testing.T) {
