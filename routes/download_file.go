@@ -38,8 +38,7 @@ func downloadFile(c *gin.Context) {
 	// validate user
 	account, err := models.GetAccountById(request.AccountID)
 	if err != nil {
-		AccountNotFoundResponse(c)
-
+		AccountNotFoundResponse(c, request.AccountID)
 		return
 	}
 
