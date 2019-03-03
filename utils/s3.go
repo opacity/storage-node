@@ -16,6 +16,12 @@ type s3Wrapper struct {
 	s3 *s3.S3
 }
 
+const (
+	CannedAcl_Private         = "private"
+	CannedAcl_PublicRead      = "public-read"
+	CannedAcl_PublicReadWrite = "public-read-write"
+)
+
 var awsPagingSize int64
 
 var svc *s3Wrapper
@@ -154,6 +160,16 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 	return err
 }
 
+func setObjectCannedAcl(bucketName string, objectName string, cannedAcl string) error {
+	input := &s3.PutObjectAclInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objectName),
+		ACL:    aws.String(cannedAcl),
+	}
+
+	return svc.SetObjectCannedAcl(input)
+}
+
 // Get Object operation on defaultBucketName
 func GetDefaultBucketObject(objectKey string, cached bool) (string, error) {
 	return getObject(Env.BucketName, objectKey, cached)
@@ -177,6 +193,10 @@ func ListDefaultBucketObjectKeys(objectKeyPrefix string) ([]string, error) {
 // Delete all the object operation on defaultBucketName with particular prefix
 func DeleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
 	return deleteObjectKeys(Env.BucketName, objectKeyPrefix)
+}
+
+func SetDefaultObjectCannedAcl(objectKey string cannedAcl string) error {
+	return setObjectCannedAcl(Env.BucketName, objectKey, cannedAcl)
 }
 
 func getKey(bucketName string, objectKey string) string {
@@ -257,5 +277,14 @@ func (svc *s3Wrapper) DeleteObjects(input *s3.DeleteObjectsInput) error {
 	}
 
 	_, err := svc.s3.DeleteObjects(input)
+	return err
+}
+
+func (svc *s3Wrapper) SetObjectCannedAcl(input *s3.PutObjectAclInput) error {
+	if svc.s3 == nil {
+		return nil
+	}
+
+	_, err := svc.s3.PutObjectAcl(input)
 	return err
 }

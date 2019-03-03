@@ -20,4 +20,8 @@ func (e s3ExpireAccess) Run() {
 		fmt.Println("Some error occurred")
 	}
 
+	for _, v := range expired {
+
+	}
+	models.DB.Delete(&expired)
 }
