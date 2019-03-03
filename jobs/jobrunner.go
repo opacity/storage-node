@@ -12,6 +12,7 @@ func StartJobs() {
 	jobs := []JobRunnable{
 		&pingStdOut{counter: 1},
 		s3Deleter{},
+		s3ExpireAccess{},
 	}
 
 	for _, s := range jobs {
