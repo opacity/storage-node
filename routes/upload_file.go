@@ -3,8 +3,6 @@ package routes
 import (
 	"fmt"
 
-	"errors"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"

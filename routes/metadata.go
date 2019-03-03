@@ -33,7 +33,7 @@ func getMetadata(c *gin.Context) {
 
 	metadata, _, err := utils.GetValueFromKV(metadataKey)
 	if err != nil {
-		NotFound(c, err)
+		NotFoundResponse(c, err)
 		return
 	}
 	OkResponse(c, getMetadataRes{
@@ -46,14 +46,14 @@ func setMetadata(c *gin.Context) {
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 
 	_, expirationTime, err := utils.GetValueFromKV(request.MetadataKey)
 
 	if err != nil {
-		NotFound(c, err)
+		NotFoundResponse(c, err)
 		return
 	}
 
@@ -65,7 +65,7 @@ func setMetadata(c *gin.Context) {
 	ttl := time.Until(expirationTime)
 
 	if err := utils.BatchSet(&utils.KVPairs{request.MetadataKey: request.Metadata}, ttl); err != nil {
-		InternalError(c, err)
+		InternalErrorResponse(c, err)
 		return
 	}
 

@@ -129,12 +129,12 @@ func checkAccountPaymentStatus(c *gin.Context) {
 		// Create empty key:value data in badger DB
 		ttl := time.Until(account.ExpirationDate())
 		if err := utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
-			BadRequest(c, err)
+			BadRequestResponse(c, err)
 			return
 		}
 		// Delete the metadata key on the account model
 		if err := models.DB.Model(&account).Updates(models.Account{MetadataKey: ""}).Error; err != nil {
-			BadRequest(c, err)
+			BadRequestResponse(c, err)
 			return
 		}
 	}
