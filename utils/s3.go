@@ -180,7 +180,7 @@ func setObjectCannedAcl(bucketName string, objectName string, cannedAcl string) 
 
 	return svc.SetObjectCannedAcl(input)
 }
-  
+
 func setBucketLifecycle(bucketName string, rules []*s3.LifecycleRule) error {
 	input := &s3.PutBucketLifecycleConfigurationInput{
 		Bucket: aws.String(bucketName),
@@ -228,7 +228,7 @@ func DeleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
 	return deleteObjectKeys(Env.BucketName, objectKeyPrefix)
 }
 
-func SetDefaultObjectCannedAcl(objectKey string cannedAcl string) error {
+func SetDefaultObjectCannedAcl(objectKey string, cannedAcl string) error {
 	return setObjectCannedAcl(Env.BucketName, objectKey, cannedAcl)
 }
 
@@ -331,10 +331,10 @@ func (svc *s3Wrapper) HeadObject(input *s3.HeadObjectInput) error {
 }
 
 func (svc *s3Wrapper) SetObjectCannedAcl(input *s3.PutObjectAclInput) error {
-  	if svc.s3 == nil {
+	if svc.s3 == nil {
 		return nil
 	}
-  
+
 	_, err := svc.s3.PutObjectAcl(input)
 	return err
 }
