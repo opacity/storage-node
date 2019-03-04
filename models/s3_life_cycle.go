@@ -9,16 +9,22 @@ import (
 
 /*The life cycle of a particular object inside the bucket. */
 type S3ObjectLifeCycle struct {
-	BucketName  string `gorm:"primary_key"`
 	ObjectName  string `gorm:"primary_key"`
 	ExpiredTime time.Time
 }
 
 func ExpireObject(objectName string) error{
-	s := S3ObjectLifeCycle{
-		BucketName : utils.Env.BucketName,
-		ObjectName: objectName,
-		ExpiredTime: time.Now().Add(time.Hour * 1)
+	expiredTime := time.Now().Add(time.Hour * 1)
+	var s = S3ObjectLifeCycle{}
+	
+	if DB.Where("object_name = ?", objectName).First(&s).RecordNotFound() {
+		s = S3ObjectLifeCycle{
+			ObjectName: objectName,
+			ExpiredTime: expiredTime
+		}
+		return DB.Create(&s).Error
 	}
-	return DB.Create(&s).Error
+
+	s.ExpiredTime = expiredTime
+	return DB.Save(&s).Error
 }

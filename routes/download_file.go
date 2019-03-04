@@ -41,7 +41,7 @@ func downloadFile(c *gin.Context) {
 		AccountNotFoundResponse(c, request.AccountID)
 		return
 	}
-  
+
 	// verify object existed in S3
 	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.UploadID)
 	if !utils.DoesDefaultBucketObjectExist(objectKey) {
@@ -49,7 +49,15 @@ func downloadFile(c *gin.Context) {
 		return
 	}
 
-  utils.SetDefaultObjectCannedAcl(objectKey, utils.CannedAcl_PublicRead)
+	if err := utils.SetDefaultObjectCannedAcl(objectKey, utils.CannedAcl_PublicRead); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	if err := models.ExpireObject(objectKey); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
 
 	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, objectKey)
 	OkResponse(c, downloadFileRes{
