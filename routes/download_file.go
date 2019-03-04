@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gin-gonic/gin"
@@ -30,19 +31,27 @@ func downloadFile(c *gin.Context) {
 	}
 	if err := utils.Validator.Struct(request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 
 	// validate user
-	if _, err := models.GetAccountById(request.AccountID); err != nil {
-		AccountNotFound(c)
+	account, err := models.GetAccountById(request.AccountID)
+	if err != nil {
+		AccountNotFoundResponse(c, request.AccountID)
+		return
+	}
+  
+	// verify object existed in S3
+	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.UploadID)
+	if !utils.DoesDefaultBucketObjectExist(objectKey) {
+		NotFoundResponse(c, errors.New("Such data does not exist"))
 		return
 	}
 
-	utils.SetDefaultObjectCannedAcl(request.UploadID, utils.CannedAcl_PublicRead)
+  utils.SetDefaultObjectCannedAcl(objectKey, utils.CannedAcl_PublicRead)
 
-	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, request.UploadID)
+	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, objectKey)
 	OkResponse(c, downloadFileRes{
 		// Redirect to a different URL that client would have authorization to download it.
 		FileDownloadUrl: url,

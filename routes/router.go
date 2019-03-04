@@ -73,11 +73,8 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(MetadataPath, UpdateMetadataHandler())
 	v1Router.GET(MetadataPath+"/:metadataKey", GetMetadataHandler())
 
-	v1Router.POST("/trial-upload", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "stub for doing a trial upload")
-	})
-
 	v1Router.POST("/upload", UploadFileHandler())
+	v1Router.POST("/free_upload", FreeUploadFileHandler())
 	v1Router.GET("/download/:accountID/:uploadID", DownloadFileHandler())
 }
 

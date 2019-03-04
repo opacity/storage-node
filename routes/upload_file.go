@@ -3,8 +3,6 @@ package routes
 import (
 	"fmt"
 
-	"errors"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -29,19 +27,19 @@ func uploadFile(c *gin.Context) {
 	request := uploadFileReq{}
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 
 	account, err := models.GetAccountById(request.AccountID)
 	if err != nil {
-		NotFound(c, errors.New("no account with id: "+request.AccountID))
+		AccountNotFoundResponse(c, request.AccountID)
 		return
 	}
 
 	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.UploadID)
 	if err := utils.SetDefaultBucketObject(objectKey, request.FileData); err != nil {
-		InternalError(c, err)
+		InternalErrorResponse(c, err)
 		return
 	}
 

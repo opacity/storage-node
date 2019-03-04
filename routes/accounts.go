@@ -43,20 +43,20 @@ func createAccount(c *gin.Context) {
 	request := accountCreateReq{}
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
 	if err != nil {
 		err = fmt.Errorf("error generating account wallet:  %v", err)
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 
 	storageLimit, ok := models.StorageLimitMap[request.StorageLimit]
 	if !ok {
-		BadRequest(c, errors.New("storage not offered in that increment in GB"))
+		BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
 		return
 	}
 
@@ -66,7 +66,7 @@ func createAccount(c *gin.Context) {
 		request.AccountID,
 	)
 	if encryptErr != nil {
-		ServiceUnavailable(c, fmt.Errorf("error encrypting private key:  %v", encryptErr))
+		ServiceUnavailableResponse(c, fmt.Errorf("error encrypting private key:  %v", encryptErr))
 		return
 	}
 
@@ -81,19 +81,19 @@ func createAccount(c *gin.Context) {
 	}
 
 	if err := utils.Validator.Struct(account); err == nil {
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 
 	cost, err := account.Cost()
 	if err != nil {
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 
 	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 
@@ -107,7 +107,7 @@ func createAccount(c *gin.Context) {
 
 	if err := utils.Validator.Struct(&response); err != nil {
 		err = fmt.Errorf("could not create a valid response:  %v", err)
-		BadRequest(c, err)
+		BadRequestResponse(c, err)
 		return
 	}
 
@@ -119,7 +119,7 @@ func checkAccountPaymentStatus(c *gin.Context) {
 
 	account, err := models.GetAccountById(accountID)
 	if err != nil {
-		NotFound(c, errors.New("no account with id: "+accountID))
+		AccountNotFoundResponse(c, accountID)
 		return
 	}
 
@@ -129,12 +129,12 @@ func checkAccountPaymentStatus(c *gin.Context) {
 		// Create empty key:value data in badger DB
 		ttl := time.Until(account.ExpirationDate())
 		if err := utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
-			BadRequest(c, err)
+			BadRequestResponse(c, err)
 			return
 		}
 		// Delete the metadata key on the account model
 		if err := models.DB.Model(&account).Updates(models.Account{MetadataKey: ""}).Error; err != nil {
-			BadRequest(c, err)
+			BadRequestResponse(c, err)
 			return
 		}
 	}

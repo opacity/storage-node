@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/orcaman/concurrent-map"
@@ -68,6 +69,16 @@ func deleteBucket(bucketName string) error {
 		Bucket: aws.String(bucketName),
 	}
 	return svc.DeleteBucket(input)
+}
+
+func doesObjectExist(bucketName string, objectKey string) bool {
+	input := &s3.HeadObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objectKey),
+	}
+
+	err := svc.HeadObject(input)
+	return err != nil
 }
 
 func getObject(bucketName string, objectKey string, cached bool) (string, error) {
@@ -169,6 +180,28 @@ func setObjectCannedAcl(bucketName string, objectName string, cannedAcl string) 
 
 	return svc.SetObjectCannedAcl(input)
 }
+  
+func setBucketLifecycle(bucketName string, rules []*s3.LifecycleRule) error {
+	input := &s3.PutBucketLifecycleConfigurationInput{
+		Bucket: aws.String(bucketName),
+		LifecycleConfiguration: &s3.BucketLifecycleConfiguration{
+			Rules: rules,
+		},
+	}
+
+	return svc.PutBucketLifecycleConfiguration(input)
+}
+
+func getBucketLifecycle(bucketName string) ([]*s3.LifecycleRule, error) {
+	input := &s3.GetBucketLifecycleConfigurationInput{
+		Bucket: aws.String(bucketName),
+	}
+	return svc.GetBucketLifecycleConfiguration(input)
+}
+
+func DoesDefaultBucketObjectExist(objectKey string) bool {
+	return doesObjectExist(Env.BucketName, objectKey)
+}
 
 // Get Object operation on defaultBucketName
 func GetDefaultBucketObject(objectKey string, cached bool) (string, error) {
@@ -197,6 +230,14 @@ func DeleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
 
 func SetDefaultObjectCannedAcl(objectKey string cannedAcl string) error {
 	return setObjectCannedAcl(Env.BucketName, objectKey, cannedAcl)
+}
+
+func SetDefaultBucketLifecycle(rules []*s3.LifecycleRule) error {
+	return setBucketLifecycle(Env.BucketName, rules)
+}
+
+func GetDefaultBucketLifecycle() ([]*s3.LifecycleRule, error) {
+	return getBucketLifecycle(Env.BucketName)
 }
 
 func getKey(bucketName string, objectKey string) string {
@@ -280,11 +321,46 @@ func (svc *s3Wrapper) DeleteObjects(input *s3.DeleteObjectsInput) error {
 	return err
 }
 
-func (svc *s3Wrapper) SetObjectCannedAcl(input *s3.PutObjectAclInput) error {
+func (svc *s3Wrapper) HeadObject(input *s3.HeadObjectInput) error {
 	if svc.s3 == nil {
 		return nil
 	}
 
+	_, err := svc.s3.HeadObject(input)
+	return err
+}
+
+func (svc *s3Wrapper) SetObjectCannedAcl(input *s3.PutObjectAclInput) error {
+  	if svc.s3 == nil {
+		return nil
+	}
+  
 	_, err := svc.s3.PutObjectAcl(input)
 	return err
+}
+
+func (svc *s3Wrapper) PutBucketLifecycleConfiguration(input *s3.PutBucketLifecycleConfigurationInput) error {
+	if svc.s3 == nil {
+		return nil
+	}
+
+	_, err := svc.s3.PutBucketLifecycleConfiguration(input)
+	return err
+}
+
+func (svc *s3Wrapper) GetBucketLifecycleConfiguration(input *s3.GetBucketLifecycleConfigurationInput) ([]*s3.LifecycleRule, error) {
+	if svc.s3 == nil {
+		return nil, nil
+	}
+
+	v, err := svc.s3.GetBucketLifecycleConfiguration(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.RequestFailure); ok {
+			if aerr.StatusCode() == 404 {
+				return nil, nil
+			}
+		}
+		return nil, err
+	}
+	return v.Rules, nil
 }
