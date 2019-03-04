@@ -1,15 +1,43 @@
 package jobs
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/bamzi/jobrunner"
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/utils"
 )
 
-func StartJobs() {
+type BackgroundRunnable interface {
+	ScheduleInterval() string
+	Run()
+}
+
+type StartUpRunnable interface {
+	Run() error
+}
+
+func StartupJobs() {
+	utils.SlackLog("Run StartUp Jobs")
+	defer utils.SlackLog("Finished StartUp Jobs")
+
+	jobs := []StartUpRunnable{
+		noOps{},
+		s3LifeCycle{},
+	}
+
+	for _, s := range jobs {
+		err := s.Run()
+		if err != nil {
+			utils.PanicOnError(errors.New(fmt.Sprintf("Abort!!!! Unable to startup process with error: %s", err)))
+		}
+	}
+}
+
+func ScheduleBackgroundJobs() {
 	jobrunner.Start()
-	jobs := []JobRunnable{
+	jobs := []BackgroundRunnable{
 		&pingStdOut{counter: 1},
 		s3Deleter{},
 	}
@@ -29,11 +57,6 @@ func JobHtml(c *gin.Context) {
 	c.HTML(200, "", jobrunner.StatusPage())
 }
 
-type JobRunnable interface {
-	ScheduleInterval() string
-	Run()
-}
-
 type pingStdOut struct {
 	counter int
 }
@@ -45,4 +68,10 @@ func (e *pingStdOut) ScheduleInterval() string {
 func (e *pingStdOut) Run() {
 	fmt.Printf("Pinging with count %d\n", e.counter)
 	e.counter = e.counter + 1
+}
+
+type noOps struct{}
+
+func (e noOps) Run() error {
+	return nil
 }

@@ -10,6 +10,7 @@ import (
 /*PanicOnError panics if an error was passed in*/
 func PanicOnError(err error) {
 	if err != nil {
+		SlackLogError(err.Error())
 		panic(err)
 	}
 }
