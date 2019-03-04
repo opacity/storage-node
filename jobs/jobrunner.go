@@ -30,9 +30,7 @@ func StartupJobs() {
 	for _, s := range jobs {
 		err := s.Run()
 		if err != nil {
-			msg := errors.New(fmt.Sprintf("Abort!!!! Unable to startup process with error: %s", err))
-			utils.SlackLog(msg.Error())
-			panic(msg)
+			utils.PanicOnError(errors.New(fmt.Sprintf("Abort!!!! Unable to startup process with error: %s", err)))
 		}
 	}
 }
