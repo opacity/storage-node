@@ -70,8 +70,7 @@ func (e *pingStdOut) Run() {
 	e.counter = e.counter + 1
 }
 
-type noOps struct {
-}
+type noOps struct{}
 
 func (e noOps) Run() error {
 	return nil

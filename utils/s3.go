@@ -333,6 +333,5 @@ func (svc *s3Wrapper) GetBucketLifecycleConfiguration(input *s3.GetBucketLifecyc
 		}
 		return nil, err
 	}
-
 	return v.Rules, nil
 }
