@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/orcaman/concurrent-map"
@@ -164,6 +165,24 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 	return err
 }
 
+func setBucketLifecycle(bucketName string, rules []*s3.LifecycleRule) error {
+	input := &s3.PutBucketLifecycleConfigurationInput{
+		Bucket: aws.String(bucketName),
+		LifecycleConfiguration: &s3.BucketLifecycleConfiguration{
+			Rules: rules,
+		},
+	}
+
+	return svc.PutBucketLifecycleConfiguration(input)
+}
+
+func getBucketLifecycle(bucketName string) ([]*s3.LifecycleRule, error) {
+	input := &s3.GetBucketLifecycleConfigurationInput{
+		Bucket: aws.String(bucketName),
+	}
+	return svc.GetBucketLifecycleConfiguration(input)
+}
+
 func DoesDefaultBucketObjectExist(objectKey string) bool {
 	return doesObjectExist(Env.BucketName, objectKey)
 }
@@ -191,6 +210,14 @@ func ListDefaultBucketObjectKeys(objectKeyPrefix string) ([]string, error) {
 // Delete all the object operation on defaultBucketName with particular prefix
 func DeleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
 	return deleteObjectKeys(Env.BucketName, objectKeyPrefix)
+}
+
+func SetDefaultBucketLifecycle(rules []*s3.LifecycleRule) error {
+	return setBucketLifecycle(Env.BucketName, rules)
+}
+
+func GetDefaultBucketLifecycle() ([]*s3.LifecycleRule, error) {
+	return getBucketLifecycle(Env.BucketName)
 }
 
 func getKey(bucketName string, objectKey string) string {
@@ -281,4 +308,31 @@ func (svc *s3Wrapper) HeadObject(input *s3.HeadObjectInput) error {
 
 	_, err := svc.s3.HeadObject(input)
 	return err
+}
+
+func (svc *s3Wrapper) PutBucketLifecycleConfiguration(input *s3.PutBucketLifecycleConfigurationInput) error {
+	if svc.s3 == nil {
+		return nil
+	}
+
+	_, err := svc.s3.PutBucketLifecycleConfiguration(input)
+	return err
+}
+
+func (svc *s3Wrapper) GetBucketLifecycleConfiguration(input *s3.GetBucketLifecycleConfigurationInput) ([]*s3.LifecycleRule, error) {
+	if svc.s3 == nil {
+		return nil, nil
+	}
+
+	v, err := svc.s3.GetBucketLifecycleConfiguration(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.RequestFailure); ok {
+			if aerr.StatusCode() == 404 {
+				return nil, nil
+			}
+		}
+		return nil, err
+	}
+
+	return v.Rules, nil
 }
