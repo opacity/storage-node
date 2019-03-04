@@ -41,6 +41,7 @@ func downloadFile(c *gin.Context) {
 	}
 
 	utils.SetDefaultObjectCannedAcl(request.UploadID, utils.CannedAcl_PublicRead)
+
 	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, request.UploadID)
 	OkResponse(c, downloadFileRes{
 		// Redirect to a different URL that client would have authorization to download it.
