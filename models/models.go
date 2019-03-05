@@ -28,9 +28,14 @@ func Connect(dbURL string) {
 	DB, err = gorm.Open("mysql", dbURL)
 	utils.PanicOnError(err)
 
-	DB.AutoMigrate(&Account{})
-	DB.AutoMigrate(&File{})
-	DB.AutoMigrate(&S3ObjectLifeCycle{})
+	schema := []interface{}{
+		Account{},
+		File{},
+		S3ObjectLifeCycle{},
+	}
+	for _, s := range schema {
+		DB.AutoMigrate(&s)
+	}
 }
 
 /*Close a database connection*/
