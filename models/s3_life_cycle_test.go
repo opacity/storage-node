@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +17,7 @@ func Test_Update(t *testing.T) {
 
 	assert.Nil(t, ExpireObject(objectName))
 
-	s := S3ObjectLifeCycle{}
+	s = S3ObjectLifeCycle{}
 	assert.Nil(t, DB.Where("object_name = ?", objectName).First(&s))
 	assert.True(t, time.Now().Sub(s.ExpiredTime).Minutes() < 10.0)
 }
@@ -28,7 +27,7 @@ func Test_Create(t *testing.T) {
 	assert.Nil(t, ExpireObject(objectName))
 
 	s := S3ObjectLifeCycle{}
-	assert.Nil(t, DB.Where("object_name = ?", objectNameß).First(&s))
+	assert.Nil(t, DB.Where("object_name = ?", objectName).First(&s))
 
 	assert.True(t, time.Now().Sub(s.ExpiredTime).Minutes() < 10.0)
 }
