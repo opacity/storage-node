@@ -58,7 +58,7 @@ func setMetadata(c *gin.Context) {
 	}
 
 	if expirationTime.Before(time.Now()) {
-		Forbidden(c, errors.New("subscription expired"))
+		ForbiddenResponse(c, errors.New("subscription expired"))
 		return
 	}
 
