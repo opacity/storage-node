@@ -74,5 +74,6 @@ func (e *pingStdOut) Run() {
 type noOps struct{}
 
 func (e noOps) Run() error {
+	fmt.Println("Run noOps")
 	return nil
 }

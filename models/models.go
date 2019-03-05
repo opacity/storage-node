@@ -30,6 +30,7 @@ func Connect(dbURL string) {
 
 	DB.AutoMigrate(&Account{})
 	DB.AutoMigrate(&File{})
+	DB.AutoMigrate(&S3ObjectLifeCycle{})
 }
 
 /*Close a database connection*/
