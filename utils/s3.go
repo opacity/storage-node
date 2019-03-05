@@ -268,6 +268,13 @@ func (svc *s3Wrapper) DeleteObject(input *s3.DeleteObjectInput) error {
 	}
 
 	_, err := svc.s3.DeleteObject(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.RequestFailure); ok {
+			if aerr.StatusCode() == 404 {
+				return nil
+			}
+		}
+	}
 	return err
 }
 
