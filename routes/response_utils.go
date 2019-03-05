@@ -24,7 +24,7 @@ func AccountNotFoundResponse(c *gin.Context, id string) {
 	c.AbortWithStatusJSON(http.StatusNotFound, fmt.Sprintf("no account with that id: %s", id))
 }
 
-func Forbidden(c *gin.Context, err error) {
+func ForbiddenResponse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusForbidden, err.Error())
 }
 
