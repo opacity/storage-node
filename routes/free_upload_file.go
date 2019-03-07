@@ -17,7 +17,7 @@ type freeUploadFileRes struct {
 }
 
 func FreeUploadFileHandler() gin.HandlerFunc {
-	return gin.HandlerFunc(freeUploadFile)
+	return ginHandlerFunc(freeUploadFile)
 }
 
 func freeUploadFile(c *gin.Context) {

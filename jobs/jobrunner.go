@@ -69,6 +69,7 @@ func (e *pingStdOut) ScheduleInterval() string {
 func (e *pingStdOut) Run() {
 	fmt.Printf("Pinging with count %d\n", e.counter)
 	e.counter = e.counter + 1
+	utils.Metrics_PingStdOut_Counter.Inc()
 }
 
 type noOps struct{}
