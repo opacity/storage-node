@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/jobs"
 	"github.com/opacity/storage-node/utils"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var uptime time.Time
@@ -81,6 +82,8 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 func setupAdminPaths(router *gin.Engine) {
 	g := router.Group(AdminPath)
 	g.GET("/jobrunner/json", jobs.JobJson)
+
+	g.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Load template file location relative to the current working directory
 	// Unable to find the file.

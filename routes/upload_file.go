@@ -20,7 +20,7 @@ type uploadFileRes struct {
 
 /*UploadFileHandler is a handler for the user to upload files*/
 func UploadFileHandler() gin.HandlerFunc {
-	return gin.HandlerFunc(uploadFile)
+	return ginHandlerFunc(uploadFile)
 }
 
 func uploadFile(c *gin.Context) {

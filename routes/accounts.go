@@ -31,12 +31,12 @@ type accountPaidRes struct {
 
 /*CreateAccountHandler is a handler for post requests to create accounts*/
 func CreateAccountHandler() gin.HandlerFunc {
-	return gin.HandlerFunc(createAccount)
+	return ginHandlerFunc(createAccount)
 }
 
 /*CheckAccountPaymentStatusHandler is a handler for requests checking the payment status*/
 func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
-	return gin.HandlerFunc(checkAccountPaymentStatus)
+	return ginHandlerFunc(checkAccountPaymentStatus)
 }
 
 func createAccount(c *gin.Context) {

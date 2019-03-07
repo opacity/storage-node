@@ -21,7 +21,7 @@ type downloadFileRes struct {
 }
 
 func DownloadFileHandler() gin.HandlerFunc {
-	return gin.HandlerFunc(downloadFile)
+	return ginHandlerFunc(downloadFile)
 }
 
 func downloadFile(c *gin.Context) {

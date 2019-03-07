@@ -20,12 +20,12 @@ type getMetadataRes struct {
 
 /*GetMetadataHandler is a handler for getting the file metadata*/
 func GetMetadataHandler() gin.HandlerFunc {
-	return gin.HandlerFunc(getMetadata)
+	return ginHandlerFunc(getMetadata)
 }
 
 /*GetMetadataHandler is a handler for updating the file metadata*/
 func UpdateMetadataHandler() gin.HandlerFunc {
-	return gin.HandlerFunc(setMetadata)
+	return ginHandlerFunc(setMetadata)
 }
 
 func getMetadata(c *gin.Context) {
