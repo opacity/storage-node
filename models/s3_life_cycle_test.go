@@ -4,9 +4,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
 
+func Test_Init_S3_Life_Cycle(t *testing.T) {
+	utils.SetTesting("../.env")
+	Connect(utils.Env.DatabaseURL)
+}
 func Test_Update(t *testing.T) {
 	objectName := "abc"
 	s := S3ObjectLifeCycle{
