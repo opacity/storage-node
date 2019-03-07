@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 )
 
 func Test_Init_S3_Life_Cycle(t *testing.T) {
+	fmt.Println("Test_Init_S3_Life_Cycle")
 	utils.SetTesting("../.env")
 	Connect(utils.Env.DatabaseURL)
 }
