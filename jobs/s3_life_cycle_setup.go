@@ -11,9 +11,9 @@ const (
 	freeUploadPrefix = "free_upload/"
 )
 
-type s3LifeCycle struct{}
+type s3LifeCycleSetup struct{}
 
-func (e s3LifeCycle) Run() error {
+func (e s3LifeCycleSetup) Run() error {
 	rules, err := utils.GetDefaultBucketLifecycle()
 	if err != nil {
 		return err

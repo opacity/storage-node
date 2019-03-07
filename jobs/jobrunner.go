@@ -24,7 +24,7 @@ func StartupJobs() {
 
 	jobs := []StartUpRunnable{
 		noOps{},
-		s3LifeCycle{},
+		s3LifeCycleSetup{},
 	}
 
 	for _, s := range jobs {
@@ -40,6 +40,7 @@ func ScheduleBackgroundJobs() {
 	jobs := []BackgroundRunnable{
 		&pingStdOut{counter: 1},
 		s3Deleter{},
+		s3ExpireAccess{},
 	}
 
 	for _, s := range jobs {
@@ -73,5 +74,6 @@ func (e *pingStdOut) Run() {
 type noOps struct{}
 
 func (e noOps) Run() error {
+	fmt.Println("Run noOps")
 	return nil
 }

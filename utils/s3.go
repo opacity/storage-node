@@ -17,6 +17,12 @@ type s3Wrapper struct {
 	s3 *s3.S3
 }
 
+const (
+	CannedAcl_Private         = "private"
+	CannedAcl_PublicRead      = "public-read"
+	CannedAcl_PublicReadWrite = "public-read-write"
+)
+
 var awsPagingSize int64
 
 var svc *s3Wrapper
@@ -165,6 +171,16 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 	return err
 }
 
+func setObjectCannedAcl(bucketName string, objectName string, cannedAcl string) error {
+	input := &s3.PutObjectAclInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objectName),
+		ACL:    aws.String(cannedAcl),
+	}
+
+	return svc.SetObjectCannedAcl(input)
+}
+
 func setBucketLifecycle(bucketName string, rules []*s3.LifecycleRule) error {
 	input := &s3.PutBucketLifecycleConfigurationInput{
 		Bucket: aws.String(bucketName),
@@ -212,6 +228,10 @@ func DeleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
 	return deleteObjectKeys(Env.BucketName, objectKeyPrefix)
 }
 
+func SetDefaultObjectCannedAcl(objectKey string, cannedAcl string) error {
+	return setObjectCannedAcl(Env.BucketName, objectKey, cannedAcl)
+}
+
 func SetDefaultBucketLifecycle(rules []*s3.LifecycleRule) error {
 	return setBucketLifecycle(Env.BucketName, rules)
 }
@@ -248,6 +268,13 @@ func (svc *s3Wrapper) DeleteObject(input *s3.DeleteObjectInput) error {
 	}
 
 	_, err := svc.s3.DeleteObject(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.RequestFailure); ok {
+			if aerr.StatusCode() == 404 {
+				return nil
+			}
+		}
+	}
 	return err
 }
 
@@ -307,6 +334,15 @@ func (svc *s3Wrapper) HeadObject(input *s3.HeadObjectInput) error {
 	}
 
 	_, err := svc.s3.HeadObject(input)
+	return err
+}
+
+func (svc *s3Wrapper) SetObjectCannedAcl(input *s3.PutObjectAclInput) error {
+	if svc.s3 == nil {
+		return nil
+	}
+
+	_, err := svc.s3.PutObjectAcl(input)
 	return err
 }
 

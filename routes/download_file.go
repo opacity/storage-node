@@ -49,6 +49,16 @@ func downloadFile(c *gin.Context) {
 		return
 	}
 
+	if err := utils.SetDefaultObjectCannedAcl(objectKey, utils.CannedAcl_PublicRead); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	if err := models.ExpireObject(objectKey); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
 	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, objectKey)
 	OkResponse(c, downloadFileRes{
 		// Redirect to a different URL that client would have authorization to download it.
