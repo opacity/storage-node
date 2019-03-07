@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -10,7 +9,6 @@ import (
 )
 
 func Test_Init_S3_Life_Cycle(t *testing.T) {
-	fmt.Println("Test_Init_S3_Life_Cycle")
 	utils.SetTesting("../.env")
 	Connect(utils.Env.DatabaseURL)
 }
@@ -25,7 +23,7 @@ func Test_Update(t *testing.T) {
 	assert.Nil(t, ExpireObject(objectName))
 
 	s = S3ObjectLifeCycle{}
-	assert.Nil(t, DB.Where("object_name = ?", objectName).First(&s))
+	assert.Nil(t, DB.Where("object_name = ?", objectName).First(&s).Error)
 	assert.True(t, time.Now().Sub(s.ExpiredTime).Minutes() < 10.0)
 }
 
@@ -34,7 +32,7 @@ func Test_Create(t *testing.T) {
 	assert.Nil(t, ExpireObject(objectName))
 
 	s := S3ObjectLifeCycle{}
-	assert.Nil(t, DB.Where("object_name = ?", objectName).First(&s))
+	assert.Nil(t, DB.Where("object_name = ?", objectName).First(&s).Error)
 
 	assert.True(t, time.Now().Sub(s.ExpiredTime).Minutes() < 10.0)
 }
