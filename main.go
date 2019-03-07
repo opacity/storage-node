@@ -14,7 +14,7 @@ func main() {
 	utils.SetDevelopment()
 
 	utils.SlackLog("Begin to restart service!")
-	//models.Connect(utils.Env.DatabaseURL)
+	models.Connect(utils.Env.DatabaseURL)
 
 	jobs.StartupJobs()
 	if utils.Env.EnableJobs {
