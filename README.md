@@ -48,6 +48,7 @@ sudo systemctl restart docker # restart docker
 ```
 
 App in docker may running this IP address locally: http://0.0.0.0:3000/
+
 App metrics can be found in http://0.0.0.0:3000/admin/metrics
 
 ---
