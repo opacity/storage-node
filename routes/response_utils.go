@@ -1,8 +1,11 @@
 package routes
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
+	"runtime/debug"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
@@ -54,6 +57,16 @@ func ginHandlerFunc(f gin.HandlerFunc) gin.HandlerFunc {
 			// Capture the error
 			if r := recover(); r != nil {
 				utils.SlackLogError(fmt.Sprintf("Recover from err %v", r))
+
+				buff := bytes.NewBufferString("")
+				buff.Write(debug.Stack())
+				stacks := strings.Split(buff.String(), "\n")
+
+				threadId := stacks[0]
+				if len(stacks) > 5 {
+					stacks = stacks[5:]
+				}
+				fmt.Printf("Recover from err %v\nRunning on thread: %s,\nStack: \n%v\n", r, threadId, strings.Join(stacks, "\n"))
 
 				if err, ok := r.(error); ok {
 					InternalErrorResponse(c, err)
