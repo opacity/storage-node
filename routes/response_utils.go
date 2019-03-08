@@ -80,3 +80,7 @@ func ginHandlerFunc(f gin.HandlerFunc) gin.HandlerFunc {
 	}
 	return gin.HandlerFunc(injectToRecoverFromPanic)
 }
+
+func getLogger() utils.Logger {
+	return nil
+}
