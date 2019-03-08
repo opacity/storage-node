@@ -29,6 +29,7 @@ type StorageNodeEnv struct {
 
 	// Debug purpose
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
+	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
 }
 
 /*Env is the environment for a particular node while the application is running*/
