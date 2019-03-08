@@ -29,8 +29,10 @@ type loggerWrapper struct {
 	logrus.FieldLogger
 }
 
-var defaultLogger Logger
-var testLogger Logger
+var (
+	defaultLogger Logger
+	testLogger    Logger
+)
 
 func (l loggerWrapper) LogIfError(err error, extraInfo map[string]interface{}) {
 	if err == nil {
@@ -41,17 +43,17 @@ func (l loggerWrapper) LogIfError(err error, extraInfo map[string]interface{}) {
 }
 
 // Create a new Logger from a particular requestIdPrefix.
-func NewLogger(sessionId string) Logger {
+func GetLogger(sessionId string) Logger {
 	return loggerWrapper{logrus.WithFields(logrus.Fields{"session_id": sessionId})}
 }
 
-func newLogger(loggerTag string) Logger {
+func getLogger(loggerTag string) Logger {
 	return loggerWrapper{logrus.WithFields(logrus.Fields{"tag": loggerTag})}
 }
 
 func GetDefaultLogger() Logger {
 	if defaultLogger == nil {
-		defaultLogger = newLogger("DEFAULT")
+		defaultLogger = getLogger("DEFAULT")
 	}
 	return defaultLogger
 }
@@ -59,7 +61,7 @@ func GetDefaultLogger() Logger {
 // Used for Unit tests
 func GetLoggerForTest() Logger {
 	if testLogger == nil {
-		testLogger = newLogger("TEST")
+		testLogger = getLogger("TEST")
 	}
 	return testLogger
 }

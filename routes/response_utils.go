@@ -81,6 +81,6 @@ func ginHandlerFunc(f gin.HandlerFunc) gin.HandlerFunc {
 	return gin.HandlerFunc(injectToRecoverFromPanic)
 }
 
-func getLogger() utils.Logger {
+func getLogger(c *gin.Context) utils.Logger {
 	return nil
 }
