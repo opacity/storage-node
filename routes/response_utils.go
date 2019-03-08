@@ -64,9 +64,9 @@ func ginHandlerFunc(f gin.HandlerFunc) gin.HandlerFunc {
 
 				threadId := stacks[0]
 				if len(stacks) > 5 {
-					stacks = stacks[5:]
+					stacks = stacks[5:] // skip the Stack() and Defer method.
 				}
-				fmt.Printf("Recover from err %v\nRunning on thread: %s,\nStack: \n%v\n", r, threadId, strings.Join(stacks, "\n"))
+				fmt.Printf("[StorageNode]Recover from err %v\nRunning on thread: %s,\nStack: \n%v\n", r, threadId, strings.Join(stacks, "\n"))
 
 				if err, ok := r.(error); ok {
 					InternalErrorResponse(c, err)
