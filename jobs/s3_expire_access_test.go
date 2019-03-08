@@ -15,6 +15,9 @@ func Test_Init_S3_Life_Cycle(t *testing.T) {
 }
 
 func Test_Delete_S3Object(t *testing.T) {
+	// Make sure nothing existed in the table
+	models.DB.Delete(&models.S3ObjectLifeCycle{})
+
 	models.DB.Create(&models.S3ObjectLifeCycle{
 		ObjectName:  "foo",
 		ExpiredTime: time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
