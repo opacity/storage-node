@@ -1,8 +1,6 @@
 package utils
 
 import (
-	"fmt"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,7 +37,7 @@ func (l loggerWrapper) LogIfError(err error, extraInfo map[string]interface{}) {
 		return
 	}
 
-	l.Error(fmt.Sprintf("Error: %s, extra: %s", err, extraInfo))
+	l.Errorf("Error: %s, extra: %s", err, extraInfo)
 }
 
 // Create a new Logger from a particular requestIdPrefix.
