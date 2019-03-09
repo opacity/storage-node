@@ -1,7 +1,6 @@
 package jobs
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/opacity/storage-node/models"
@@ -17,7 +16,7 @@ func (e s3ExpireAccess) ScheduleInterval() string {
 func (e s3ExpireAccess) Run() {
 	expired := make([]models.S3ObjectLifeCycle, 0)
 	if err := models.DB.Where("expired_time < ?", time.Now()).Find(&expired).Error; err != nil {
-		fmt.Printf("Some error occur on querying DB: %v\n", err)
+		utils.GetLogger("jobs-s3-expire-access").Errorf("Some error occur on querying DB: %v", err)
 		return
 	}
 
