@@ -67,7 +67,7 @@ func (e *pingStdOut) ScheduleInterval() string {
 }
 
 func (e *pingStdOut) Run() {
-	fmt.Printf("Pinging with count %d\n", e.counter)
+	utils.GetLogger("jobs-ping-std-out").Infof("Pinging with count %d\n", e.counter)
 	e.counter = e.counter + 1
 	utils.Metrics_PingStdOut_Counter.Inc()
 }
@@ -75,6 +75,6 @@ func (e *pingStdOut) Run() {
 type noOps struct{}
 
 func (e noOps) Run() error {
-	fmt.Println("Run noOps")
+	utils.GetLogger("jobs-no-ops").Info("Run noOps")
 	return nil
 }

@@ -71,7 +71,7 @@ func ginHandlerFunc(f gin.HandlerFunc) gin.HandlerFunc {
 				if len(stacks) > 5 {
 					stacks = stacks[5:] // skip the Stack() and Defer method.
 				}
-				fmt.Printf("[StorageNode]Recover from err %v\nRunning on thread: %s,\nStack: \n%v\n", r, threadId, strings.Join(stacks, "\n"))
+				getLogger(c).Error(fmt.Sprintf("[StorageNode]Recover from err %v\nRunning on thread: %s,\nStack: \n%v\n", r, threadId, strings.Join(stacks, "\n")))
 
 				if err, ok := r.(error); ok {
 					InternalErrorResponse(c, err)
@@ -87,7 +87,8 @@ func ginHandlerFunc(f gin.HandlerFunc) gin.HandlerFunc {
 }
 
 func getLogger(c *gin.Context) utils.Logger {
-	return nil
+	requestUuid := c.Writer.Header().Get(REQUEST_UUID)
+	return utils.GetLogger(requestUuid)
 }
 
 func setUpSession(c *gin.Context) {

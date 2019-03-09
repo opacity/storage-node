@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -32,7 +31,7 @@ func SlackLogError(message string) {
 }
 
 func SlackLogWithLevel(message string, level LogLevel) {
-	fmt.Println(message)
+	GetDefaultLogger().Info(message)
 
 	if len(Env.SlackDebugUrl) == 0 {
 		return
@@ -52,7 +51,7 @@ func SlackLogWithLevel(message string, level LogLevel) {
 	jsonValue, _ := json.Marshal(values)
 	_, err := http.Post(Env.SlackDebugUrl, "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
-		fmt.Printf("Unable to Post to Slack due to %v\n", err)
+		GetDefaultLogger().Errorf("Unable to Post to Slack due to %v", err)
 	}
 }
 

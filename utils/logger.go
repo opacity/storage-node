@@ -43,17 +43,13 @@ func (l loggerWrapper) LogIfError(err error, extraInfo map[string]interface{}) {
 }
 
 // Create a new Logger from a particular requestIdPrefix.
-func GetLogger(sessionId string) Logger {
-	return loggerWrapper{logrus.WithFields(logrus.Fields{"session_id": sessionId})}
-}
-
-func getLogger(loggerTag string) Logger {
-	return loggerWrapper{logrus.WithFields(logrus.Fields{"tag": loggerTag})}
+func GetLogger(requestUuid string) Logger {
+	return loggerWrapper{logrus.WithFields(logrus.Fields{"request_uuid": requestUuid})}
 }
 
 func GetDefaultLogger() Logger {
 	if defaultLogger == nil {
-		defaultLogger = getLogger("DEFAULT")
+		defaultLogger = loggerWrapper{logrus.WithFields(logrus.Fields{})}
 	}
 	return defaultLogger
 }
@@ -61,7 +57,7 @@ func GetDefaultLogger() Logger {
 // Used for Unit tests
 func GetLoggerForTest() Logger {
 	if testLogger == nil {
-		testLogger = getLogger("TEST")
+		testLogger = loggerWrapper{logrus.WithFields(logrus.Fields{"tag": "TEST_ONLY"})}
 	}
 	return testLogger
 }
