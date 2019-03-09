@@ -86,6 +86,10 @@ func ginHandlerFunc(f gin.HandlerFunc) gin.HandlerFunc {
 	return gin.HandlerFunc(injectToRecoverFromPanic)
 }
 
+func getLogger(c *gin.Context) utils.Logger {
+	return nil
+}
+
 func setUpSession(c *gin.Context) {
 	v := c.GetHeader(REQUEST_UUID)
 	if v == "" {
