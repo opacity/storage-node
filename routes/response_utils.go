@@ -8,8 +8,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/opacity/storage-node/utils"
 )
+
+const REQUEST_UUID = "request_uuid"
 
 func InternalErrorResponse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
@@ -53,6 +56,8 @@ func OkResponse(c *gin.Context, response interface{}) {
 
 func ginHandlerFunc(f gin.HandlerFunc) gin.HandlerFunc {
 	injectToRecoverFromPanic := func(c *gin.Context) {
+		setUpSession(c)
+
 		defer func() {
 			// Capture the error
 			if r := recover(); r != nil {
@@ -83,4 +88,12 @@ func ginHandlerFunc(f gin.HandlerFunc) gin.HandlerFunc {
 
 func getLogger(c *gin.Context) utils.Logger {
 	return nil
+}
+
+func setUpSession(c *gin.Context) {
+	v := c.GetHeader(REQUEST_UUID)
+	if v == "" {
+		v = uuid.New().String()
+	}
+	c.Writer.Header().Set(REQUEST_UUID, v)
 }
