@@ -14,6 +14,8 @@ services:
     - "db"
     volumes:
     - ".:/go/src/github.com/opacity/storage-node"
+    - "./data/badger/prod:/var/lib/badger/prod"
+    - "./data/badger/test:/var/lib/badger/test"
     working_dir: "/go/src/github.com/opacity/storage-node"
     command: >
       bash -c "
