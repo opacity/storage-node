@@ -2,9 +2,12 @@
 
 ## Getting Started
 
-The storage node uses Docker to spin up a go app, [mysql, required download](https://dev.mysql.com/downloads/file/?id=479845), and private iota instance (TODO). You must first install [Docker](https://www.docker.com/community-edition).
+The storage node uses Docker to spin up a go app [mysql, required download](https://dev.mysql.com/downloads/file/?id=479845).
+You must first install [Docker](https://www.docker.com/community-edition).
 
-You should also install gopackage first and make sure you have $GOPATH set. And then clone this repo into $GOPATH/src/github.com/opacity/storage-node/<all of git repo>. This is important since we are using govendor and it only works within $GOPATH/src.
+You should also install gopackage first and make sure you have `$GOPATH` set. The go version should be 1.11 or greater.
+Then clone this repo somewhere outside of the `$GOPATH`.  It needs to be outside of the `$GOPATH` so that the go commands
+will use go modules.
 
 ```bash
 # To setup this first time, you need to have .env file. By default, use .env.test for unit test.
@@ -24,14 +27,21 @@ docker-compose up --build -d
 docker-compose up -d
 
 # Run unit test
-govendor sync # make sure to include any dependence
-docker-compose exec app govendor test +local
+docker-compose exec app go test ./...
 
-# Manage new dependence
-govendor list # will list all of new dependence. "m"=missing
-govendor fetch github.com/...  # fetch the dependence and add it to your local vendor folder
-# Govendor is not smart enough to fetch all sub dependence, so you might end to manually fetching all its sub-dependence yourself.
-govendor test +local # test to build it
+# Manage new dependencies
+# If you have installed the project outside of the $GOPATH and your go version is high enough, 
+commands such as:
+go build 
+# and: 
+go test 
+# ...should automatically add new dependencies 
+# as needed and update your go.mod file.
+# To install specific versions you can use commands such as:  
+go get foo@v1.2.3
+go get foo@master
+go get foo@e3702bed2
+# Or, directly edit the go.mod file.
 ```
 
 ---
@@ -65,8 +75,12 @@ GORM: For querying database. See https://github.com/jinzhu/gorm
 
 Gin-Gonic: For HTTP server. See https://github.com/gin-gonic
 
-Govendor: For Package management. See https://github.com/kardianos/govendor
-
+Go Modules: For dependency management. See:  
+https://github.com/golang/go/wiki/Modules
+https://www.kablamo.com.au/blog/2018/12/10/just-tell-me-how-to-use-go-modules
+https://ukiahsmith.com/blog/a-gentle-introduction-to-golang-modules/
+https://arslan.io/2018/08/26/using-go-modules-with-vendor-support-on-travis-ci/
+https://dave.cheney.net/2018/07/16/using-go-modules-with-travis-ci
 
 # ENV
 When you pull down changes for the app, check for new properties that have been added to
