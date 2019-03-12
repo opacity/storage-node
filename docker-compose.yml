@@ -14,8 +14,6 @@ services:
     - "db"
     volumes:
     - ".:/go/src/github.com/opacity/storage-node"
-    - "./data/badger/prod:/var/lib/badger/prod"
-    - "./data/badger/test:/var/lib/badger/test"
     working_dir: "/go/src/github.com/opacity/storage-node"
     command: >
       bash -c "
@@ -24,7 +22,6 @@ services:
         do
           sleep 0.5;
         done;
-        govendor sync
         echo ${DEBUG}
         if [ -z ${DEBUG} ]; then
           echo \"Starting Storage node in PROD mode\";
