@@ -6,7 +6,7 @@ go:
  - "1.11.4"
 
 env:
-  - DOCKER_COMPOSE_VERSION=1.18.0
+  - DOCKER_COMPOSE_VERSION=1.18.0 GO111MODULE=on
 
 addons:
   apt:
@@ -29,12 +29,10 @@ before_install:
   - cp .travis.env .env
 
   - docker-compose --version
-
-install:
   - rm -rf ./data
-  - make govendor
-  - make ethereum-fix
   - docker-compose up --build -d
+
+install: true
 
 before_script:
   - sleep 30
@@ -47,4 +45,4 @@ before_script:
   #   "
 
 script:
-  - docker-compose exec app govendor test +local
+  - docker-compose exec app go test ./...

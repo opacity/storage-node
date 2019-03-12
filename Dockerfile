@@ -1,5 +1,6 @@
 FROM golang:1.11
 ENV ADDR=0.0.0.0
+ENV GO111MODULE=on
 
 RUN go version
 
@@ -14,11 +15,6 @@ RUN rm -rf /var/lib/apt/lists/*
 RUN mkdir -p "$GOPATH/src/github.com/opacity/storage-node"
 WORKDIR "$GOPATH/src/github.com/opacity/storage-node"
 
-RUN go get -u -v github.com/kardianos/govendor
-RUN go get github.com/codegangsta/gin
-RUN gin -h
-
 COPY . .
 
-RUN govendor sync
-RUN go build
+RUN go build ./...
