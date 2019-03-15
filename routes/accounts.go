@@ -25,7 +25,7 @@ type accountCreateRes struct {
 }
 
 type accountPaidRes struct {
-	Paid  bool  `json:"paid" binding:"required"`
+	Paid  bool  `json:"paid"`
 	Error error `json:"error"`
 }
 
