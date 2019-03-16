@@ -4,13 +4,37 @@ services:
   prometheus:
     image: quay.io/prometheus/prometheus:latest
     ports:
-      - "9090:9090"
+      - 9090:9090
     volumes:
-      - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     networks:
       - promnet
+
+  # Explore current machine metric for prometheus to scrape.
+  node-exporter:
+    image: prom/node-exporter
+    ports:
+      - 9100:9100
+    networks:
+      - promnet
+
+# If we decide to turn on our own grafana dashboard
+#  grafana:
+#    image: grafana/grafana
+#    environment:
+#      - GF_SECURITY_ADMIN_PASSWORD=admin
+#      - GF_SERVER_HTTP_PORT=3100
+#    depends_on:
+#      - prometheus
+#    ports:
+#      - 3100:3100
+#    volumes:
+#      - grafana_data:/var/lib/grafana
+#    networks:
+#      - promnet
 
   app:
     build: "."
@@ -69,3 +93,7 @@ networks:
     driver: bridge
   dbnet:
     driver: bridge
+
+volumes:
+  prometheus_data: {}
+# grafana_data: {}

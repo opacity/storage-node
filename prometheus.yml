@@ -24,3 +24,6 @@ scrape_configs:
     static_configs:
     - targets: ['app:3000']
   
+  - job_name: 'node-exporter'
+    static_configs:
+    - targets: ['node-exporter:9100'] 
