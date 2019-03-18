@@ -12,11 +12,16 @@ Eventually we'll have two different account managers.  One for backend managed
 accounts and one for smart contract managed accounts*/
 type AccountManagement struct {
 	CheckIfPaid
+	CheckIfPending
 }
 
 /*CheckIfPaid defines the required parameters and return values for
 an instance of AccountManagement's CheckIfPaid method*/
 type CheckIfPaid func(common.Address, *big.Int) (bool, error)
+
+/*CheckIfPending defines the required parameters and return values for
+an instance of AccountManagement's CheckIfPending method*/
+type CheckIfPending func(common.Address) (bool, error)
 
 /*BackendManagement is an instance of AccountManagement which we will use
 for backend-managed subscriptions*/
@@ -24,7 +29,8 @@ var BackendManagement AccountManagement
 
 func init() {
 	BackendManagement = AccountManagement{
-		CheckIfPaid: checkIfBackendSubscriptionPaid,
+		CheckIfPaid:    checkIfBackendSubscriptionPaid,
+		CheckIfPending: checkIfBackendSubscriptionPaymentPending,
 	}
 }
 
@@ -35,4 +41,8 @@ func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int) (bo
 	}
 
 	return tokenBalance.Int64() >= amount.Int64(), nil
+}
+
+func checkIfBackendSubscriptionPaymentPending(address common.Address) (bool, error) {
+	return EthWrapper.CheckForPendingTokenTxs(address)
 }
