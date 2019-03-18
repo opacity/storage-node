@@ -140,6 +140,11 @@ func (account *Account) CheckIfPaid() (bool, error) {
 	return paid, err
 }
 
+/*CheckIfPending returns whether a transaction is pending to the address*/
+func (account *Account) CheckIfPending() (bool, error) {
+	return BackendManager.CheckIfPending(services.StringToAddress(account.EthAddress))
+}
+
 func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 	paid, err := account.CheckIfPaid()
 	if err != nil {

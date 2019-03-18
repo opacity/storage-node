@@ -12,6 +12,10 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
+const Unpaid = "unpaid"
+const Pending = "pending"
+const Paid = "paid"
+
 type accountCreateReq struct {
 	AccountID        string `json:"accountID" binding:"required,len=64"`
 	StorageLimit     int    `json:"storageLimit" binding:"required,gte=100"`
@@ -25,8 +29,8 @@ type accountCreateRes struct {
 }
 
 type accountPaidRes struct {
-	Paid  bool  `json:"paid"`
-	Error error `json:"error"`
+	PaymentStatus string `json:"paymentStatus"`
+	Error         error  `json:"error"`
 }
 
 /*CreateAccountHandler is a handler for post requests to create accounts*/
@@ -123,6 +127,7 @@ func checkAccountPaymentStatus(c *gin.Context) {
 		return
 	}
 
+	pending := false
 	paid, err := account.CheckIfPaid()
 
 	if paid && err == nil {
@@ -137,10 +142,22 @@ func checkAccountPaymentStatus(c *gin.Context) {
 			BadRequestResponse(c, err)
 			return
 		}
+	} else if !paid && err == nil {
+		pending, err = account.CheckIfPending()
 	}
 
 	OkResponse(c, accountPaidRes{
-		Paid:  paid,
-		Error: err,
+		PaymentStatus: createPaymentStatusResponse(paid, pending),
+		Error:         err,
 	})
+}
+
+func createPaymentStatusResponse(paid bool, pending bool) string {
+	if paid {
+		return Paid
+	}
+	if pending {
+		return Pending
+	}
+	return Unpaid
 }

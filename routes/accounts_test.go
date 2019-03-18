@@ -36,7 +36,7 @@ func returnValidAccount() models.Account {
 
 	return models.Account{
 		AccountID:            accountID,
-		MonthsInSubscription: 12,
+		MonthsInSubscription: models.DefaultMonthsPerSubscription,
 		StorageLocation:      "https://someFileStoragePlace.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
 		StorageUsed:          10,
@@ -104,7 +104,7 @@ func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
 	}
 }
 
-func Test_ExpectErrorIfNoAccount(t *testing.T) {
+func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) {
 	account := returnValidAccount()
 
 	w := accountsTestHelperCheckAccountPaymentStatus(t, account.AccountID)
@@ -117,7 +117,7 @@ func Test_ExpectErrorIfNoAccount(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "no account with that id")
 }
 
-func Test_ExpectNoErrorIfAccountExists(t *testing.T) {
+func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExists(t *testing.T) {
 	account := returnValidAccount()
 	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -135,7 +135,7 @@ func Test_ExpectNoErrorIfAccountExists(t *testing.T) {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
 
-	assert.Contains(t, w.Body.String(), `"paid":true`)
+	assert.Contains(t, w.Body.String(), `"paymentStatus":"paid"`)
 }
 
 func accountsTestHelperCreateAccount(t *testing.T, post accountCreateReq) *httptest.ResponseRecorder {
