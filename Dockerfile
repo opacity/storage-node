@@ -17,7 +17,4 @@ WORKDIR "$GOPATH/src/github.com/opacity/storage-node"
 
 COPY . .
 
-RUN go get github.com/codegangsta/gin
-RUN gin -h
-
 RUN go build ./...
