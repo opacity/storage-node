@@ -23,7 +23,7 @@ func returnValidAccount() Account {
 
 	return Account{
 		AccountID:            utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
-		MonthsInSubscription: 12,
+		MonthsInSubscription: DefaultMonthsPerSubscription,
 		StorageLocation:      "https://someFileStoragePlace.com/12345",
 		StorageLimit:         BasicStorageLimit,
 		StorageUsed:          10,
@@ -230,6 +230,43 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 
 	paid, err := account.CheckIfPaid()
 	assert.False(t, paid)
+	assert.NotNil(t, err)
+	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
+}
+
+func Test_CheckIfPending_Is_Pending(t *testing.T) {
+	account := returnValidAccount()
+
+	BackendManager.CheckIfPending = func(address common.Address) (bool, error) {
+		return true, nil
+	}
+
+	pending, err := account.CheckIfPending()
+	assert.True(t, pending)
+	assert.Nil(t, err)
+}
+
+func Test_CheckIfPending_Is_Not_Pending(t *testing.T) {
+	account := returnValidAccount()
+
+	BackendManager.CheckIfPending = func(address common.Address) (bool, error) {
+		return false, nil
+	}
+
+	pending, err := account.CheckIfPending()
+	assert.False(t, pending)
+	assert.Nil(t, err)
+}
+
+func Test_CheckIfPending_Error_While_Checking(t *testing.T) {
+	account := returnValidAccount()
+
+	BackendManager.CheckIfPending = func(address common.Address) (bool, error) {
+		return false, errors.New("some error")
+	}
+
+	pending, err := account.CheckIfPending()
+	assert.False(t, pending)
 	assert.NotNil(t, err)
 	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
 }

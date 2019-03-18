@@ -31,6 +31,7 @@ type Eth struct {
 	GetETHBalance
 	TransferToken
 	TransferETH
+	CheckForPendingTokenTxs
 }
 
 /*GenerateWallet - generate valid Ethereum network address and private key*/
@@ -47,6 +48,9 @@ type TransferToken func(from common.Address, privateKey *ecdsa.PrivateKey, to co
 
 /*TransferETH - send ETH to an ethereum address*/
 type TransferETH func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error)
+
+/*CheckForPendingTokenTxs - checks whether a pending token transaction exists*/
+type CheckForPendingTokenTxs func(address common.Address) (bool, error)
 
 /*AddressToNonceMap is a type of mapping addresses to nonces*/
 type AddressToNonceMap map[common.Address]uint64
@@ -85,11 +89,12 @@ func init() {
 	MainWalletAddress = common.HexToAddress(utils.Env.MainWalletAddress)
 
 	EthWrapper = Eth{
-		GenerateWallet:  generateWallet,
-		TransferToken:   transferToken,
-		TransferETH:     transferETH,
-		GetTokenBalance: getTokenBalance,
-		GetETHBalance:   getETHBalance,
+		GenerateWallet:          generateWallet,
+		TransferToken:           transferToken,
+		TransferETH:             transferETH,
+		GetTokenBalance:         getTokenBalance,
+		GetETHBalance:           getETHBalance,
+		CheckForPendingTokenTxs: checkForPendingTokenTxs,
 	}
 }
 
@@ -132,7 +137,7 @@ func generateWallet() (addr common.Address, privateKey string, err error) {
 }
 
 // Check balance from a valid address
-func getTokenBalance(addr common.Address) *big.Int {
+func getTokenBalance(address common.Address) *big.Int {
 	// connect ethereum client
 	client, err := sharedClient()
 	if err != nil {
@@ -148,7 +153,7 @@ func getTokenBalance(addr common.Address) *big.Int {
 		return big.NewInt(-1)
 	}
 	callOpts := bind.CallOpts{Pending: false, From: OpacityAddress}
-	balance, err := Opacity.BalanceOf(&callOpts, addr)
+	balance, err := Opacity.BalanceOf(&callOpts, address)
 	if err != nil {
 		utils.LogIfError(err, nil)
 		return big.NewInt(-1)
@@ -283,6 +288,30 @@ func transferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAd
 
 	// return signed transactions
 	return signedTxs, signedTx.Hash().Hex(), int64(signedTx.Nonce()), nil
+}
+
+func checkForPendingTokenTxs(address common.Address) (bool, error) {
+	// connect ethereum client
+	client, err := sharedClient()
+	if err != nil {
+		utils.LogIfError(err, nil)
+		return false, err
+	}
+
+	// instance of the token contract
+	OpacityAddress := common.HexToAddress(utils.Env.ContractAddress)
+	Opacity, err := NewOpacity(OpacityAddress, client)
+	if err != nil {
+		utils.LogIfError(err, nil)
+		return false, err
+	}
+	callOpts := bind.CallOpts{Pending: true, From: OpacityAddress}
+	balance, err := Opacity.BalanceOf(&callOpts, address)
+	if err != nil {
+		utils.LogIfError(err, nil)
+		return false, err
+	}
+	return balance.Int64() > big.NewInt(0).Int64(), nil
 }
 
 /*RemoveFromAddressNonceMap removes a key with a certain address from the map of addresses to their
