@@ -306,3 +306,34 @@ func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
 
 	assert.NotNil(t, account.UseStorageSpaceInByte(95*1e9 /* Upload 95GB. */))
 }
+
+func Test_CreateSpaceUsedReport(t *testing.T) {
+	expectedSpaceAlloted := 400
+	expectedSpaceUsed := 234.56
+
+	if err := DB.Delete(Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+
+	for i := 0; i < 4; i++ {
+		accountPaid := returnValidAccount()
+		accountPaid.StorageUsed = expectedSpaceUsed / 4
+		accountPaid.PaymentStatus = PaymentStatusType(utils.RandIndex(5) + 2)
+		if err := DB.Create(&accountPaid).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+	}
+
+	for i := 0; i < 4; i++ {
+		accountUnpaid := returnValidAccount()
+		accountUnpaid.StorageUsed = expectedSpaceUsed / 4
+		if err := DB.Create(&accountUnpaid).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+	}
+
+	spaceReport := CreateSpaceUsedReport()
+
+	assert.Equal(t, expectedSpaceAlloted, spaceReport.SpaceAllotedSum)
+	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
+}
