@@ -27,6 +27,12 @@ type Account struct {
 	MetadataKey          string            `json:"metadataKey" binding:"omitempty,len=64"`
 }
 
+/*SpaceReport defines a model for capturing the space alloted compared to space used*/
+type SpaceReport struct {
+	SpaceAllotedSum  int
+	SpaceUsedSum float64
+}
+
 /*Invoice is the invoice object we will return to the client*/
 type Invoice struct {
 	Cost       float64 `json:"cost" binding:"required,gte=0"`
@@ -171,6 +177,14 @@ func GetAccountById(accountID string) (Account, error) {
 	account := Account{}
 	err := DB.Where("account_id = ?", accountID).First(&account).Error
 	return account, err
+}
+
+/*CreateSpaceUsedReport populates a model of the space alloted versus space used*/
+func CreateSpaceUsedReport() SpaceReport {
+	var result SpaceReport
+	DB.Raw("SELECT SUM(storage_limit) as space_alloted_sum, SUM(storage_used) as space_used_sum FROM accounts WHERE payment_status >= ?",
+		InitialPaymentReceived).Scan(&result)
+	return result
 }
 
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the
