@@ -23,4 +23,9 @@ var (
 	Metrics_404_Response_Counter = Metrics_Http_Response_Counter.With(prometheus.Labels{"response_code": "404"})
 	Metrics_500_Response_Counter = Metrics_Http_Response_Counter.With(prometheus.Labels{"response_code": "500"})
 	Metrics_503_Response_Counter = Metrics_Http_Response_Counter.With(prometheus.Labels{"response_code": "503"})
+
+	Metrics_Percent_Of_Space_Used = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "storagenode_percent_of_space_used_gauge",
+		Help: "Percent of space used vs. space alloted, for all paid accounts",
+	})
 )
