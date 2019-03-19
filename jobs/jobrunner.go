@@ -41,6 +41,7 @@ func ScheduleBackgroundJobs() {
 		&pingStdOut{counter: 1},
 		s3Deleter{},
 		s3ExpireAccess{},
+		spaceUsageReporter{},
 	}
 
 	for _, s := range jobs {
