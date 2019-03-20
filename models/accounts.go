@@ -29,8 +29,8 @@ type Account struct {
 
 /*SpaceReport defines a model for capturing the space alloted compared to space used*/
 type SpaceReport struct {
-	SpaceAllotedSum  int
-	SpaceUsedSum float64
+	SpaceAllotedSum int
+	SpaceUsedSum    float64
 }
 
 /*Invoice is the invoice object we will return to the client*/
@@ -185,6 +185,13 @@ func CreateSpaceUsedReport() SpaceReport {
 	DB.Raw("SELECT SUM(storage_limit) as space_alloted_sum, SUM(storage_used) as space_used_sum FROM accounts WHERE payment_status >= ?",
 		InitialPaymentReceived).Scan(&result)
 	return result
+}
+
+/*PurgeOldUnpaidAccounts deletes accounts past a certain age which have not been paid for*/
+func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
+	err := DB.Where("created_at < ? AND payment_status = ?",
+		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainUnpaidAccounts)), InitialPaymentInProgress).Delete(&Account{}).Error
+	return err
 }
 
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the

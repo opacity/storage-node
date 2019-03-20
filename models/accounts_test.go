@@ -311,7 +311,7 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 	expectedSpaceAlloted := 400
 	expectedSpaceUsed := 234.56
 
-	if err := DB.Delete(Account{}).Error; err != nil {
+	if err := DB.Delete(&Account{}).Error; err != nil {
 		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
 	}
 
@@ -336,4 +336,58 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 
 	assert.Equal(t, expectedSpaceAlloted, spaceReport.SpaceAllotedSum)
 	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
+}
+
+func Test_PurgeOldUnpaidAccounts(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+
+	for i := 0; i < 4; i++ {
+		accountPaid := returnValidAccount()
+		if err := DB.Create(&accountPaid).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+	}
+
+	accounts := []Account{}
+	DB.Find(&accounts)
+	assert.Equal(t, 4, len(accounts))
+
+	// after cutoff time and payment has been received
+	// should NOT get purged
+	accounts[0].CreatedAt = time.Now().Add(-1 * 6 * 24 * time.Hour)
+	accounts[0].PaymentStatus = InitialPaymentReceived
+
+	// before cutoff time but payment has been received
+	// should NOT get purged
+	accounts[1].CreatedAt = time.Now().Add(-1 * 8 * 24 * time.Hour)
+	accounts[1].PaymentStatus = InitialPaymentReceived
+
+	// after cutoff time, payment still in progress
+	// should NOT get purged
+	accounts[2].CreatedAt = time.Now().Add(-1 * 6 * 24 * time.Hour)
+	accounts[2].PaymentStatus = InitialPaymentInProgress
+
+	// before cutoff time, payment still in progress
+	// this one should get purged
+	accounts[3].CreatedAt = time.Now().Add(-1 * 8 * 24 * time.Hour)
+	accounts[3].PaymentStatus = InitialPaymentInProgress
+
+	accountToBeDeletedID := accounts[3].AccountID
+
+	DB.Save(&accounts[0])
+	DB.Save(&accounts[1])
+	DB.Save(&accounts[2])
+	DB.Save(&accounts[3])
+
+	PurgeOldUnpaidAccounts(7)
+
+	accounts = []Account{}
+	DB.Find(&accounts)
+	assert.Equal(t, 3, len(accounts))
+
+	accounts = []Account{}
+	DB.Where("account_id = ?", accountToBeDeletedID).Find(&accounts)
+	assert.Equal(t, 0, len(accounts))
 }
