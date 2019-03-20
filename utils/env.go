@@ -8,7 +8,10 @@ import (
 
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
+	"strconv"
 )
+
+const defaultAccountRetentionDays = 7
 
 /*StorageNodeEnv represents what our storage node environment should look like*/
 type StorageNodeEnv struct {
@@ -30,6 +33,8 @@ type StorageNodeEnv struct {
 	// Debug purpose
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
 	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
+
+	AccountRetentionDays int `env:"ACCOUNT_RETENTION_DAYS" envDefault:"7"`
 }
 
 /*Env is the environment for a particular node while the application is running*/
@@ -94,14 +99,23 @@ func tryLookUp() error {
 	contractAddress := AppendLookupErrors("TOKEN_CONTRACT_ADDRESS", &collectedErrors)
 	ethNodeURL := AppendLookupErrors("ETH_NODE_URL", &collectedErrors)
 	mainWalletAddress := AppendLookupErrors("MAIN_WALLET_ADDRESS", &collectedErrors)
+	accountRetentionDaysStr := AppendLookupErrors("ACCOUNT_RETENTION_DAYS", &collectedErrors)
+	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
+	if err != nil {
+		collectedErrors = append(collectedErrors, err)
+	}
+	if accountRetentionDays <= 0 {
+		accountRetentionDays = defaultAccountRetentionDays
+	}
 
 	serverEnv := StorageNodeEnv{
-		ProdDatabaseURL:   prodDBUrl,
-		TestDatabaseURL:   testDBUrl,
-		EncryptionKey:     encryptionKey,
-		ContractAddress:   contractAddress,
-		EthNodeURL:        ethNodeURL,
-		MainWalletAddress: mainWalletAddress,
+		ProdDatabaseURL:      prodDBUrl,
+		TestDatabaseURL:      testDBUrl,
+		EncryptionKey:        encryptionKey,
+		ContractAddress:      contractAddress,
+		EthNodeURL:           ethNodeURL,
+		MainWalletAddress:    mainWalletAddress,
+		AccountRetentionDays: accountRetentionDays,
 	}
 
 	Env = serverEnv
