@@ -391,3 +391,31 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 	DB.Where("account_id = ?", accountToBeDeletedID).Find(&accounts)
 	assert.Equal(t, 0, len(accounts))
 }
+
+func Test_GetAccountsByPaymentStatus(t *testing.T) {
+
+}
+
+func Test_SetAccountsToNextPaymentStatus(t *testing.T) {
+
+}
+
+func Test_handleAccountWithPaymentInProgress(t *testing.T) {
+
+}
+
+func Test_handleAccountThatNeedsGas(t *testing.T) {
+
+}
+
+func Test_handleAccountReceivingGas(t *testing.T) {
+
+}
+
+func Test_handleAccountReadyForCollection(t *testing.T) {
+
+}
+
+func Test_handleAccountWithCollectionInProgress(t *testing.T) {
+
+}

@@ -15,16 +15,17 @@ const defaultAccountRetentionDays = 7
 
 /*StorageNodeEnv represents what our storage node environment should look like*/
 type StorageNodeEnv struct {
-	ProdDatabaseURL   string `env:"PROD_DATABASE_URL" envDefault:""`
-	TestDatabaseURL   string `env:"TEST_DATABASE_URL" envDefault:""`
-	DatabaseURL       string `envDefault:""`
-	EncryptionKey     string `env:"ENCRYPTION_KEY" envDefault:""`
-	GoEnv             string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
-	ContractAddress   string `env:"TOKEN_CONTRACT_ADDRESS" envDefault:""`
-	EthNodeURL        string `env:"ETH_NODE_URL" envDefault:""`
-	MainWalletAddress string `env:"MAIN_WALLET_ADDRESS" envDefault:""`
-	DisplayName       string `env:"DISPLAY_NAME" envDefault:"storage-node-test"`
-	EnableJobs        bool   `env:"ENABLE_JOB" envDefault:"false"`
+	ProdDatabaseURL      string `env:"PROD_DATABASE_URL" envDefault:""`
+	TestDatabaseURL      string `env:"TEST_DATABASE_URL" envDefault:""`
+	DatabaseURL          string `envDefault:""`
+	EncryptionKey        string `env:"ENCRYPTION_KEY" envDefault:""`
+	GoEnv                string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
+	ContractAddress      string `env:"TOKEN_CONTRACT_ADDRESS" envDefault:""`
+	EthNodeURL           string `env:"ETH_NODE_URL" envDefault:""`
+	MainWalletAddress    string `env:"MAIN_WALLET_ADDRESS" envDefault:""`
+	MainWalletPrivateKey string `env:"MAIN_WALLET_PRIVATE_KEY" envDefault:""`
+	DisplayName          string `env:"DISPLAY_NAME" envDefault:"storage-node-test"`
+	EnableJobs           bool   `env:"ENABLE_JOB" envDefault:"false"`
 
 	// Aws configuration
 	BucketName string `env:"AWS_BUCKET_NAME" envDefault:""`
@@ -99,6 +100,7 @@ func tryLookUp() error {
 	contractAddress := AppendLookupErrors("TOKEN_CONTRACT_ADDRESS", &collectedErrors)
 	ethNodeURL := AppendLookupErrors("ETH_NODE_URL", &collectedErrors)
 	mainWalletAddress := AppendLookupErrors("MAIN_WALLET_ADDRESS", &collectedErrors)
+	mainWalletPrivateKey := AppendLookupErrors("MAIN_WALLET_PRIVATE_KEY", &collectedErrors)
 	accountRetentionDaysStr := AppendLookupErrors("ACCOUNT_RETENTION_DAYS", &collectedErrors)
 	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
 	if err != nil {
@@ -115,6 +117,7 @@ func tryLookUp() error {
 		ContractAddress:      contractAddress,
 		EthNodeURL:           ethNodeURL,
 		MainWalletAddress:    mainWalletAddress,
+		MainWalletPrivateKey: mainWalletPrivateKey,
 		AccountRetentionDays: accountRetentionDays,
 	}
 

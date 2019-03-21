@@ -44,7 +44,7 @@ type GetTokenBalance func(common.Address) /*In Wei Unit*/ *big.Int
 type GetETHBalance func(common.Address) /*In Wei Unit*/ *big.Int
 
 /*TransferToken - send Token from one account to another*/
-type TransferToken func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address, opqAmount big.Int) (bool, string, int64)
+type TransferToken func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, opqAmount big.Int) (bool, string, int64)
 
 /*TransferETH - send ETH to an ethereum address*/
 type TransferETH func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error)
@@ -77,16 +77,27 @@ const (
 
 var (
 	/*EthWrapper is an instance of our ethereum wrapper*/
-	EthWrapper        Eth
-	client            *ethclient.Client
-	mtx               sync.Mutex
-	chainId           = params.MainnetChainConfig.ChainID
-	addressNonceMap   AddressToNonceMap
-	MainWalletAddress common.Address
+	EthWrapper                     Eth
+	client                         *ethclient.Client
+	mtx                            sync.Mutex
+	chainId                        = params.MainnetChainConfig.ChainID
+	addressNonceMap                AddressToNonceMap
+	MainWalletAddress              common.Address
+	MainWalletPrivateKey           *ecdsa.PrivateKey
+	DefaultGasPrice                = utils.ConvertGweiToWei(big.NewInt(2))
+	DefaultGasForPaymentCollection = new(big.Int).Mul(DefaultGasPrice, big.NewInt(int64(GasLimitTokenSend)))
 )
 
 func init() {
+	var err error
+	if utils.Env.MainWalletPrivateKey == "" || utils.Env.MainWalletAddress == "" {
+		err = errors.New("need MainWalletAddress and MainWalletPrivateKey for storage node's main wallet")
+		utils.LogIfError(err, nil)
+		utils.PanicOnError(err)
+	}
 	MainWalletAddress = common.HexToAddress(utils.Env.MainWalletAddress)
+	MainWalletPrivateKey, err = StringToPrivateKey(utils.Env.MainWalletPrivateKey)
+	utils.LogIfError(err, nil)
 
 	EthWrapper = Eth{
 		GenerateWallet:          generateWallet,
@@ -374,4 +385,9 @@ func printTx(tx *types.Transaction) {
 /*StringToAddress converts a string to a common.Address*/
 func StringToAddress(address string) common.Address {
 	return common.HexToAddress(address)
+}
+
+/* StringToPrivateKey Utility HexToECDSA parses a secp256k1 private key*/
+func StringToPrivateKey(hexPrivateKey string) (*ecdsa.PrivateKey, error) {
+	return crypto.HexToECDSA(hexPrivateKey)
 }

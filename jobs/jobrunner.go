@@ -42,6 +42,8 @@ func ScheduleBackgroundJobs() {
 		s3Deleter{},
 		s3ExpireAccess{},
 		spaceUsageReporter{},
+		unpaidAccountDeleter{},
+		tokenCollector{},
 	}
 
 	for _, s := range jobs {
