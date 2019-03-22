@@ -154,8 +154,7 @@ func (account *Account) CheckIfPaid() (bool, error) {
 	paid, err := BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress),
 		costInWei)
 	if paid {
-		account.PaymentStatus = InitialPaymentReceived
-		DB.Save(&account)
+		SetAccountsToNextPaymentStatus([]Account{*(account)})
 	}
 	return paid, err
 }
@@ -212,7 +211,7 @@ func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
 func GetAccountsByPaymentStatus(paymentStatus PaymentStatusType) []Account {
 	accounts := []Account{}
 	err := DB.Where("payment_status = ?",
-		paymentStatus).Delete(&accounts).Error
+		paymentStatus).Find(&accounts).Error
 	utils.LogIfError(err, nil)
 	return accounts
 }
@@ -220,8 +219,7 @@ func GetAccountsByPaymentStatus(paymentStatus PaymentStatusType) []Account {
 /*SetAccountsToNextPaymentStatus transitions an account to the next payment status*/
 func SetAccountsToNextPaymentStatus(accounts []Account) {
 	for _, account := range accounts {
-		account.PaymentStatus = getNextPaymentStatus(account.PaymentStatus)
-		err := DB.Save(&account).Error
+		err := DB.Model(&account).Updates(Account{PaymentStatus: getNextPaymentStatus(account.PaymentStatus)}).Error
 		utils.LogIfError(err, nil)
 	}
 }
@@ -237,7 +235,10 @@ func getNextPaymentStatus(paymentStatus PaymentStatusType) PaymentStatusType {
 
 /*handleAccountWithPaymentInProgress checks if the user has paid for their account, and if so
 sets the account to the next payment status, adds the metadata key to badger, and deletes the
-metadata key from the SQL DB.*/
+metadata key from the SQL DB.
+
+Not calling SetAccountsToNextPaymentStatus here because CheckIfPaid calls it
+*/
 func handleAccountWithPaymentInProgress(account Account) error {
 	paid, err := account.CheckIfPaid()
 	if paid && err == nil {
@@ -246,11 +247,9 @@ func handleAccountWithPaymentInProgress(account Account) error {
 		if err = utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
 			return err
 		}
-		// Delete the metadata key on the account model
-		if err = DB.Model(&account).Updates(Account{MetadataKey: ""}).Error; err != nil {
+		if err = DB.Model(&account).Update("metadata_key", "").Error; err != nil {
 			return err
 		}
-		SetAccountsToNextPaymentStatus([]Account{account})
 	}
 	return nil
 }
@@ -258,13 +257,10 @@ func handleAccountWithPaymentInProgress(account Account) error {
 /*handleAccountThatNeedsGas sends some ETH to an account that we will later need to collect tokens from and sets the
 account's payment status to the next status.*/
 func handleAccountThatNeedsGas(account Account) error {
-	balance := EthWrapper.GetTokenBalance(services.StringToAddress(account.EthAddress))
+	paid, _ := account.CheckIfPaid()
 	var transferErr error
-
-	if balance.Int64() == 0 {
-		utils.LogIfError(errors.New("expected a token balance but found 0"), nil)
-	} else if balance.Int64() > 0 {
-		_, _, _, transferErr := EthWrapper.TransferETH(
+	if paid {
+		_, _, _, transferErr = EthWrapper.TransferETH(
 			services.MainWalletAddress,
 			services.MainWalletPrivateKey,
 			services.StringToAddress(account.EthAddress),
@@ -324,7 +320,7 @@ func handleAccountReadyForCollection(account Account) error {
 is zero, it means the collection has succeeded and the payment status is set to the next status*/
 func handleAccountWithCollectionInProgress(account Account) error {
 	balance := EthWrapper.GetTokenBalance(services.StringToAddress(account.EthAddress))
-	if balance.Int64() == 0 {
+	if balance.Int64() > 0 {
 		SetAccountsToNextPaymentStatus([]Account{account})
 	}
 	return nil

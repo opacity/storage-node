@@ -10,26 +10,28 @@ import (
 
 	"math/big"
 
+	"crypto/ecdsa"
+
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
 
-var testNonce = "23384a8eabc4a4ba091cfdbcb3dbacdc27000c03e318fd52accb8e2380f11320"
-
 func returnValidAccount() Account {
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	accountID := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 
 	return Account{
-		AccountID:            utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		AccountID:            accountID,
 		MonthsInSubscription: DefaultMonthsPerSubscription,
 		StorageLocation:      "https://someFileStoragePlace.com/12345",
 		StorageLimit:         BasicStorageLimit,
 		StorageUsed:          10,
 		PaymentStatus:        InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
-		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, testNonce)),
+		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
 	}
 }
 
@@ -200,10 +202,17 @@ func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 		return true, nil
 	}
 
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
 	paid, err := account.CheckIfPaid()
 	assert.True(t, paid)
 	assert.Nil(t, err)
-	assert.Equal(t, InitialPaymentReceived, account.PaymentStatus)
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+
+	assert.Equal(t, InitialPaymentReceived, accountFromDB.PaymentStatus)
 }
 
 func Test_CheckIfPaid_Not_Paid(t *testing.T) {
@@ -214,10 +223,17 @@ func Test_CheckIfPaid_Not_Paid(t *testing.T) {
 		return false, nil
 	}
 
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
 	paid, err := account.CheckIfPaid()
 	assert.False(t, paid)
 	assert.Nil(t, err)
-	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+
+	assert.Equal(t, InitialPaymentInProgress, accountFromDB.PaymentStatus)
 }
 
 func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
@@ -228,10 +244,17 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 		return false, errors.New("some error")
 	}
 
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
 	paid, err := account.CheckIfPaid()
 	assert.False(t, paid)
 	assert.NotNil(t, err)
-	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+
+	assert.Equal(t, InitialPaymentInProgress, accountFromDB.PaymentStatus)
 }
 
 func Test_CheckIfPending_Is_Pending(t *testing.T) {
@@ -393,29 +416,332 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 }
 
 func Test_GetAccountsByPaymentStatus(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
 
+	// for each payment status, check that we can get the accounts of that status and that the account IDs
+	// of the accounts returned from GetAccountsByPaymentStatus match the accounts we created for the test
+	for paymentStatus := InitialPaymentInProgress; paymentStatus <= PaymentRetrievalComplete; paymentStatus++ {
+		account := returnValidAccount()
+		account.PaymentStatus = paymentStatus
+		if err := DB.Create(&account).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+		expectedAccountID := account.AccountID
+		accounts := GetAccountsByPaymentStatus(paymentStatus)
+		assert.Equal(t, 1, len(accounts))
+		assert.Equal(t, expectedAccountID, accounts[0].AccountID)
+	}
 }
 
 func Test_SetAccountsToNextPaymentStatus(t *testing.T) {
+	for paymentStatus := InitialPaymentInProgress; paymentStatus <= PaymentRetrievalComplete; paymentStatus++ {
+		if err := DB.Delete(&Account{}).Error; err != nil {
+			t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+		}
+		account := returnValidAccount()
+
+		// set to starting payment status
+		account.PaymentStatus = paymentStatus
+		if err := DB.Create(&account).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+		accounts := GetAccountsByPaymentStatus(paymentStatus)
+
+		// verify 1 account was returned and that its payment status is as we expected
+		assert.Equal(t, 1, len(accounts))
+		assert.Equal(t, paymentStatus, accounts[0].PaymentStatus)
+
+		// call method under test
+		SetAccountsToNextPaymentStatus(accounts)
+
+		// get the next status in the sequence, or keep the same status if the it was the
+		// last status in the sequence
+		newStatus := getNextPaymentStatus(paymentStatus)
+
+		// verify that the starting paymentStatus and newStatus are not equal, UNLESS
+		// they are both the last status in the sequence
+		assert.True(t, newStatus != paymentStatus ||
+			(newStatus == paymentStatus && paymentStatus == PaymentRetrievalComplete))
+
+		// if the payment statuses are not equal verify there are no accounts returned
+		// with the original payment status
+		if paymentStatus != newStatus {
+			accounts = GetAccountsByPaymentStatus(paymentStatus)
+			assert.Equal(t, 0, len(accounts))
+		}
+
+		// verify there is 1 account with the new status
+		accounts = GetAccountsByPaymentStatus(newStatus)
+		assert.Equal(t, 1, len(accounts))
+	}
+}
+
+func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+	account := returnValidAccount()
+	account.PaymentStatus = InitialPaymentInProgress
+	account.MetadataKey = utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return true, nil
+	}
+
+	// grab the account from the DB
+	accountFromDB, _ := GetAccountById(account.AccountID)
+
+	// verify no badger pair exists with that metadata key
+	_, _, err := utils.GetValueFromKV(accountFromDB.MetadataKey)
+	assert.NotNil(t, err)
+
+	// verify that the account has a metadata key
+	assert.Equal(t, 64, len(accountFromDB.MetadataKey))
+
+	verifyPaymentStatusExpectations(t, account, InitialPaymentInProgress, InitialPaymentReceived, handleAccountWithPaymentInProgress)
+
+	// The user has paid so we expect changes after calling handleAccountWithPaymentInProgress
+
+	// grab the account from the DB
+	accountFromDB, _ = GetAccountById(account.AccountID)
+
+	// verify a badger pair exists with that metadata key
+	metadata, _, err := utils.GetValueFromKV(account.MetadataKey)
+	assert.Nil(t, err)
+	assert.Equal(t, "", metadata)
+
+	//verify account metadata key is deleted
+	assert.Equal(t, 0, len(accountFromDB.MetadataKey))
+}
+
+func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+	account := returnValidAccount()
+	account.PaymentStatus = InitialPaymentInProgress
+	account.MetadataKey = utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
+	// grab the account from the DB
+	accountFromDB, _ := GetAccountById(account.AccountID)
+
+	// verify no badger pair exists with that metadata key
+	_, _, err := utils.GetValueFromKV(accountFromDB.MetadataKey)
+	assert.NotNil(t, err)
+
+	// verify that the account has a metadata key
+	assert.Equal(t, 64, len(accountFromDB.MetadataKey))
+
+	verifyPaymentStatusExpectations(t, account, InitialPaymentInProgress, InitialPaymentInProgress, handleAccountWithPaymentInProgress)
+
+	// The user has not paid so we expect everything to be the same
+
+	// grab the account from the DB
+	accountFromDB, _ = GetAccountById(account.AccountID)
+
+	// verify no badger pair exists with that metadata key
+	_, _, err = utils.GetValueFromKV(accountFromDB.MetadataKey)
+	assert.NotNil(t, err)
+
+	// verify that the account has a metadata key
+	assert.Equal(t, 64, len(accountFromDB.MetadataKey))
+}
+
+func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+	account := returnValidAccount()
+	account.PaymentStatus = InitialPaymentReceived
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	EthWrapper.TransferETH = func(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey,
+		toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
+		// not returning anything important for the first three return values because
+		// handleAccountThatNeedsGas only cares about the 4th return value which will
+		// be an error or nil
+		return types.Transactions{}, "", -1, nil
+	}
+
+	verifyPaymentStatusExpectations(t, account, InitialPaymentReceived, GasTransferInProgress, handleAccountThatNeedsGas)
 
 }
 
-func Test_handleAccountWithPaymentInProgress(t *testing.T) {
+func Test_handleAccountThatNeedsGas_transfer_error(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+	account := returnValidAccount()
+	account.PaymentStatus = InitialPaymentReceived
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	EthWrapper.TransferETH = func(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey,
+		toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
+		// not returning anything important for the first three return values because
+		// handleAccountThatNeedsGas only cares about the 4th return value which will
+		// be an error or nil
+		return types.Transactions{}, "", -1, errors.New("SOMETHING HAPPENED")
+	}
+
+	verifyPaymentStatusExpectations(t, account, InitialPaymentReceived, InitialPaymentReceived, handleAccountThatNeedsGas)
 
 }
 
-func Test_handleAccountThatNeedsGas(t *testing.T) {
+func Test_handleAccountReceivingGas_gas_received(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+	account := returnValidAccount()
+	account.PaymentStatus = GasTransferInProgress
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+		return big.NewInt(1)
+	}
+
+	verifyPaymentStatusExpectations(t, account, GasTransferInProgress, GasTransferComplete, handleAccountReceivingGas)
 
 }
 
-func Test_handleAccountReceivingGas(t *testing.T) {
+func Test_handleAccountReceivingGas_gas_not_received(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+	account := returnValidAccount()
+	account.PaymentStatus = GasTransferInProgress
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+		return big.NewInt(-1)
+	}
+
+	verifyPaymentStatusExpectations(t, account, GasTransferInProgress, GasTransferInProgress, handleAccountReceivingGas)
 
 }
 
-func Test_handleAccountReadyForCollection(t *testing.T) {
+func Test_handleAccountReadyForCollection_transfer_success(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+	account := returnValidAccount()
+	account.PaymentStatus = GasTransferComplete
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+		return big.NewInt(1)
+	}
+	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+		return big.NewInt(1)
+	}
+	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+		opqAmount big.Int) (bool, string, int64) {
+		// all that handleAccountReadyForCollection cares about is the first return value
+		return true, "", 1
+	}
+
+	verifyPaymentStatusExpectations(t, account, GasTransferComplete, PaymentRetrievalInProgress, handleAccountReadyForCollection)
 
 }
 
-func Test_handleAccountWithCollectionInProgress(t *testing.T) {
+func Test_handleAccountReadyForCollection_transfer_failed(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+	account := returnValidAccount()
+	account.PaymentStatus = GasTransferComplete
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
 
+	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+		return big.NewInt(1)
+	}
+	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+		return big.NewInt(1)
+	}
+	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+		opqAmount big.Int) (bool, string, int64) {
+		// all that handleAccountReadyForCollection cares about is the first return value
+		return false, "", 1
+	}
+
+	verifyPaymentStatusExpectations(t, account, GasTransferComplete, GasTransferComplete, handleAccountReadyForCollection)
+
+}
+
+func Test_handleAccountWithCollectionInProgress_balance_found(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+	account := returnValidAccount()
+	account.PaymentStatus = PaymentRetrievalInProgress
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+		return big.NewInt(1)
+	}
+
+	verifyPaymentStatusExpectations(t, account, PaymentRetrievalInProgress, PaymentRetrievalComplete, handleAccountWithCollectionInProgress)
+}
+
+func Test_handleAccountWithCollectionInProgress_balance_not_found(t *testing.T) {
+	if err := DB.Delete(&Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+	account := returnValidAccount()
+	account.PaymentStatus = PaymentRetrievalInProgress
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+		return big.NewInt(0)
+	}
+
+	verifyPaymentStatusExpectations(t, account, PaymentRetrievalInProgress, PaymentRetrievalInProgress, handleAccountWithCollectionInProgress)
+}
+
+func verifyPaymentStatusExpectations(t *testing.T,
+	account Account,
+	startingStatus PaymentStatusType,
+	endingStatus PaymentStatusType,
+	methodUnderTest func(Account) error) {
+	// grab the account from the DB
+	accountFromDB, _ := GetAccountById(account.AccountID)
+
+	// verify account's payment status is what we expect
+	assert.Equal(t, startingStatus, accountFromDB.PaymentStatus)
+
+	// call method under test
+	methodUnderTest(accountFromDB)
+
+	// grab the account from the DB
+	accountFromDB, _ = GetAccountById(account.AccountID)
+
+	// verify account's payment status is what we expect
+	assert.Equal(t, endingStatus, accountFromDB.PaymentStatus)
 }

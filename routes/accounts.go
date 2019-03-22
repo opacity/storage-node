@@ -138,7 +138,7 @@ func checkAccountPaymentStatus(c *gin.Context) {
 			return
 		}
 		// Delete the metadata key on the account model
-		if err := models.DB.Model(&account).Updates(models.Account{MetadataKey: ""}).Error; err != nil {
+		if err = models.DB.Model(&account).Update("metadata_key", "").Error; err != nil {
 			BadRequestResponse(c, err)
 			return
 		}

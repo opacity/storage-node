@@ -6,9 +6,10 @@ import (
 
 	"os"
 
+	"strconv"
+
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
-	"strconv"
 )
 
 const defaultAccountRetentionDays = 7

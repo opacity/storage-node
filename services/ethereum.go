@@ -89,6 +89,18 @@ var (
 )
 
 func init() {
+	EthWrapper = Eth{
+		GenerateWallet:          generateWallet,
+		TransferToken:           transferToken,
+		TransferETH:             transferETH,
+		GetTokenBalance:         getTokenBalance,
+		GetETHBalance:           getETHBalance,
+		CheckForPendingTokenTxs: checkForPendingTokenTxs,
+	}
+}
+
+/*SetWallet gets the address and private key for storage node's main wallet*/
+func SetWallet() {
 	var err error
 	if utils.Env.MainWalletPrivateKey == "" || utils.Env.MainWalletAddress == "" {
 		err = errors.New("need MainWalletAddress and MainWalletPrivateKey for storage node's main wallet")
@@ -98,15 +110,6 @@ func init() {
 	MainWalletAddress = common.HexToAddress(utils.Env.MainWalletAddress)
 	MainWalletPrivateKey, err = StringToPrivateKey(utils.Env.MainWalletPrivateKey)
 	utils.LogIfError(err, nil)
-
-	EthWrapper = Eth{
-		GenerateWallet:          generateWallet,
-		TransferToken:           transferToken,
-		TransferETH:             transferETH,
-		GetTokenBalance:         getTokenBalance,
-		GetETHBalance:           getETHBalance,
-		CheckForPendingTokenTxs: checkForPendingTokenTxs,
-	}
 }
 
 // Shared client provides access to the underlying Ethereum client

@@ -58,6 +58,7 @@ services:
           sleep 0.5;
         done;
         echo ${DEBUG}
+        go get github.com/codegangsta/gin
         if [ -z ${DEBUG} ]; then
           echo \"Starting Storage node in PROD mode\";
           go build -o ./bin/storage-node && chmod +x ./bin/storage-node;
