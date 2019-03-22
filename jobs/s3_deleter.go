@@ -21,3 +21,7 @@ func (e s3Deleter) Run() {
 		utils.DeleteDefaultBucketObjectKeys(account.S3Prefix())
 	}
 }
+
+func (e s3Deleter) Runnable() bool {
+	return models.DB != nil
+}

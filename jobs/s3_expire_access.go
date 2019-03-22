@@ -26,3 +26,7 @@ func (e s3ExpireAccess) Run() {
 		}
 	}
 }
+
+func (e s3ExpireAccess) Runnable() bool {
+	return models.DB != nil && utils.IsS3Enabled()
+}

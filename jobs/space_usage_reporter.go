@@ -17,3 +17,7 @@ func (s spaceUsageReporter) Run() {
 
 	utils.Metrics_Percent_Of_Space_Used.Set(spaceUsed)
 }
+
+func (s spaceUsageReporter) Runnable() bool {
+	return models.DB != nil
+}
