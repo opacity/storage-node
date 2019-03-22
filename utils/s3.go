@@ -51,7 +51,7 @@ func SetS3DataCaching(isCaching bool) {
 	shouldCachedData = isCaching
 }
 
-func isS3Enabled() bool {
+func IsS3Enabled() bool {
 	return svc.s3 != nil
 }
 
