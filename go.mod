@@ -27,7 +27,6 @@ require (
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/gobuffalo/buffalo v0.14.2 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/huin/goupnp v1.0.0 // indirect
@@ -41,7 +40,6 @@ require (
 	github.com/karalabe/hid v0.0.0-20181128192157-d815e0c1a2e2 // indirect
 	github.com/markbates/going v1.0.3 // indirect
 	github.com/mattn/go-shellwords v1.0.5 // indirect
-	github.com/opacity/brokernode v0.0.0-20190211020636-557debb1f134
 	github.com/orcaman/concurrent-map v0.0.0-20190107190726-7ed82d9cb717
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/prometheus/client_golang v0.9.2
