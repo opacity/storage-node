@@ -5,15 +5,19 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type accountDeleter struct {
+type unpaidAccountDeleter struct {
 }
 
-func (a accountDeleter) ScheduleInterval() string {
+func (u unpaidAccountDeleter) ScheduleInterval() string {
 	return "@midnight"
 }
 
-func (a accountDeleter) Run() {
+func (u unpaidAccountDeleter) Run() {
 	err := models.PurgeOldUnpaidAccounts(utils.Env.AccountRetentionDays)
 
 	utils.LogIfError(err, nil)
+}
+
+func (u unpaidAccountDeleter) Runnable() bool {
+	return models.DB != nil
 }

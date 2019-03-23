@@ -4,6 +4,7 @@ import (
 	"github.com/opacity/storage-node/jobs"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/routes"
+	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -12,6 +13,7 @@ func main() {
 
 	//utils.SetProduction()
 	utils.SetDevelopment()
+	services.SetWallet()
 
 	utils.SlackLog("Begin to restart service!")
 

@@ -18,6 +18,9 @@ var (
 	/*BackendManager is a copy of services.BackendManagement.  We can
 	stub out methods in unit tests*/
 	BackendManager = services.BackendManagement
+
+	/*EthWrapper is a copy of services.EthWrapper*/
+	EthWrapper = services.EthWrapper
 )
 
 /*Connect to a database*/

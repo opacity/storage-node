@@ -7,6 +7,8 @@ import (
 
 	"math/big"
 
+	"encoding/hex"
+
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
@@ -90,6 +92,11 @@ var StorageLimitMap = make(map[int]StorageLimitType)
 /*CostMap is for mapping subscription plans to their prices, for a default length subscription*/
 var CostMap = make(map[StorageLimitType]float64)
 
+/*PaymentCollectionFunctions maps a PaymentStatus to the method that should be run
+on an account of that status*/
+var PaymentCollectionFunctions = make(map[PaymentStatusType]func(
+	account Account) error)
+
 func init() {
 	StorageLimitMap[int(BasicStorageLimit)] = BasicStorageLimit
 
@@ -101,6 +108,13 @@ func init() {
 	PaymentStatusMap[PaymentRetrievalComplete] = "PaymentRetrievalComplete"
 
 	CostMap[BasicStorageLimit] = BasicSubscriptionDefaultCost
+
+	PaymentCollectionFunctions[InitialPaymentInProgress] = handleAccountWithPaymentInProgress
+	PaymentCollectionFunctions[InitialPaymentReceived] = handleAccountThatNeedsGas
+	PaymentCollectionFunctions[GasTransferInProgress] = handleAccountReceivingGas
+	PaymentCollectionFunctions[GasTransferComplete] = handleAccountReadyForCollection
+	PaymentCollectionFunctions[PaymentRetrievalInProgress] = handleAccountWithCollectionInProgress
+	PaymentCollectionFunctions[PaymentRetrievalComplete] = handleAccountAlreadyCollected
 }
 
 /*BeforeCreate - callback called before the row is created*/
@@ -140,8 +154,7 @@ func (account *Account) CheckIfPaid() (bool, error) {
 	paid, err := BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress),
 		costInWei)
 	if paid {
-		account.PaymentStatus = InitialPaymentReceived
-		DB.Save(&account)
+		SetAccountsToNextPaymentStatus([]Account{*(account)})
 	}
 	return paid, err
 }
@@ -192,6 +205,130 @@ func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
 	err := DB.Where("created_at < ? AND payment_status = ?",
 		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainUnpaidAccounts)), InitialPaymentInProgress).Delete(&Account{}).Error
 	return err
+}
+
+/*getAccountsByPaymentStatus gets accounts based on the payment status passed in*/
+func GetAccountsByPaymentStatus(paymentStatus PaymentStatusType) []Account {
+	accounts := []Account{}
+	err := DB.Where("payment_status = ?",
+		paymentStatus).Find(&accounts).Error
+	utils.LogIfError(err, nil)
+	return accounts
+}
+
+/*SetAccountsToNextPaymentStatus transitions an account to the next payment status*/
+func SetAccountsToNextPaymentStatus(accounts []Account) {
+	for _, account := range accounts {
+		err := DB.Model(&account).Updates(Account{PaymentStatus: getNextPaymentStatus(account.PaymentStatus)}).Error
+		utils.LogIfError(err, nil)
+	}
+}
+
+/*getNextPaymentStatus returns the next payment status in the sequence*/
+func getNextPaymentStatus(paymentStatus PaymentStatusType) PaymentStatusType {
+	nextStatus := paymentStatus + 1
+	if nextStatus > PaymentRetrievalComplete {
+		nextStatus = PaymentRetrievalComplete
+	}
+	return nextStatus
+}
+
+/*handleAccountWithPaymentInProgress checks if the user has paid for their account, and if so
+sets the account to the next payment status, adds the metadata key to badger, and deletes the
+metadata key from the SQL DB.
+
+Not calling SetAccountsToNextPaymentStatus here because CheckIfPaid calls it
+*/
+func handleAccountWithPaymentInProgress(account Account) error {
+	paid, err := account.CheckIfPaid()
+	if paid && err == nil {
+		// Create empty key:value data in badger DB
+		ttl := time.Until(account.ExpirationDate())
+		if err = utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
+			return err
+		}
+		if err = DB.Model(&account).Update("metadata_key", "").Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+/*handleAccountThatNeedsGas sends some ETH to an account that we will later need to collect tokens from and sets the
+account's payment status to the next status.*/
+func handleAccountThatNeedsGas(account Account) error {
+	paid, _ := account.CheckIfPaid()
+	var transferErr error
+	if paid {
+		_, _, _, transferErr = EthWrapper.TransferETH(
+			services.MainWalletAddress,
+			services.MainWalletPrivateKey,
+			services.StringToAddress(account.EthAddress),
+			services.DefaultGasForPaymentCollection)
+		if transferErr == nil {
+			SetAccountsToNextPaymentStatus([]Account{account})
+			return nil
+		}
+		utils.LogIfError(transferErr, nil)
+	}
+	return transferErr
+}
+
+/*handleAccountReceivingGas checks whether the gas has arrived and transitions the account to the next payment
+status if so.*/
+func handleAccountReceivingGas(account Account) error {
+	ethBalance := EthWrapper.GetETHBalance(services.StringToAddress(account.EthAddress))
+	if ethBalance.Int64() > 0 {
+		SetAccountsToNextPaymentStatus([]Account{account})
+	}
+	return nil
+}
+
+/*handleAccountReadyForCollection will attempt to retrieve the tokens from the account's payment address and set the
+account's payment status to the next status if there are no errors.*/
+func handleAccountReadyForCollection(account Account) error {
+	tokenBalance := EthWrapper.GetTokenBalance(services.StringToAddress(account.EthAddress))
+	ethBalance := EthWrapper.GetETHBalance(services.StringToAddress(account.EthAddress))
+	keyInBytes, decryptErr := utils.DecryptWithErrorReturn(
+		utils.Env.EncryptionKey,
+		account.EthPrivateKey,
+		account.AccountID,
+	)
+	privateKey, keyErr := services.StringToPrivateKey(hex.EncodeToString(keyInBytes))
+
+	if tokenBalance.Int64() == 0 {
+		utils.LogIfError(errors.New("expected a token balance but found 0"), nil)
+	} else if ethBalance.Int64() == 0 {
+		utils.LogIfError(errors.New("expected an eth balance but found 0"), nil)
+	} else if tokenBalance.Int64() > 0 && ethBalance.Int64() > 0 &&
+		utils.ReturnFirstError([]error{decryptErr, keyErr}) == nil {
+		success, _, _ := EthWrapper.TransferToken(
+			services.StringToAddress(account.EthAddress),
+			privateKey,
+			services.MainWalletAddress,
+			*tokenBalance)
+		if success {
+			SetAccountsToNextPaymentStatus([]Account{account})
+			return nil
+		}
+		utils.LogIfError(errors.New("payment collection failed"), nil)
+	}
+	return utils.ReturnFirstError([]error{decryptErr, keyErr})
+}
+
+/*handleAccountWithCollectionInProgress will check the token balance of an account's payment address.  If the balance
+is zero, it means the collection has succeeded and the payment status is set to the next status*/
+func handleAccountWithCollectionInProgress(account Account) error {
+	balance := EthWrapper.GetTokenBalance(services.StringToAddress(account.EthAddress))
+	if balance.Int64() > 0 {
+		SetAccountsToNextPaymentStatus([]Account{account})
+	}
+	return nil
+}
+
+/*handleAccountAlreadyCollected does not do anything important and is here to prevent index out of range errors*/
+func handleAccountAlreadyCollected(account Account) error {
+	return nil
 }
 
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the
