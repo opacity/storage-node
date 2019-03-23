@@ -12,6 +12,8 @@ import (
 type BackgroundRunnable interface {
 	ScheduleInterval() string
 	Run()
+	/** Indicate whether it can run or not. */
+	Runnable() bool
 }
 
 type StartUpRunnable interface {
@@ -47,7 +49,9 @@ func ScheduleBackgroundJobs() {
 	}
 
 	for _, s := range jobs {
-		jobrunner.Schedule(s.ScheduleInterval(), s)
+		if s.Runnable() {
+			jobrunner.Schedule(s.ScheduleInterval(), s)
+		}
 	}
 }
 
@@ -73,6 +77,10 @@ func (e *pingStdOut) Run() {
 	utils.GetLogger("jobs-ping-std-out").Infof("Pinging with count %d\n", e.counter)
 	e.counter = e.counter + 1
 	utils.Metrics_PingStdOut_Counter.Inc()
+}
+
+func (e *pingStdOut) Runnable() bool {
+	return true
 }
 
 type noOps struct{}
