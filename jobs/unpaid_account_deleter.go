@@ -17,3 +17,7 @@ func (u unpaidAccountDeleter) Run() {
 
 	utils.LogIfError(err, nil)
 }
+
+func (u unpaidAccountDeleter) Runnable() bool {
+	return models.DB != nil
+}
