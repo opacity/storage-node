@@ -22,7 +22,7 @@ func FreeUploadFileHandler() gin.HandlerFunc {
 
 func freeUploadFile(c *gin.Context) {
 	request := freeUploadFileReq{}
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
+	if err := utils.ParseRequestBody(c, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		BadRequestResponse(c, err)
 		return

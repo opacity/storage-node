@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	multiUploadId    = "multi-upload"
 	freeUploadId     = "free-upload"
 	freeUploadPrefix = "free_upload/"
 )
@@ -34,6 +35,14 @@ func (e s3LifeCycleSetup) Run() error {
 		},
 		ID:     aws.String(freeUploadId),
 		Status: aws.String("Enabled"),
+	})
+
+	rules = append(rules, &s3.LifecycleRule{
+		AbortIncompleteMultipartUpload: &s3.AbortIncompleteMultipartUpload{
+			DaysAfterInitiation: aws.Int64(1),
+		},
+		Status: aws.String("Enabled"),
+		ID:     aws.String(multiUploadId),
 	})
 
 	return utils.SetDefaultBucketLifecycle(rules)

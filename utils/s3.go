@@ -18,6 +18,8 @@ type s3Wrapper struct {
 }
 
 const (
+	MaxMultiPartSize          = int64(1024 * 1024 * 50)
+	MaxMultiPartRetries       = 10
 	CannedAcl_Private         = "private"
 	CannedAcl_PublicRead      = "public-read"
 	CannedAcl_PublicReadWrite = "public-read-write"
