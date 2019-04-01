@@ -128,17 +128,12 @@ func checkAccountPaymentStatus(c *gin.Context) {
 	}
 
 	pending := false
+	initialPaymentStatus := account.PaymentStatus
 	paid, err := account.CheckIfPaid()
 
-	if paid && err == nil {
-		// Create empty key:value data in badger DB
-		ttl := time.Until(account.ExpirationDate())
-		if err := utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
-			BadRequestResponse(c, err)
-			return
-		}
-		// Delete the metadata key on the account model
-		if err = models.DB.Model(&account).Update("metadata_key", "").Error; err != nil {
+	if paid && err == nil && initialPaymentStatus == models.InitialPaymentInProgress {
+		err := models.HandleMetadataKeyForPaidAccount(account)
+		if err != nil {
 			BadRequestResponse(c, err)
 			return
 		}

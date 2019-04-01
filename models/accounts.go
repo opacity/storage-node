@@ -224,6 +224,20 @@ func SetAccountsToNextPaymentStatus(accounts []Account) {
 	}
 }
 
+/*HandleMetadataKeyForPaidAccount adds the metadata key to badger and removes from the sql table*/
+func HandleMetadataKeyForPaidAccount(account Account) (err error) {
+	// Create empty key:value data in badger DB
+	ttl := time.Until(account.ExpirationDate())
+	if err = utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
+		return err
+	}
+	// Delete the metadata key on the account model
+	if err = DB.Model(&account).Update("metadata_key", "").Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 /*getNextPaymentStatus returns the next payment status in the sequence*/
 func getNextPaymentStatus(paymentStatus PaymentStatusType) PaymentStatusType {
 	nextStatus := paymentStatus + 1
@@ -240,16 +254,10 @@ metadata key from the SQL DB.
 Not calling SetAccountsToNextPaymentStatus here because CheckIfPaid calls it
 */
 func handleAccountWithPaymentInProgress(account Account) error {
+	initialPaymentStatus := account.PaymentStatus
 	paid, err := account.CheckIfPaid()
-	if paid && err == nil {
-		// Create empty key:value data in badger DB
-		ttl := time.Until(account.ExpirationDate())
-		if err = utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
-			return err
-		}
-		if err = DB.Model(&account).Update("metadata_key", "").Error; err != nil {
-			return err
-		}
+	if paid && err == nil && initialPaymentStatus == InitialPaymentInProgress {
+		return HandleMetadataKeyForPaidAccount(account)
 	}
 	return nil
 }

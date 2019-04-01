@@ -15,7 +15,7 @@ type updateMetadataReq struct {
 }
 
 type getMetadataRes struct {
-	Metadata string `json:"metadata" binding:"required"`
+	Metadata string `json:"metadata"`
 }
 
 /*GetMetadataHandler is a handler for getting the file metadata*/
