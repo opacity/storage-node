@@ -45,7 +45,7 @@ func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 
 func createAccount(c *gin.Context) {
 	request := accountCreateReq{}
-	if err := utils.ParseRequestBody(c, &request); err != nil {
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		BadRequestResponse(c, err)
 		return

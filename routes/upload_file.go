@@ -29,7 +29,7 @@ func UploadFileHandler() gin.HandlerFunc {
 func uploadFile(c *gin.Context) {
 	request := uploadFileReq{}
 
-	if err := utils.ParseRequestBody(c, &request); err != nil {
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		BadRequestResponse(c, err)
 		return

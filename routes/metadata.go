@@ -44,7 +44,7 @@ func getMetadata(c *gin.Context) {
 func setMetadata(c *gin.Context) {
 	request := updateMetadataReq{}
 
-	if err := utils.ParseRequestBody(c, &request); err != nil {
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		BadRequestResponse(c, err)
 		return

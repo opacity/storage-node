@@ -5,13 +5,18 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 /*ParseRequestBody take a request and parses the body to the target interface.*/
-func ParseRequestBody(c *gin.Context, dest interface{}) error {
-	return c.ShouldBind(dest)
+func ParseRequestBody(req *http.Request, dest interface{}) error {
+	body := req.Body
+	defer body.Close()
+
+	if err := parse(body, dest); err != nil {
+		return err
+	}
+
+	return Validator.Struct(dest)
 }
 
 /*ParseResponseBody take a response and parses the body to the target interface.*/
