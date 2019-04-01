@@ -9,9 +9,12 @@ import (
 )
 
 type uploadFileReq struct {
-	AccountID string `json:"accountID" binding:"required,len=64"`
-	UploadID  string `json:"uploadID" binding:"required"`
-	FileData  string `json:"fileData" binding:"required"`
+	AccountID string `form:"accountID" binding:"required,len=64"`
+	UploadID  string `form:"uploadID" binding:"required"`
+	FileData  string `form:"fileData" binding:"required"`
+	FileHash  string `form:"fileHash" binding:"required,len=64"`
+	PartIndex int    `form:"partIndex" binding:"required,gte=0"`
+	EndIndex  int    `form:"endIndex" binding:"required,gtefield=PartIndex"`
 }
 
 type uploadFileRes struct {
