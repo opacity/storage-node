@@ -14,11 +14,10 @@ import (
 )
 
 var (
-	fileName            = "SunsetWavesMedium.mp4"
-	testFileDownloadURL = "https://raw.githubusercontent.com/opacity/test_files/master/" + fileName
-	awsTestDirPath      = "unit_tests/"
-	keyOnAws            = awsTestDirPath + fileName
-	localFilePath       string
+	fileName       = "lorem.txt"
+	awsTestDirPath = "unit_tests/"
+	keyOnAws       = awsTestDirPath + fileName
+	localFilePath  string
 )
 
 func Test_S3_Init(t *testing.T) {
@@ -29,21 +28,12 @@ func Test_S3_Init(t *testing.T) {
 
 /*
 Test_Multi_Part_Uploads tests multipart uploads
-	1. Verify the file does not exist locally.
-	2. Download the test file.
-	3. Verify the file does exist locally.
-	4. Run tests for a successful multipart upload.
-	5. Run tests for an aborted multipart upload.
-	6. Delete the file locally.
-	7. Verify the file no longer exists locally.
+	1. Run tests for a successful multipart upload.
+	2. Run tests for an aborted multipart upload.
 */
 func Test_Multi_Part_Uploads(t *testing.T) {
-	multipartLocalTestSetup(localFilePath, t)
-
 	multipartUploadCompletionTest(t)
 	multipartUploadAbortionTest(t)
-
-	multipartLocalTestTearDown(localFilePath, t)
 }
 
 /*
@@ -115,10 +105,10 @@ func successfulMultipartUploadForTest(t *testing.T) {
 	var completedParts []*s3.CompletedPart
 	partNumber := 1
 	for curr = 0; remaining != 0; curr += partLength {
-		if remaining < MaxMultiPartSize {
+		if remaining < MaxMultiPartSizeForTest {
 			partLength = remaining
 		} else {
-			partLength = MaxMultiPartSize
+			partLength = MaxMultiPartSizeForTest
 		}
 		completedPart, uploadPartErr := svc.UploadPartOfMultiPartUpload(key, uploadID, buffer[curr:curr+partLength], partNumber)
 		if uploadPartErr != nil {
@@ -142,27 +132,12 @@ func failedMultipartUploadForTest(t *testing.T) {
 	var curr, partLength int64
 	partNumber := 1
 	curr = 0
-	partLength = MaxMultiPartSize
+	partLength = MaxMultiPartSizeForTest
 
 	_, uploadPartErr := svc.UploadPartOfMultiPartUpload(key, uploadID, buffer[curr:curr+partLength], partNumber)
 	assert.Nil(t, uploadPartErr)
 	cancelErr := svc.CancelMultipartUpload(key, uploadID)
 	assert.Nil(t, cancelErr)
-}
-
-/*multipartLocalTestSetup verifies the file does not exist locally, downloads it, then verifies that it exists locally.*/
-func multipartLocalTestSetup(localFilePath string, t *testing.T) {
-	verifyLocalFileDoesNotExist(localFilePath, t)
-
-	downloadTestFile(localFilePath, testFileDownloadURL, t)
-
-	verifyLocalFileExists(localFilePath, t)
-}
-
-/*multipartLocalTestTearDown deletes the local file and then verifies it does not exist locally*/
-func multipartLocalTestTearDown(localFilePath string, t *testing.T) {
-	deleteLocalTestFile(localFilePath, t)
-	verifyLocalFileDoesNotExist(localFilePath, t)
 }
 
 /*verifyFileIsNotOnS3 checks that the file is not on S3*/

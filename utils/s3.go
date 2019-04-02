@@ -19,6 +19,7 @@ type s3Wrapper struct {
 
 const (
 	MaxMultiPartSize          = int64(1024 * 1024 * 50)
+	MaxMultiPartSizeForTest   = int64(1024 * 1024 * 5)
 	MaxMultiPartRetries       = 10
 	CannedAcl_Private         = "private"
 	CannedAcl_PublicRead      = "public-read"
@@ -26,9 +27,7 @@ const (
 )
 
 var awsPagingSize int64
-
 var svc *s3Wrapper
-
 var cachedData cmap.ConcurrentMap
 var shouldCachedData bool
 
