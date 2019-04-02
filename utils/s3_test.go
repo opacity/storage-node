@@ -28,21 +28,33 @@ func Test_S3_Init(t *testing.T) {
 }
 
 /*
-Test_Multi_Part_Uploads_Success tests for successful completion of multipart upload
+Test_Multi_Part_Uploads tests multipart uploads
 	1. Verify the file does not exist locally.
 	2. Download the test file.
 	3. Verify the file does exist locally.
-	4. Verify the file does not exist on S3.
-	5. Start and finish a multipart upload to S3, verifying no errors.
-	6. Verify the file exists on S3.
-	7. Remove the file from S3.
-	8. Verify it was removed from S3.
-	9. Delete the file locally.
-	10. Verify the file no longer exists locally.
+	4. Run tests for a successful multipart upload.
+	5. Run tests for an aborted multipart upload.
+	6. Delete the file locally.
+	7. Verify the file no longer exists locally.
 */
-func Test_Multi_Part_Uploads_Success(t *testing.T) {
+func Test_Multi_Part_Uploads(t *testing.T) {
 	multipartLocalTestSetup(localFilePath, t)
 
+	multipartUploadCompletionTest(t)
+	multipartUploadAbortionTest(t)
+
+	multipartLocalTestTearDown(localFilePath, t)
+}
+
+/*
+multipartUploadCompletionTest tests for successful completion of multipart upload
+	1. Verify the file does not exist on S3.
+	2. Start and finish a multipart upload to S3, verifying no errors.
+	3. Verify the file exists on S3.
+	4. Remove the file from S3.
+	5. Verify it was removed from S3.
+*/
+func multipartUploadCompletionTest(t *testing.T) {
 	verifyFileIsNotOnS3(keyOnAws, t)
 
 	successfulMultipartUploadForTest(t)
@@ -50,33 +62,22 @@ func Test_Multi_Part_Uploads_Success(t *testing.T) {
 	verifyFileIsOnS3(keyOnAws, t)
 
 	removeFileFromS3(keyOnAws, t)
-
-	multipartLocalTestTearDown(localFilePath, t)
 }
 
 /*
-Test_Multi_Part_Uploads_Abort tests for successful abortion of multipart upload
-	1. Verify the file does not exist locally.
-	2. Download the test file.
-	3. Verify the file does exist locally.
-	4. Verify the file does not exist on S3.
-	5. Start a multipart upload to S3.
-	6. Abort the upload to S3 before completion.
-	7. Verify no abortion errors.
-	8. Verify the file does not exist on S3.
-	9. Delete the file locally.
-	10. Verify the file no longer exists locally.
+multipartUploadAbortionTest tests for successful abortion of multipart upload
+	1. Verify the file does not exist on S3.
+	2. Start a multipart upload to S3.
+	3. Abort the upload to S3 before completion.
+	4. Verify no abortion errors.
+	5. Verify the file does not exist on S3.
 */
-func Test_Multi_Part_Uploads_Abort(t *testing.T) {
-	multipartLocalTestSetup(localFilePath, t)
-
+func multipartUploadAbortionTest(t *testing.T) {
 	verifyFileIsNotOnS3(keyOnAws, t)
 
 	failedMultipartUploadForTest(t)
 
 	verifyFileIsNotOnS3(keyOnAws, t)
-
-	multipartLocalTestTearDown(localFilePath, t)
 }
 
 /*startUploadForTest starts a multipart upload for unit tests and returns the aws object key, upload id,

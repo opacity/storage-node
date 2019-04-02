@@ -10,8 +10,8 @@ import (
 
 type uploadFileReq struct {
 	AccountID string `form:"accountID" binding:"required,len=64"`
-	UploadID  string `form:"uploadID" binding:"required"`
-	FileData  string `form:"fileData" binding:"required"`
+	ChunkHash string `form:"chunkHash" binding:"required"`
+	ChunkData string `form:"chunkData" binding:"required"`
 	FileHash  string `form:"fileHash" binding:"required,len=64"`
 	PartIndex int    `form:"partIndex" binding:"required,gte=0"`
 	EndIndex  int    `form:"endIndex" binding:"required,gtefield=PartIndex"`
@@ -59,8 +59,8 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.UploadID)
-	if err := utils.SetDefaultBucketObject(objectKey, request.FileData); err != nil {
+	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.ChunkHash)
+	if err := utils.SetDefaultBucketObject(objectKey, request.ChunkData); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
@@ -68,4 +68,13 @@ func uploadFile(c *gin.Context) {
 	OkResponse(c, uploadFileRes{
 		Status: "File is uploaded",
 	})
+}
+
+func handleFirstChunk() {
+}
+
+func handleMiddleChunk() {
+}
+
+func handleLastChunk() {
 }
