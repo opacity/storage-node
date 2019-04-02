@@ -38,15 +38,19 @@ func init() {
 	hasAwsKey := len(os.Getenv("AWS_ACCESS_KEY_ID")) > 0 && len(os.Getenv("AWS_SECRET_ACCESS_KEY")) > 0
 	// Stub out the S3 if we don't have S3 access right.
 	if hasAwsKey {
-		svc = &s3Wrapper{
-			s3: s3.New(session.Must(session.NewSession())),
-		}
+		newS3Session()
 	} else {
 		svc = &s3Wrapper{}
 	}
 
 	shouldCachedData = false
 	cachedData = cmap.New()
+}
+
+func newS3Session() {
+	svc = &s3Wrapper{
+		s3: s3.New(session.Must(session.NewSession())),
+	}
 }
 
 func SetS3DataCaching(isCaching bool) {
