@@ -45,4 +45,4 @@ before_script:
   #   "
 
 script:
-  - docker-compose exec app go test ./...
+  - docker-compose exec app go test ./... -v
