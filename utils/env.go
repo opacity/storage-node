@@ -30,7 +30,7 @@ type StorageNodeEnv struct {
 
 	// Aws configuration
 	BucketName         string `env:"AWS_BUCKET_NAME" envDefault:""`
-	AwsRegion          string `env:"AWS_REGION" envDefault:"us-east-2"`
+	AwsRegion          string `env:"AWS_REGION" envDefault:""`
 	AwsAccessKeyID     string `env:"AWS_ACCESS_KEY_ID" envDefault:""`
 	AwsSecretAccessKey string `env:"AWS_SECRET_ACCESS_KEY" envDefault:""`
 
