@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -39,8 +38,8 @@ func init() {
 }
 
 func newS3Session() {
-	hasAwsCredentials := len(os.Getenv("AWS_ACCESS_KEY_ID")) > 0 && len(os.Getenv("AWS_SECRET_ACCESS_KEY")) > 0 &&
-		len(os.Getenv("AWS_BUCKET_NAME")) > 0 && len(os.Getenv("AWS_REGION")) > 0
+	hasAwsCredentials := len(Env.AwsAccessKeyID) > 0 && len(Env.AwsSecretAccessKey) > 0 &&
+		len(Env.BucketName) > 0 && len(Env.AwsRegion) > 0
 	// Stub out the S3 if we don't have S3 access right.
 	if hasAwsCredentials {
 		svc = &s3Wrapper{
