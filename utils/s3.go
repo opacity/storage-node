@@ -34,23 +34,22 @@ var shouldCachedData bool
 
 func init() {
 	awsPagingSize = 1000 // The max paging size per request.
-
-	hasAwsCredentials := len(os.Getenv("AWS_ACCESS_KEY_ID")) > 0 && len(os.Getenv("AWS_SECRET_ACCESS_KEY")) > 0 &&
-		len(os.Getenv("AWS_BUCKET_NAME")) > 0 && len(os.Getenv("AWS_REGION")) > 0
-	// Stub out the S3 if we don't have S3 access right.
-	if hasAwsCredentials {
-		newS3Session()
-	} else {
-		PanicOnError(errors.New("missing S3 credentials"))
-	}
+	newS3Session()
 
 	shouldCachedData = false
 	cachedData = cmap.New()
 }
 
 func newS3Session() {
-	svc = &s3Wrapper{
-		s3: s3.New(session.Must(session.NewSession())),
+	hasAwsCredentials := len(os.Getenv("AWS_ACCESS_KEY_ID")) > 0 && len(os.Getenv("AWS_SECRET_ACCESS_KEY")) > 0 &&
+		len(os.Getenv("AWS_BUCKET_NAME")) > 0 && len(os.Getenv("AWS_REGION")) > 0
+	// Stub out the S3 if we don't have S3 access right.
+	if hasAwsCredentials {
+		svc = &s3Wrapper{
+			s3: s3.New(session.Must(session.NewSession())),
+		}
+	} else {
+		PanicOnError(errors.New("missing S3 credentials"))
 	}
 }
 
