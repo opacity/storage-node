@@ -29,8 +29,10 @@ type StorageNodeEnv struct {
 	EnableJobs           bool   `env:"ENABLE_JOB" envDefault:"false"`
 
 	// Aws configuration
-	BucketName string `env:"AWS_BUCKET_NAME" envDefault:""`
-	AwsRegion  string `env:"AWS_REGION" envDefault:"us-east-2"`
+	BucketName         string `env:"AWS_BUCKET_NAME" envDefault:""`
+	AwsRegion          string `env:"AWS_REGION" envDefault:"us-east-2"`
+	AwsAccessKeyID     string `env:"AWS_ACCESS_KEY_ID" envDefault:""`
+	AwsSecretAccessKey string `env:"AWS_SECRET_ACCESS_KEY" envDefault:""`
 
 	// Debug purpose
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
@@ -102,6 +104,10 @@ func tryLookUp() error {
 	ethNodeURL := AppendLookupErrors("ETH_NODE_URL", &collectedErrors)
 	mainWalletAddress := AppendLookupErrors("MAIN_WALLET_ADDRESS", &collectedErrors)
 	mainWalletPrivateKey := AppendLookupErrors("MAIN_WALLET_PRIVATE_KEY", &collectedErrors)
+	bucketName := AppendLookupErrors("AWS_BUCKET_NAME", &collectedErrors)
+	awsRegion := AppendLookupErrors("AWS_REGION", &collectedErrors)
+	awsAccessKeyID := AppendLookupErrors("AWS_ACCESS_KEY_ID", &collectedErrors)
+	awsSecretAccessKey := AppendLookupErrors("AWS_SECRET_ACCESS_KEY", &collectedErrors)
 	accountRetentionDaysStr := AppendLookupErrors("ACCOUNT_RETENTION_DAYS", &collectedErrors)
 	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
 	if err != nil {
@@ -120,6 +126,10 @@ func tryLookUp() error {
 		MainWalletAddress:    mainWalletAddress,
 		MainWalletPrivateKey: mainWalletPrivateKey,
 		AccountRetentionDays: accountRetentionDays,
+		AwsRegion:            awsRegion,
+		BucketName:           bucketName,
+		AwsAccessKeyID:       awsAccessKeyID,
+		AwsSecretAccessKey:   awsSecretAccessKey,
 	}
 
 	Env = serverEnv
