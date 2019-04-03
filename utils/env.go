@@ -65,8 +65,6 @@ func initEnv(filenames ...string) {
 		log.Fatal("must set an encryption key in the .env file")
 	}
 
-	fmt.Println(storageNodeEnv)
-
 	Env = storageNodeEnv
 }
 
@@ -159,7 +157,7 @@ func tryLookUp() error {
 error, it will append it to the array of errors that are passed in*/
 func AppendLookupErrors(property string, collectedErrors *[]error) string {
 	value, exists := os.LookupEnv(property)
-	if !exists {
+	if !exists || value == "" {
 		*collectedErrors = append(*(collectedErrors),
 			errors.New("in tryLookup, failed to load .env variable: "+property))
 	}
