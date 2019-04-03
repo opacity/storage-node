@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -34,12 +35,13 @@ var shouldCachedData bool
 func init() {
 	awsPagingSize = 1000 // The max paging size per request.
 
-	hasAwsKey := len(os.Getenv("AWS_ACCESS_KEY_ID")) > 0 && len(os.Getenv("AWS_SECRET_ACCESS_KEY")) > 0
+	hasAwsCredentials := len(os.Getenv("AWS_ACCESS_KEY_ID")) > 0 && len(os.Getenv("AWS_SECRET_ACCESS_KEY")) > 0 &&
+		len(os.Getenv("AWS_BUCKET_NAME")) > 0 && len(os.Getenv("AWS_REGION")) > 0
 	// Stub out the S3 if we don't have S3 access right.
-	if hasAwsKey {
+	if hasAwsCredentials {
 		newS3Session()
 	} else {
-		svc = &s3Wrapper{}
+		PanicOnError(errors.New("missing S3 credentials"))
 	}
 
 	shouldCachedData = false
