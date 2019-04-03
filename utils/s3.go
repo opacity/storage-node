@@ -34,8 +34,6 @@ var shouldCachedData bool
 
 func init() {
 	awsPagingSize = 1000 // The max paging size per request.
-	newS3Session()
-
 	shouldCachedData = false
 	cachedData = cmap.New()
 }
