@@ -10,6 +10,8 @@ import (
 
 	"fmt"
 
+	"time"
+
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
 )
@@ -93,6 +95,7 @@ func SetTesting(filenames ...string) {
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
 	InitKvStore()
+	time.Sleep(3 * time.Second)
 	newS3Session()
 }
 
