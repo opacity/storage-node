@@ -127,12 +127,12 @@ func successfulMultipartUploadForTest(t *testing.T) {
 /*failedMultipartUploadForTest will initiate a multipart upload for unit tests, but will abort it before the upload
 is complete.  It will verify there were no errors aborting the upload.*/
 func failedMultipartUploadForTest(t *testing.T) {
-	key, uploadID, buffer, _ := startUploadForTest(t)
+	key, uploadID, buffer, size := startUploadForTest(t)
 
 	var curr, partLength int64
 	partNumber := 1
 	curr = 0
-	partLength = MaxMultiPartSizeForTest
+	partLength = size
 
 	_, uploadPartErr := svc.UploadPartOfMultiPartUpload(key, uploadID, buffer[curr:curr+partLength], partNumber)
 	assert.Nil(t, uploadPartErr)
