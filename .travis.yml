@@ -35,14 +35,20 @@ before_install:
 install: true
 
 before_script:
-  # - sleep 30
-  # - "
-  #     echo waiting for docker...;
-  #     while ! nc -z localhost 3000;
-  #     do
-  #       sleep 0.5;
-  #     done;
-  #   "
+   - echo waiting for docker...;
+       while ! nc -z localhost 3000;
+       do
+         sleep 0.5;
+         free -m;
+       done;
 
 script:
-  - docker-compose exec app go test ./... -v
+  - docker-compose exec app go test ./jobs
+  - free -m;
+  - docker-compose exec app go test ./models
+  - free -m;
+  - docker-compose exec app go test ./routes
+  - free -m;
+  - docker-compose exec app go test ./services
+  - free -m;
+  - docker-compose exec app go test ./utils
