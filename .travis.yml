@@ -59,7 +59,7 @@ before_install:
   - sudo sed -i -e 's/AWS_BUCKET_NAME=TRAVIS/AWS_BUCKET_NAME=${AWS_BUCKET_NAME}/' .env
   #- sudo sed -i -e 's/ETH_NODE_URL=TRAVIS/ETH_NODE_URL=${ETH_NODE_URL}/' .env
   #- sudo sed -i -e 's/TOKEN_CONTRACT_ADDRESS=TRAVIS/TOKEN_CONTRACT_ADDRESS=${TOKEN_CONTRACT_ADDRESS}/' .env
-  cat .env
+  - cat .env
   - docker-compose --version
   - rm -rf ./data
   #- docker-compose up --build -d
