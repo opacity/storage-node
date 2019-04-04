@@ -35,6 +35,8 @@ before_install:
 install: true
 
 before_script:
+  - echo $AWS_REGION
+  - echo AWS_REGION
   - sleep 30
   # - "
   #     echo waiting for docker...;
