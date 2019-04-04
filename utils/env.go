@@ -51,12 +51,20 @@ var Env StorageNodeEnv
 func initEnv(filenames ...string) {
 	// Load ENV variables
 
+	fmt.Print("loading filename: ")
+	fmt.Println(filenames)
 	value, exists := os.LookupEnv("TRAVIS")
 	if exists && value == "true" {
 		fmt.Println("TRAVIS")
 		fmt.Println("TRAVIS")
 		fmt.Println("TRAVIS")
 		fmt.Println("TRAVIS")
+		fmt.Println("Calling tryLookup")
+		lookupErr := tryLookUp()
+		if lookupErr != nil {
+			log.Fatal("Error loading environment variables: " + lookupErr.Error())
+		}
+		return
 	} else {
 		fmt.Println("NOPE NOPE NOPE")
 		fmt.Println("NOPE NOPE NOPE")
