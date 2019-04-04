@@ -42,6 +42,7 @@ type Invoice struct {
 }
 
 //
+//
 /*StorageLimitType defines a type for the storage limits*/
 type StorageLimitType int
 
