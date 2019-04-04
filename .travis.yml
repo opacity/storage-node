@@ -56,13 +56,14 @@ before_install:
 
   - docker-compose --version
   - rm -rf ./data
+  - echo $AWS_REGION
+  - echo $TOKEN_CONTRACT_ADDRESS
+  - echo $ACCOUNT_RETENTION_DAYS
 
 install: true
 
 before_script:
-  - echo AWS_REGION
   - echo $AWS_REGION
-  - echo ${AWS_REGION}
   # - docker-compose up --build -d
   # - "
   #     echo waiting for docker...;
@@ -73,7 +74,6 @@ before_script:
   #   "
 
 script:
-  - echo TOKEN_CONTRACT_ADDRESS
   - echo $TOKEN_CONTRACT_ADDRESS
-  - echo ${TOKEN_CONTRACT_ADDRESS}
-  # - docker-compose exec app go test ./...
+  - echo $ACCOUNT_RETENTION_DAYS
+  - docker-compose exec app go test ./...
