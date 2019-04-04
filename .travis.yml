@@ -53,7 +53,9 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - cp .travis.env .env
-
+  - sudo sed -i -e 's/AWS_BUCKET_NAME=TRAVIS/AWS_BUCKET_NAME='${AWS_BUCKET_NAME}'/' .env
+  - sudo chmod ugo+x travis/envCopy.sh
+  - sudo ./travis/envCopy.sh
   - docker-compose --version
   - rm -rf ./data
   - docker-compose up --build
