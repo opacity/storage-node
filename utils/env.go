@@ -8,6 +8,8 @@ import (
 
 	"strconv"
 
+	"fmt"
+
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
 )
@@ -43,6 +45,25 @@ type StorageNodeEnv struct {
 var Env StorageNodeEnv
 
 func initEnv(filenames ...string) {
+
+	// Check if this is a build being run by travis
+	result, exists := os.LookupEnv("TRAVIS")
+	if exists && result == "true" {
+		lookupErr := tryLookUp()
+		fmt.Println("THIS IS A TRAVIS BUILD")
+		fmt.Println("THIS IS A TRAVIS BUILD")
+		fmt.Println("THIS IS A TRAVIS BUILD")
+		fmt.Println("THIS IS A TRAVIS BUILD")
+		fmt.Println("THIS IS A TRAVIS BUILD")
+		fmt.Println("THIS IS A TRAVIS BUILD")
+		fmt.Println("Env.AwsRegion")
+		fmt.Println(Env.AwsRegion)
+		if lookupErr != nil {
+			log.Fatal("Error loading environment variables: " + CollectErrors([]error{lookupErr}).Error())
+		}
+		return
+	}
+
 	// Load ENV variables
 	err := godotenv.Load(filenames...)
 	if err != nil {
