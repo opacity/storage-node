@@ -14,14 +14,17 @@ func (e s3ExpireAccess) ScheduleInterval() string {
 }
 
 func (e s3ExpireAccess) Run() {
-	expired := make([]models.S3ObjectLifeCycle, 0)
+	expired := []models.S3ObjectLifeCycle{}
 	if err := models.DB.Where("expired_time < ?", time.Now()).Find(&expired).Error; err != nil {
 		utils.GetLogger("jobs-s3-expire-access").Errorf("Some error occur on querying DB: %v", err)
 		return
 	}
 
 	for _, v := range expired {
-		if err := utils.DeleteDefaultBucketObject(v.ObjectName); err == nil {
+		err := utils.DeleteDefaultBucketObject(v.ObjectName)
+		utils.LogIfError(err, nil)
+		utils.PanicOnError(err)
+		if err == nil {
 			models.DB.Delete(&v)
 		}
 	}
