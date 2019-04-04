@@ -58,24 +58,13 @@ before_install:
   - sudo sed -i -e 's/AWS_SECRET_ACCESS_KEY=TRAVIS/AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}'/' .env
   - sudo sed -i -e 's/AWS_REGION=TRAVIS/AWS_REGION='${AWS_REGION}'/' .env
   - sudo sed -i -e 's+ETH_NODE_URL=TRAVIS+ETH_NODE_URL='${ETH_NODE_URL}'+' .env
-#  - sudo chmod ugo+x travis/envCopy.sh
-#  - sudo ./travis/envCopy.sh
   - docker-compose --version
   - rm -rf ./data
-  - docker-compose up --build
+  - docker-compose up --build -d
 
 install: true
 
 before_script:
 
 script:
-  - echo $AWS_REGION
-#  - docker-compose exec app go test ./jobs -v
-#  - free -m;
-#  - docker-compose exec app go test ./models -v
-#  - free -m;
-#  - docker-compose exec app go test ./routes -v
-#  - free -m;
-#  - docker-compose exec app go test ./services -v
-#  - free -m;
-#  - docker-compose exec app go test ./utils -v
+  - docker-compose exec app go test ./..

@@ -45,6 +45,7 @@ func newS3Session() {
 			s3: s3.New(session.Must(session.NewSession())),
 		}
 	} else {
+
 		svc = &s3Wrapper{}
 	}
 }

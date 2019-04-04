@@ -41,8 +41,6 @@ type Invoice struct {
 	EthAddress string  `json:"ethAddress" binding:"required,len=42"`
 }
 
-//
-//
 /*StorageLimitType defines a type for the storage limits*/
 type StorageLimitType int
 

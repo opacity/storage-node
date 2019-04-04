@@ -8,10 +8,6 @@ import (
 
 	"strconv"
 
-	"fmt"
-
-	"time"
-
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
 )
@@ -51,29 +47,17 @@ var Env StorageNodeEnv
 func initEnv(filenames ...string) {
 	// Load ENV variables
 
-	fmt.Print("loading filename: ")
-	fmt.Println(filenames)
 	value, exists := os.LookupEnv("TRAVIS")
 	if exists && value == "true" {
-		fmt.Println("TRAVIS")
-		fmt.Println("TRAVIS")
-		fmt.Println("TRAVIS")
-		fmt.Println("TRAVIS")
-		fmt.Println("Calling tryLookup")
 		lookupErr := tryLookUp()
 		if lookupErr != nil {
 			log.Fatal("Error loading environment variables: " + lookupErr.Error())
 		}
 		return
-	} else {
-		fmt.Println("NOPE NOPE NOPE")
-		fmt.Println("NOPE NOPE NOPE")
-		fmt.Println("NOPE NOPE NOPE")
 	}
 
 	err := godotenv.Load(filenames...)
 	if err != nil {
-		fmt.Println("Calling tryLookup")
 		lookupErr := tryLookUp()
 		if lookupErr != nil {
 			log.Fatal("Error loading environment variables: " + CollectErrors([]error{err, lookupErr}).Error())
@@ -116,7 +100,6 @@ func SetTesting(filenames ...string) {
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
 	InitKvStore()
-	time.Sleep(3 * time.Second)
 	newS3Session()
 }
 
@@ -140,16 +123,6 @@ func tryLookUp() error {
 	awsSecretAccessKey := AppendLookupErrors("AWS_SECRET_ACCESS_KEY", &collectedErrors)
 	accountRetentionDaysStr := AppendLookupErrors("ACCOUNT_RETENTION_DAYS", &collectedErrors)
 	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
-
-	fmt.Println(awsRegion)
-	fmt.Println("len(awsRegion)")
-	fmt.Println(len(awsRegion))
-	fmt.Println("len(awsAccessKeyID)")
-	fmt.Println(len(awsAccessKeyID))
-	fmt.Println("len(awsSecretAccessKey)")
-	fmt.Println(len(awsSecretAccessKey))
-	fmt.Println("len(bucketName)")
-	fmt.Println(len(bucketName))
 
 	if err != nil {
 		collectedErrors = append(collectedErrors, err)
