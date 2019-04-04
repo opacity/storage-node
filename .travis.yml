@@ -26,6 +26,7 @@ before_install:
   - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
+  - cp .travis.env .env
 
   - docker-compose --version
   - rm -rf ./data
@@ -42,12 +43,12 @@ before_script:
        done;
 
 script:
-  - docker-compose exec app go test ./jobs
+  - docker-compose exec app go test ./jobs -v
   - free -m;
-  - docker-compose exec app go test ./models
+  - docker-compose exec app go test ./models -v
   - free -m;
-  - docker-compose exec app go test ./routes
+  - docker-compose exec app go test ./routes -v
   - free -m;
-  - docker-compose exec app go test ./services
+  - docker-compose exec app go test ./services -v
   - free -m;
-  - docker-compose exec app go test ./utils
+  - docker-compose exec app go test ./utils -v

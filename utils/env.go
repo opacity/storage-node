@@ -50,6 +50,19 @@ var Env StorageNodeEnv
 
 func initEnv(filenames ...string) {
 	// Load ENV variables
+
+	value, exists := os.LookupEnv("TRAVIS")
+	if exists && value == "true" {
+		fmt.Println("TRAVIS")
+		fmt.Println("TRAVIS")
+		fmt.Println("TRAVIS")
+		fmt.Println("TRAVIS")
+	} else {
+		fmt.Println("NOPE NOPE NOPE")
+		fmt.Println("NOPE NOPE NOPE")
+		fmt.Println("NOPE NOPE NOPE")
+	}
+
 	err := godotenv.Load(filenames...)
 	if err != nil {
 		fmt.Println("Calling tryLookup")
