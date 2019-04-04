@@ -58,12 +58,11 @@ before_install:
 
   - docker-compose --version
   - rm -rf ./data
-  - docker-compose up --build -d
 
 install: true
 
 before_script:
-  # - docker-compose up --build -d
+  - docker-compose up --build -d
   # - "
   #     echo waiting for docker...;
   #     while ! nc -z localhost 3000;
