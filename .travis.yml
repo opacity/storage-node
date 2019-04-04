@@ -43,6 +43,8 @@ before_script:
          sleep 0.5;
          free -m;
        done;
+  - echo $AWS_REGION
+  - echo AWS_REGION
 
 script:
   - docker-compose exec app go test ./jobs -v
