@@ -20,21 +20,21 @@ var (
 	localFilePath  string
 )
 
-func Test_S3_Init(t *testing.T) {
-	SetTesting("../.env")
-	workingDir, _ := os.Getwd()
-	localFilePath = workingDir + string(os.PathSeparator) + fileName
-}
+//func Test_S3_Init(t *testing.T) {
+//	SetTesting("../.env")
+//	workingDir, _ := os.Getwd()
+//	localFilePath = workingDir + string(os.PathSeparator) + fileName
+//}
 
 /*
 Test_Multi_Part_Uploads tests multipart uploads
 	1. Run tests for a successful multipart upload.
 	2. Run tests for an aborted multipart upload.
 */
-func Test_Multi_Part_Uploads(t *testing.T) {
-	multipartUploadCompletionTest(t)
-	multipartUploadAbortionTest(t)
-}
+//func Test_Multi_Part_Uploads(t *testing.T) {
+//	multipartUploadCompletionTest(t)
+//	multipartUploadAbortionTest(t)
+//}
 
 /*
 multipartUploadCompletionTest tests for successful completion of multipart upload
