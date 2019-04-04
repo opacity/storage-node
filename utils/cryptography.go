@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 )
 
+
 /*Encrypt encrypts a secret using a key and a nonce*/
 func Encrypt(key string, secret string, nonce string) []byte {
 	keyInBytes, err := hex.DecodeString(key)
