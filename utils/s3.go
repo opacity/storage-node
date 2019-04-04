@@ -2,7 +2,6 @@ package utils
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -46,7 +45,7 @@ func newS3Session() {
 			s3: s3.New(session.Must(session.NewSession())),
 		}
 	} else {
-		PanicOnError(errors.New("missing S3 credentials"))
+		svc = &s3Wrapper{}
 	}
 }
 
