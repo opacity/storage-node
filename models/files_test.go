@@ -4,15 +4,16 @@ import (
 	"testing"
 
 	"github.com/opacity/storage-node/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func returnValidFile() File {
 	return File{
-		FileID:              utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
-		FileSize:            10,
-		FileStorageLocation: "locationOfFile",
-		UploadStatus:        FileUploadNotStarted,
-		ChunkIndex:          0,
+		FileID:           utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		AwsUploadID:      utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		AwsObjectKey:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		EndIndex:         10,
+		CompletedIndexes: nil,
 	}
 }
 
@@ -76,33 +77,133 @@ func Test_Empty_FileID_Fails(t *testing.T) {
 	file.FileID = ""
 
 	if err := utils.Validator.Struct(file); err == nil {
-		t.Fatalf("account should have failed validation")
+		t.Fatalf("file should have failed validation")
 	}
 }
 
-func Test_No_File_Size_Fails(t *testing.T) {
+func Test_No_AwsUploadID_Fails(t *testing.T) {
 	file := returnValidFile()
-	file.FileSize = 0
+	file.AwsUploadID = ""
 
 	if err := utils.Validator.Struct(file); err == nil {
-		t.Fatalf("account should have failed validation")
+		t.Fatalf("file should have failed validation")
 	}
 }
 
-func Test_No_Storage_Location_Data_Fails(t *testing.T) {
+func Test_No_AwsObjectKey_Fails(t *testing.T) {
 	file := returnValidFile()
-	file.FileStorageLocation = ""
+	file.AwsObjectKey = ""
 
 	if err := utils.Validator.Struct(file); err == nil {
-		t.Fatalf("account should have failed validation")
+		t.Fatalf("file should have failed validation")
 	}
 }
 
-func Test_No_UploadStatus_Fails(t *testing.T) {
+func Test_EndIndex_Too_Low_Fails(t *testing.T) {
 	file := returnValidFile()
-	file.UploadStatus = 0
+	file.EndIndex = -1
 
 	if err := utils.Validator.Struct(file); err == nil {
-		t.Fatalf("account should have failed validation")
+		t.Fatalf("file should have failed validation")
 	}
+}
+
+func Test_UpdateCompletedIndexes(t *testing.T) {
+	file := returnValidFile()
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	expectedMap := make(IndexMap)
+	expectedMap[2] = true
+	expectedMap[5] = true
+
+	err := file.UpdateCompletedIndexes(2)
+	assert.Nil(t, err)
+	err = file.UpdateCompletedIndexes(5)
+	assert.Nil(t, err)
+
+	actualFile := File{}
+	DB.First(&actualFile, "file_id = ?", file.FileID)
+	actualMap := actualFile.GetCompletedIndexesAsMap()
+
+	assert.Equal(t, expectedMap, actualMap)
+}
+
+func Test_GetCompletedIndexesAsMap(t *testing.T) {
+	file := returnValidFile()
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	expectedMap := make(IndexMap)
+	startingMap := file.GetCompletedIndexesAsMap()
+	assert.Equal(t, expectedMap, startingMap)
+
+	expectedMap[2] = true
+	expectedMap[5] = true
+
+	err := file.UpdateCompletedIndexes(2)
+	assert.Nil(t, err)
+	err = file.UpdateCompletedIndexes(5)
+	assert.Nil(t, err)
+
+	actualFile := File{}
+	DB.First(&actualFile, "file_id = ?", file.FileID)
+	actualMap := actualFile.GetCompletedIndexesAsMap()
+
+	assert.Equal(t, expectedMap, actualMap)
+}
+
+func Test_SetCompletedIndexesToString(t *testing.T) {
+	file := returnValidFile()
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	indexMap := make(IndexMap)
+	indexMap[2] = true
+	indexMap[5] = true
+
+	err := file.SaveCompletedIndexesAsString(indexMap)
+	assert.Nil(t, err)
+
+	actualMap := file.GetCompletedIndexesAsMap()
+
+	assert.Equal(t, indexMap, actualMap)
+}
+
+func Test_VerifyAllChunksUploaded(t *testing.T) {
+	file := returnValidFile()
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	indexMap := make(IndexMap)
+	indexMap[2] = true
+	indexMap[5] = true
+
+	err := file.SaveCompletedIndexesAsString(indexMap)
+	assert.Nil(t, err)
+
+	allChunksUploaded := file.VerifyAllChunksUploaded()
+	assert.False(t, allChunksUploaded)
+
+	for i := 0; i <= file.EndIndex; i++ {
+		indexMap[i] = true
+	}
+
+	err = file.SaveCompletedIndexesAsString(indexMap)
+	assert.Nil(t, err)
+
+	allChunksUploaded = file.VerifyAllChunksUploaded()
+	assert.True(t, allChunksUploaded)
 }
