@@ -46,16 +46,6 @@ var Env StorageNodeEnv
 
 func initEnv(filenames ...string) {
 	// Load ENV variables
-
-	value, exists := os.LookupEnv("TRAVIS")
-	if exists && value == "true" {
-		lookupErr := tryLookUp()
-		if lookupErr != nil {
-			log.Fatal("Error loading environment variables: " + lookupErr.Error())
-		}
-		return
-	}
-
 	err := godotenv.Load(filenames...)
 	if err != nil {
 		lookupErr := tryLookUp()
