@@ -15,6 +15,12 @@ const (
 type s3LifeCycleSetup struct{}
 
 func (e s3LifeCycleSetup) Run() error {
+	freeUploadErr := setFreeUploadRule()
+	multiUploadErr := setMultipartUploadRule()
+	return utils.CollectErrors([]error{freeUploadErr, multiUploadErr})
+}
+
+func setFreeUploadRule() error {
 	rules, err := utils.GetDefaultBucketLifecycle()
 	if err != nil {
 		return err
@@ -37,12 +43,30 @@ func (e s3LifeCycleSetup) Run() error {
 		Status: aws.String("Enabled"),
 	})
 
+	return utils.SetDefaultBucketLifecycle(rules)
+}
+
+func setMultipartUploadRule() error {
+	rules, err := utils.GetDefaultBucketLifecycle()
+	if err != nil {
+		return err
+	}
+
+	for _, rule := range rules {
+		if (*rule.ID) == multiUploadId {
+			return nil
+		}
+	}
+
 	rules = append(rules, &s3.LifecycleRule{
 		AbortIncompleteMultipartUpload: &s3.AbortIncompleteMultipartUpload{
 			DaysAfterInitiation: aws.Int64(1),
 		},
 		Status: aws.String("Enabled"),
 		ID:     aws.String(multiUploadId),
+		Filter: &s3.LifecycleRuleFilter{
+			Prefix: aws.String(""),
+		},
 	})
 
 	return utils.SetDefaultBucketLifecycle(rules)
