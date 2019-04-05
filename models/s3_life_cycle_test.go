@@ -25,6 +25,7 @@ func Test_Update(t *testing.T) {
 	s = S3ObjectLifeCycle{}
 	assert.Nil(t, DB.Where("object_name = ?", objectName).First(&s).Error)
 	assert.True(t, time.Now().Sub(s.ExpiredTime).Minutes() < 10.0)
+	DB.Delete(&s)
 }
 
 func Test_Create(t *testing.T) {
@@ -35,4 +36,5 @@ func Test_Create(t *testing.T) {
 	assert.Nil(t, DB.Where("object_name = ?", objectName).First(&s).Error)
 
 	assert.True(t, time.Now().Sub(s.ExpiredTime).Minutes() < 10.0)
+	DB.Delete(&s)
 }
