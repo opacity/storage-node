@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -18,33 +17,37 @@ type s3Wrapper struct {
 }
 
 const (
+	MaxMultiPartSize          = int64(1024 * 1024 * 50)
+	MaxMultiPartSizeForTest   = int64(1024 * 1024 * 5)
+	MaxMultiPartRetries       = 10
 	CannedAcl_Private         = "private"
 	CannedAcl_PublicRead      = "public-read"
 	CannedAcl_PublicReadWrite = "public-read-write"
 )
 
 var awsPagingSize int64
-
 var svc *s3Wrapper
-
 var cachedData cmap.ConcurrentMap
 var shouldCachedData bool
 
 func init() {
 	awsPagingSize = 1000 // The max paging size per request.
+	shouldCachedData = false
+	cachedData = cmap.New()
+}
 
-	hasAwsKey := len(os.Getenv("AWS_ACCESS_KEY_ID")) > 0 && len(os.Getenv("AWS_SECRET_ACCESS_KEY")) > 0
+func newS3Session() {
+	hasAwsCredentials := len(Env.AwsAccessKeyID) > 0 && len(Env.AwsSecretAccessKey) > 0 &&
+		len(Env.BucketName) > 0 && len(Env.AwsRegion) > 0
 	// Stub out the S3 if we don't have S3 access right.
-	if hasAwsKey {
+	if hasAwsCredentials {
 		svc = &s3Wrapper{
 			s3: s3.New(session.Must(session.NewSession())),
 		}
 	} else {
+
 		svc = &s3Wrapper{}
 	}
-
-	shouldCachedData = false
-	cachedData = cmap.New()
 }
 
 func SetS3DataCaching(isCaching bool) {
@@ -343,6 +346,68 @@ func (svc *s3Wrapper) SetObjectCannedAcl(input *s3.PutObjectAclInput) error {
 	}
 
 	_, err := svc.s3.PutObjectAcl(input)
+	return err
+}
+
+func (svc *s3Wrapper) StartMultipartUpload(input *s3.CreateMultipartUploadInput) (*s3.CreateMultipartUploadOutput, error) {
+	if svc.s3 == nil {
+		return &s3.CreateMultipartUploadOutput{}, nil
+	}
+	return svc.s3.CreateMultipartUpload(input)
+}
+
+func (svc *s3Wrapper) UploadPartOfMultiPartUpload(key, uploadID string, fileBytes []byte,
+	partNumber int) (*s3.CompletedPart, error) {
+	tryNum := 1
+	partInput := &s3.UploadPartInput{
+		Body:          bytes.NewReader(fileBytes),
+		Bucket:        aws.String(Env.BucketName),
+		Key:           aws.String(key),
+		UploadId:      aws.String(uploadID),
+		PartNumber:    aws.Int64(int64(partNumber)),
+		ContentLength: aws.Int64(int64(len(fileBytes))),
+	}
+
+	for tryNum <= MaxMultiPartRetries {
+		uploadResult, err := svc.s3.UploadPart(partInput)
+		if err != nil {
+			if tryNum == MaxMultiPartRetries {
+				if aerr, ok := err.(awserr.Error); ok {
+					return nil, aerr
+				}
+				return nil, err
+			}
+			tryNum++
+		} else {
+			return &s3.CompletedPart{
+				ETag:       uploadResult.ETag,
+				PartNumber: aws.Int64(int64(partNumber)),
+			}, nil
+		}
+	}
+	return nil, nil
+}
+
+func (svc *s3Wrapper) FinishMultipartUpload(key, uploadID string,
+	completedParts []*s3.CompletedPart) (*s3.CompleteMultipartUploadOutput, error) {
+	completeInput := &s3.CompleteMultipartUploadInput{
+		Bucket:   aws.String(Env.BucketName),
+		Key:      aws.String(key),
+		UploadId: aws.String(uploadID),
+		MultipartUpload: &s3.CompletedMultipartUpload{
+			Parts: completedParts,
+		},
+	}
+	return svc.s3.CompleteMultipartUpload(completeInput)
+}
+
+func (svc *s3Wrapper) CancelMultipartUpload(key, uploadID string) error {
+	abortInput := &s3.AbortMultipartUploadInput{
+		Bucket:   aws.String(Env.BucketName),
+		Key:      aws.String(key),
+		UploadId: aws.String(uploadID),
+	}
+	_, err := svc.s3.AbortMultipartUpload(abortInput)
 	return err
 }
 

@@ -9,9 +9,12 @@ import (
 )
 
 type uploadFileReq struct {
-	AccountID string `json:"accountID" binding:"required,len=64"`
-	UploadID  string `json:"uploadID" binding:"required"`
-	FileData  string `json:"fileData" binding:"required"`
+	AccountID string `form:"accountID" binding:"required,len=64"`
+	ChunkHash string `form:"chunkHash" binding:"required"`
+	ChunkData string `form:"chunkData" binding:"required"`
+	FileHash  string `form:"fileHash" binding:"required,len=64"`
+	PartIndex int    `form:"partIndex" binding:"required,gte=0"`
+	EndIndex  int    `form:"endIndex" binding:"required,gtefield=PartIndex"`
 }
 
 type uploadFileRes struct {
@@ -25,6 +28,7 @@ func UploadFileHandler() gin.HandlerFunc {
 
 func uploadFile(c *gin.Context) {
 	request := uploadFileReq{}
+
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		BadRequestResponse(c, err)
@@ -55,8 +59,8 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.UploadID)
-	if err := utils.SetDefaultBucketObject(objectKey, request.FileData); err != nil {
+	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.ChunkHash)
+	if err := utils.SetDefaultBucketObject(objectKey, request.ChunkData); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
@@ -64,4 +68,13 @@ func uploadFile(c *gin.Context) {
 	OkResponse(c, uploadFileRes{
 		Status: "File is uploaded",
 	})
+}
+
+func handleFirstChunk() {
+}
+
+func handleMiddleChunk() {
+}
+
+func handleLastChunk() {
 }

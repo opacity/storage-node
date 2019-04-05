@@ -6,12 +6,38 @@ go:
  - "1.11.4"
 
 env:
-  - DOCKER_COMPOSE_VERSION=1.18.0 GO111MODULE=on
-
+  global:
+  - DOCKER_COMPOSE_VERSION=1.18.0
+  - GO111MODULE=on
+  - DISPLAY_NAME=travisBuild
+  - ENABLE_JOBS=false
+  - SLACK_DEBUG_URL=""
+  - DISABLE_DB_CONN=false
+  - ACCOUNT_RETENTION_DAYS=7
+  - PROD_DATABASE_URL="root:secret@tcp(db:3306)/test?parseTime=true&multiStatements=true&readTimeout=1s"
+  - TEST_DATABASE_URL="root:secret@tcp(db:3306)/test?parseTime=true&multiStatements=true&readTimeout=1s"
+  # ETH_NODE_URL
+  - secure: "VQRLwmHSbPVMvb1UTK2meogWFBTrQvEV3cJd3E5mfl/bKRJNw1WpvEIQLZ+0OweGiditmZBoEZri0scaxjWiR26cYMlKA3ToDewAfDlMk3MnJrr6s4uzIsAJAj1xJhX6vw2UjqFjsNukMn/nfLlxiSusVHwB6zBCg+zcQ0W+47Qp33ka5I4xWGkNN3ttRiIUFrfKp4EubGQLSUsFLfcp2zZRlGmvJ4Va4Ggxz6ZvED++3EsCQHBjGhoRBezDhE0vZbFmKCkdY8tt11U857tzWIvXVi+WqPazxfaVGSWZ5ChOfgK42dngk8O9m8bEC0BV92kOd5SGkxbg0923Rraw69VGs/qsZjQJRyAQHJuc6imUW2TbYqENKgnqa9+W9bh9YmHIXuss0dsPZsnStELyTUpWAC6JUXGDwSyJzHbzg6J36oY1lZmRaTWasw56PhPzqiCVmjvkat8McGZiE4k/C8KyAq50QqaFDc20tPCFRgLwB9mlQtDrffdpjky+CHPBlGf9zfmpQzLZlXx3GRXMrZquPlyIVVnUxC7JAyW/YLJk6kw4M5jcIgA5RD33AOrngA1z23ZqaoZ8eNO4n7KKuNRYyeGzH9zeOumEqYQCsU/nbvIkcfyHXggILs6dYlFRR0bkXHXle6YqrXaEsuaB1sfVtmdhxbcxuw/CWFHaFds="
+  # TOKEN_CONTRACT_ADDRESS
+  - secure: "UgJOfi3PnORMlVjuZ96bKHL3Eep3rVGyZUwMv8q1Sd23+dr3YosCiflf2ftbk1Y9yQFJaUSwcg7wWg2rBW9TmFc9nKVUNQ+fVQE0vpegeUoZz+i8L3WeWouPHSStrF19T2oRh/vFjyiYEfRbvWhg4LkOo5gQoOby7XotqqIWp8lg6wuBfErrXoRqn65Z6ZTt8zdDUoeeHfh+9qiXq4RSfRuUtDXQxJXWzysGWozCjMOUH0WlfPZGY3UkUBr/nt7txPBDEDTkkzLruunxMQ7TYSsGlW5kUfrN8A0cnhM3jsDFal2iVCpnhCFWtL0R61dZ/FHJM53u2QGI0GY3oU3rDmzsKhJDwp2zQ9ldxdvxrmI2xKaE/AAT2HQ38beqkrIQKFA9s6LnTrgClDOGtiJkqAUyO5MNAdRC73UiVAwZClrNU/ay5FsLU4lzNojH1hF5bgY7B0PzgY/bw4dvKw2v7FvblSQFv/OP9QPfUwRuwjQFQzuU/MR4zrJcOYE0TjuB1YfKlOWfmAVt1MtAf+UleMfat8BrwZW21aDOXqqObRjZ9hbmmgtd8u5LQAFxygu0jpt2+QLYljlzQNKnu8CuSfTJiKM3CA5n7if1TViYZTZgaXArPjj4gMJ3gFPj4CFHa5jmShT8hmXwrUQ/LMucjNiUIt1EzkrOTkA4VT4Jlig="
+  # AWS_ACCESS_KEY_ID
+  - secure: "kzvaRIiJ8HcXhYBwOFOf/lsZW4bkK/B9E0HFJOjQcVdP/RkHqJ43jE26IVhT3c0fLQKVDD1wzi0/qyFml4KjAqlADWPtq0GqntKhXXQ3QMp/rBo382wS37f6r07URjbEcAQ6WkFNwDL6ie3zy3UxNk2rbXZ/8HJgiqR9z6r2A3SDT1sY14jon54MKdqvr0OEdEtQ16CLnZVfAKA5BAcqOEQoIZI3R1ips1OdkttIW7XBPTLxNHWCsLmKrED/7II+otIwDuZ/4XquR/Rza86TbqwdJ4xvqtqh3rCxYal+6xy4n0GsyJuaV6E3y+zX8+CJ6jFDnCI7CqTwvKUgvW3+TPBQeUvWIDfqwCWs1d9OE5sC1W1KQHsnOYH3KjqzzwKxZWfd2ccJCcLxXzNWacj7J9nq8Z4V92yYAhHQkWZvuwHdFffgPeAsRR2lMAIm6JgbOvc2o4nvu/AbStrl/V8Y2zfCRIPrC2RbQfX+MRA/lMaRoEyWmjhjfe42eSSQZzcCnoFw/Hff+91XTIZRoSo7CzNt9v+ASjlmWye4Vb+lnkK310lsxV2OGWmGiO8YeBhCWGfrrAAkz3MV9RKgMzWOkalmxVW9fJXc5wI+91UvHBLIdxwzS08qZVXNQBiQV0ndXgTHhg+PnNWa4wRld+SGY8XUu/gG2ROy3SspkGYeQ44="
+  # AWS_SECRET_ACCESS_KEY
+  - secure: "K1OoWSEvgnCO2GKxfq7G0SEfbPbNgXyP641Gk5l0kgUwQNJIvINkfxMd+p6z1bg3Ih02QfMEt4wDcxxRhrzAoYs17sJxf+zW9DA+SHO05TLMQntIDn7D4M+i07lHirZUiYQxXHODUiS9FxIMjyyp5YlGqeRYpFmtyoyX1L1HHN1MICYyAH1cLVmHOi3Jy9t48UL4rUtLhYaGrvW24f3ATEvKRF2JbbLJhlYgHYripAH8GRE9Rbedu8oBlumOd6DS2y8MwuQehZov/iALIPYmsBAnr8bRMqa+qTGMLFi0As42FlxA5VOx8S0g4YP/z3WbBaPNmI6wfJPXcCOz9UZEla2RDbZoVSxYA7YoZDa0J8scEhNRjbPRuY5FxdFCY90sOxq8hjtmc+M4nAwcMZ9fLUO92oML6vbJmK1crAFNbdqG0qkGSth4U+tDje9laL0Ny6Fp+wij250X378mUHegMRXOszGg7C+KZjf7zSXaLIoh7Vj+vrZRHSZejlfzgDHyOgydtchcIbrVywve0uEvwr/jpSpK6WCo03Pzd4VAzy5cT4LF684UTEvWWmh1GKW0V50D0A8Ctny8i0g4IkfCxyvsWSLs/l7tAEbwaXOxChg865AI1FtxL2P+y82nuYkEyp4v7FZZALjHIs4F3U4iW9NgXe01Vb812OL3Wewj64Q="
+  # AWS_REGION
+  - secure: "nNfqWcbClfD8VYWAUe6cYKb/OipzWN3voS64l0MVeybYDJ/yU7ghVq9RHnNco6syy2GzZRJqCY+ABD5QwH4YDcTNgcDO9LWi5h4CE0/74Av/OFoaoOiTpTcbVPcip1xaTKfjRaqKogogmuqqrHzhF9MYkDQFRLVUZTUi7yhNt56GuKl0lKWZDkNNeClj16Fzw41z2zkJgXrcXR+aBj11R/A0IbXE2snlbv6zkLHtYFK0+3DI+gMrvhYhUT9b8XdceRGl907X9vM4izcDFT02vQGDw/fIVsehYGVJ33JRSwAthNyI5EzcCv4iQRwV8VH3JPCkoG4tzfJ8rlzceinlwjeay15YfzOyC34kK6j+PdZ6cmkRm8/L4N+YqwxOeZEHYeLmo7DhxLrPtMlop2QCk3VsM7rBTd6X/HqPGjqT8D8ZrDa4zOooLM+TDJKMkp0b52UJ23b1bmA5AcvWYiBVNfWUyyqybpnnLQkByY7cYKP+2vmdFanIkszKescJTdEsoicfiq2HsBGC4A8vqGSecpmEiBiAD9jb3tqg4dEPDthbN3Bcy97ypqFIR1B2bRuCB1LGA7pjOx6zKu5AKidSpaq/9pcO9mWY/myF+g2CO0v+xydU8Dq9STL4pHI5sJDkUWCWaih5yX3PRM8UzlTsVQCixaTmxzSboESnmYiTxwY="
+  # AWS_BUCKET_NAME
+  - secure: "KXf1BZuunh9cqD9SL9fIEMVnPEGdS50KuhvVeKAXL5o6pRFjEVb6YHxJWuzuPwYCMML6QlahXoGoCG0OKP16KOx7xdHYND4QZlRNNBxC4dHBMamO77+mElcfO9ayVjtLw6UfUa1FtiNYoWvHBF+rK5N69HGi15/eOOddLvbooM8xPq6dNcL+nEVREzx7Lj1jvQmJ77JLKm/tR+17MqTITvG06CUK+X2C6atH0F5QJG2us5jnqPC/C8FN93vfVdzG0qR3aQUvZfw3+U+Qz0MYWXZyZ1f5YRdupa79FCMhgTFPBjM62mTIFFyQOwjwxwXwiQjsJKHB03ufL9oOscR0fhJZPjCh1henKspiftQgN38SFoa6rMj3xbDJKs3JYSH43+CmswH/BbGu9tIwgqsIrYMtnmkrFOK4soU3/YGqpQeW+LG9PkFDok7Pv6tvWe/gvIMNFueViMNFsd4e9TyPbpaSnmzhAv+SfHGF+glynFmevVLo6FiZvLngZU1HiEATHpPCqes63WJHO5jHuzHQYdFjSzun9WxCokoaAoqzHxt3eiacmPFPnBROflS88Jhiqmd7QWPb/1cq1I8UA3bCnDC3DZE9BsmkliotPLjSN3ZaWZ7ANZD9c2iUuoG7qAbWawtTK3kOWKkDeS/87EquWTfr+65Jnn9grU9JbW6Yyu4="
+  # MAIN_WALLET_PRIVATE_KEY
+  - secure: "C0XfxhFV5pRb75VyfvFGVHMEgt4Y+hqipcxR647E/8ta27gl5nzuygFyLCVYqA/FeOrN5thw0UNJwpjzAs6Cs9OrC5x0XjrR6UuDC/p6QZaktwvvlgqpuJb33m9jICzcBquYgjBr17uOUzjlFrmixs32kNi4gHLq/LuAGvXGbPOxfdZZEbVAcRvlrcNKEX+RfmTH6DganLY4lWjQvGvSvNBVEqyY0XG+dwSD4IdE5pSgO+UO92nn+vomtKel0jZlxJavnvv0Fp6/Yar52EnKdk8nMAIiiZjMapiY+oICXve/F9Is4cWXjd8Hs4mO4pyG4dGOKPJNpxUMYyrycHYipuwW4AXepmcI3URHoiAK0C3ICOD9SnxXTzzDLnTdsXQtXbHEEjwRm8shgq/b4zWAIQUAGJp8t0XsryLYgkmgP0e6Zx0WxOONikhJ163TfqXy3k9m68oG9vVhbFyra1plvCT105yDG506Byfe6addip3j2aDK2pJ8CGSUYRa/NX3jAGKVFFhw4L2kG5ezUBbQQ451w/K3UzI520KIJzytYE6SAG5rDMLlqLBjEKXTxxa/C5BFODGRFSUnOyKXVUWPlbmOx5D3SAbQpkbHz8bPaAXpNSjkaMqNBzaPeLC7QBNyiv/cchDbvkZEDU3k0bWFu8tdVn4/7Qledc4fTkFixZI="
+  # MAIN_WALLET_ADDRESS
+  - secure: "Vjr3aaIcEWe4y7fAmfVSZOoYzYlkRpzHKFBpX6JEwFpc7nXFOfKpD/68JHafbl9Zyjc7A2e84wRKqISQSfGc4cdXhDaVpGVj/j9DXMhxaY4IUASutWjsYi6T2frH2557dlXb+lPqH06U+HKJUmEplYk+LGjvG+aVhwyG/Gw9YxDNAM2Nicmn2lOn334ualzinO58HSXuRmwGIpZKcg9mBhuyZWja4B9cIDgIJnP7GaWCxHCaJw3OBF12htSmmrNjpI9EzdkqWsBcnBl/fxQibln40xNv0Oeyk2SnCkahUvFq6LHhDSeF38kuQ1JS1Ama2yj4CT2xbgAOtrNdDt35iPH76SZOi/RRs2BOHdnzJTOaAggy3gxmGFMmuKk18dkkrl6N+4Erhi+XMnlWcG/LhemnXZADHLSwuqEpa02xXmkPmEDAVWKl2yzx09D5IvRuOkRziY9QgERs/3QgtC2nDJxgYHHeV3UWvBJ4t2wNOz136zWScdDcjlp7QXepQ0aHv1MTc8rY0grxTUkc9n1pExm5ylXIl0VYtU3TbKkFTBhOSUVOgCFDSE96WKvTFj9bHjn/VwA8R7SruKTDYsooCvASe8hHQeQM9MBDBvt89hYRIkSOzYyj5bi+F5ZP4zS53CA0O5UcV3pCWE5zdQlJYv867jr/vF7U49BeTSsZBZc="
+  # ENCRYPTION_KEY
+  - secure: "iadH1I5VTBHM6b33v36yWimwAhilv/qX4s0MKOLp8X7g7SxV41k6tnrkjI+4oUf+DLAXR9nGbJB2vcaiOg5YNaVi0Hr7AeVkx5C34pmSqqocTaPqttjJVMeOzu6l4lWFMiFDdET+TrIinaic9un8AaZIBfKuVLrRUfD2S/rI5otmzxAInTKuJdPJ6sHMqpTDRXjnd4P0a22KNImPMtNbXD+kDPmMfiq+Pf2+ThpIFqzfl7EeTMN1p3bIuiXRIprIja/snXzDFuQfPALMEneED6eTW8wWeyZij4Y81Piypqygwsj16dp8CwvesmoXDrjrgG7R7ymENVo+uifxoQOzp+LvHBZXSzNb4cS0ujlM/p6xIM063oojJc0qNPQFuUVZ+6C1A6CETg8NU48euJ+IkwOIMev24vg1qsVd28g35f0dtXc3zTSYpt1cJB99ZjwC6TwyXxsA8WjS0Xf6ZQomXyacrCxf5ujz5o+w/ckpffNRn0TzHcmEje43/ecNmdpQ3byVN78OHbbuSSGuk9ai5TZy0mifhAB2CmgH88WfFeSfmGIjaUo45EFYDbbveMN8dtlE01f/z+dR8lWL71+/DCDBg4D/0GsariHfeMD2ifhVOEkDXziyItWxT0F2m866vrQU3+Nrdvg3peOFVvZz9XoQcHOWfjqUAhXfxlI1DBc="
 addons:
   apt:
     packages:
-      - docker-ce
+    - docker-ce
 
 before_install:
   - sudo apt-get install -y -q netcat
@@ -27,7 +53,11 @@ before_install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - cp .travis.env .env
-
+  - sudo sed -i -e 's/AWS_BUCKET_NAME=TRAVIS/AWS_BUCKET_NAME='${AWS_BUCKET_NAME}'/' .env
+  - sudo sed -i -e 's/AWS_ACCESS_KEY_ID=TRAVIS/AWS_ACCESS_KEY_ID='${AWS_ACCESS_KEY_ID}'/' .env
+  - sudo sed -i -e 's/AWS_SECRET_ACCESS_KEY=TRAVIS/AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}'/' .env
+  - sudo sed -i -e 's/AWS_REGION=TRAVIS/AWS_REGION='${AWS_REGION}'/' .env
+  - sudo sed -i -e 's+ETH_NODE_URL=TRAVIS+ETH_NODE_URL='${ETH_NODE_URL}'+' .env
   - docker-compose --version
   - rm -rf ./data
   - docker-compose up --build -d
@@ -35,14 +65,6 @@ before_install:
 install: true
 
 before_script:
-  - sleep 30
-  # - "
-  #     echo waiting for docker...;
-  #     while ! nc -z localhost 3000;
-  #     do
-  #       sleep 0.5;
-  #     done;
-  #   "
 
 script:
   - docker-compose exec app go test ./...

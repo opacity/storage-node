@@ -29,8 +29,10 @@ type StorageNodeEnv struct {
 	EnableJobs           bool   `env:"ENABLE_JOB" envDefault:"false"`
 
 	// Aws configuration
-	BucketName string `env:"AWS_BUCKET_NAME" envDefault:""`
-	AwsRegion  string `env:"AWS_REGION" envDefault:"us-east-2"`
+	BucketName         string `env:"AWS_BUCKET_NAME" envDefault:""`
+	AwsRegion          string `env:"AWS_REGION" envDefault:""`
+	AwsAccessKeyID     string `env:"AWS_ACCESS_KEY_ID" envDefault:""`
+	AwsSecretAccessKey string `env:"AWS_SECRET_ACCESS_KEY" envDefault:""`
 
 	// Debug purpose
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
@@ -69,6 +71,7 @@ func SetProduction() {
 	Env.GoEnv = "production"
 	Env.DatabaseURL = Env.ProdDatabaseURL
 	InitKvStore()
+	newS3Session()
 }
 
 /*SetDevelopment sets the development environment*/
@@ -78,6 +81,7 @@ func SetDevelopment() {
 	// TODO: should we have a separate development database?
 	Env.DatabaseURL = Env.ProdDatabaseURL
 	InitKvStore()
+	newS3Session()
 }
 
 /*SetTesting sets the testing environment*/
@@ -86,6 +90,7 @@ func SetTesting(filenames ...string) {
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
 	InitKvStore()
+	newS3Session()
 }
 
 /*IsTestEnv returns whether we are in the test environment*/
@@ -102,8 +107,13 @@ func tryLookUp() error {
 	ethNodeURL := AppendLookupErrors("ETH_NODE_URL", &collectedErrors)
 	mainWalletAddress := AppendLookupErrors("MAIN_WALLET_ADDRESS", &collectedErrors)
 	mainWalletPrivateKey := AppendLookupErrors("MAIN_WALLET_PRIVATE_KEY", &collectedErrors)
+	bucketName := AppendLookupErrors("AWS_BUCKET_NAME", &collectedErrors)
+	awsRegion := AppendLookupErrors("AWS_REGION", &collectedErrors)
+	awsAccessKeyID := AppendLookupErrors("AWS_ACCESS_KEY_ID", &collectedErrors)
+	awsSecretAccessKey := AppendLookupErrors("AWS_SECRET_ACCESS_KEY", &collectedErrors)
 	accountRetentionDaysStr := AppendLookupErrors("ACCOUNT_RETENTION_DAYS", &collectedErrors)
 	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
+
 	if err != nil {
 		collectedErrors = append(collectedErrors, err)
 	}
@@ -120,6 +130,10 @@ func tryLookUp() error {
 		MainWalletAddress:    mainWalletAddress,
 		MainWalletPrivateKey: mainWalletPrivateKey,
 		AccountRetentionDays: accountRetentionDays,
+		AwsRegion:            awsRegion,
+		BucketName:           bucketName,
+		AwsAccessKeyID:       awsAccessKeyID,
+		AwsSecretAccessKey:   awsSecretAccessKey,
 	}
 
 	Env = serverEnv
@@ -130,7 +144,7 @@ func tryLookUp() error {
 error, it will append it to the array of errors that are passed in*/
 func AppendLookupErrors(property string, collectedErrors *[]error) string {
 	value, exists := os.LookupEnv(property)
-	if !exists {
+	if !exists || value == "" {
 		*collectedErrors = append(*(collectedErrors),
 			errors.New("in tryLookup, failed to load .env variable: "+property))
 	}
