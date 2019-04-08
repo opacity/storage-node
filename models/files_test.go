@@ -3,6 +3,8 @@ package models
 import (
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,6 +16,13 @@ func returnValidFile() File {
 		AwsObjectKey:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		EndIndex:         10,
 		CompletedIndexes: nil,
+	}
+}
+
+func returnCompletedPart(partNumber int) *s3.CompletedPart {
+	return &s3.CompletedPart{
+		ETag:       aws.String(utils.RandSeqFromRunes(32, []rune("abcdef01234567890"))),
+		PartNumber: aws.Int64(int64(partNumber)),
 	}
 }
 
@@ -116,13 +125,16 @@ func Test_UpdateCompletedIndexes(t *testing.T) {
 		t.Fatalf("should have created file but didn't: " + err.Error())
 	}
 
-	expectedMap := make(IndexMap)
-	expectedMap[2] = true
-	expectedMap[5] = true
+	completedPartIndex2 := returnCompletedPart(2)
+	completedPartIndex5 := returnCompletedPart(5)
 
-	err := file.UpdateCompletedIndexes(2)
+	expectedMap := make(IndexMap)
+	expectedMap[*completedPartIndex2.PartNumber] = completedPartIndex2
+	expectedMap[*completedPartIndex5.PartNumber] = completedPartIndex5
+
+	err := file.UpdateCompletedIndexes(completedPartIndex2)
 	assert.Nil(t, err)
-	err = file.UpdateCompletedIndexes(5)
+	err = file.UpdateCompletedIndexes(completedPartIndex5)
 	assert.Nil(t, err)
 
 	actualFile := File{}
@@ -144,12 +156,15 @@ func Test_GetCompletedIndexesAsMap(t *testing.T) {
 	startingMap := file.GetCompletedIndexesAsMap()
 	assert.Equal(t, expectedMap, startingMap)
 
-	expectedMap[2] = true
-	expectedMap[5] = true
+	completedPartIndex2 := returnCompletedPart(2)
+	completedPartIndex5 := returnCompletedPart(5)
 
-	err := file.UpdateCompletedIndexes(2)
+	expectedMap[*completedPartIndex2.PartNumber] = completedPartIndex2
+	expectedMap[*completedPartIndex5.PartNumber] = completedPartIndex5
+
+	err := file.UpdateCompletedIndexes(completedPartIndex2)
 	assert.Nil(t, err)
-	err = file.UpdateCompletedIndexes(5)
+	err = file.UpdateCompletedIndexes(completedPartIndex5)
 	assert.Nil(t, err)
 
 	actualFile := File{}
@@ -159,7 +174,7 @@ func Test_GetCompletedIndexesAsMap(t *testing.T) {
 	assert.Equal(t, expectedMap, actualMap)
 }
 
-func Test_SetCompletedIndexesToString(t *testing.T) {
+func Test_SaveCompletedIndexesAsString(t *testing.T) {
 	file := returnValidFile()
 
 	// Add file to DB
@@ -168,8 +183,12 @@ func Test_SetCompletedIndexesToString(t *testing.T) {
 	}
 
 	indexMap := make(IndexMap)
-	indexMap[2] = true
-	indexMap[5] = true
+
+	completedPartIndex2 := returnCompletedPart(2)
+	completedPartIndex5 := returnCompletedPart(5)
+
+	indexMap[2] = completedPartIndex2
+	indexMap[5] = completedPartIndex5
 
 	err := file.SaveCompletedIndexesAsString(indexMap)
 	assert.Nil(t, err)
@@ -188,8 +207,12 @@ func Test_VerifyAllChunksUploaded(t *testing.T) {
 	}
 
 	indexMap := make(IndexMap)
-	indexMap[2] = true
-	indexMap[5] = true
+
+	completedPartIndex2 := returnCompletedPart(2)
+	completedPartIndex5 := returnCompletedPart(5)
+
+	indexMap[2] = completedPartIndex2
+	indexMap[5] = completedPartIndex5
 
 	err := file.SaveCompletedIndexesAsString(indexMap)
 	assert.Nil(t, err)
@@ -198,7 +221,7 @@ func Test_VerifyAllChunksUploaded(t *testing.T) {
 	assert.False(t, allChunksUploaded)
 
 	for i := 0; i <= file.EndIndex; i++ {
-		indexMap[i] = true
+		indexMap[int64(i)] = returnCompletedPart(i)
 	}
 
 	err = file.SaveCompletedIndexesAsString(indexMap)

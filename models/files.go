@@ -9,6 +9,7 @@ import (
 
 	"sync"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
 )
@@ -28,7 +29,7 @@ type File struct {
 	CompletedIndexes *string   `json:"completedIndexes"`
 }
 
-type IndexMap map[int]bool
+type IndexMap map[int64]*s3.CompletedPart
 
 /*UploadStatusType defines a type for the upload statuses*/
 type UploadStatusType int
@@ -88,12 +89,12 @@ func (file *File) PrettyString() {
 }
 
 /*UpdateCompletedIndexes - update the completed indexes*/
-func (file *File) UpdateCompletedIndexes(index int) error {
+func (file *File) UpdateCompletedIndexes(completedPart *s3.CompletedPart) error {
 	// TODO:  QA and see if we even need this?
 	indexMutex.Lock()
 	defer indexMutex.Unlock()
 	completedIndexes := file.GetCompletedIndexesAsMap()
-	completedIndexes[index] = true
+	completedIndexes[*completedPart.PartNumber] = completedPart
 	err := file.SaveCompletedIndexesAsString(completedIndexes)
 	return err
 }
@@ -131,7 +132,7 @@ func (file *File) VerifyAllChunksUploaded() bool {
 	completedIndexMap := file.GetCompletedIndexesAsMap()
 
 	for index := 0; index <= file.EndIndex; index++ {
-		if complete, ok := completedIndexMap[index]; !ok && !complete {
+		if _, ok := completedIndexMap[int64(index)]; !ok {
 			return false
 		}
 	}
