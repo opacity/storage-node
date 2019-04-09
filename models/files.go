@@ -14,7 +14,7 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-var indexMutex = &sync.Mutex{}
+var getFileMutex = &sync.Mutex{}
 
 /*File defines a model for managing a user subscription for uploads*/
 type File struct {
@@ -23,10 +23,11 @@ type File struct {
 	FileID           string    `gorm:"primary_key" json:"fileID" binding:"required"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
-	AwsUploadID      string    `json:"awsUploadID" binding:"required"`
-	AwsObjectKey     string    `json:"awsObjectKey" binding:"required"`
+	AwsUploadID      *string   `json:"awsUploadID"`
+	AwsObjectKey     *string   `json:"awsObjectKey"`
 	EndIndex         int       `json:"endIndex" binding:"required,gte=0"`
 	CompletedIndexes *string   `json:"completedIndexes"`
+	sync.Mutex
 }
 
 type IndexMap map[int64]*s3.CompletedPart
@@ -75,24 +76,42 @@ func (file *File) PrettyString() {
 	fmt.Print("UpdatedAt:                      ")
 	fmt.Println(file.UpdatedAt)
 
-	fmt.Print("AwsUploadID:                      ")
-	fmt.Println(file.AwsUploadID)
+	fmt.Print("AwsUploadID:                    ")
+	fmt.Println(*file.AwsUploadID)
 
-	fmt.Print("AwsObjectKey:                      ")
-	fmt.Println(file.AwsObjectKey)
+	fmt.Print("AwsObjectKey:                   ")
+	fmt.Println(*file.AwsObjectKey)
 
-	fmt.Print("EndIndex:                      ")
+	fmt.Print("EndIndex:                       ")
 	fmt.Println(file.EndIndex)
 
-	fmt.Print("CompletedIndexes:                      ")
+	fmt.Print("CompletedIndexes:               ")
 	fmt.Println(file.CompletedIndexes)
+}
+
+/*GetOrCreateFile - Get or create the file. */
+func GetOrCreateFile(file File) (*File, error) {
+	getFileMutex.Lock()
+	defer getFileMutex.Unlock()
+	var fileFromDB File
+	err := DB.Where(File{FileID: file.FileID}).Attrs(file).FirstOrCreate(&fileFromDB).Error
+
+	return &fileFromDB, err
+}
+
+/*UpdateKeyAndUploadID - update the key and uploadID*/
+func (file *File) UpdateKeyAndUploadID(key, uploadID *string) error {
+	if err := DB.Model(&file).Updates(File{AwsObjectKey: key, AwsUploadID: uploadID}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 /*UpdateCompletedIndexes - update the completed indexes*/
 func (file *File) UpdateCompletedIndexes(completedPart *s3.CompletedPart) error {
-	// TODO:  QA and see if we even need this?
-	indexMutex.Lock()
-	defer indexMutex.Unlock()
+	// TODO:  QA and see if we need this mutex?
+	file.Lock()
+	defer file.Unlock()
 	completedIndexes := file.GetCompletedIndexesAsMap()
 	completedIndexes[*completedPart.PartNumber] = completedPart
 	err := file.SaveCompletedIndexesAsString(completedIndexes)

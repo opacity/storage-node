@@ -12,8 +12,8 @@ import (
 func returnValidFile() File {
 	return File{
 		FileID:           utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
-		AwsUploadID:      utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
-		AwsObjectKey:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		AwsUploadID:      aws.String(utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))),
+		AwsObjectKey:     aws.String(utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))),
 		EndIndex:         10,
 		CompletedIndexes: nil,
 	}
@@ -90,24 +90,6 @@ func Test_Empty_FileID_Fails(t *testing.T) {
 	}
 }
 
-func Test_No_AwsUploadID_Fails(t *testing.T) {
-	file := returnValidFile()
-	file.AwsUploadID = ""
-
-	if err := utils.Validator.Struct(file); err == nil {
-		t.Fatalf("file should have failed validation")
-	}
-}
-
-func Test_No_AwsObjectKey_Fails(t *testing.T) {
-	file := returnValidFile()
-	file.AwsObjectKey = ""
-
-	if err := utils.Validator.Struct(file); err == nil {
-		t.Fatalf("file should have failed validation")
-	}
-}
-
 func Test_EndIndex_Too_Low_Fails(t *testing.T) {
 	file := returnValidFile()
 	file.EndIndex = -1
@@ -115,6 +97,45 @@ func Test_EndIndex_Too_Low_Fails(t *testing.T) {
 	if err := utils.Validator.Struct(file); err == nil {
 		t.Fatalf("file should have failed validation")
 	}
+}
+
+func Test_GetOrCreateFile_file_exists(t *testing.T) {
+	file := returnValidFile()
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	shouldNotBeTheUploadKey := aws.String("some dumb string")
+	file.AwsObjectKey = shouldNotBeTheUploadKey
+
+	fileInDB, _ := GetOrCreateFile(file)
+	// verify it's not an empty file object
+	assert.NotEqual(t, File{}, fileInDB)
+	// verify the upload IDs match
+	assert.Equal(t, aws.StringValue(file.AwsUploadID), aws.StringValue(fileInDB.AwsUploadID))
+
+	// the file already existed and we only check for a match on FileID, so the value in the DB should
+	// not have this AwsObjectKey value
+	assert.NotEqual(t, aws.StringValue(shouldNotBeTheUploadKey), aws.StringValue(fileInDB.AwsObjectKey))
+}
+
+func Test_GetOrCreateFile_file_does_not_exist(t *testing.T) {
+	file := returnValidFile()
+
+	shouldBeTheUploadKey := aws.String("some dumb string")
+	file.AwsObjectKey = shouldBeTheUploadKey
+
+	fileInDB, _ := GetOrCreateFile(file)
+	// verify it's not an empty file object
+	assert.NotEqual(t, File{}, fileInDB)
+	// verify the upload IDs match
+	assert.Equal(t, aws.StringValue(file.AwsUploadID), aws.StringValue(fileInDB.AwsUploadID))
+
+	// the file didn't exist in the db at the time we passed the file object into GetOrCreateFile, so the file
+	// value from the db should have the AwsObjectKey value that we assigned before we passed it into GetOrCreateFile
+	assert.Equal(t, aws.StringValue(shouldBeTheUploadKey), aws.StringValue(fileInDB.AwsObjectKey))
 }
 
 func Test_UpdateCompletedIndexes(t *testing.T) {

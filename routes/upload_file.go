@@ -3,6 +3,8 @@ package routes
 import (
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -59,22 +61,49 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.ChunkHash)
-	if err := utils.SetDefaultBucketObject(objectKey, request.ChunkData); err != nil {
+	file, err := models.GetOrCreateFile(models.File{
+		FileID:   request.FileHash,
+		EndIndex: request.EndIndex,
+	})
+	if err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
+	var multipartErr error
+	var completedPart *s3.CompletedPart
+	if file.AwsUploadID == nil && file.AwsObjectKey == nil {
+		completedPart, multipartErr = handleFirstChunk(file, request.PartIndex, request.ChunkData)
+	} else {
+		completedPart, multipartErr = handleOtherChunk(file, request.PartIndex, request.ChunkData)
+	}
+
+	if multipartErr != nil {
+		InternalErrorResponse(c, multipartErr)
+		return
+	} else {
+		file.UpdateCompletedIndexes(completedPart)
+	}
+
 	OkResponse(c, uploadFileRes{
-		Status: "File is uploaded",
+		Status: "Chunk is uploaded",
 	})
 }
 
-func handleFirstChunk() {
+func handleFirstChunk(file *models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {
+	key, uploadID, err := utils.CreateMultiPartUpload(file.FileID)
+	if err != nil {
+		return nil, err
+	}
+	err = file.UpdateKeyAndUploadID(key, uploadID)
+	if err != nil {
+		return nil, err
+	}
+
+	return handleOtherChunk(file, chunkIndex, chunkData)
 }
 
-func handleMiddleChunk() {
-}
-
-func handleLastChunk() {
+func handleOtherChunk(file *models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {
+	return utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
+		[]byte(chunkData), chunkIndex)
 }

@@ -23,6 +23,7 @@ const (
 	CannedAcl_Private         = "private"
 	CannedAcl_PublicRead      = "public-read"
 	CannedAcl_PublicReadWrite = "public-read-write"
+	MultiPartFileType         = "application/octet-stream"
 )
 
 var awsPagingSize int64
@@ -174,6 +175,25 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 	return err
 }
 
+func createMultiPartUpload(key, fileType string) (*string, *string, error) {
+	output, err := svc.StartMultipartUpload(key, fileType)
+
+	return output.Key, output.UploadId, err
+}
+
+func uploadPart(key, uploadID string, fileBytes []byte, partNumber int) (*s3.CompletedPart, error) {
+	return svc.UploadPartOfMultiPartUpload(key, uploadID, fileBytes, partNumber)
+}
+
+func abortMultiPartUpload(key, uploadID string) error {
+	return svc.CancelMultipartUpload(key, uploadID)
+}
+
+func completeMultiPartUpload(key, uploadID string,
+	completedParts []*s3.CompletedPart) (*s3.CompleteMultipartUploadOutput, error) {
+	return svc.FinishMultipartUpload(key, uploadID, completedParts)
+}
+
 func setObjectCannedAcl(bucketName string, objectName string, cannedAcl string) error {
 	input := &s3.PutObjectAclInput{
 		Bucket: aws.String(bucketName),
@@ -229,6 +249,23 @@ func ListDefaultBucketObjectKeys(objectKeyPrefix string) ([]string, error) {
 // Delete all the object operation on defaultBucketName with particular prefix
 func DeleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
 	return deleteObjectKeys(Env.BucketName, objectKeyPrefix)
+}
+
+func CreateMultiPartUpload(key string) (*string, *string, error) {
+	return createMultiPartUpload(key, MultiPartFileType)
+}
+
+func UploadMultiPartPart(key, uploadID string, fileBytes []byte, partNumber int) (*s3.CompletedPart, error) {
+	return uploadPart(key, uploadID, fileBytes, partNumber)
+}
+
+func AbortMultiPartUpload(key, uploadID string) error {
+	return abortMultiPartUpload(key, uploadID)
+}
+
+func CompleteMultiPartUpload(key, uploadID string,
+	completedParts []*s3.CompletedPart) (*s3.CompleteMultipartUploadOutput, error) {
+	return completeMultiPartUpload(key, uploadID, completedParts)
 }
 
 func SetDefaultObjectCannedAcl(objectKey string, cannedAcl string) error {
@@ -349,10 +386,18 @@ func (svc *s3Wrapper) SetObjectCannedAcl(input *s3.PutObjectAclInput) error {
 	return err
 }
 
-func (svc *s3Wrapper) StartMultipartUpload(input *s3.CreateMultipartUploadInput) (*s3.CreateMultipartUploadOutput, error) {
+//func (svc *s3Wrapper) StartMultipartUpload(input *s3.CreateMultipartUploadInput) (*s3.CreateMultipartUploadOutput, error) {
+func (svc *s3Wrapper) StartMultipartUpload(key, fileType string) (*s3.CreateMultipartUploadOutput, error) {
 	if svc.s3 == nil {
 		return &s3.CreateMultipartUploadOutput{}, nil
 	}
+
+	input := &s3.CreateMultipartUploadInput{
+		Bucket:      aws.String(Env.BucketName),
+		Key:         aws.String(key),
+		ContentType: aws.String(fileType),
+	}
+
 	return svc.s3.CreateMultipartUpload(input)
 }
 

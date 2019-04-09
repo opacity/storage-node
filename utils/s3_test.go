@@ -79,20 +79,14 @@ func startUploadForTest(t *testing.T) (string, string, []byte, int64) {
 	fileInfo, _ := file.Stat()
 	size := fileInfo.Size()
 	buffer := make([]byte, size)
-	fileType := http.DetectContentType(buffer)
 	file.Read(buffer)
 
-	key := awsTestDirPath + fileName
-	input := &s3.CreateMultipartUploadInput{
-		Bucket:      aws.String(Env.BucketName),
-		Key:         aws.String(key),
-		ContentType: aws.String(fileType),
-	}
+	awsKey := awsTestDirPath + fileName
 
-	resp, err := svc.StartMultipartUpload(input)
+	_, uploadID, err := CreateMultiPartUpload(awsKey)
 	assert.Nil(t, err)
 
-	return key, aws.StringValue(resp.UploadId), buffer, size
+	return awsKey, aws.StringValue(uploadID), buffer, size
 }
 
 /*successfulMultipartUploadForTest will execute a successful multipart upload for unit tests and verify there were
