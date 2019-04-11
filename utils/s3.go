@@ -386,7 +386,6 @@ func (svc *s3Wrapper) SetObjectCannedAcl(input *s3.PutObjectAclInput) error {
 	return err
 }
 
-//func (svc *s3Wrapper) StartMultipartUpload(input *s3.CreateMultipartUploadInput) (*s3.CreateMultipartUploadOutput, error) {
 func (svc *s3Wrapper) StartMultipartUpload(key, fileType string) (*s3.CreateMultipartUploadOutput, error) {
 	if svc.s3 == nil {
 		return &s3.CreateMultipartUploadOutput{}, nil
