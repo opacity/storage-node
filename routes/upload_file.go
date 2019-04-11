@@ -65,6 +65,7 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
+	utils.Metrics_FileUploaded_Counter.Inc()
 	OkResponse(c, uploadFileRes{
 		Status: "File is uploaded",
 	})
