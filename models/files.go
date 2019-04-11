@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"fmt"
@@ -9,6 +10,7 @@ import (
 
 	"sync"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
@@ -25,7 +27,7 @@ type File struct {
 	UpdatedAt        time.Time `json:"updatedAt"`
 	AwsUploadID      *string   `json:"awsUploadID"`
 	AwsObjectKey     *string   `json:"awsObjectKey"`
-	EndIndex         int       `json:"endIndex" binding:"required,gte=0"`
+	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
 	CompletedIndexes *string   `json:"completedIndexes"`
 	sync.Mutex
 }
@@ -48,6 +50,8 @@ const (
 	/*FileUploadError is for files we experienced an error uploading*/
 	FileUploadError = -1
 )
+
+const FirstChunkIndex = 1
 
 /*UploadStatusMap is for pretty printing the UploadStatus*/
 var UploadStatusMap = make(map[UploadStatusType]string)
@@ -131,6 +135,20 @@ func (file *File) GetCompletedIndexesAsMap() IndexMap {
 	return completedIndexes
 }
 
+/*GetCompletedPartsAsArray takes the map of completed parts and makes them into an array*/
+func (file *File) GetCompletedPartsAsArray() []*s3.CompletedPart {
+	completedIndexes := file.GetCompletedIndexesAsMap()
+	var completedParts []*s3.CompletedPart
+
+	for index := FirstChunkIndex; index <= file.EndIndex; index++ {
+		if _, ok := completedIndexes[int64(index)]; ok {
+			completedParts = append(completedParts, completedIndexes[int64(index)])
+		}
+	}
+
+	return completedParts
+}
+
 /*SaveCompletedIndexesAsString accepts a map of chunk indexes, converts them to a string,
 and saves it to the file's CompletedIndexes.*/
 func (file *File) SaveCompletedIndexesAsString(completedIndexes IndexMap) error {
@@ -144,17 +162,36 @@ func (file *File) SaveCompletedIndexesAsString(completedIndexes IndexMap) error 
 	return nil
 }
 
-/*VerifyAllChunksUploaded gets the file's CompletedIndexes as a map, then checks that map to verify
+/*UploadCompleted gets the file's CompletedIndexes as a map, then checks that map to verify
 that all expected chunk indexes have been added to the map.  If any are not found it returns false.
 If none are discovered missing it returns true.  */
-func (file *File) VerifyAllChunksUploaded() bool {
+func (file *File) UploadCompleted() bool {
 	completedIndexMap := file.GetCompletedIndexesAsMap()
 
-	for index := 0; index <= file.EndIndex; index++ {
+	for index := FirstChunkIndex; index <= file.EndIndex; index++ {
 		if _, ok := completedIndexMap[int64(index)]; !ok {
 			return false
 		}
 	}
 
 	return true
+}
+
+/*FinishUpload - finishes the upload*/
+func (file *File) FinishUpload() error {
+	allChunksUploaded := file.UploadCompleted()
+	if !allChunksUploaded {
+		return errors.New("missing some chunks, cannot finish upload")
+	}
+
+	completedParts := file.GetCompletedPartsAsArray()
+
+	_, err := utils.CompleteMultiPartUpload(aws.StringValue(file.AwsObjectKey),
+		aws.StringValue(file.AwsUploadID), completedParts)
+
+	if err == nil {
+		DB.Delete(file)
+	}
+
+	return err
 }

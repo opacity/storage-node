@@ -15,7 +15,7 @@ type uploadFileReq struct {
 	ChunkHash string `form:"chunkHash" binding:"required"`
 	ChunkData string `form:"chunkData" binding:"required"`
 	FileHash  string `form:"fileHash" binding:"required,len=64"`
-	PartIndex int    `form:"partIndex" binding:"required,gte=0"`
+	PartIndex int    `form:"partIndex" binding:"exists,gte=1"`
 	EndIndex  int    `form:"endIndex" binding:"required,gtefield=PartIndex"`
 }
 
@@ -44,6 +44,7 @@ func uploadFile(c *gin.Context) {
 	}
 
 	paid, err := account.CheckIfPaid()
+
 	if err == nil && !paid {
 		cost, _ := account.Cost()
 		response := accountCreateRes{
@@ -72,7 +73,7 @@ func uploadFile(c *gin.Context) {
 
 	var multipartErr error
 	var completedPart *s3.CompletedPart
-	if file.AwsUploadID == nil && file.AwsObjectKey == nil {
+	if request.PartIndex == models.FirstChunkIndex {
 		completedPart, multipartErr = handleFirstChunk(file, request.PartIndex, request.ChunkData)
 	} else {
 		completedPart, multipartErr = handleOtherChunk(file, request.PartIndex, request.ChunkData)
@@ -83,6 +84,11 @@ func uploadFile(c *gin.Context) {
 		return
 	} else {
 		file.UpdateCompletedIndexes(completedPart)
+	}
+
+	if file.UploadCompleted() {
+		err = file.FinishUpload()
+		utils.LogIfError(err, nil)
 	}
 
 	OkResponse(c, uploadFileRes{
@@ -104,6 +110,7 @@ func handleFirstChunk(file *models.File, chunkIndex int, chunkData string) (*s3.
 }
 
 func handleOtherChunk(file *models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {
-	return utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
+	completedPart, err := utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
 		[]byte(chunkData), chunkIndex)
+	return completedPart, err
 }

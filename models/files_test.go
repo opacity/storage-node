@@ -219,7 +219,7 @@ func Test_SaveCompletedIndexesAsString(t *testing.T) {
 	assert.Equal(t, indexMap, actualMap)
 }
 
-func Test_VerifyAllChunksUploaded(t *testing.T) {
+func Test_UploadCompleted(t *testing.T) {
 	file := returnValidFile()
 
 	// Add file to DB
@@ -238,7 +238,7 @@ func Test_VerifyAllChunksUploaded(t *testing.T) {
 	err := file.SaveCompletedIndexesAsString(indexMap)
 	assert.Nil(t, err)
 
-	allChunksUploaded := file.VerifyAllChunksUploaded()
+	allChunksUploaded := file.UploadCompleted()
 	assert.False(t, allChunksUploaded)
 
 	for i := 0; i <= file.EndIndex; i++ {
@@ -248,6 +248,47 @@ func Test_VerifyAllChunksUploaded(t *testing.T) {
 	err = file.SaveCompletedIndexesAsString(indexMap)
 	assert.Nil(t, err)
 
-	allChunksUploaded = file.VerifyAllChunksUploaded()
+	allChunksUploaded = file.UploadCompleted()
 	assert.True(t, allChunksUploaded)
+}
+
+func Test_GetCompletedPartsAsArray(t *testing.T) {
+	file := returnValidFile()
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	var expectedCompletedParts []*s3.CompletedPart
+	startingArray := file.GetCompletedPartsAsArray()
+	assert.Equal(t, expectedCompletedParts, startingArray)
+
+	completedPartIndex2 := returnCompletedPart(2)
+	completedPartIndex5 := returnCompletedPart(5)
+
+	err := file.UpdateCompletedIndexes(completedPartIndex2)
+	assert.Nil(t, err)
+	err = file.UpdateCompletedIndexes(completedPartIndex5)
+	assert.Nil(t, err)
+
+	actualFile := File{}
+	DB.First(&actualFile, "file_id = ?", file.FileID)
+	updatedArray := actualFile.GetCompletedPartsAsArray()
+
+	assert.NotEqual(t, startingArray, updatedArray)
+	assert.Equal(t, 2, len(updatedArray))
+
+	assert.True(t, *updatedArray[0].ETag == *completedPartIndex2.ETag ||
+		*updatedArray[0].ETag == *completedPartIndex5.ETag)
+	assert.True(t, *updatedArray[0].PartNumber == *completedPartIndex2.PartNumber ||
+		*updatedArray[0].PartNumber == *completedPartIndex5.PartNumber)
+	assert.True(t, *updatedArray[1].ETag == *completedPartIndex2.ETag ||
+		*updatedArray[1].ETag == *completedPartIndex5.ETag)
+	assert.True(t, *updatedArray[1].PartNumber == *completedPartIndex2.PartNumber ||
+		*updatedArray[1].PartNumber == *completedPartIndex5.PartNumber)
+}
+
+func Test_FinishUpload(t *testing.T) {
+	// TODO: revisit this method and write tests for it
 }

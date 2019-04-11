@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 
+	"strings"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +25,9 @@ var (
 func Test_S3_Init(t *testing.T) {
 	SetTesting("../.env")
 	workingDir, _ := os.Getwd()
-	localFilePath = workingDir + string(os.PathSeparator) + fileName
+	testDir := strings.Replace(workingDir, "/utils", "", -1)
+	testDir = testDir + "/test_files"
+	localFilePath = testDir + string(os.PathSeparator) + fileName
 }
 
 /*
