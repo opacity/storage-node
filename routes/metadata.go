@@ -11,7 +11,7 @@ import (
 
 type updateMetadataReq struct {
 	MetadataKey string `json:"metadataKey" binding:"required,len=64"`
-	Metadata    string `json:"Metadata" binding:"required"`
+	Metadata    string `json:"metadata" binding:"required"`
 }
 
 type getMetadataRes struct {
