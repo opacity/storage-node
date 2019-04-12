@@ -179,6 +179,7 @@ func (file *File) UploadCompleted() bool {
 
 /*FinishUpload - finishes the upload*/
 func (file *File) FinishUpload() error {
+	// TODO:  revisit this method.  We may want to do something else besides deleting the file.
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
 		return errors.New("missing some chunks, cannot finish upload")
@@ -190,6 +191,7 @@ func (file *File) FinishUpload() error {
 		aws.StringValue(file.AwsUploadID), completedParts)
 
 	if err == nil {
+		utils.Metrics_FileUploaded_Counter.Inc()
 		DB.Delete(file)
 	}
 

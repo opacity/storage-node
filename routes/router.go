@@ -89,6 +89,8 @@ func setupAdminPaths(router *gin.Engine) {
 
 	g.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
+	g.GET("/user_stats", UserStatsHandler())
+
 	// Load template file location relative to the current working directory
 	// Unable to find the file.
 	// g.GET("/jobrunner/html", jobs.JobHtml)
