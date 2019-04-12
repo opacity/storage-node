@@ -77,6 +77,8 @@ services:
     container_name: mysql
     image: mysql:5.7
     restart: "always"
+    command: --sql_mode=''
+    # command: mysqld --sql_mode=''
     environment:
       - MYSQL_DATABASE=test
       - MYSQL_ROOT_USER=root
