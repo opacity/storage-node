@@ -187,11 +187,14 @@ func (file *File) FinishUpload() error {
 
 	completedParts := file.GetCompletedPartsAsArray()
 
-	_, err := utils.CompleteMultiPartUpload(aws.StringValue(file.AwsObjectKey),
-		aws.StringValue(file.AwsUploadID), completedParts)
+	objectKey := aws.StringValue(file.AwsObjectKey)
+	_, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts)
 
 	if err == nil {
 		utils.Metrics_FileUploaded_Counter.Inc()
+
+		objectSize := utils.GetDefaultBucketObjectSize(objectKey)
+		utils.Metrics_FileUploadedSizeInByte_Counter.Add(float64(objectSize))
 		DB.Delete(file)
 	}
 

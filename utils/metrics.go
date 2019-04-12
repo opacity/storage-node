@@ -17,6 +17,10 @@ var (
 		Name: "storagenode_fileuploaded_counter",
 		Help: "The total number of FileUploaded.",
 	})
+	Metrics_FileUploadedSizeInByte_Counter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "storagenode_fileuploadedSizeInByte_counter",
+		Help: "The total number byte is uploaded.",
+	})
 
 	Metrics_PingStdOut_Counter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "storagenode_pingstdout_counter",
