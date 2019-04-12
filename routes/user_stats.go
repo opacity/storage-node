@@ -6,8 +6,9 @@ import (
 )
 
 type userStatsRes struct {
-	UserAccountsCount  int `json:"userAccountsCount"`
-	UploadedFilesCount int `json:"uploadedFilesCount"`
+	UserAccountsCount    int `json:"userAccountsCount"`
+	UploadedFilesCount   int `json:"uploadedFilesCount"`
+	UploadedFileSizeInMb int `json:"uploadedFileSizeInMb"`
 }
 
 func UserStatsHandler() gin.HandlerFunc {
@@ -15,8 +16,11 @@ func UserStatsHandler() gin.HandlerFunc {
 }
 
 func userStats(c *gin.Context) {
+	fileSizeInByte := utils.GetMetricCounter(utils.Metrics_FileUploadedSizeInByte_Counter)
+
 	OkResponse(c, userStatsRes{
-		UserAccountsCount:  int(utils.GetMetricCounter(utils.Metrics_AccountCreated_Counter)),
-		UploadedFilesCount: int(utils.GetMetricCounter(utils.Metrics_FileUploaded_Counter)),
+		UserAccountsCount:    int(utils.GetMetricCounter(utils.Metrics_AccountCreated_Counter)),
+		UploadedFilesCount:   int(utils.GetMetricCounter(utils.Metrics_FileUploaded_Counter)),
+		UploadedFileSizeInMb: int(fileSizeInByte / 1000000),
 	})
 }

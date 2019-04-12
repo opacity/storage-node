@@ -16,6 +16,8 @@ type s3Wrapper struct {
 	s3 *s3.S3
 }
 
+type ObjectIterator func([]*s3.Object) bool
+
 const (
 	MaxMultiPartSize          = int64(1024 * 1024 * 50)
 	MaxMultiPartSizeForTest   = int64(1024 * 1024 * 5)
@@ -131,13 +133,10 @@ func deleteObject(bucketName string, objectKey string) error {
 func listObjectKeys(bucketName string, objectKeyPrefix string) ([]string, error) {
 	var keys []string
 
-	input := &s3.ListObjectsV2Input{
-		Bucket:  aws.String(bucketName),
-		Prefix:  aws.String(objectKeyPrefix),
-		MaxKeys: aws.Int64(awsPagingSize),
-	}
-	err := svc.ListObjectPages(input, func(objKeys []string, lastPage bool) bool {
-		keys = append(keys, objKeys...)
+	err := iterateBucketAllObjects(bucketName, func(objs []*s3.Object) bool {
+		for _, c := range objs {
+			keys = append(keys, aws.StringValue(c.Key))
+		}
 		return true
 	})
 	return keys, err
@@ -151,10 +150,11 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 	}
 
 	var deleteErr error
-	err := svc.ListObjectPages(input, func(objKeys []string, lastPage bool) bool {
+
+	err := iterateBucketAllObjects(bucketName, func(objs []*s3.Object) bool {
 		var objIdentifier []*s3.ObjectIdentifier
-		for _, objKey := range objKeys {
-			objIdentifier = append(objIdentifier, &s3.ObjectIdentifier{Key: aws.String(objKey)})
+		for _, c := range objs {
+			objIdentifier = append(objIdentifier, &s3.ObjectIdentifier{Key: c.Key})
 		}
 		deleteInput := &s3.DeleteObjectsInput{
 			Bucket: aws.String(bucketName),
@@ -222,6 +222,14 @@ func getBucketLifecycle(bucketName string) ([]*s3.LifecycleRule, error) {
 	return svc.GetBucketLifecycleConfiguration(input)
 }
 
+func iterateBucketAllObjects(bucketName string, i ObjectIterator) error {
+	input := &s3.ListObjectsV2Input{
+		Bucket:  aws.String(bucketName),
+		MaxKeys: aws.Int64(awsPagingSize),
+	}
+	return svc.ListObjectPages(input, i)
+}
+
 func DoesDefaultBucketObjectExist(objectKey string) bool {
 	return doesObjectExist(Env.BucketName, objectKey)
 }
@@ -278,6 +286,10 @@ func SetDefaultBucketLifecycle(rules []*s3.LifecycleRule) error {
 
 func GetDefaultBucketLifecycle() ([]*s3.LifecycleRule, error) {
 	return getBucketLifecycle(Env.BucketName)
+}
+
+func IterateDefaultBucketAllObjects(i ObjectIterator) error {
+	return iterateBucketAllObjects(Env.BucketName, i)
 }
 
 func getKey(bucketName string, objectKey string) string {
@@ -343,18 +355,14 @@ func (svc *s3Wrapper) GetObjectAsString(input *s3.GetObjectInput) (string, error
 	return buf.String(), nil
 }
 
-func (svc *s3Wrapper) ListObjectPages(input *s3.ListObjectsV2Input, fn func([]string, bool) bool) error {
+func (svc *s3Wrapper) ListObjectPages(input *s3.ListObjectsV2Input, it ObjectIterator) error {
 	if svc.s3 == nil {
-		fn(nil, true)
+		it(nil)
 		return nil
 	}
 
 	err := svc.s3.ListObjectsV2Pages(input, func(page *s3.ListObjectsV2Output, lastPage bool) bool {
-		var keys []string
-		for _, c := range page.Contents {
-			keys = append(keys, aws.StringValue(c.Key))
-		}
-		return fn(keys, lastPage)
+		return it(page.Contents)
 	})
 	return err
 }
