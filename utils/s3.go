@@ -16,6 +16,8 @@ type s3Wrapper struct {
 	s3 *s3.S3
 }
 
+type ObjectIterator func([]*s3.Object) bool
+
 const (
 	MaxMultiPartSize          = int64(1024 * 1024 * 50)
 	MaxMultiPartSizeForTest   = int64(1024 * 1024 * 5)
@@ -46,7 +48,6 @@ func newS3Session() {
 			s3: s3.New(session.Must(session.NewSession())),
 		}
 	} else {
-
 		svc = &s3Wrapper{}
 	}
 }
@@ -81,8 +82,21 @@ func doesObjectExist(bucketName string, objectKey string) bool {
 		Key:    aws.String(objectKey),
 	}
 
-	err := svc.HeadObject(input)
-	return err != nil
+	r, err := svc.HeadObject(input)
+	return err == nil && r != nil
+}
+
+func getObjectSizeInByte(bucketName string, objectKey string) int64 {
+	input := &s3.HeadObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objectKey),
+	}
+
+	r, err := svc.HeadObject(input)
+	if err != nil {
+		return 0
+	}
+	return aws.Int64Value(r.ContentLength)
 }
 
 func getObject(bucketName string, objectKey string, cached bool) (string, error) {
@@ -136,8 +150,11 @@ func listObjectKeys(bucketName string, objectKeyPrefix string) ([]string, error)
 		Prefix:  aws.String(objectKeyPrefix),
 		MaxKeys: aws.Int64(awsPagingSize),
 	}
-	err := svc.ListObjectPages(input, func(objKeys []string, lastPage bool) bool {
-		keys = append(keys, objKeys...)
+
+	err := svc.ListObjectPages(input, func(objs []*s3.Object) bool {
+		for _, c := range objs {
+			keys = append(keys, aws.StringValue(c.Key))
+		}
 		return true
 	})
 	return keys, err
@@ -151,10 +168,11 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 	}
 
 	var deleteErr error
-	err := svc.ListObjectPages(input, func(objKeys []string, lastPage bool) bool {
+
+	err := svc.ListObjectPages(input, func(objs []*s3.Object) bool {
 		var objIdentifier []*s3.ObjectIdentifier
-		for _, objKey := range objKeys {
-			objIdentifier = append(objIdentifier, &s3.ObjectIdentifier{Key: aws.String(objKey)})
+		for _, c := range objs {
+			objIdentifier = append(objIdentifier, &s3.ObjectIdentifier{Key: c.Key})
 		}
 		deleteInput := &s3.DeleteObjectsInput{
 			Bucket: aws.String(bucketName),
@@ -222,6 +240,14 @@ func getBucketLifecycle(bucketName string) ([]*s3.LifecycleRule, error) {
 	return svc.GetBucketLifecycleConfiguration(input)
 }
 
+func iterateBucketAllObjects(bucketName string, i ObjectIterator) error {
+	input := &s3.ListObjectsV2Input{
+		Bucket:  aws.String(bucketName),
+		MaxKeys: aws.Int64(awsPagingSize),
+	}
+	return svc.ListObjectPages(input, i)
+}
+
 func DoesDefaultBucketObjectExist(objectKey string) bool {
 	return doesObjectExist(Env.BucketName, objectKey)
 }
@@ -229,6 +255,10 @@ func DoesDefaultBucketObjectExist(objectKey string) bool {
 // Get Object operation on defaultBucketName
 func GetDefaultBucketObject(objectKey string, cached bool) (string, error) {
 	return getObject(Env.BucketName, objectKey, cached)
+}
+
+func GetDefaultBucketObjectSize(objectKey string) int64 {
+	return getObjectSizeInByte(Env.BucketName, objectKey)
 }
 
 // Set Object operation on defaultBucketName
@@ -278,6 +308,10 @@ func SetDefaultBucketLifecycle(rules []*s3.LifecycleRule) error {
 
 func GetDefaultBucketLifecycle() ([]*s3.LifecycleRule, error) {
 	return getBucketLifecycle(Env.BucketName)
+}
+
+func IterateDefaultBucketAllObjects(i ObjectIterator) error {
+	return iterateBucketAllObjects(Env.BucketName, i)
 }
 
 func getKey(bucketName string, objectKey string) string {
@@ -343,18 +377,14 @@ func (svc *s3Wrapper) GetObjectAsString(input *s3.GetObjectInput) (string, error
 	return buf.String(), nil
 }
 
-func (svc *s3Wrapper) ListObjectPages(input *s3.ListObjectsV2Input, fn func([]string, bool) bool) error {
+func (svc *s3Wrapper) ListObjectPages(input *s3.ListObjectsV2Input, it ObjectIterator) error {
 	if svc.s3 == nil {
-		fn(nil, true)
+		it(nil)
 		return nil
 	}
 
 	err := svc.s3.ListObjectsV2Pages(input, func(page *s3.ListObjectsV2Output, lastPage bool) bool {
-		var keys []string
-		for _, c := range page.Contents {
-			keys = append(keys, aws.StringValue(c.Key))
-		}
-		return fn(keys, lastPage)
+		return it(page.Contents)
 	})
 	return err
 }
@@ -368,13 +398,13 @@ func (svc *s3Wrapper) DeleteObjects(input *s3.DeleteObjectsInput) error {
 	return err
 }
 
-func (svc *s3Wrapper) HeadObject(input *s3.HeadObjectInput) error {
+func (svc *s3Wrapper) HeadObject(input *s3.HeadObjectInput) (*s3.HeadObjectOutput, error) {
 	if svc.s3 == nil {
-		return nil
+		return nil, nil
 	}
 
-	_, err := svc.s3.HeadObject(input)
-	return err
+	out, err := svc.s3.HeadObject(input)
+	return out, err
 }
 
 func (svc *s3Wrapper) SetObjectCannedAcl(input *s3.PutObjectAclInput) error {
