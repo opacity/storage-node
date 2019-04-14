@@ -2,6 +2,9 @@ package jobs
 
 import (
 	"testing"
+
+	"github.com/opacity/storage-node/models"
+	"github.com/opacity/storage-node/utils"
 )
 
 func Test_Init_User_Stats_Setup(t *testing.T) {
