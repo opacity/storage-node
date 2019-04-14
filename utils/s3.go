@@ -34,7 +34,7 @@ var cachedData cmap.ConcurrentMap
 var shouldCachedData bool
 
 func init() {
-	awsPagingSize = 1 // The max paging size per request.
+	awsPagingSize = 1000 // The max paging size per request.
 	shouldCachedData = false
 	cachedData = cmap.New()
 }
