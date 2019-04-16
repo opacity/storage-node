@@ -1,9 +1,14 @@
 package utils
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/ecdsa"
 	"encoding/hex"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 /*Encrypt encrypts a secret using a key and a nonce*/
@@ -72,4 +77,57 @@ func DecryptWithErrorReturn(key string, cipherText string, nonce string) ([]byte
 		errDecodeNonce,
 		decryptErr,
 	})
+}
+
+/*Hash hashes input byte arguments*/
+func Hash(data ...[]byte) []byte {
+	return crypto.Keccak256(data...)
+}
+
+/*Recover recovers a public key from an ECDSA sig*/
+func Recover(hash []byte, sig []byte) (*ecdsa.PublicKey, error) {
+	return crypto.SigToPub(hash, sig)
+}
+
+/*Verify recovers a public key and checks it against an existing, known public key, and returns true if they match*/
+func Verify(address []byte, hash []byte, sig []byte) (bool, error) {
+	pubkey, err := Recover(hash, sig)
+	addr := PubkeyToAddress(*pubkey)
+
+	return bytes.Equal(address, addr[:]), err
+}
+
+/*VerifyFromStrings recovers a public key and checks it against an existing, known public key, and returns true if they match*/
+func VerifyFromStrings(address string, hash string, sig string) (bool, error) {
+	addressBytes, err := hex.DecodeString(address)
+	if err != nil {
+		return nil, err
+	}
+
+	hashBytes, err := hex.DecodeString(hash)
+	if err != nil {
+		return nil, err
+	}
+
+	sigBytes, err := hex.DecodeString(sig)
+	if err != nil {
+		return nil, err
+	}
+
+	return Verify(addressBytes, hashBytes, sigBytes)
+}
+
+/*Sign signs a message with a private key*/
+func Sign(msg []byte, prv *ecdsa.PrivateKey) ([]byte, error) {
+	return crypto.Sign(msg, prv)
+}
+
+/*GenerateKey generates a random ecdsa private key*/
+func GenerateKey() (*ecdsa.PrivateKey, error) {
+	return crypto.GenerateKey()
+}
+
+/*PubkeyToAddress takes a public key and converts it to an ethereum public address*/
+func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
+	return crypto.PubkeyToAddress(p)
 }
