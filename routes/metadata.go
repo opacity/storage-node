@@ -14,8 +14,15 @@ type updateMetadataReq struct {
 	Metadata    string `json:"metadata" binding:"required"`
 }
 
+type updateMetadataRes struct {
+	MetadataKey    string    `json:"metadataKey" binding:"required,len=64"`
+	Metadata       string    `json:"metadata" binding:"required"`
+	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
+}
+
 type getMetadataRes struct {
-	Metadata string `json:"metadata"`
+	Metadata       string    `json:"metadata"`
+	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
 }
 
 /*GetMetadataHandler is a handler for getting the file metadata*/
@@ -31,13 +38,14 @@ func UpdateMetadataHandler() gin.HandlerFunc {
 func getMetadata(c *gin.Context) {
 	metadataKey := c.Param("metadataKey")
 
-	metadata, _, err := utils.GetValueFromKV(metadataKey)
+	metadata, expirationTime, err := utils.GetValueFromKV(metadataKey)
 	if err != nil {
 		NotFoundResponse(c, err)
 		return
 	}
 	OkResponse(c, getMetadataRes{
-		Metadata: metadata,
+		Metadata:       metadata,
+		ExpirationDate: expirationTime,
 	})
 }
 
@@ -69,5 +77,9 @@ func setMetadata(c *gin.Context) {
 		return
 	}
 
-	OkResponse(c, request)
+	OkResponse(c, updateMetadataRes{
+		MetadataKey:    request.MetadataKey,
+		Metadata:       request.Metadata,
+		ExpirationDate: expirationTime,
+	})
 }

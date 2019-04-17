@@ -80,7 +80,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 
 func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	newValue := "rotallyNewValue"
+	newValue := "totallyNewValue"
 
 	post := updateMetadataReq{
 		MetadataKey: testMetadataKey,
