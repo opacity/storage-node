@@ -147,6 +147,10 @@ func Test_Upload_File_Account_Not_Paid(t *testing.T) {
 }
 
 func Test_Upload_File_Account_Paid_Upload_Starts(t *testing.T) {
+	if err := models.DB.Unscoped().Delete(&models.Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+
 	uploadFileReq := returnValidUploadFileReq()
 	createPaidAccount(uploadFileReq.AccountID, t)
 
@@ -175,6 +179,10 @@ func Test_Upload_File_Account_Paid_Upload_Starts(t *testing.T) {
 }
 
 func Test_Upload_File_Account_Paid_Upload_Continues(t *testing.T) {
+	if err := models.DB.Unscoped().Delete(&models.Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+
 	uploadFileReq := returnValidUploadFileReq()
 	createPaidAccount(uploadFileReq.AccountID, t)
 
