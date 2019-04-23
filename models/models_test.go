@@ -20,7 +20,7 @@ func deleteAccounts(t *testing.T) {
 		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
 	}
 
-	accounts := []Account{nil}
+	accounts := []Account{}
 
 	DB.Find(&accounts)
 
