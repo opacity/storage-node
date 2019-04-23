@@ -334,9 +334,7 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 	expectedSpaceAlloted := 400
 	expectedSpaceUsed := 234.56
 
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 
 	for i := 0; i < 4; i++ {
 		accountPaid := returnValidAccount()
@@ -362,9 +360,7 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 }
 
 func Test_PurgeOldUnpaidAccounts(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 
 	for i := 0; i < 4; i++ {
 		accountPaid := returnValidAccount()
@@ -416,6 +412,7 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 }
 
 func Test_GetAccountsByPaymentStatus(t *testing.T) {
+	deleteAccounts(t)
 	// for each payment status, check that we can get the accounts of that status and that the account IDs
 	// of the accounts returned from GetAccountsByPaymentStatus match the accounts we created for the test
 	for paymentStatus := InitialPaymentInProgress; paymentStatus <= PaymentRetrievalComplete; paymentStatus++ {
@@ -436,9 +433,7 @@ func Test_GetAccountsByPaymentStatus(t *testing.T) {
 
 func Test_SetAccountsToNextPaymentStatus(t *testing.T) {
 	for paymentStatus := InitialPaymentInProgress; paymentStatus <= PaymentRetrievalComplete; paymentStatus++ {
-		if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-			t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-		}
+		deleteAccounts(t)
 		account := returnValidAccount()
 
 		// set to starting payment status
@@ -478,9 +473,8 @@ func Test_SetAccountsToNextPaymentStatus(t *testing.T) {
 }
 
 func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
+
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentInProgress
 	account.MetadataKey = utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
@@ -519,9 +513,7 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 }
 
 func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentInProgress
 	account.MetadataKey = utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
@@ -559,9 +551,7 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 }
 
 func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentReceived
 	if err := DB.Create(&account).Error; err != nil {
@@ -581,9 +571,7 @@ func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {
 }
 
 func Test_handleAccountThatNeedsGas_transfer_error(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentReceived
 	if err := DB.Create(&account).Error; err != nil {
@@ -603,9 +591,7 @@ func Test_handleAccountThatNeedsGas_transfer_error(t *testing.T) {
 }
 
 func Test_handleAccountReceivingGas_gas_received(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 	account := returnValidAccount()
 	account.PaymentStatus = GasTransferInProgress
 	if err := DB.Create(&account).Error; err != nil {
@@ -621,9 +607,7 @@ func Test_handleAccountReceivingGas_gas_received(t *testing.T) {
 }
 
 func Test_handleAccountReceivingGas_gas_not_received(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 	account := returnValidAccount()
 	account.PaymentStatus = GasTransferInProgress
 	if err := DB.Create(&account).Error; err != nil {
@@ -639,9 +623,7 @@ func Test_handleAccountReceivingGas_gas_not_received(t *testing.T) {
 }
 
 func Test_handleAccountReadyForCollection_transfer_success(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 	account := returnValidAccount()
 	account.PaymentStatus = GasTransferComplete
 	if err := DB.Create(&account).Error; err != nil {
@@ -661,13 +643,10 @@ func Test_handleAccountReadyForCollection_transfer_success(t *testing.T) {
 	}
 
 	verifyPaymentStatusExpectations(t, account, GasTransferComplete, PaymentRetrievalInProgress, handleAccountReadyForCollection)
-
 }
 
 func Test_handleAccountReadyForCollection_transfer_failed(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 	account := returnValidAccount()
 	account.PaymentStatus = GasTransferComplete
 	if err := DB.Create(&account).Error; err != nil {
@@ -691,9 +670,7 @@ func Test_handleAccountReadyForCollection_transfer_failed(t *testing.T) {
 }
 
 func Test_handleAccountWithCollectionInProgress_balance_found(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 	account := returnValidAccount()
 	account.PaymentStatus = PaymentRetrievalInProgress
 	if err := DB.Create(&account).Error; err != nil {
@@ -708,9 +685,7 @@ func Test_handleAccountWithCollectionInProgress_balance_found(t *testing.T) {
 }
 
 func Test_handleAccountWithCollectionInProgress_balance_not_found(t *testing.T) {
-	if err := DB.Unscoped().Delete(&Account{}).Error; err != nil {
-		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-	}
+	deleteAccounts(t)
 	account := returnValidAccount()
 	account.PaymentStatus = PaymentRetrievalInProgress
 	if err := DB.Create(&account).Error; err != nil {
