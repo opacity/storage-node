@@ -37,7 +37,7 @@ func returnValidAccount() models.Account {
 	return models.Account{
 		AccountID:            accountID,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
-		StorageLocation:      "https://someFileStoragePlace.com/12345",
+		StorageLocation:      "https://createdInRoutesAccountsTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
 		StorageUsed:          10,
 		PaymentStatus:        models.InitialPaymentInProgress,

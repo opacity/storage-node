@@ -363,7 +363,7 @@ func (account *Account) PrettyString() {
 	fmt.Print("StorageLimit:                   ")
 	fmt.Println(account.StorageLimit)
 
-	fmt.Print("StorageUsed:                   ")
+	fmt.Print("StorageUsed:                    ")
 	fmt.Println(account.StorageUsed)
 
 	fmt.Print("StorageLocation:                ")

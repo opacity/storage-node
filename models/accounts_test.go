@@ -26,7 +26,7 @@ func returnValidAccount() Account {
 	return Account{
 		AccountID:            accountID,
 		MonthsInSubscription: DefaultMonthsPerSubscription,
-		StorageLocation:      "https://someFileStoragePlace.com/12345",
+		StorageLocation:      "https://createdInModelsAccountsTest.com/12345",
 		StorageLimit:         BasicStorageLimit,
 		StorageUsed:          10,
 		PaymentStatus:        InitialPaymentInProgress,
@@ -37,7 +37,7 @@ func returnValidAccount() Account {
 
 func Test_Init_Accounts(t *testing.T) {
 	utils.SetTesting("../.env")
-	Connect(utils.Env.DatabaseURL)
+	Connect(utils.Env.TestDatabaseURL)
 }
 
 func Test_Valid_Account_Passes(t *testing.T) {
@@ -432,8 +432,10 @@ func Test_GetAccountsByPaymentStatus(t *testing.T) {
 }
 
 func Test_SetAccountsToNextPaymentStatus(t *testing.T) {
+
 	for paymentStatus := InitialPaymentInProgress; paymentStatus <= PaymentRetrievalComplete; paymentStatus++ {
 		deleteAccounts(t)
+
 		account := returnValidAccount()
 
 		// set to starting payment status
@@ -441,6 +443,7 @@ func Test_SetAccountsToNextPaymentStatus(t *testing.T) {
 		if err := DB.Create(&account).Error; err != nil {
 			t.Fatalf("should have created account but didn't: " + err.Error())
 		}
+
 		accounts := GetAccountsByPaymentStatus(paymentStatus)
 
 		// verify 1 account was returned and that its payment status is as we expected

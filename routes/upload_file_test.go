@@ -40,7 +40,7 @@ func createUnpaidAccount(accountID string, t *testing.T) models.Account {
 	account := models.Account{
 		AccountID:            accountID,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
-		StorageLocation:      "https://someFileStoragePlace.com/12345",
+		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
 		StorageUsed:          10,
 		PaymentStatus:        models.InitialPaymentInProgress,
@@ -62,7 +62,7 @@ func createPaidAccount(accountID string, t *testing.T) models.Account {
 	account := models.Account{
 		AccountID:            accountID,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
-		StorageLocation:      "https://someFileStoragePlace.com/12345",
+		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
 		StorageUsed:          10,
 		PaymentStatus:        models.InitialPaymentReceived,
