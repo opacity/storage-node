@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 // Provides a Slack way to send fmt.Println log to Slack for debugging purpose
@@ -49,7 +50,7 @@ func SlackLogWithLevel(message string, level LogLevel) {
 	}
 
 	jsonValue, _ := json.Marshal(values)
-	_, err := http.Post(Env.SlackDebugUrl, "application/json", bytes.NewBuffer(jsonValue))
+	_, err := http.Post(strings.TrimSpace(Env.SlackDebugUrl), "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
 		GetDefaultLogger().Errorf("Unable to Post to Slack due to %v", err)
 	}

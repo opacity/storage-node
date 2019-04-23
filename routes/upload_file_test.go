@@ -40,7 +40,7 @@ func createUnpaidAccount(accountID string, t *testing.T) models.Account {
 	account := models.Account{
 		AccountID:            accountID,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
-		StorageLocation:      "https://someFileStoragePlace.com/12345",
+		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
 		StorageUsed:          10,
 		PaymentStatus:        models.InitialPaymentInProgress,
@@ -62,7 +62,7 @@ func createPaidAccount(accountID string, t *testing.T) models.Account {
 	account := models.Account{
 		AccountID:            accountID,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
-		StorageLocation:      "https://someFileStoragePlace.com/12345",
+		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
 		StorageUsed:          10,
 		PaymentStatus:        models.InitialPaymentReceived,
@@ -147,6 +147,10 @@ func Test_Upload_File_Account_Not_Paid(t *testing.T) {
 }
 
 func Test_Upload_File_Account_Paid_Upload_Starts(t *testing.T) {
+	if err := models.DB.Unscoped().Delete(&models.Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+
 	uploadFileReq := returnValidUploadFileReq()
 	createPaidAccount(uploadFileReq.AccountID, t)
 
@@ -175,6 +179,10 @@ func Test_Upload_File_Account_Paid_Upload_Starts(t *testing.T) {
 }
 
 func Test_Upload_File_Account_Paid_Upload_Continues(t *testing.T) {
+	if err := models.DB.Unscoped().Delete(&models.Account{}).Error; err != nil {
+		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+	}
+
 	uploadFileReq := returnValidUploadFileReq()
 	createPaidAccount(uploadFileReq.AccountID, t)
 

@@ -28,7 +28,7 @@ func returnCompletedPart(partNumber int) *s3.CompletedPart {
 
 func Test_Init_Files(t *testing.T) {
 	utils.SetTesting("../.env")
-	Connect(utils.Env.DatabaseURL)
+	Connect(utils.Env.TestDatabaseURL)
 }
 
 func Test_Valid_File_Passes(t *testing.T) {
