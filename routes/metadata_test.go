@@ -10,6 +10,8 @@ import (
 
 	"time"
 
+	"encoding/hex"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
@@ -62,14 +64,24 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
+	updateMetadataObj := updateMetadataObject{
+		MetadataKey: testMetadataKey,
+		Metadata:    newValue,
+		Timestamp:   time.Now().Unix(),
+	}
+	metadataJSON, err := json.Marshal(updateMetadataObj)
+	assert.Nil(t, err)
+	hash := utils.Hash(metadataJSON)
+
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	signature, err := utils.Sign(hash, privateKey)
+	assert.Nil(t, err)
+
 	post := updateMetadataReq{
-		Signature: utils.RandSeqFromRunes(130, []rune("abcdef01234567890")),
-		Address:   utils.RandSeqFromRunes(20, []rune("abcdef01234567890")),
-		Metadata: updateMetadataObject{
-			MetadataKey: testMetadataKey,
-			Metadata:    newValue,
-			Timestamp:   time.Now().Unix(),
-		},
+		Signature: hex.EncodeToString(signature),
+		Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
+		Metadata:  updateMetadataObj,
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
@@ -89,14 +101,24 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 
+	updateMetadataObj := updateMetadataObject{
+		MetadataKey: testMetadataKey,
+		Metadata:    newValue,
+		Timestamp:   time.Now().Unix(),
+	}
+	metadataJSON, err := json.Marshal(updateMetadataObj)
+	assert.Nil(t, err)
+	hash := utils.Hash(metadataJSON)
+
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	signature, err := utils.Sign(hash, privateKey)
+	assert.Nil(t, err)
+
 	post := updateMetadataReq{
-		Signature: utils.RandSeqFromRunes(130, []rune("abcdef01234567890")),
-		Address:   utils.RandSeqFromRunes(20, []rune("abcdef01234567890")),
-		Metadata: updateMetadataObject{
-			MetadataKey: testMetadataKey,
-			Metadata:    newValue,
-			Timestamp:   time.Now().Unix(),
-		},
+		Signature: hex.EncodeToString(signature),
+		Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
+		Metadata:  updateMetadataObj,
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)

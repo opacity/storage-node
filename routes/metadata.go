@@ -26,7 +26,7 @@ type updateMetadataReq struct {
 	// R: sig[64:127]
 	// S: sig[128:129]
 	Signature string               `json:"signature" binding:"required,len=130"`
-	Address   string               `json:"address" binding:"required,len=20"`
+	Address   string               `json:"address" binding:"required,len=42"`
 	Metadata  updateMetadataObject `json:"metadata" binding:"required"`
 }
 
