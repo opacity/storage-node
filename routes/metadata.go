@@ -7,6 +7,8 @@ import (
 
 	"time"
 
+	"encoding/hex"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
 )
@@ -15,7 +17,7 @@ import (
 type updateMetadataObject struct {
 	Metadata    string `json:"metadata" binding:"required,len=64"`
 	MetadataKey string `json:"metadataKey" binding:"required,len=64"`
-	Timestamp   int    `json:"timestamp" binding:"required"`
+	Timestamp   int64  `json:"timestamp" binding:"required"`
 }
 
 type updateMetadataReq struct {
@@ -23,9 +25,9 @@ type updateMetadataReq struct {
 	// V: sig[0:63]
 	// R: sig[64:127]
 	// S: sig[128:129]
-	Signature string               `json:"sig" binding:"required,len=130"`
+	Signature string               `json:"signature" binding:"required,len=130"`
 	Address   string               `json:"address" binding:"required,len=20"`
-	Metadata  updateMetadataObject `json:"meta" binding:"required"`
+	Metadata  updateMetadataObject `json:"metadata" binding:"required"`
 }
 
 type updateMetadataRes struct {
@@ -80,12 +82,13 @@ func setMetadata(c *gin.Context) {
 	}
 
 	hash := utils.Hash(metadataJSON)
-
-	verified, err := utils.VerifyFromStrings(request.Address, string(hash), request.Signature)
+	verified, err := utils.VerifyFromStrings(request.Address, hex.EncodeToString(hash),
+		request.Signature)
 	if err != nil {
 		BadRequestResponse(c, errors.New("error verifying signature"))
 		return
 	}
+
 	if verified != true {
 		ForbiddenResponse(c, errors.New("signature did not match"))
 		return

@@ -8,6 +8,8 @@ import (
 	"bytes"
 	"encoding/json"
 
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
@@ -21,8 +23,8 @@ func Test_Init_Metadata(t *testing.T) {
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := "testMetadataKey1"
-	testMetadataValue := "testMetadataValue1"
+	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -39,7 +41,7 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 }
 
 func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
-	testMetadataKey := "testMetadataKey2"
+	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 
 	w := metadataTestHelperGetMetadata(t, testMetadataKey)
 
@@ -53,17 +55,20 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	testMetadataValue := "testMetadataValue1"
-	newValue := "totallyNewValue"
+	testMetadataValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
 	}
 
 	post := updateMetadataReq{
+		Signature: utils.RandSeqFromRunes(130, []rune("abcdef01234567890")),
+		Address:   utils.RandSeqFromRunes(20, []rune("abcdef01234567890")),
 		Metadata: updateMetadataObject{
 			MetadataKey: testMetadataKey,
 			Metadata:    newValue,
+			Timestamp:   time.Now().Unix(),
 		},
 	}
 
@@ -82,12 +87,15 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 
 func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	newValue := "rotallyNewValue"
+	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 
 	post := updateMetadataReq{
+		Signature: utils.RandSeqFromRunes(130, []rune("abcdef01234567890")),
+		Address:   utils.RandSeqFromRunes(20, []rune("abcdef01234567890")),
 		Metadata: updateMetadataObject{
 			MetadataKey: testMetadataKey,
 			Metadata:    newValue,
+			Timestamp:   time.Now().Unix(),
 		},
 	}
 

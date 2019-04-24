@@ -94,6 +94,9 @@ func Recover(hash []byte, sig []byte) (*ecdsa.PublicKey, error) {
 /*Verify recovers a public key and checks it against an existing, known public key, and returns true if they match*/
 func Verify(address []byte, hash []byte, sig []byte) (bool, error) {
 	pubkey, err := Recover(hash, sig)
+	if err != nil {
+		return false, err
+	}
 	addr := PubkeyToAddress(*pubkey)
 
 	return bytes.Equal(address, addr[:]), err
