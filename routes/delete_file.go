@@ -14,7 +14,6 @@ type deleteFileReq struct {
 }
 
 type deleteFileRes struct {
-	msg string `json:"msg"`
 }
 
 /*DeleteFileHandler is a handler for the user to upload files*/
