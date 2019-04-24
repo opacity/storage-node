@@ -25,12 +25,11 @@ import (
 
 func returnValidUploadFileReq() uploadFileReq {
 	return uploadFileReq{
-		AccountID: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
-		ChunkHash: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
-		ChunkData: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
-		FileHash:  utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
-		PartIndex: models.FirstChunkIndex,
-		EndIndex:  10,
+		AccountID:  utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ChunkData:  utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		FileHandle: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		PartIndex:  models.FirstChunkIndex,
+		EndIndex:   10,
 	}
 }
 
@@ -154,7 +153,7 @@ func Test_Upload_File_Account_Paid_Upload_Starts(t *testing.T) {
 	uploadFileReq := returnValidUploadFileReq()
 	createPaidAccount(uploadFileReq.AccountID, t)
 
-	fileId := uploadFileReq.FileHash
+	fileId := uploadFileReq.FileHandle
 	filesInDB := []models.File{}
 	models.DB.Where("file_id = ?", fileId).Find(&filesInDB)
 	assert.Equal(t, 0, len(filesInDB))
@@ -204,7 +203,7 @@ func Test_Upload_File_Account_Paid_Upload_Continues(t *testing.T) {
 	}
 
 	filesInDB := []models.File{}
-	models.DB.Where("file_id = ?", uploadFileReq.FileHash).Find(&filesInDB)
+	models.DB.Where("file_id = ?", uploadFileReq.FileHandle).Find(&filesInDB)
 	assert.Equal(t, 1, len(filesInDB))
 
 	completedPartsAsArray := filesInDB[0].GetCompletedPartsAsArray()
@@ -234,7 +233,7 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	uploadFileReq.PartIndex++
 
 	filesInDB := []models.File{}
-	models.DB.Where("file_id = ?", uploadFileReq.FileHash).Find(&filesInDB)
+	models.DB.Where("file_id = ?", uploadFileReq.FileHandle).Find(&filesInDB)
 	assert.Equal(t, 1, len(filesInDB))
 
 	objectKey := aws.StringValue(filesInDB[0].AwsObjectKey)
@@ -248,7 +247,7 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	}
 
 	filesInDB = []models.File{}
-	models.DB.Where("file_id = ?", uploadFileReq.FileHash).Find(&filesInDB)
+	models.DB.Where("file_id = ?", uploadFileReq.FileHandle).Find(&filesInDB)
 	assert.Equal(t, 0, len(filesInDB))
 
 	err := utils.DeleteDefaultBucketObject(objectKey)
