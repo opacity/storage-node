@@ -11,12 +11,11 @@ import (
 )
 
 type uploadFileReq struct {
-	AccountID string `form:"accountID" binding:"required,len=64"`
-	ChunkHash string `form:"chunkHash" binding:"required"`
-	ChunkData string `form:"chunkData" binding:"required"`
-	FileHash  string `form:"fileHash" binding:"required,len=64"`
-	PartIndex int    `form:"partIndex" binding:"exists,gte=1"`
-	EndIndex  int    `form:"endIndex" binding:"required,gtefield=PartIndex"`
+	AccountID  string `form:"accountID" binding:"required,len=64"`
+	ChunkData  string `form:"chunkData" binding:"required"`
+	FileHandle string `form:"fileHandle" binding:"required,len=64"`
+	PartIndex  int    `form:"partIndex" binding:"exists,gte=1"`
+	EndIndex   int    `form:"endIndex" binding:"required,gtefield=PartIndex"`
 }
 
 type uploadFileRes struct {
@@ -63,7 +62,7 @@ func uploadFile(c *gin.Context) {
 	}
 
 	file, err := models.GetOrCreateFile(models.File{
-		FileID:   request.FileHash,
+		FileID:   request.FileHandle,
 		EndIndex: request.EndIndex,
 	})
 	if err != nil {
