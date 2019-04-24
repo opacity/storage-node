@@ -11,7 +11,7 @@ import (
 
 type downloadFileReq struct {
 	AccountID string `binding:"required,len=64"`
-	UploadID  string `binding:"required"`
+	FileID    string `binding:"required"`
 }
 
 type downloadFileRes struct {
@@ -27,7 +27,7 @@ func DownloadFileHandler() gin.HandlerFunc {
 func downloadFile(c *gin.Context) {
 	request := downloadFileReq{
 		AccountID: c.Param("accountID"),
-		UploadID:  c.Param("uploadID"),
+		FileID:    c.Param("fileID"),
 	}
 	if err := utils.Validator.Struct(request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
@@ -43,7 +43,7 @@ func downloadFile(c *gin.Context) {
 	}
 
 	// verify object existed in S3
-	objectKey := fmt.Sprintf("%s%s", account.S3Prefix(), request.UploadID)
+	objectKey := account.GetS3ObjectKeyForFileID(request.FileID)
 	if !utils.DoesDefaultBucketObjectExist(objectKey) {
 		NotFoundResponse(c, errors.New("Such data does not exist"))
 		return
