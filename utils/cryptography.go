@@ -101,17 +101,17 @@ func Verify(address []byte, hash []byte, sig []byte) (bool, error) {
 func VerifyFromStrings(address string, hash string, sig string) (bool, error) {
 	addressBytes, err := hex.DecodeString(address)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
 	hashBytes, err := hex.DecodeString(hash)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
 	sigBytes, err := hex.DecodeString(sig)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 
 	return Verify(addressBytes, hashBytes, sigBytes)

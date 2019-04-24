@@ -61,8 +61,10 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	}
 
 	post := updateMetadataReq{
-		MetadataKey: testMetadataKey,
-		Metadata:    newValue,
+		Metadata: updateMetadataObject{
+			MetadataKey: testMetadataKey,
+			Metadata:    newValue,
+		},
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
@@ -83,8 +85,10 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	newValue := "rotallyNewValue"
 
 	post := updateMetadataReq{
-		MetadataKey: testMetadataKey,
-		Metadata:    newValue,
+		Metadata: updateMetadataObject{
+			MetadataKey: testMetadataKey,
+			Metadata:    newValue,
+		},
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)

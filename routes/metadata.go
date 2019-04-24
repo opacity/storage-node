@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
 )
@@ -26,8 +28,15 @@ type updateMetadataReq struct {
 	Metadata  updateMetadataObject `json:"meta" binding:"required"`
 }
 
+type updateMetadataRes struct {
+	MetadataKey    string    `json:"metadataKey" binding:"required,len=64"`
+	Metadata       string    `json:"metadata" binding:"required"`
+	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
+}
+
 type getMetadataRes struct {
-	Metadata string `json:"metadata" binding:"required,len=64"`
+	Metadata       string    `json:"metadata" binding:"required,len=64"`
+	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
 }
 
 /*GetMetadataHandler is a handler for getting the file metadata*/
@@ -43,13 +52,14 @@ func UpdateMetadataHandler() gin.HandlerFunc {
 func getMetadata(c *gin.Context) {
 	metadataKey := c.Param("metadataKey")
 
-	metadata, _, err := utils.GetValueFromKV(metadataKey)
+	metadata, expirationTime, err := utils.GetValueFromKV(metadataKey)
 	if err != nil {
 		NotFoundResponse(c, err)
 		return
 	}
 	OkResponse(c, getMetadataRes{
-		Metadata: metadata,
+		Metadata:       metadata,
+		ExpirationDate: expirationTime,
 	})
 }
 
@@ -64,13 +74,14 @@ func setMetadata(c *gin.Context) {
 
 	metadataJSON, err := json.Marshal(request.Metadata)
 	if err != nil {
-		BadRequestResponse("bad request, unable to parse metadata body: %v", err)
+		err = fmt.Errorf("bad request, unable to parse metadata body: %v", err)
+		BadRequestResponse(c, err)
 		return
 	}
 
 	hash := utils.Hash(metadataJSON)
 
-	verified, err := utils.VerifyFromStrings(request.Address, hash, request.Signature)
+	verified, err := utils.VerifyFromStrings(request.Address, string(hash), request.Signature)
 	if err != nil {
 		BadRequestResponse(c, errors.New("error verifying signature"))
 		return
@@ -80,10 +91,28 @@ func setMetadata(c *gin.Context) {
 		return
 	}
 
-	if err := utils.BatchSet(&utils.KVPairs{request.MetadataKey: request.Metadata}); err != nil {
+	_, expirationTime, err := utils.GetValueFromKV(request.Metadata.MetadataKey)
+
+	if err != nil {
+		NotFoundResponse(c, err)
+		return
+	}
+
+	if expirationTime.Before(time.Now()) {
+		ForbiddenResponse(c, errors.New("subscription expired"))
+		return
+	}
+
+	ttl := time.Until(expirationTime)
+
+	if err := utils.BatchSet(&utils.KVPairs{request.Metadata.MetadataKey: request.Metadata.Metadata}, ttl); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
-	OkResponse(c, request)
+	OkResponse(c, updateMetadataRes{
+		MetadataKey:    request.Metadata.MetadataKey,
+		Metadata:       request.Metadata.Metadata,
+		ExpirationDate: expirationTime,
+	})
 }
