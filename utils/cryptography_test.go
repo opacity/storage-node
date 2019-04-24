@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/hex"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type EncryptionTestStruct struct {
@@ -51,4 +53,57 @@ func Test_Decrypt(t *testing.T) {
 				tc.secret, hex.EncodeToString(secret))
 		}
 	}
+}
+
+func Test_Hash(t *testing.T) {
+	testInputAsBytes := []byte("someTestInput")
+	expectedHash := []byte{0xdc, 0x1e, 0x51, 0xfd, 0xe3, 0x6, 0xb7, 0x5c, 0xf0, 0x66, 0xe6, 0x41, 0x3d, 0x3d, 0xe0,
+		0xb2, 0xa5, 0x14, 0x3c, 0x9a, 0xee, 0xe2, 0x79, 0xb9, 0x5a, 0xbc, 0x5, 0x64, 0x51, 0xe3, 0x9c, 0x86}
+
+	result := Hash(testInputAsBytes)
+
+	assert.Equal(t, expectedHash, result)
+}
+
+func Test_Sign_And_Recover(t *testing.T) {
+	msg := Hash([]byte(RandSeqFromRunes(32, []rune("abcdef01234567890"))))
+	privateKey, err := GenerateKey()
+	assert.Nil(t, err)
+
+	signature, err := Sign(msg, privateKey)
+	assert.Nil(t, err)
+
+	publicKey, err := Recover(msg, signature)
+	assert.Nil(t, err)
+	assert.Equal(t, *publicKey, privateKey.PublicKey)
+}
+
+func Test_Verify(t *testing.T) {
+	msg := Hash([]byte(RandSeqFromRunes(32, []rune("abcdef01234567890"))))
+	privateKey, err := GenerateKey()
+	assert.Nil(t, err)
+
+	publicAddressAsBytes := PubkeyToAddress(privateKey.PublicKey).Bytes()
+
+	signature, err := Sign(msg, privateKey)
+	assert.Nil(t, err)
+
+	isMatch, err := Verify(publicAddressAsBytes, msg, signature)
+	assert.Nil(t, err)
+	assert.True(t, isMatch)
+}
+
+func Test_VerifyFromStrings(t *testing.T) {
+	msg := Hash([]byte(RandSeqFromRunes(32, []rune("abcdef01234567890"))))
+	privateKey, err := GenerateKey()
+	assert.Nil(t, err)
+
+	publicAddressAsString := PubkeyToAddress(privateKey.PublicKey).Hex()
+
+	signature, err := Sign(msg, privateKey)
+	assert.Nil(t, err)
+
+	isMatch, err := VerifyFromStrings(publicAddressAsString, hex.EncodeToString(msg), hex.EncodeToString(signature))
+	assert.Nil(t, err)
+	assert.True(t, isMatch)
 }

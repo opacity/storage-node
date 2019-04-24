@@ -7,6 +7,8 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 
+	"strings"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -99,7 +101,7 @@ func Verify(address []byte, hash []byte, sig []byte) (bool, error) {
 
 /*VerifyFromStrings recovers a public key and checks it against an existing, known public key, and returns true if they match*/
 func VerifyFromStrings(address string, hash string, sig string) (bool, error) {
-	addressBytes, err := hex.DecodeString(address)
+	addressBytes, err := hex.DecodeString(strings.TrimPrefix(address, "0x"))
 	if err != nil {
 		return false, err
 	}
