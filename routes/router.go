@@ -79,8 +79,13 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.GET(MetadataPath+"/:metadataKey", GetMetadataHandler())
 
 	v1Router.POST(UploadPath, UploadFileHandler())
+
 	v1Router.POST("/free_upload", FreeUploadFileHandler())
-	v1Router.GET("/download/:accountID/:uploadID", DownloadFileHandler())
+	v1Router.GET("/download/:accountID/:fileID", DownloadFileHandler())
+
+	// File endpoint
+	v1Router.DELETE("/file/:accountID/:fileID", DeleteFileHandler())
+	v1Router.GET("/file/:accountID/:fileID", DownloadFileHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {
