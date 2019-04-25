@@ -185,6 +185,10 @@ func (account *Account) S3Prefix() string {
 	return fmt.Sprintf("%s/", account.AccountID)
 }
 
+func (account *Account) GetS3ObjectKeyForFileID(fileID string) string {
+	return fmt.Sprintf("%s%s", account.S3Prefix(), fileID)
+}
+
 /*Return Account object(first one) if there is not any error. */
 func GetAccountById(accountID string) (Account, error) {
 	account := Account{}
@@ -363,7 +367,7 @@ func (account *Account) PrettyString() {
 	fmt.Print("StorageLimit:                   ")
 	fmt.Println(account.StorageLimit)
 
-	fmt.Print("StorageUsed:                   ")
+	fmt.Print("StorageUsed:                    ")
 	fmt.Println(account.StorageUsed)
 
 	fmt.Print("StorageLocation:                ")

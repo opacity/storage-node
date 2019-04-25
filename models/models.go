@@ -25,6 +25,9 @@ var (
 
 /*Connect to a database*/
 func Connect(dbURL string) {
+	if DB != nil {
+		DB.Close()
+	}
 	var err error
 	fmt.Println("Attempting connection to: " + dbURL)
 

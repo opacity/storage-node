@@ -25,7 +25,11 @@ const (
 	/*AdminPath is a router group for admin task. */
 	AdminPath = "/admin"
 
+	/*MetadataPath is the path for dealing with metadata*/
 	MetadataPath = "/metadata"
+
+	/*UploadPath is the path for uploading files to paid accounts*/
+	UploadPath = "/upload"
 )
 
 func init() {
@@ -74,9 +78,14 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(MetadataPath, UpdateMetadataHandler())
 	v1Router.GET(MetadataPath+"/:metadataKey", GetMetadataHandler())
 
-	v1Router.POST("/upload", UploadFileHandler())
+	v1Router.POST(UploadPath, UploadFileHandler())
+
 	v1Router.POST("/free_upload", FreeUploadFileHandler())
-	v1Router.GET("/download/:accountID/:uploadID", DownloadFileHandler())
+	v1Router.GET("/download/:accountID/:fileID", DownloadFileHandler())
+
+	// File endpoint
+	v1Router.DELETE("/file/:accountID/:fileID", DeleteFileHandler())
+	v1Router.GET("/file/:accountID/:fileID", DownloadFileHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {
@@ -84,6 +93,8 @@ func setupAdminPaths(router *gin.Engine) {
 	g.GET("/jobrunner/json", jobs.JobJson)
 
 	g.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	g.GET("/user_stats", UserStatsHandler())
 
 	// Load template file location relative to the current working directory
 	// Unable to find the file.

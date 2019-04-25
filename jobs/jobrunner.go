@@ -27,6 +27,7 @@ func StartupJobs() {
 	jobs := []StartUpRunnable{
 		noOps{},
 		s3LifeCycleSetup{},
+		userStatsSetup{},
 	}
 
 	for _, s := range jobs {
@@ -46,6 +47,7 @@ func ScheduleBackgroundJobs() {
 		spaceUsageReporter{},
 		unpaidAccountDeleter{},
 		tokenCollector{},
+		fileCleaner{},
 	}
 
 	for _, s := range jobs {

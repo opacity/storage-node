@@ -37,7 +37,7 @@ type updateMetadataRes struct {
 }
 
 type getMetadataRes struct {
-	Metadata       string    `json:"metadata" binding:"required,len=64"`
+	Metadata       string    `json:"metadata" binding:"exists"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
 }
 

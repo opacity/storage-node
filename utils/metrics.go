@@ -3,10 +3,25 @@ package utils
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	dto "github.com/prometheus/client_model/go"
 )
 
 // List of all Metrics throughout the application
 var (
+	Metrics_AccountCreated_Counter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "storagenode_accountcreated_counter",
+		Help: "The total number of UserAccount created.",
+	})
+	Metrics_FileUploaded_Counter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "storagenode_fileuploaded_counter",
+		Help: "The total number of FileUploaded.",
+	})
+	Metrics_FileUploadedSizeInByte_Counter = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "storagenode_fileuploadedSizeInByte_counter",
+		Help: "The total number byte is uploaded.",
+	})
+
 	Metrics_PingStdOut_Counter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "storagenode_pingstdout_counter",
 		Help: "The total number of ping std out",
@@ -29,3 +44,9 @@ var (
 		Help: "Percent of space used vs. space alloted, for all paid accounts",
 	})
 )
+
+func GetMetricCounter(m prometheus.Counter) float64 {
+	pb := &dto.Metric{}
+	m.Write(pb)
+	return pb.GetCounter().GetValue()
+}
