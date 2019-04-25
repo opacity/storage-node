@@ -1,17 +1,33 @@
 package routes
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+
 	"time"
+
+	"encoding/hex"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
 )
 
-type updateMetadataReq struct {
+// must be sorted alphabetically for JSON marshaling/stringifying
+type updateMetadataObject struct {
+	Metadata    string `json:"metadata" binding:"required,len=64"`
 	MetadataKey string `json:"metadataKey" binding:"required,len=64"`
-	Metadata    string `json:"metadata" binding:"required"`
+	Timestamp   int64  `json:"timestamp" binding:"required"`
+}
+
+type updateMetadataReq struct {
+	// signature without 0x prefix is broken into
+	// V: sig[0:63]
+	// R: sig[64:127]
+	// S: sig[128:129]
+	Signature string               `json:"signature" binding:"required,len=130"`
+	Address   string               `json:"address" binding:"required,len=42"`
+	Metadata  updateMetadataObject `json:"metadata" binding:"required"`
 }
 
 type updateMetadataRes struct {
@@ -21,7 +37,7 @@ type updateMetadataRes struct {
 }
 
 type getMetadataRes struct {
-	Metadata       string    `json:"metadata"`
+	Metadata       string    `json:"metadata" binding:"exists"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
 }
 
@@ -30,7 +46,7 @@ func GetMetadataHandler() gin.HandlerFunc {
 	return ginHandlerFunc(getMetadata)
 }
 
-/*GetMetadataHandler is a handler for updating the file metadata*/
+/*UpdateMetadataHandler is a handler for updating the file metadata*/
 func UpdateMetadataHandler() gin.HandlerFunc {
 	return ginHandlerFunc(setMetadata)
 }
@@ -53,12 +69,32 @@ func setMetadata(c *gin.Context) {
 	request := updateMetadataReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
+		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
 		BadRequestResponse(c, err)
 		return
 	}
 
-	_, expirationTime, err := utils.GetValueFromKV(request.MetadataKey)
+	metadataJSON, err := json.Marshal(request.Metadata)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse metadata body: %v", err)
+		BadRequestResponse(c, err)
+		return
+	}
+
+	hash := utils.Hash(metadataJSON)
+	verified, err := utils.VerifyFromStrings(request.Address, hex.EncodeToString(hash),
+		request.Signature)
+	if err != nil {
+		BadRequestResponse(c, errors.New("error verifying signature"))
+		return
+	}
+
+	if verified != true {
+		ForbiddenResponse(c, errors.New("signature did not match"))
+		return
+	}
+
+	_, expirationTime, err := utils.GetValueFromKV(request.Metadata.MetadataKey)
 
 	if err != nil {
 		NotFoundResponse(c, err)
@@ -72,14 +108,14 @@ func setMetadata(c *gin.Context) {
 
 	ttl := time.Until(expirationTime)
 
-	if err := utils.BatchSet(&utils.KVPairs{request.MetadataKey: request.Metadata}, ttl); err != nil {
+	if err := utils.BatchSet(&utils.KVPairs{request.Metadata.MetadataKey: request.Metadata.Metadata}, ttl); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
 	OkResponse(c, updateMetadataRes{
-		MetadataKey:    request.MetadataKey,
-		Metadata:       request.Metadata,
+		MetadataKey:    request.Metadata.MetadataKey,
+		Metadata:       request.Metadata.Metadata,
 		ExpirationDate: expirationTime,
 	})
 }

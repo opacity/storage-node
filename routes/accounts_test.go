@@ -1,12 +1,11 @@
 package routes
 
 import (
-	"testing"
-
 	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 
 	"encoding/hex"
 
