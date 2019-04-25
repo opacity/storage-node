@@ -47,6 +47,7 @@ func ScheduleBackgroundJobs() {
 		spaceUsageReporter{},
 		unpaidAccountDeleter{},
 		tokenCollector{},
+		fileCleaner{},
 	}
 
 	for _, s := range jobs {

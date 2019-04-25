@@ -3,6 +3,11 @@ package models
 import (
 	"testing"
 
+	"os"
+	"strings"
+
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/opacity/storage-node/utils"
@@ -24,6 +29,34 @@ func returnCompletedPart(partNumber int) *s3.CompletedPart {
 		ETag:       aws.String(utils.RandSeqFromRunes(32, []rune("abcdef01234567890"))),
 		PartNumber: aws.Int64(int64(partNumber)),
 	}
+}
+
+func multipartUploadOfSingleChunk(t *testing.T, f *File) (*s3.CompletedPart, error) {
+	workingDir, _ := os.Getwd()
+	testDir := strings.Replace(workingDir, "/models", "", -1)
+	testDir = testDir + "/test_files"
+	localFilePath := testDir + string(os.PathSeparator) + "lorem.txt"
+
+	file, err := os.Open(localFilePath)
+	assert.Nil(t, err)
+	defer file.Close()
+	fileInfo, _ := file.Stat()
+	size := fileInfo.Size()
+	buffer := make([]byte, size)
+	file.Read(buffer)
+
+	key, uploadID, err := utils.CreateMultiPartUpload(f.FileID)
+	if err != nil {
+		return nil, err
+	}
+	err = f.UpdateKeyAndUploadID(key, uploadID)
+	if err != nil {
+		return nil, err
+	}
+
+	completedPart, err := utils.UploadMultiPartPart(aws.StringValue(f.AwsObjectKey), aws.StringValue(f.AwsUploadID),
+		buffer, FirstChunkIndex)
+	return completedPart, err
 }
 
 func Test_Init_Files(t *testing.T) {
@@ -290,5 +323,82 @@ func Test_GetCompletedPartsAsArray(t *testing.T) {
 }
 
 func Test_FinishUpload(t *testing.T) {
-	// TODO: revisit this method and write tests for it
+	file := returnValidFile()
+	file.EndIndex = 1
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	completedPartIndex1, err := multipartUploadOfSingleChunk(t, &file)
+	assert.Nil(t, err)
+
+	err = file.UpdateCompletedIndexes(completedPartIndex1)
+	assert.Nil(t, err)
+
+	actualFiles := []File{}
+	DB.Find(&actualFiles, "file_id = ?", file.FileID)
+	assert.Equal(t, 1, len(actualFiles))
+
+	objectKey := actualFiles[0].AwsObjectKey
+
+	file.FinishUpload()
+	actualFiles = []File{}
+	DB.Find(&actualFiles, "file_id = ?", file.FileID)
+	assert.Equal(t, 0, len(actualFiles))
+
+	err = utils.DeleteDefaultBucketObject(aws.StringValue(objectKey))
+	assert.Nil(t, err)
+}
+
+func Test_CompleteUploadsNewerThan(t *testing.T) {
+	deleteFiles(t)
+	file := returnValidFile()
+	file.EndIndex = 1
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	completedPartIndex1, err := multipartUploadOfSingleChunk(t, &file)
+	assert.Nil(t, err)
+
+	err = file.UpdateCompletedIndexes(completedPartIndex1)
+	assert.Nil(t, err)
+
+	actualFiles := []File{}
+	DB.Find(&actualFiles, "file_id = ?", file.FileID)
+	assert.Equal(t, 1, len(actualFiles))
+
+	objectKey := actualFiles[0].AwsObjectKey
+
+	CompleteUploadsNewerThan(time.Now().Add(-5 * time.Minute))
+	actualFiles = []File{}
+	DB.Find(&actualFiles, "file_id = ?", file.FileID)
+	assert.Equal(t, 0, len(actualFiles))
+
+	err = utils.DeleteDefaultBucketObject(aws.StringValue(objectKey))
+	assert.Nil(t, err)
+}
+
+func Test_DeleteUploadsOlderThan(t *testing.T) {
+	deleteFiles(t)
+	file := returnValidFile()
+	file.EndIndex = 1
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	actualFiles := []File{}
+	DB.Find(&actualFiles, "file_id = ?", file.FileID)
+	assert.Equal(t, 1, len(actualFiles))
+
+	DeleteUploadsOlderThan(time.Now().Add(5 * time.Minute))
+	actualFiles = []File{}
+	DB.Find(&actualFiles, "file_id = ?", file.FileID)
+	assert.Equal(t, 0, len(actualFiles))
 }
