@@ -7,7 +7,7 @@ import (
 )
 
 type CompletedFile struct {
-	FileID    string    `gorm:"primary_key" json:"FileID" binding:"required"`
+	FileID    string    `gorm:"primary_key" json:"fileID" binding:"required"`
 	CreatedAt time.Time `json:"createdAt"`
 	ExpiredAt time.Time `json:"expiredAt"`
 }
