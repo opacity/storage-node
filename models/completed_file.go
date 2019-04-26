@@ -3,7 +3,6 @@ package models
 import (
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -20,8 +19,8 @@ func GetAllExpiredFiles(expiredTime time.Time) ([]string, error) {
 		return nil, err
 	}
 	var fileIDs []string
-	for f := range files {
+	for _, f := range files {
 		fileIDs = append(fileIDs, f.FileID)
 	}
-	return f, nil
+	return fileIDs, nil
 }
