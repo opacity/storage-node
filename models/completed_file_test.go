@@ -1,8 +1,8 @@
 package models
 
 import (
-	"testing"
 	"reflect"
+	"testing"
 
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
@@ -19,14 +19,14 @@ func Test_GetAllExpiredFiles(t *testing.T) {
 		ExpiredTime: time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 	assert.Nil(t, DB.Create(&s).Error)
-	s = CompletedFile {
-		FileID: "foo2",
-		ExpiredTime: time.Date(2010, 1, 1, 12, 0, 0, 0, time.UTC)
+	s = CompletedFile{
+		FileID:      "foo2",
+		ExpiredTime: time.Date(2010, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 	assert.Nil(t, DB.Create(&s).Error)
-	s = CompletedFile {
-		FileID: "foo3",
-		ExpiredTime: time.Date(2012, 1, 1, 12, 0, 0, 0, time.UTC)
+	s = CompletedFile{
+		FileID:      "foo3",
+		ExpiredTime: time.Date(2012, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 	assert.Nil(t, DB.Create(&s).Error)
 
