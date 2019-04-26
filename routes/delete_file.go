@@ -39,8 +39,7 @@ func deleteFile(c *gin.Context) {
 		return
 	}
 
-	objectKey := account.GetS3ObjectKeyForFileID(request.FileID)
-	if err := utils.DeleteDefaultBucketObject(objectKey); err != nil {
+	if err := utils.DeleteDefaultBucketObject(request.FileID); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
