@@ -34,7 +34,7 @@ func deleteFile(c *gin.Context) {
 
 	// validate user
 	account, err := models.GetAccountById(request.AccountID)
-	if err != nil {
+	if err != nil || len(account.AccountID) > 0 {
 		AccountNotFoundResponse(c, request.AccountID)
 		return
 	}

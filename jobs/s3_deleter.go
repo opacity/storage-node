@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"github.com/opacity/storage-node/models"
-	"github.com/opacity/storage-node/utils"
 )
 
 type s3Deleter struct {
