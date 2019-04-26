@@ -34,13 +34,12 @@ func deleteFile(c *gin.Context) {
 
 	// validate user
 	account, err := models.GetAccountById(request.AccountID)
-	if err != nil {
+	if err != nil || len(account.AccountID) == 0 {
 		AccountNotFoundResponse(c, request.AccountID)
 		return
 	}
 
-	objectKey := account.GetS3ObjectKeyForFileID(request.FileID)
-	if err := utils.DeleteDefaultBucketObject(objectKey); err != nil {
+	if err := utils.DeleteDefaultBucketObject(request.FileID); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
