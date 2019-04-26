@@ -14,7 +14,7 @@ type CompletedFile struct {
 
 func GetAllExpiredFiles(expiredTime time.Time) ([]string, error) {
 	files := []CompletedFile{}
-	if err := DB.Where("expired_at > ?", expiredTime).Find(&files).Error; err != nil {
+	if err := DB.Where("expired_at < ?", expiredTime).Find(&files).Error; err != nil {
 		utils.LogIfError(err, nil)
 		return nil, err
 	}
