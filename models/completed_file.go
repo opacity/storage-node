@@ -14,7 +14,7 @@ type CompletedFile struct {
 }
 
 type sumResult struct {
-	totalFileSizeInByte int64
+	total int64
 }
 
 func GetAllExpiredCompletedFiles(expiredTime time.Time) ([]string, error) {
@@ -36,6 +36,6 @@ func DeleteAllCompletedFiles(fileIDs []string) error {
 
 func GetTotalFileSizeInByte() (int64, error) {
 	result := sumResult{}
-	err := DB.Model(&CompletedFile{}).Select("sum(file_size_in_byte)").Scan(&result).Error
+	err := DB.Model(&CompletedFile{}).Select("SUM(file_size_in_byte) AS total").Scan(&result).Error
 	return result.totalFileSizeInByte, err
 }
