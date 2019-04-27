@@ -14,7 +14,7 @@ func Test_Init_Completed_File(t *testing.T) {
 	Connect(utils.Env.TestDatabaseURL)
 }
 
-func Test_GetAllExpiredFiles(t *testing.T) {
+func Test_GetAllExpiredCompletedFiles(t *testing.T) {
 	s := CompletedFile{
 		FileID:    "foo1",
 		ExpiredAt: time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
@@ -31,9 +31,29 @@ func Test_GetAllExpiredFiles(t *testing.T) {
 	}
 	assert.Nil(t, DB.Create(&s).Error)
 
-	f, err := GetAllExpiredFiles(time.Date(2011, 1, 1, 12, 0, 0, 0, time.UTC))
+	f, err := GetAllExpiredCompletedFiles(time.Date(2011, 1, 1, 12, 0, 0, 0, time.UTC))
 	assert.Nil(t, err)
 
 	expected := []string{"foo1", "foo2"}
 	assert.True(t, reflect.DeepEqual(f, expected))
+}
+
+func Test_DeleteAllCompletedFiles(t *testing.T) {
+	s := CompletedFile{
+		FileID:    "foo4",
+		ExpiredAt: time.Date(2001, 1, 1, 12, 0, 0, 0, time.UTC),
+	}
+	assert.Nil(t, DB.Create(&s).Error)
+	s = CompletedFile{
+		FileID:    "foo5",
+		ExpiredAt: time.Date(2002, 1, 1, 12, 0, 0, 0, time.UTC),
+	}
+
+	f, _ := GetAllExpiredCompletedFiles(time.Date(2003, 1, 1, 12, 0, 0, 0, time.UTC))
+	assert.True(t, len(f) == 2)
+
+	assert.Nil(t, DeleteAllCompletedFiles([]string{"foo4", "foo5"}))
+
+	f, _ = GetAllExpiredCompletedFiles(time.Date(2003, 1, 1, 12, 0, 0, 0, time.UTC))
+	assert.True(t, len(f) == 0)
 }

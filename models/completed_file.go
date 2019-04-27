@@ -7,12 +7,13 @@ import (
 )
 
 type CompletedFile struct {
-	FileID    string    `gorm:"primary_key" json:"fileID" binding:"required"`
-	CreatedAt time.Time `json:"createdAt"`
-	ExpiredAt time.Time `json:"expiredAt"`
+	FileID         string    `gorm:"primary_key" json:"fileID" binding:"required"`
+	CreatedAt      time.Time `json:"createdAt"`
+	ExpiredAt      time.Time `json:"expiredAt"`
+	FileSizeInByte int64     `json:"fileSizeInByte"`
 }
 
-func GetAllExpiredFiles(expiredTime time.Time) ([]string, error) {
+func GetAllExpiredCompletedFiles(expiredTime time.Time) ([]string, error) {
 	files := []CompletedFile{}
 	if err := DB.Where("expired_at < ?", expiredTime).Find(&files).Error; err != nil {
 		utils.LogIfError(err, nil)
@@ -23,4 +24,8 @@ func GetAllExpiredFiles(expiredTime time.Time) ([]string, error) {
 		fileIDs = append(fileIDs, f.FileID)
 	}
 	return fileIDs, nil
+}
+
+func DeleteAllCompletedFiles(fileIDs []string) error {
+	return DB.Where(fileIDs).Delete(CompletedFile{}).Error
 }
