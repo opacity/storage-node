@@ -74,5 +74,5 @@ func Test_GetTotalFileSizeInByte(t *testing.T) {
 	v, err := GetTotalFileSizeInByte()
 
 	assert.Nil(t, err)
-	assert.True(t, v == int64(150+210))
+	assert.Equal(t, v, int64(150+210))
 }
