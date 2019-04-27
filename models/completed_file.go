@@ -32,26 +32,17 @@ func DeleteAllCompletedFiles(fileIDs []string) error {
 }
 
 func GetTotalFileSizeInByte() (int64, error) {
-	var value int64
-	err := DB.Model(&CompletedFile{}).Select("sum(file_size_in_byte)").Scan(&value).Error
-	fmt.Printf("value message %v", value)
-
 	rows, err := DB.Model(&CompletedFile{}).Select("sum(file_size_in_byte) AS total").Rows()
 	if err != nil {
-		fmt.Printf("Error : %v", err)
-		//return 0, err
+		return 0, err
 	}
 	defer rows.Close()
 
+	total := int64(0)
 	if rows.Next() {
-		total := int64(0)
-		err := rows.Scan(&total)
-		if err != nil {
-			fmt.Printf("Error : %v", err)
-			//return 0, err
+		if err := rows.Scan(&total); err != nil {
+			return 0, err
 		}
-		fmt.Printf("totatl value: %v", total)
-		//return total, nil
 	}
-	return value, err
+	return total, nil
 }
