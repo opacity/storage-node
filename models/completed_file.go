@@ -35,7 +35,7 @@ func DeleteAllCompletedFiles(fileIDs []string) error {
 }
 
 func GetTotalFileSizeInByte() (int64, error) {
-	result := sumResult{}
-	err := DB.Model(&CompletedFile{}).Select("SUM(file_size_in_byte) AS total").Scan(&result).Error
-	return result.total, err
+	var value []int
+	err := DB.Model(&CompletedFile{}).Select("SUM(file_size_in_byte)").Scan(&value).Error
+	return value[0], err
 }
