@@ -9,6 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/meirf/gopart"
 	"github.com/orcaman/concurrent-map"
 )
 
@@ -248,6 +249,27 @@ func iterateBucketAllObjects(bucketName string, i ObjectIterator) error {
 	return svc.ListObjectPages(input, i)
 }
 
+func deleteObjects(bucketName string, objectKeys []string) error {
+	input := &s3.DeleteObjectsInput{
+		Bucket: aws.String(bucketName),
+	}
+
+	for idRange := range gopart.Partition(len(objectKeys), int(awsPagingSize)) {
+		var objIdentifier []*s3.ObjectIdentifier
+		for _, c := range objectKeys[idRange.Low:idRange.High] {
+			objIdentifier = append(objIdentifier, &s3.ObjectIdentifier{Key: aws.String(c)})
+		}
+		input.Delete = &s3.Delete{
+			Objects: objIdentifier,
+		}
+
+		if err := svc.DeleteObjects(input); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func DoesDefaultBucketObjectExist(objectKey string) bool {
 	return doesObjectExist(Env.BucketName, objectKey)
 }
@@ -312,6 +334,10 @@ func GetDefaultBucketLifecycle() ([]*s3.LifecycleRule, error) {
 
 func IterateDefaultBucketAllObjects(i ObjectIterator) error {
 	return iterateBucketAllObjects(Env.BucketName, i)
+}
+
+func DeleteDefaultBucketObjects(objectKeys []string) error {
+	return deleteObjects(Env.BucketName, objectKeys)
 }
 
 func getKey(bucketName string, objectKey string) string {
