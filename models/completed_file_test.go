@@ -48,6 +48,7 @@ func Test_DeleteAllCompletedFiles(t *testing.T) {
 		FileID:    "foo5",
 		ExpiredAt: time.Date(2002, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
+	assert.Nil(t, DB.Create(&s).Error)
 
 	f, _ := GetAllExpiredCompletedFiles(time.Date(2003, 1, 1, 12, 0, 0, 0, time.UTC))
 	assert.True(t, len(f) == 2)
@@ -56,4 +57,22 @@ func Test_DeleteAllCompletedFiles(t *testing.T) {
 
 	f, _ = GetAllExpiredCompletedFiles(time.Date(2003, 1, 1, 12, 0, 0, 0, time.UTC))
 	assert.True(t, len(f) == 0)
+}
+
+func Test_DeleteAllCompletedFiles(t *testing.T) {
+	s := CompletedFile{
+		FileID:         "foo6",
+		FileSizeInByte: 150,
+	}
+	assert.Nil(t, DB.Create(&s).Error)
+	s = CompletedFile{
+		FileID:         "foo7",
+		FileSizeInByte: 210,
+	}
+	assert.Nil(t, DB.Create(&s).Error)
+
+	v, err := GetTotalFileSizeInByte()
+
+	assert.Nil(t, err)
+	assert.True(t, v == int64(150+210))
 }
