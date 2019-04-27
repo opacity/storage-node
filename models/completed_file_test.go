@@ -59,7 +59,7 @@ func Test_DeleteAllCompletedFiles(t *testing.T) {
 	assert.True(t, len(f) == 0)
 }
 
-func Test_DeleteAllCompletedFiles(t *testing.T) {
+func Test_GetTotalFileSizeInByte(t *testing.T) {
 	s := CompletedFile{
 		FileID:         "foo6",
 		FileSizeInByte: 150,
