@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/opacity/storage-node/utils"
@@ -31,7 +32,26 @@ func DeleteAllCompletedFiles(fileIDs []string) error {
 }
 
 func GetTotalFileSizeInByte() (int64, error) {
-	var values []int64
-	err := DB.Model(&CompletedFile{}).Select("SUM(file_size_in_byte)").Scan(&values).Error
-	return values[0], err
+	var value int64
+	err := DB.Model(&CompletedFile{}).Select("sum(file_size_in_byte)").Scan(&value).Error
+	fmt.Printlf("value message %v", value)
+
+	rows, err := db.Table("completed_file").Select("sum(file_size_in_byte) AS total").Rows()
+	if err != nil {
+		fmt.Printf("Error : %v", err)
+		//return 0, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		total := int64(0)
+		err := rows.Scan(&total)
+		if err != nil {
+			fmt.Printf("Error : %v", err)
+			//return 0, err
+		}
+		fmt.Printf("totatl value: %v", total)
+		//return total, nil
+	}
+	return value, err
 }
