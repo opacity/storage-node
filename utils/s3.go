@@ -9,8 +9,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/orcaman/concurrent-map"
 	"github.com/meirf/gopart"
+	"github.com/orcaman/concurrent-map"
 )
 
 type s3Wrapper struct {
@@ -249,15 +249,15 @@ func iterateBucketAllObjects(bucketName string, i ObjectIterator) error {
 	return svc.ListObjectPages(input, i)
 }
 
-func deleteObjects(bucketName string objectKeys []string) error {
-	input := &s3.DeleteObjects{
+func deleteObjects(bucketName string, objectKeys []string) error {
+	input := &s3.DeleteObjectsInput{
 		Bucket: aws.String(bucketName),
 	}
 
-	for idRange := range gopart.Partition(len(objectKeys), awsPagingSize) {
+	for idRange := range gopart.Partition(len(objectKeys), int(awsPagingSize)) {
 		var objIdentifier []*s3.ObjectIdentifier
 		for _, c := range objectKeys[idRange.Low:idRange.High] {
-			objIdentifier = append(objIdentifier, &s3.ObjectIdentifier{Key: c.Key})
+			objIdentifier = append(objIdentifier, &s3.ObjectIdentifier{Key: aws.String(c)})
 		}
 		input.Delete = &s3.Delete{
 			Objects: objIdentifier,
