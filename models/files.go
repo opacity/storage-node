@@ -202,7 +202,7 @@ func (file *File) FinishUpload() error {
 		ExpiredAt:      file.ExpiredAt,
 		FileSizeInByte: objectSize,
 	}
-	if err := DB.Save(&compeletedFile); err != nil {
+	if err := DB.Save(&compeletedFile).Error; err != nil {
 		return err
 	}
 	return DB.Delete(file).Error
