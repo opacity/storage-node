@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"testing"
+	"time"
 
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -34,7 +35,7 @@ func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 	testSubject.Run()
 
 	result := []models.CompletedFile{}
-	assert.Nil(t, model.DB.Find(&result).Error)
+	assert.Nil(t, models.DB.Find(&result).Error)
 
 	assert.Equal(t, 1, len(result))
 	assert.Equal(t, "foo3", result[0].FileID)
