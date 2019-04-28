@@ -25,6 +25,7 @@ type File struct {
 	FileID           string    `gorm:"primary_key" json:"fileID" binding:"required"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
+	ExpiredAt        time.Time `json:"expiredAt"`
 	AwsUploadID      *string   `json:"awsUploadID"`
 	AwsObjectKey     *string   `json:"awsObjectKey"`
 	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
@@ -187,17 +188,24 @@ func (file *File) FinishUpload() error {
 	completedParts := file.GetCompletedPartsAsArray()
 
 	objectKey := aws.StringValue(file.AwsObjectKey)
-	_, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts)
-
-	if err == nil {
-		utils.Metrics_FileUploaded_Counter.Inc()
-
-		objectSize := utils.GetDefaultBucketObjectSize(objectKey)
-		utils.Metrics_FileUploadedSizeInByte_Counter.Add(float64(objectSize))
-		DB.Delete(file)
+	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
+		return err
 	}
 
-	return err
+	utils.Metrics_FileUploaded_Counter.Inc()
+
+	objectSize := utils.GetDefaultBucketObjectSize(objectKey)
+	utils.Metrics_FileUploadedSizeInByte_Counter.Add(float64(objectSize))
+
+	compeletedFile := CompletedFile{
+		FileID:         file.FileID,
+		ExpiredAt:      file.ExpiredAt,
+		FileSizeInByte: objectSize,
+	}
+	if err := models.DB.Save(&compeletedFile); err != nil {
+		return err
+	}
+	return DB.Delete(file).Error
 }
 
 /*CompleteUploadsNewerThan will attempt to finish the uploads of files created after the time provided*/
