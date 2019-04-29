@@ -19,12 +19,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func returnValidCreateAccountReq() accountCreateReq {
-	return accountCreateReq{
-		AccountID:        utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+func returnValidCreateAccountBody() accountCreateObj {
+	return accountCreateObj{
 		StorageLimit:     100,
 		DurationInMonths: 12,
 		MetadataKey:      utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+	}
+}
+
+func returnValidCreateAccountReq(accountBody accountCreateObj) accountCreateReq {
+	reqJSON, _ := json.Marshal(accountBody)
+	hash := utils.Hash(reqJSON)
+
+	privateKeyToSignWith, _ := utils.GenerateKey()
+	signature, _ := utils.Sign(hash, privateKeyToSignWith)
+
+	return accountCreateReq{
+		AccountCreation: accountBody,
+		Signature:       hex.EncodeToString(signature),
 	}
 }
 
@@ -57,7 +69,7 @@ func Test_Init_Accounts(t *testing.T) {
 }
 
 func Test_NoErrorsWithValidPost(t *testing.T) {
-	post := returnValidCreateAccountReq()
+	post := returnValidCreateAccountReq(returnValidCreateAccountBody())
 
 	w := accountsTestHelperCreateAccount(t, post)
 
@@ -67,9 +79,9 @@ func Test_NoErrorsWithValidPost(t *testing.T) {
 	}
 }
 
-func Test_ExpectErrorWithInvalidAccountID(t *testing.T) {
-	post := returnValidCreateAccountReq()
-	post.AccountID = "abcdef"
+func Test_ExpectErrorWithInvalidSignature(t *testing.T) {
+	post := returnValidCreateAccountReq(returnValidCreateAccountBody())
+	post.Signature = "abcdef"
 
 	w := accountsTestHelperCreateAccount(t, post)
 
@@ -80,8 +92,9 @@ func Test_ExpectErrorWithInvalidAccountID(t *testing.T) {
 }
 
 func Test_ExpectErrorWithInvalidStorageLimit(t *testing.T) {
-	post := returnValidCreateAccountReq()
-	post.StorageLimit = 99
+	body := returnValidCreateAccountBody()
+	body.StorageLimit = 99
+	post := returnValidCreateAccountReq(body)
 
 	w := accountsTestHelperCreateAccount(t, post)
 
@@ -92,8 +105,9 @@ func Test_ExpectErrorWithInvalidStorageLimit(t *testing.T) {
 }
 
 func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
-	post := returnValidCreateAccountReq()
-	post.DurationInMonths = 0
+	body := returnValidCreateAccountBody()
+	body.DurationInMonths = 0
+	post := returnValidCreateAccountReq(body)
 
 	w := accountsTestHelperCreateAccount(t, post)
 
