@@ -97,6 +97,8 @@ func init() {
 		GetETHBalance:           getETHBalance,
 		CheckForPendingTokenTxs: checkForPendingTokenTxs,
 	}
+
+	addressNonceMap = make(AddressToNonceMap)
 }
 
 /*SetWallet gets the address and private key for storage node's main wallet*/
