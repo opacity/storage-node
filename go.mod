@@ -39,6 +39,7 @@ require (
 	github.com/mattn/go-colorable v0.1.1 // indirect
 	github.com/mattn/go-shellwords v1.0.5 // indirect
 	github.com/mattn/go-sqlite3 v1.10.0 // indirect
+	github.com/meirf/gopart v0.0.0-20180520194036-37e9492a85a8
 	github.com/orcaman/concurrent-map v0.0.0-20190107190726-7ed82d9cb717
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/pkg/errors v0.8.1 // indirect

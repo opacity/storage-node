@@ -37,29 +37,28 @@ func downloadFile(c *gin.Context) {
 
 	// validate user
 	account, err := models.GetAccountById(request.AccountID)
-	if err != nil {
+	if err != nil || len(account.AccountID) == 0 {
 		AccountNotFoundResponse(c, request.AccountID)
 		return
 	}
 
 	// verify object existed in S3
-	objectKey := account.GetS3ObjectKeyForFileID(request.FileID)
-	if !utils.DoesDefaultBucketObjectExist(objectKey) {
+	if !utils.DoesDefaultBucketObjectExist(request.FileID) {
 		NotFoundResponse(c, errors.New("Such data does not exist"))
 		return
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(objectKey, utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(request.FileID, utils.CannedAcl_PublicRead); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
-	if err := models.ExpireObject(objectKey); err != nil {
+	if err := models.ExpireObject(request.FileID); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
-	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, objectKey)
+	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, request.FileID)
 	OkResponse(c, downloadFileRes{
 		// Redirect to a different URL that client would have authorization to download it.
 		FileDownloadUrl: url,
