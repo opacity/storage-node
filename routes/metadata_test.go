@@ -79,9 +79,11 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	assert.Nil(t, err)
 
 	post := updateMetadataReq{
-		Signature: hex.EncodeToString(signature),
-		Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
-		Metadata:  updateMetadataObj,
+		verification: verification{
+			Signature: hex.EncodeToString(signature),
+			Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
+		},
+		Metadata: updateMetadataObj,
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
@@ -116,9 +118,11 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	assert.Nil(t, err)
 
 	post := updateMetadataReq{
-		Signature: hex.EncodeToString(signature),
-		Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
-		Metadata:  updateMetadataObj,
+		verification: verification{
+			Signature: hex.EncodeToString(signature),
+			Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
+		},
+		Metadata: updateMetadataObj,
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
