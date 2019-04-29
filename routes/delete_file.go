@@ -3,10 +3,7 @@ package routes
 import (
 	"fmt"
 
-	"strings"
-
 	"github.com/gin-gonic/gin"
-	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -36,16 +33,7 @@ func deleteFile(c *gin.Context) {
 		return
 	}
 
-	if err := verifyRequest(request.DeleteFile, request.Address, request.Signature, c); err != nil {
-		return
-	}
-
-	accountID := strings.TrimPrefix(request.Address, "0x")
-
-	// validate user
-	account, err := models.GetAccountById(accountID)
-	if err != nil || len(account.AccountID) == 0 {
-		AccountNotFoundResponse(c, accountID)
+	if _, err := returnAccountIfVerified(request.DeleteFile, request.Address, request.Signature, c); err != nil {
 		return
 	}
 

@@ -6,7 +6,10 @@ import (
 	"errors"
 	"fmt"
 
+	"strings"
+
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -53,4 +56,22 @@ func hashRequestBody(reqBody interface{}, c *gin.Context) ([]byte, error) {
 	}
 
 	return utils.Hash(reqJSON), nil
+}
+
+func returnAccountIfVerified(reqBody interface{}, address string, signature string, c *gin.Context) (models.Account, error) {
+	var account models.Account
+	if err := verifyRequest(reqBody, address, signature, c); err != nil {
+		return account, err
+	}
+
+	accountID := strings.TrimPrefix(address, "0x")
+
+	// validate user
+	account, err := models.GetAccountById(accountID)
+	if err != nil || len(account.AccountID) == 0 {
+		AccountNotFoundResponse(c, accountID)
+		return account, err
+	}
+
+	return account, err
 }

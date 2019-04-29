@@ -10,12 +10,16 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type uploadFileReq struct {
-	AccountID  string `form:"accountID" binding:"required,len=64"`
+type uploadFileObj struct {
 	ChunkData  string `form:"chunkData" binding:"required"`
 	FileHandle string `form:"fileHandle" binding:"required,len=64"`
 	PartIndex  int    `form:"partIndex" binding:"exists,gte=1"`
 	EndIndex   int    `form:"endIndex" binding:"required,gtefield=PartIndex"`
+}
+
+type uploadFileReq struct {
+	verification
+	UploadFile uploadFileObj `form:"uploadFile" binding:"required"`
 }
 
 type uploadFileRes struct {
@@ -36,9 +40,8 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	account, err := models.GetAccountById(request.AccountID)
+	account, err := returnAccountIfVerified(request.UploadFile, request.Address, request.Signature, c)
 	if err != nil {
-		AccountNotFoundResponse(c, request.AccountID)
 		return
 	}
 
@@ -62,8 +65,8 @@ func uploadFile(c *gin.Context) {
 	}
 
 	file, err := models.GetOrCreateFile(models.File{
-		FileID:    request.FileHandle,
-		EndIndex:  request.EndIndex,
+		FileID:    request.UploadFile.FileHandle,
+		EndIndex:  request.UploadFile.EndIndex,
 		ExpiredAt: account.ExpirationDate(),
 	})
 	if err != nil {
@@ -73,10 +76,10 @@ func uploadFile(c *gin.Context) {
 
 	var multipartErr error
 	var completedPart *s3.CompletedPart
-	if request.PartIndex == models.FirstChunkIndex {
-		completedPart, multipartErr = handleFirstChunk(file, request.PartIndex, request.ChunkData)
+	if request.UploadFile.PartIndex == models.FirstChunkIndex {
+		completedPart, multipartErr = handleFirstChunk(file, request.UploadFile.PartIndex, request.UploadFile.ChunkData)
 	} else {
-		completedPart, multipartErr = handleOtherChunk(file, request.PartIndex, request.ChunkData)
+		completedPart, multipartErr = handleOtherChunk(file, request.UploadFile.PartIndex, request.UploadFile.ChunkData)
 	}
 
 	if multipartErr != nil {

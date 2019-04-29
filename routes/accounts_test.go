@@ -27,15 +27,15 @@ func returnValidCreateAccountBody() accountCreateObj {
 	}
 }
 
-func returnValidCreateAccountReq(accountBody accountCreateObj) accountCreateReq {
-	reqJSON, _ := json.Marshal(accountBody)
+func returnValidCreateAccountReq(body accountCreateObj) accountCreateReq {
+	reqJSON, _ := json.Marshal(body)
 	hash := utils.Hash(reqJSON)
 
 	privateKeyToSignWith, _ := utils.GenerateKey()
 	signature, _ := utils.Sign(hash, privateKeyToSignWith)
 
 	return accountCreateReq{
-		AccountCreation: accountBody,
+		AccountCreation: body,
 		Signature:       hex.EncodeToString(signature),
 	}
 }

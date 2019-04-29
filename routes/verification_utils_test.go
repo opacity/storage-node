@@ -8,16 +8,23 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"crypto/ecdsa"
+
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
 
 func returnVerificationThatWillSucceed(t *testing.T, reqBody interface{}) verification {
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	return setupVerificationWithPrivateKey(t, reqBody, privateKey)
+}
+
+func setupVerificationWithPrivateKey(t *testing.T, reqBody interface{}, privateKey *ecdsa.PrivateKey) verification {
 	reqJSON, err := json.Marshal(reqBody)
 	assert.Nil(t, err)
 	hash := utils.Hash(reqJSON)
 
-	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	signature, err := utils.Sign(hash, privateKey)
 	assert.Nil(t, err)
@@ -48,24 +55,6 @@ func returnVerificationThatWillFail(t *testing.T, reqBody interface{}) verificat
 	}
 
 	return verification
-}
-
-func testCannotParseRequest(t *testing.T, w *httptest.ResponseRecorder) {
-	// Check to see if the response was what you expected
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
-	}
-
-	assert.Contains(t, w.Body.String(), marshalError)
-}
-
-func testErrorVerifyingSignature(t *testing.T, w *httptest.ResponseRecorder) {
-	// Check to see if the response was what you expected
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
-	}
-
-	assert.Contains(t, w.Body.String(), errVerifying)
 }
 
 func testVerificationFailed(t *testing.T, w *httptest.ResponseRecorder) {

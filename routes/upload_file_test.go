@@ -14,6 +14,8 @@ import (
 
 	"math/big"
 
+	"crypto/ecdsa"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
@@ -23,13 +25,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func returnValidUploadFileReq() uploadFileReq {
-	return uploadFileReq{
-		AccountID:  utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+func returnValidUploadFileBody() uploadFileObj {
+	return uploadFileObj{
 		ChunkData:  utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		FileHandle: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		PartIndex:  models.FirstChunkIndex,
 		EndIndex:   10,
+	}
+}
+
+func returnValidUploadFileReq(t *testing.T, body uploadFileObj, privateKey *ecdsa.PrivateKey) uploadFileReq {
+	verificationBody := setupVerificationWithPrivateKey(t, body, privateKey)
+
+	return uploadFileReq{
+		UploadFile:   body,
+		verification: verificationBody,
 	}
 }
 
@@ -105,10 +115,12 @@ func Test_Init_Upload_Files(t *testing.T) {
 }
 
 func Test_Upload_File_Bad_Request(t *testing.T) {
-	uploadFileReq := returnValidUploadFileReq()
-	uploadFileReq.AccountID = "abcd"
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	request := returnValidUploadFileReq(t, returnValidUploadFileBody(), privateKey)
+	request.UploadFile.PartIndex = 0
 
-	w := uploadFileHelper(t, uploadFileReq)
+	w := uploadFileHelper(t, request)
 
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
@@ -116,9 +128,11 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 }
 
 func Test_Upload_File_No_Account_Found(t *testing.T) {
-	uploadFileReq := returnValidUploadFileReq()
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	request := returnValidUploadFileReq(t, returnValidUploadFileBody(), privateKey)
 
-	w := uploadFileHelper(t, uploadFileReq)
+	w := uploadFileHelper(t, request)
 
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
@@ -126,14 +140,16 @@ func Test_Upload_File_No_Account_Found(t *testing.T) {
 }
 
 func Test_Upload_File_Account_Not_Paid(t *testing.T) {
-	uploadFileReq := returnValidUploadFileReq()
-	createUnpaidAccount(uploadFileReq.AccountID, t)
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	request := returnValidUploadFileReq(t, returnValidUploadFileBody(), privateKey)
+	createUnpaidAccount(strings.TrimPrefix(request.Address, "0x"), t)
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return false, nil
 	}
 
-	w := uploadFileHelper(t, uploadFileReq)
+	w := uploadFileHelper(t, request)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
@@ -150,17 +166,19 @@ func Test_Upload_File_Account_Paid_Upload_Starts(t *testing.T) {
 		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
 	}
 
-	uploadFileReq := returnValidUploadFileReq()
-	createPaidAccount(uploadFileReq.AccountID, t)
+	uploadBody := returnValidUploadFileBody()
+	uploadBody.ChunkData = string(returnChunkData(t))
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	request := returnValidUploadFileReq(t, uploadBody, privateKey)
+	createPaidAccount(strings.TrimPrefix(request.Address, "0x"), t)
 
-	fileId := uploadFileReq.FileHandle
+	fileId := request.UploadFile.FileHandle
 	filesInDB := []models.File{}
 	models.DB.Where("file_id = ?", fileId).Find(&filesInDB)
 	assert.Equal(t, 0, len(filesInDB))
 
-	uploadFileReq.ChunkData = string(returnChunkData(t))
-
-	w := uploadFileHelper(t, uploadFileReq)
+	w := uploadFileHelper(t, request)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
@@ -182,28 +200,31 @@ func Test_Upload_File_Account_Paid_Upload_Continues(t *testing.T) {
 		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
 	}
 
-	uploadFileReq := returnValidUploadFileReq()
-	createPaidAccount(uploadFileReq.AccountID, t)
+	uploadBody := returnValidUploadFileBody()
+	uploadBody.ChunkData = string(returnChunkData(t))
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	request := returnValidUploadFileReq(t, uploadBody, privateKey)
+	createPaidAccount(strings.TrimPrefix(request.Address, "0x"), t)
 
-	uploadFileReq.ChunkData = string(returnChunkData(t))
-
-	w := uploadFileHelper(t, uploadFileReq)
+	w := uploadFileHelper(t, request)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
 
-	nextPartIndex := uploadFileReq.PartIndex + 1
-	uploadFileReq.PartIndex = nextPartIndex
+	nextBody := uploadBody
+	nextBody.PartIndex = uploadBody.PartIndex + 1
+	request = returnValidUploadFileReq(t, nextBody, privateKey)
 
-	w = uploadFileHelper(t, uploadFileReq)
+	w = uploadFileHelper(t, request)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
 
 	filesInDB := []models.File{}
-	models.DB.Where("file_id = ?", uploadFileReq.FileHandle).Find(&filesInDB)
+	models.DB.Where("file_id = ?", request.UploadFile.FileHandle).Find(&filesInDB)
 	assert.Equal(t, 1, len(filesInDB))
 
 	completedPartsAsArray := filesInDB[0].GetCompletedPartsAsArray()
@@ -214,43 +235,47 @@ func Test_Upload_File_Account_Paid_Upload_Continues(t *testing.T) {
 }
 
 func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
-	uploadFileReq := returnValidUploadFileReq()
-	uploadFileReq.PartIndex = models.FirstChunkIndex
-	uploadFileReq.EndIndex = models.FirstChunkIndex + 1
-	createPaidAccount(uploadFileReq.AccountID, t)
+	uploadBody := returnValidUploadFileBody()
+	uploadBody.PartIndex = models.FirstChunkIndex
+	uploadBody.EndIndex = models.FirstChunkIndex + 1
 
 	chunkData := returnChunkData(t)
 	chunkDataPart1 := chunkData[0:utils.MaxMultiPartSizeForTest]
 	chunkDataPart2 := chunkData[utils.MaxMultiPartSizeForTest:]
 
-	uploadFileReq.ChunkData = string(chunkDataPart1)
+	uploadBody.ChunkData = string(chunkDataPart1)
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	request := returnValidUploadFileReq(t, uploadBody, privateKey)
+	createPaidAccount(strings.TrimPrefix(request.Address, "0x"), t)
 
-	w := uploadFileHelper(t, uploadFileReq)
+	w := uploadFileHelper(t, request)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
-	uploadFileReq.PartIndex++
+	uploadBody.PartIndex++
+	uploadBody.ChunkData = string(chunkDataPart2)
 
 	filesInDB := []models.File{}
-	models.DB.Where("file_id = ?", uploadFileReq.FileHandle).Find(&filesInDB)
+	models.DB.Where("file_id = ?", request.UploadFile.FileHandle).Find(&filesInDB)
 	assert.Equal(t, 1, len(filesInDB))
 
 	objectKey := aws.StringValue(filesInDB[0].AwsObjectKey)
 
-	uploadFileReq.ChunkData = string(chunkDataPart2)
+	request = returnValidUploadFileReq(t, uploadBody, privateKey)
 
-	w = uploadFileHelper(t, uploadFileReq)
+	w = uploadFileHelper(t, request)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
 
 	filesInDB = []models.File{}
-	models.DB.Where("file_id = ?", uploadFileReq.FileHandle).Find(&filesInDB)
+	models.DB.Where("file_id = ?", request.UploadFile.FileHandle).Find(&filesInDB)
 	assert.Equal(t, 0, len(filesInDB))
 
-	err := utils.DeleteDefaultBucketObject(objectKey)
+	err = utils.DeleteDefaultBucketObject(objectKey)
 	assert.Nil(t, err)
 }
 
