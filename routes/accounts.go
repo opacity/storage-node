@@ -25,8 +25,8 @@ type accountCreateObj struct {
 }
 
 type accountCreateReq struct {
-	Signature       string `json:"signature" binding:"required,len=130"`
-	AccountCreation accountCreateObj
+	Signature       string           `json:"signature" binding:"required,len=130"`
+	AccountCreation accountCreateObj `json:"accountCreation" binding:"required"`
 }
 
 type accountCreateRes struct {
