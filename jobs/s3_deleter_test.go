@@ -27,7 +27,7 @@ func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 	assert.Nil(t, models.DB.Create(&s).Error)
 	s = models.CompletedFile{
 		FileID:    "foo3",
-		ExpiredAt: time.Now.AddDate(0, 1, 0), // future
+		ExpiredAt: time.Now().AddDate(0, 1, 0), // future
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
 
