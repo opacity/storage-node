@@ -62,8 +62,9 @@ func uploadFile(c *gin.Context) {
 	}
 
 	file, err := models.GetOrCreateFile(models.File{
-		FileID:   request.FileHandle,
-		EndIndex: request.EndIndex,
+		FileID:    request.FileHandle,
+		EndIndex:  request.EndIndex,
+		ExpiredAt: account.ExpirationDate(),
 	})
 	if err != nil {
 		InternalErrorResponse(c, err)

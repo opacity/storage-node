@@ -21,6 +21,7 @@ func returnValidFile() File {
 		AwsObjectKey:     aws.String(utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))),
 		EndIndex:         10,
 		CompletedIndexes: nil,
+		ExpiredAt:        time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 }
 
@@ -343,11 +344,20 @@ func Test_FinishUpload(t *testing.T) {
 
 	objectKey := actualFiles[0].AwsObjectKey
 
+	completedFiles := []CompletedFile{}
+	DB.Find(&completedFiles, "file_id = ?", file.FileID)
+	assert.Equal(t, 0, len(completedFiles))
+
 	file.FinishUpload()
 	actualFiles = []File{}
 	DB.Find(&actualFiles, "file_id = ?", file.FileID)
 	assert.Equal(t, 0, len(actualFiles))
 
+	DB.Find(&completedFiles, "file_id = ?", file.FileID)
+	assert.Equal(t, 1, len(completedFiles))
+	assert.Equal(t, file.ExpiredAt, completedFiles[0].ExpiredAt)
+
+	// Clean up
 	err = utils.DeleteDefaultBucketObject(aws.StringValue(objectKey))
 	assert.Nil(t, err)
 }
