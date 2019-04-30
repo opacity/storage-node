@@ -10,8 +10,6 @@ import (
 
 	"time"
 
-	"encoding/hex"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
@@ -69,19 +67,12 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 		Metadata:    newValue,
 		Timestamp:   time.Now().Unix(),
 	}
-	metadataJSON, err := json.Marshal(updateMetadataObj)
-	assert.Nil(t, err)
-	hash := utils.Hash(metadataJSON)
 
-	privateKey, err := utils.GenerateKey()
-	assert.Nil(t, err)
-	signature, err := utils.Sign(hash, privateKey)
-	assert.Nil(t, err)
+	verificationObj := returnVerificationThatWillSucceed(t, updateMetadataObj)
 
 	post := updateMetadataReq{
-		Signature: hex.EncodeToString(signature),
-		Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
-		Metadata:  updateMetadataObj,
+		verification: verificationObj,
+		Metadata:     updateMetadataObj,
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
@@ -106,19 +97,12 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 		Metadata:    newValue,
 		Timestamp:   time.Now().Unix(),
 	}
-	metadataJSON, err := json.Marshal(updateMetadataObj)
-	assert.Nil(t, err)
-	hash := utils.Hash(metadataJSON)
 
-	privateKey, err := utils.GenerateKey()
-	assert.Nil(t, err)
-	signature, err := utils.Sign(hash, privateKey)
-	assert.Nil(t, err)
+	verificationObj := returnVerificationThatWillSucceed(t, updateMetadataObj)
 
 	post := updateMetadataReq{
-		Signature: hex.EncodeToString(signature),
-		Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
-		Metadata:  updateMetadataObj,
+		verification: verificationObj,
+		Metadata:     updateMetadataObj,
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
@@ -127,6 +111,28 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
 	}
+}
+
+func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
+	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+
+	updateMetadataObj := updateMetadataObject{
+		MetadataKey: testMetadataKey,
+		Metadata:    newValue,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	verificationObj := returnVerificationThatWillFail(t, updateMetadataObj)
+
+	post := updateMetadataReq{
+		verification: verificationObj,
+		Metadata:     updateMetadataObj,
+	}
+
+	w := metadataTestHelperUpdateMetadata(t, post)
+
+	testVerificationFailed(t, w)
 }
 
 func metadataTestHelperGetMetadata(t *testing.T, metadataKey string) *httptest.ResponseRecorder {

@@ -1,13 +1,10 @@
 package routes
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	"time"
-
-	"encoding/hex"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
@@ -21,13 +18,8 @@ type updateMetadataObject struct {
 }
 
 type updateMetadataReq struct {
-	// signature without 0x prefix is broken into
-	// V: sig[0:63]
-	// R: sig[64:127]
-	// S: sig[128:129]
-	Signature string               `json:"signature" binding:"required,len=130"`
-	Address   string               `json:"address" binding:"required,len=42"`
-	Metadata  updateMetadataObject `json:"metadata" binding:"required"`
+	verification
+	Metadata updateMetadataObject `json:"metadata" binding:"required"`
 }
 
 type updateMetadataRes struct {
@@ -74,23 +66,7 @@ func setMetadata(c *gin.Context) {
 		return
 	}
 
-	metadataJSON, err := json.Marshal(request.Metadata)
-	if err != nil {
-		err = fmt.Errorf("bad request, unable to parse metadata body: %v", err)
-		BadRequestResponse(c, err)
-		return
-	}
-
-	hash := utils.Hash(metadataJSON)
-	verified, err := utils.VerifyFromStrings(request.Address, hex.EncodeToString(hash),
-		request.Signature)
-	if err != nil {
-		BadRequestResponse(c, errors.New("error verifying signature"))
-		return
-	}
-
-	if verified != true {
-		ForbiddenResponse(c, errors.New("signature did not match"))
+	if err := verifyRequest(request.Metadata, request.Address, request.Signature, c); err != nil {
 		return
 	}
 

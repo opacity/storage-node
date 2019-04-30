@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
@@ -16,11 +18,15 @@ const Unpaid = "unpaid"
 const Pending = "pending"
 const Paid = "paid"
 
-type accountCreateReq struct {
-	AccountID        string `json:"accountID" binding:"required,len=64"`
+type accountCreateObj struct {
 	StorageLimit     int    `json:"storageLimit" binding:"required,gte=100"`
 	DurationInMonths int    `json:"durationInMonths" binding:"required,gte=1"`
 	MetadataKey      string `json:"metadataKey" binding:"required,len=64"`
+}
+
+type accountCreateReq struct {
+	Signature       string           `json:"signature" binding:"required,len=130"`
+	AccountCreation accountCreateObj `json:"accountCreation" binding:"required"`
 }
 
 type accountCreateRes struct {
@@ -58,30 +64,45 @@ func createAccount(c *gin.Context) {
 		return
 	}
 
-	storageLimit, ok := models.StorageLimitMap[request.StorageLimit]
+	storageLimit, ok := models.StorageLimitMap[request.AccountCreation.StorageLimit]
 	if !ok {
 		BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
 		return
 	}
 
+	hash, err := hashRequestBody(request.AccountCreation, c)
+	if err != nil {
+		return
+	}
+
+	sigBytes, err := hex.DecodeString(request.Signature)
+	if err != nil {
+		BadRequestResponse(c, err)
+		return
+	}
+
+	publicKey, err := utils.Recover(hash, sigBytes)
+	accountID := strings.TrimPrefix(utils.PubkeyToAddress(*publicKey).String(), "0x")
+
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
 		privKey,
-		request.AccountID,
+		accountID,
 	)
+
 	if encryptErr != nil {
 		ServiceUnavailableResponse(c, fmt.Errorf("error encrypting private key:  %v", encryptErr))
 		return
 	}
 
 	account := models.Account{
-		AccountID:            request.AccountID,
-		MetadataKey:          request.MetadataKey,
+		AccountID:            accountID,
+		MetadataKey:          request.AccountCreation.MetadataKey,
 		StorageLimit:         storageLimit,
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:        models.InitialPaymentInProgress,
-		MonthsInSubscription: request.DurationInMonths,
+		MonthsInSubscription: request.AccountCreation.DurationInMonths,
 	}
 
 	if err := utils.Validator.Struct(account); err == nil {

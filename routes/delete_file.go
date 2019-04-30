@@ -4,13 +4,16 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
+type deleteFileObj struct {
+	FileID string `binding:"required"`
+}
+
 type deleteFileReq struct {
-	AccountID string `binding:"required,len=64"`
-	FileID    string `binding:"required"`
+	verification
+	DeleteFile deleteFileObj `json:"deleteFile" binding:"required"`
 }
 
 type deleteFileRes struct {
@@ -22,24 +25,19 @@ func DeleteFileHandler() gin.HandlerFunc {
 }
 
 func deleteFile(c *gin.Context) {
-	request := deleteFileReq{
-		AccountID: c.Param("accountID"),
-		FileID:    c.Param("fileID"),
-	}
+	request := deleteFileReq{}
+
 	if err := utils.Validator.Struct(request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		BadRequestResponse(c, err)
 		return
 	}
 
-	// validate user
-	account, err := models.GetAccountById(request.AccountID)
-	if err != nil || len(account.AccountID) == 0 {
-		AccountNotFoundResponse(c, request.AccountID)
+	if _, err := returnAccountIfVerified(request.DeleteFile, request.Address, request.Signature, c); err != nil {
 		return
 	}
 
-	if err := utils.DeleteDefaultBucketObject(request.FileID); err != nil {
+	if err := utils.DeleteDefaultBucketObject(request.DeleteFile.FileID); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
