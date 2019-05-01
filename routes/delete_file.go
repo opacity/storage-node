@@ -8,7 +8,7 @@ import (
 )
 
 type deleteFileObj struct {
-	FileID string `binding:"required"`
+	FileID string `json:"fileID" binding:"required" example:"the handle of the file"`
 }
 
 type deleteFileReq struct {
@@ -19,6 +19,16 @@ type deleteFileReq struct {
 type deleteFileRes struct {
 }
 
+// DeleteFileHandler godoc
+// @Summary delete a file
+// @Description delete a file
+// @Accept  json
+// @Produce  json
+// @Param deleteFileReq body routes.deleteFileReq true "file deletion object"
+// @Success 200 {object} routes.deleteFileRes
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v1/file [delete]
 /*DeleteFileHandler is a handler for the user to upload files*/
 func DeleteFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(deleteFile)

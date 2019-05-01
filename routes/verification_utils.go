@@ -22,8 +22,8 @@ type verification struct {
 	// V: sig[0:63]
 	// R: sig[64:127]
 	// S: sig[128:129]
-	Signature string `json:"signature" binding:"required,len=130"`
-	Address   string `json:"address" binding:"required,len=42"`
+	Signature string `json:"signature" binding:"required,len=130" minLength:"130" maxLength:"130" example:"a 130 character string created when you signed the request with your private key or account handle"`
+	Address   string `json:"address" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"`
 }
 
 func verifyRequest(reqBody interface{}, address string, signature string, c *gin.Context) error {

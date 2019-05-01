@@ -39,6 +39,16 @@ func ForbiddenResponse(c *gin.Context, err error) {
 	utils.Metrics_403_Response_Counter.Inc()
 }
 
+func AccountNotPaidResponse(c *gin.Context, response interface{}) {
+	if err := utils.Validator.Struct(response); err != nil {
+		err = fmt.Errorf("could not create a valid response:  %v", err)
+		BadRequestResponse(c, err)
+		return
+	}
+	c.AbortWithStatusJSON(http.StatusForbidden, response)
+	utils.Metrics_403_Response_Counter.Inc()
+}
+
 func NotFoundResponse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
 	utils.Metrics_404_Response_Counter.Inc()

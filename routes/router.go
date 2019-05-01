@@ -6,12 +6,26 @@ import (
 	"os"
 	"time"
 
+	_ "github.com/opacity/storage-node/docs"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/jobs"
 	"github.com/opacity/storage-node/utils"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
+
+// @title Storage Node
+// @version 1.0
+// @description Opacity backend for file storage.
+// @termsOfService https://opacity.io/terms-of-service
+
+// @contact.name Opacity Staff
+// @contact.url https://telegram.me/opacitystorage
+
+// @license.name GNU GENERAL PUBLIC LICENSE
 
 var uptime time.Time
 
@@ -43,6 +57,8 @@ func CreateRoutes() {
 
 	setupV1Paths(returnV1Group(router))
 	setupAdminPaths(router)
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Listen and Serve
 	err := router.Run(":" + os.Getenv("PORT"))
