@@ -37,7 +37,7 @@ func Test_User_Stats(t *testing.T) {
 
 	assert.Contains(t, w.Body.String(), "\"userAccountsCount\":2,")
 	assert.Contains(t, w.Body.String(), "\"uploadedFilesCount\":3,")
-	assert.Contains(t, w.Body.String(), "\"uploadedFileSizeInMb\":4.50")
+	assert.Contains(t, w.Body.String(), "\"uploadedFileSizeInMb\":4.5")
 }
 
 func getUserStats(t *testing.T) *httptest.ResponseRecorder {
