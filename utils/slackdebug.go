@@ -32,7 +32,7 @@ func SlackLogError(message string) {
 }
 
 func SlackLogWithLevel(message string, level LogLevel) {
-	GetDefaultLogger().Info(message)
+	GetDefaultLogger().Info(Env.DisplayName + ": " + message)
 
 	if len(Env.SlackDebugUrl) == 0 {
 		return
