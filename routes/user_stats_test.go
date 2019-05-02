@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
@@ -38,7 +39,7 @@ func Test_User_Stats(t *testing.T) {
 
 func getUserStats(t *testing.T) *httptest.ResponseRecorder {
 	router := returnEngine()
-	admin := routner.Group(AdminPath)
+	admin := router.Group(AdminPath)
 	admin.GET("/user_stats", UserStatsHandler())
 
 	req, err := http.NewRequest(http.MethodGet, admin.BasePath()+"/user_stats", nil)
@@ -66,10 +67,11 @@ func createCompletedFile(t *testing.T, fileSize int64) models.CompletedFile {
 }
 
 func createNewAccount(t *testing.T) models.Account {
+	accountID := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
 	account := models.Account{
-		AccountID:            utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		AccountID:            accountID,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
 		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
