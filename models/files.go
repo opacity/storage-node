@@ -192,11 +192,7 @@ func (file *File) FinishUpload() error {
 		return err
 	}
 
-	utils.Metrics_FileUploaded_Counter.Inc()
-
 	objectSize := utils.GetDefaultBucketObjectSize(objectKey)
-	utils.Metrics_FileUploadedSizeInByte_Counter.Add(float64(objectSize))
-
 	compeletedFile := CompletedFile{
 		FileID:         file.FileID,
 		ExpiredAt:      file.ExpiredAt,
