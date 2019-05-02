@@ -11,6 +11,14 @@ type userStatsRes struct {
 	UploadedFileSizeInMb float64 `json:"uploadedFileSizeInMb"`
 }
 
+// UserStatsHandler godoc
+// @Summary get statistics
+// @Description get statistics
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} routes.userStatsRes
+// @Router /admin/user_stats [get]
+/*UserStatsHandler returns user statistics*/
 func UserStatsHandler() gin.HandlerFunc {
 	return ginHandlerFunc(userStats)
 }

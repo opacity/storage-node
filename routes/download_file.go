@@ -10,7 +10,7 @@ import (
 )
 
 type downloadFileObj struct {
-	FileID string `binding:"required"`
+	FileID string `json:"fileID" binding:"required" example:"the handle of the file"`
 }
 
 type downloadFileReq struct {
@@ -20,10 +20,22 @@ type downloadFileReq struct {
 
 type downloadFileRes struct {
 	// Url should point to S3, thus client does not need to download it from this node.
-	FileDownloadUrl string `json:"fileDownloadUrl"`
+	FileDownloadUrl string `json:"fileDownloadUrl" example:"a URL to use to download the file"`
 	// Add other auth-token and expired within a certain period of time.
 }
 
+// DownloadFileHandler godoc
+// @Summary download a file
+// @Description download a file
+// @Accept  json
+// @Produce  json
+// @Param downloadFileReq body routes.downloadFileReq true "download object"
+// @Success 200 {object} routes.downloadFileRes
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 404 {string} string "such data does not exist"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v1/download [get]
+/*DownloadFileHandler handles the downloading of a file*/
 func DownloadFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(downloadFile)
 }
@@ -43,7 +55,7 @@ func downloadFile(c *gin.Context) {
 
 	// verify object existed in S3
 	if !utils.DoesDefaultBucketObjectExist(request.DownloadFile.FileID) {
-		NotFoundResponse(c, errors.New("Such data does not exist"))
+		NotFoundResponse(c, errors.New("such data does not exist"))
 		return
 	}
 

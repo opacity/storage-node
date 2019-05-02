@@ -46,6 +46,17 @@ go get foo@e3702bed2
 
 ---
 
+# Updating API
+
+We are using https://github.com/swaggo/swag to document our API.  
+To install swaggo cli, run `go get -u github.com/swaggo/swag/cmd/swag`.  
+
+When you add a new endpoint or update an existing endpoint, update the comments above the handler, and add restrictions
+and examples in the structs that the endpoint uses to parse requests or create responses.  When you make any updates,
+run `swag init -g routes/router.go` to re-generate the API docs.  
+
+You can see the API documentation at `(host):3000/swagger/index.html`
+
 # Docker command
 
 ```bash

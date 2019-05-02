@@ -19,13 +19,13 @@ const Pending = "pending"
 const Paid = "paid"
 
 type accountCreateObj struct {
-	StorageLimit     int    `json:"storageLimit" binding:"required,gte=100"`
-	DurationInMonths int    `json:"durationInMonths" binding:"required,gte=1"`
-	MetadataKey      string `json:"metadataKey" binding:"required,len=64"`
+	StorageLimit     int    `json:"storageLimit" binding:"required,gte=100" minimum:"100" maximum:"100" example:"100"`
+	DurationInMonths int    `json:"durationInMonths" binding:"required,gte=1" minimum:"1" example:"12"`
+	MetadataKey      string `json:"metadataKey" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a 64-char hex string created deterministically from your account handle or private key"`
 }
 
 type accountCreateReq struct {
-	Signature       string           `json:"signature" binding:"required,len=130"`
+	Signature       string           `json:"signature" binding:"required,len=130" minLength:"130" maxLength:"130" example:"a 130 character string created when you signed the request with your private key or account handle"`
 	AccountCreation accountCreateObj `json:"accountCreation" binding:"required"`
 }
 
@@ -35,15 +35,35 @@ type accountCreateRes struct {
 }
 
 type accountPaidRes struct {
-	PaymentStatus string `json:"paymentStatus"`
-	Error         error  `json:"error"`
+	PaymentStatus string `json:"paymentStatus" example:"paid"`
+	Error         error  `json:"error" example:"the error encountered while checking"`
 }
 
+// CreateAccountHandler godoc
+// @Summary create an account
+// @Description create an account
+// @Accept  json
+// @Produce  json
+// @Param accountCreateReq body routes.accountCreateReq true "account creation object"
+// @Success 200 {object} routes.accountCreateRes
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 503 {string} string "error encrypting private key: (with the error)"
+// @Router /api/v1/accounts [post]
 /*CreateAccountHandler is a handler for post requests to create accounts*/
 func CreateAccountHandler() gin.HandlerFunc {
 	return ginHandlerFunc(createAccount)
 }
 
+// CheckAccountPaymentStatusHandler godoc
+// @Summary check the payment status of an account
+// @Description check the payment status of an account
+// @Accept  json
+// @Produce  json
+// @Param accountID path string true "your account id a.k.a. the public address of your private key"
+// @Success 200 {object} routes.accountPaidRes
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 404 {string} string "no account with that id: (with your accountID)"
+// @Router /api/v1/accounts/putAccountIDHere [get]
 /*CheckAccountPaymentStatusHandler is a handler for requests checking the payment status*/
 func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 	return ginHandlerFunc(checkAccountPaymentStatus)

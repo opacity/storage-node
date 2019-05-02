@@ -37,8 +37,8 @@ type SpaceReport struct {
 
 /*Invoice is the invoice object we will return to the client*/
 type Invoice struct {
-	Cost       float64 `json:"cost" binding:"required,gte=0"`
-	EthAddress string  `json:"ethAddress" binding:"required,len=42"`
+	Cost       float64 `json:"cost" binding:"required,gte=0" example:"1.56"`
+	EthAddress string  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"`
 }
 
 /*StorageLimitType defines a type for the storage limits*/

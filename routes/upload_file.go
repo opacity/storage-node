@@ -11,10 +11,10 @@ import (
 )
 
 type uploadFileObj struct {
-	ChunkData  string `form:"chunkData" binding:"required"`
-	FileHandle string `form:"fileHandle" binding:"required,len=64"`
-	PartIndex  int    `form:"partIndex" binding:"exists,gte=1"`
-	EndIndex   int    `form:"endIndex" binding:"required,gtefield=PartIndex"`
+	ChunkData  string `form:"chunkData" binding:"required" example:"a binary string of the chunk data"`
+	FileHandle string `form:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
+	PartIndex  int    `form:"partIndex" binding:"required,gte=1" example:"1"`
+	EndIndex   int    `form:"endIndex" binding:"required,gtefield=PartIndex" example:"2"`
 }
 
 type uploadFileReq struct {
@@ -23,9 +23,20 @@ type uploadFileReq struct {
 }
 
 type uploadFileRes struct {
-	Status string `json:"status"`
+	Status string `json:"status" example:"Chunk is uploaded"`
 }
 
+// UploadFileHandler godoc
+// @Summary upload a chunk of a file
+// @Description upload a chunk of a file. The first partIndex must be 1. The endIndex must be greater than or equal to partIndex.
+// @Accept  mpfd
+// @Produce  json
+// @Param uploadFileReq body routes.uploadFileReq true "an object to upload a chunk of a file"
+// @Success 200 {object} routes.uploadFileRes
+// @Failure 403 {object} routes.accountCreateRes
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v1/upload [post]
 /*UploadFileHandler is a handler for the user to upload files*/
 func UploadFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(uploadFile)
@@ -56,7 +67,7 @@ func uploadFile(c *gin.Context) {
 			},
 			ExpirationDate: account.ExpirationDate(),
 		}
-		OkResponse(c, response)
+		AccountNotPaidResponse(c, response)
 		return
 	}
 	if err != nil {

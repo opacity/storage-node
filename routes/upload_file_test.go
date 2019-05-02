@@ -151,8 +151,8 @@ func Test_Upload_File_Account_Not_Paid(t *testing.T) {
 
 	w := uploadFileHelper(t, request)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
 	}
 
 	assert.Contains(t, w.Body.String(), "invoice")
