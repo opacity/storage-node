@@ -156,7 +156,6 @@ func createAccount(c *gin.Context) {
 		return
 	}
 
-	utils.Metrics_AccountCreated_Counter.Inc()
 	OkResponse(c, response)
 }
 

@@ -27,7 +27,6 @@ func StartupJobs() {
 	jobs := []StartUpRunnable{
 		noOps{},
 		s3LifeCycleSetup{},
-		userStatsSetup{},
 	}
 
 	for _, s := range jobs {

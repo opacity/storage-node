@@ -15,7 +15,7 @@ func Test_Init_Completed_File(t *testing.T) {
 }
 
 func Test_GetAllExpiredCompletedFiles(t *testing.T) {
-	deleteCompletedFiles(t)
+	DeleteCompletedFilesForTest(t)
 	s := CompletedFile{
 		FileID:    "foo1",
 		ExpiredAt: time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
@@ -40,7 +40,7 @@ func Test_GetAllExpiredCompletedFiles(t *testing.T) {
 }
 
 func Test_DeleteAllCompletedFiles(t *testing.T) {
-	deleteCompletedFiles(t)
+	DeleteCompletedFilesForTest(t)
 	s := CompletedFile{
 		FileID:    "foo4",
 		ExpiredAt: time.Date(2001, 1, 1, 12, 0, 0, 0, time.UTC),
@@ -62,7 +62,7 @@ func Test_DeleteAllCompletedFiles(t *testing.T) {
 }
 
 func Test_GetTotalFileSizeInByte(t *testing.T) {
-	deleteCompletedFiles(t)
+	DeleteCompletedFilesForTest(t)
 	s := CompletedFile{
 		FileID:         "foo6",
 		FileSizeInByte: 150,

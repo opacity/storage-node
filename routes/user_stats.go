@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -24,11 +25,30 @@ func UserStatsHandler() gin.HandlerFunc {
 }
 
 func userStats(c *gin.Context) {
-	fileSizeInByte := utils.GetMetricCounter(utils.Metrics_FileUploadedSizeInByte_Counter)
+	userCount := 0
+	if err := models.DB.Model(&models.Account{}).Count(&userCount).Error; err != nil {
+		utils.LogIfError(err, nil)
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	fileCount := 0
+	if err := models.DB.Model(&models.CompletedFile{}).Count(&fileCount).Error; err != nil {
+		utils.LogIfError(err, nil)
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	fileSizeInByte, err := models.GetTotalFileSizeInByte()
+	if err != nil {
+		utils.LogIfError(err, nil)
+		InternalErrorResponse(c, err)
+		return
+	}
 
 	OkResponse(c, userStatsRes{
-		UserAccountsCount:    int(utils.GetMetricCounter(utils.Metrics_AccountCreated_Counter)),
-		UploadedFilesCount:   int(utils.GetMetricCounter(utils.Metrics_FileUploaded_Counter)),
-		UploadedFileSizeInMb: fileSizeInByte / 1000000.0,
+		UserAccountsCount:    userCount,
+		UploadedFilesCount:   fileCount,
+		UploadedFileSizeInMb: float64(fileSizeInByte) / 1000000.0,
 	})
 }

@@ -9,19 +9,6 @@ import (
 
 // List of all Metrics throughout the application
 var (
-	Metrics_AccountCreated_Counter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "storagenode_accountcreated_counter",
-		Help: "The total number of UserAccount created.",
-	})
-	Metrics_FileUploaded_Counter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "storagenode_fileuploaded_counter",
-		Help: "The total number of FileUploaded.",
-	})
-	Metrics_FileUploadedSizeInByte_Counter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "storagenode_fileuploadedSizeInByte_counter",
-		Help: "The total number byte is uploaded.",
-	})
-
 	Metrics_PingStdOut_Counter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "storagenode_pingstdout_counter",
 		Help: "The total number of ping std out",
