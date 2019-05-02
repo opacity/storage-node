@@ -30,7 +30,7 @@ type updateMetadataRes struct {
 
 type getMetadataRes struct {
 	Metadata       string    `json:"metadata" binding:"exists" example:"your account metadata"`
-	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
+	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
 }
 
 // GetMetadataHandler godoc

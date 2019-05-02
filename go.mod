@@ -16,7 +16,7 @@ require (
 	github.com/codegangsta/gin v0.0.0-20171026143024-cafe2ce98974 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20190204142019-df6d76eb9289 // indirect
-	github.com/dgraph-io/badger v0.0.0-20190222211955-291295e18f0e
+	github.com/dgraph-io/badger v2.0.0-rc.2.0.20190502142029-ea4934b40697+incompatible
 	github.com/dgryski/go-farm v0.0.0-20190104051053-3adb47b1fb0f // indirect
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
 	github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 // indirect
