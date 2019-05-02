@@ -20,6 +20,9 @@ func Test_Init_User_Stats(t *testing.T) {
 }
 
 func Test_User_Stats(t *testing.T) {
+	models.DeleteAccountsForTest(t)
+	models.DeleteCompletedFilesForTest(t)
+
 	createNewAccount(t)
 	createNewAccount(t)
 	createCompletedFile(t, 1000000)
@@ -32,8 +35,8 @@ func Test_User_Stats(t *testing.T) {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
 
-	assert.Contains(t, w.Body.String(), "\"userAccountsCount\":2")
-	assert.Contains(t, w.Body.String(), "\"uploadedFilesCount\":3")
+	assert.Contains(t, w.Body.String(), "\"userAccountsCount\":2,")
+	assert.Contains(t, w.Body.String(), "\"uploadedFilesCount\":3,")
 	assert.Contains(t, w.Body.String(), "\"uploadedFileSizeInMb\":4.50")
 }
 

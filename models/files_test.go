@@ -363,7 +363,7 @@ func Test_FinishUpload(t *testing.T) {
 }
 
 func Test_CompleteUploadsNewerThan(t *testing.T) {
-	deleteFiles(t)
+	DeleteFilesForTest(t)
 	file := returnValidFile()
 	file.EndIndex = 1
 
@@ -394,7 +394,7 @@ func Test_CompleteUploadsNewerThan(t *testing.T) {
 }
 
 func Test_DeleteUploadsOlderThan(t *testing.T) {
-	deleteFiles(t)
+	DeleteFilesForTest(t)
 	file := returnValidFile()
 	file.EndIndex = 1
 
