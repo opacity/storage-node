@@ -1,0 +1,201 @@
+package routes
+
+import (
+	"crypto/ecdsa"
+	"encoding/hex"
+	"encoding/json"
+	"os"
+	"strings"
+	"testing"
+
+	"net/http"
+	"net/http/httptest"
+
+	"bytes"
+
+	"github.com/opacity/storage-node/models"
+	"github.com/opacity/storage-node/services"
+	"github.com/opacity/storage-node/utils"
+	"github.com/stretchr/testify/assert"
+)
+
+func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
+	abortIfNotTesting(t)
+	return UploadFileObj{
+		ChunkData:  utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		FileHandle: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		PartIndex:  models.FirstChunkIndex,
+		EndIndex:   10,
+	}
+}
+
+func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKey *ecdsa.PrivateKey) UploadFileReq {
+	abortIfNotTesting(t)
+
+	verificationBody := setupVerificationWithPrivateKeyForTest(t, body, privateKey)
+
+	return UploadFileReq{
+		UploadFile:   body,
+		verification: verificationBody,
+	}
+}
+
+func CreateUnpaidAccountForTest(accountID string, t *testing.T) models.Account {
+	abortIfNotTesting(t)
+
+	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+
+	account := models.Account{
+		AccountID:            accountID,
+		MonthsInSubscription: models.DefaultMonthsPerSubscription,
+		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
+		StorageLimit:         models.BasicStorageLimit,
+		StorageUsed:          10,
+		PaymentStatus:        models.InitialPaymentInProgress,
+		EthAddress:           ethAddress.String(),
+		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
+		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+	}
+
+	if err := models.DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	return account
+}
+
+func CreatePaidAccountForTest(accountID string, t *testing.T) models.Account {
+	abortIfNotTesting(t)
+
+	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+
+	account := models.Account{
+		AccountID:            accountID,
+		MonthsInSubscription: models.DefaultMonthsPerSubscription,
+		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
+		StorageLimit:         models.BasicStorageLimit,
+		StorageUsed:          10,
+		PaymentStatus:        models.InitialPaymentReceived,
+		EthAddress:           ethAddress.String(),
+		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
+		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+	}
+
+	if err := models.DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	return account
+}
+
+func ReturnChunkDataForTest(t *testing.T) []byte {
+	abortIfNotTesting(t)
+
+	workingDir, _ := os.Getwd()
+	testDir := strings.Replace(workingDir, "/routes", "", -1)
+	testDir = testDir + "/test_files"
+	localFilePath := testDir + string(os.PathSeparator) + "lorem.txt"
+
+	file, err := os.Open(localFilePath)
+	assert.Nil(t, err)
+	defer file.Close()
+	fileInfo, _ := file.Stat()
+	size := fileInfo.Size()
+	buffer := make([]byte, size)
+	file.Read(buffer)
+
+	return buffer
+}
+
+func returnSuccessVerificationForTest(t *testing.T, reqBody interface{}) verification {
+	abortIfNotTesting(t)
+
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	return setupVerificationWithPrivateKeyForTest(t, reqBody, privateKey)
+}
+
+func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody interface{}, privateKey *ecdsa.PrivateKey) verification {
+	abortIfNotTesting(t)
+
+	reqJSON, err := json.Marshal(reqBody)
+	assert.Nil(t, err)
+	hash := utils.Hash(reqJSON)
+
+	assert.Nil(t, err)
+	signature, err := utils.Sign(hash, privateKey)
+	assert.Nil(t, err)
+
+	verification := verification{
+		Signature: hex.EncodeToString(signature),
+		Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
+	}
+
+	return verification
+}
+
+func returnFailedVerificationForTest(t *testing.T, reqBody interface{}) verification {
+	abortIfNotTesting(t)
+
+	reqJSON, err := json.Marshal(reqBody)
+	assert.Nil(t, err)
+	hash := utils.Hash(reqJSON)
+
+	privateKeyToSignWith, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	wrongPrivateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	signature, err := utils.Sign(hash, privateKeyToSignWith)
+	assert.Nil(t, err)
+
+	verification := verification{
+		Signature: hex.EncodeToString(signature),
+		Address:   utils.PubkeyToAddress(wrongPrivateKey.PublicKey).Hex(),
+	}
+
+	return verification
+}
+
+func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
+	abortIfNotTesting(t)
+
+	// Check to see if the response was what you expected
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
+	}
+
+	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
+}
+
+func UploadFileHelperForTest(t *testing.T, post UploadFileReq) *httptest.ResponseRecorder {
+	abortIfNotTesting(t)
+
+	router := returnEngine()
+	v1 := returnV1Group(router)
+	v1.POST(UploadPath, UploadFileHandler())
+
+	marshalledReq, _ := json.Marshal(post)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	// Create the mock request you'd like to test. Make sure the second argument
+	// here is the same as one of the routes you defined in the router setup
+	// block!
+	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+UploadPath, reqBody)
+	if err != nil {
+		t.Fatalf("Couldn't create request: %v\n", err)
+	}
+
+	// Create a response recorder so you can inspect the response
+	w := httptest.NewRecorder()
+
+	// Perform the request
+	router.ServeHTTP(w, req)
+
+	return w
+}
+
+func abortIfNotTesting(t *testing.T) {
+	if !utils.IsTestEnv() {
+		t.Fatalf("should only be calling this method while testing")
+	}
+}

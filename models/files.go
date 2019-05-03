@@ -29,7 +29,7 @@ type File struct {
 	AwsUploadID      *string   `json:"awsUploadID"`
 	AwsObjectKey     *string   `json:"awsObjectKey"`
 	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
-	CompletedIndexes *string   `json:"completedIndexes"`
+	CompletedIndexes *string   `json:"completedIndexes" gorm:"type:mediumtext"`
 	sync.Mutex
 }
 
@@ -120,6 +120,7 @@ func (file *File) UpdateCompletedIndexes(completedPart *s3.CompletedPart) error 
 	completedIndexes := file.GetCompletedIndexesAsMap()
 	completedIndexes[*completedPart.PartNumber] = completedPart
 	err := file.SaveCompletedIndexesAsString(completedIndexes)
+
 	return err
 }
 

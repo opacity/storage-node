@@ -339,12 +339,12 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "an object to upload a chunk of a file",
-                        "name": "uploadFileReq",
+                        "name": "UploadFileReq",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.uploadFileReq"
+                            "$ref": "#/definitions/routes.UploadFileReq"
                         }
                     }
                 ],
@@ -640,7 +640,7 @@ var doc = `{
                 }
             }
         },
-        "routes.uploadFileObj": {
+        "routes.UploadFileObj": {
             "type": "object",
             "required": [
                 "chunkData",
@@ -669,7 +669,7 @@ var doc = `{
                 }
             }
         },
-        "routes.uploadFileReq": {
+        "routes.UploadFileReq": {
             "type": "object",
             "required": [
                 "address",
@@ -691,7 +691,7 @@ var doc = `{
                 },
                 "uploadFile": {
                     "type": "object",
-                    "$ref": "#/definitions/routes.uploadFileObj"
+                    "$ref": "#/definitions/routes.UploadFileObj"
                 }
             }
         },
