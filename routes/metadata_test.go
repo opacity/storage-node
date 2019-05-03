@@ -68,7 +68,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	verificationObj := returnVerificationThatWillSucceed(t, updateMetadataObj)
+	verificationObj := returnSuccessVerificationForTest(t, updateMetadataObj)
 
 	post := updateMetadataReq{
 		verification: verificationObj,
@@ -98,7 +98,7 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	verificationObj := returnVerificationThatWillSucceed(t, updateMetadataObj)
+	verificationObj := returnSuccessVerificationForTest(t, updateMetadataObj)
 
 	post := updateMetadataReq{
 		verification: verificationObj,
@@ -123,7 +123,7 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	verificationObj := returnVerificationThatWillFail(t, updateMetadataObj)
+	verificationObj := returnFailedVerificationForTest(t, updateMetadataObj)
 
 	post := updateMetadataReq{
 		verification: verificationObj,
@@ -132,7 +132,7 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 
 	w := metadataTestHelperUpdateMetadata(t, post)
 
-	testVerificationFailed(t, w)
+	confirmVerifyFailedForTest(t, w)
 }
 
 func metadataTestHelperGetMetadata(t *testing.T, metadataKey string) *httptest.ResponseRecorder {

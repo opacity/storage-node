@@ -209,7 +209,7 @@ definitions:
     - metadata
     - metadataKey
     type: object
-  routes.uploadFileObj:
+  routes.UploadFileObj:
     properties:
       chunkData:
         example: a binary string of the chunk data
@@ -231,7 +231,7 @@ definitions:
     - fileHandle
     - partIndex
     type: object
-  routes.uploadFileReq:
+  routes.UploadFileReq:
     properties:
       address:
         example: a 42-char eth address with 0x prefix
@@ -250,7 +250,7 @@ definitions:
         minLength: 130
         type: string
       uploadFile:
-        $ref: '#/definitions/routes.uploadFileObj'
+        $ref: '#/definitions/routes.UploadFileObj'
         type: object
     required:
     - address
@@ -491,10 +491,10 @@ paths:
       parameters:
       - description: an object to upload a chunk of a file
         in: body
-        name: uploadFileReq
+        name: UploadFileReq
         required: true
         schema:
-          $ref: '#/definitions/routes.uploadFileReq'
+          $ref: '#/definitions/routes.UploadFileReq'
           type: object
       produces:
       - application/json
