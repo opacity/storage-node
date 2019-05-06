@@ -79,3 +79,22 @@ func Test_GetTotalFileSizeInByte(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, int64(360), v)
 }
+
+func Test_GetCompletedFileByFileID(t *testing.T) {
+	DeleteCompletedFilesForTest(t)
+	s := CompletedFile{
+		FileID:         "foo6",
+		FileSizeInByte: 150,
+	}
+	assert.Nil(t, DB.Create(&s).Error)
+	s = CompletedFile{
+		FileID:         "foo7",
+		FileSizeInByte: 210,
+	}
+	assert.Nil(t, DB.Create(&s).Error)
+
+	completedFile, err := GetCompletedFileByFileID(s.FileID)
+	assert.True(t, completedFile.FileID == s.FileID)
+	assert.True(t, completedFile.FileSizeInByte == s.FileSizeInByte)
+	assert.Nil(t, err)
+}

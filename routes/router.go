@@ -44,6 +44,9 @@ const (
 
 	/*UploadPath is the path for uploading files to paid accounts*/
 	UploadPath = "/upload"
+
+	/*FilePath is the path for downloading and deleting files*/
+	FilePath = "/file"
 )
 
 func init() {
@@ -97,11 +100,11 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(UploadPath, UploadFileHandler())
 
 	v1Router.POST("/free_upload", FreeUploadFileHandler())
-	v1Router.GET("/download/:accountID/:fileID", DownloadFileHandler())
+	v1Router.GET("/download", DownloadFileHandler())
 
 	// File endpoint
-	v1Router.DELETE("/file/:accountID/:fileID", DeleteFileHandler())
-	v1Router.GET("/file/:accountID/:fileID", DownloadFileHandler())
+	v1Router.DELETE(FilePath, DeleteFileHandler())
+	v1Router.GET(FilePath, DownloadFileHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {

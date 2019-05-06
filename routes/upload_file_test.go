@@ -147,6 +147,10 @@ func Test_Upload_File_Account_Paid_Upload_Continues(t *testing.T) {
 }
 
 func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
+	models.DeleteAccountsForTest(t)
+	models.DeleteCompletedFilesForTest(t)
+	models.DeleteFilesForTest(t)
+
 	uploadBody := ReturnValidUploadFileBodyForTest(t)
 	uploadBody.PartIndex = models.FirstChunkIndex
 	uploadBody.EndIndex = models.FirstChunkIndex + 1
@@ -159,7 +163,7 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-	CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
+	account := CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
 
 	w := UploadFileHelperForTest(t, request)
 
@@ -186,6 +190,15 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	filesInDB = []models.File{}
 	models.DB.Where("file_id = ?", request.UploadFile.FileHandle).Find(&filesInDB)
 	assert.Equal(t, 0, len(filesInDB))
+
+	updatedAccount, err := models.GetAccountById(account.AccountID)
+	assert.Nil(t, err)
+
+	assert.True(t, updatedAccount.StorageUsed > account.StorageUsed)
+
+	completedFiles := []models.CompletedFile{}
+	models.DB.Where("file_id = ?", request.UploadFile.FileHandle).Find(&completedFiles)
+	assert.Equal(t, 1, len(completedFiles))
 
 	err = utils.DeleteDefaultBucketObject(objectKey)
 	assert.Nil(t, err)

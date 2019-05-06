@@ -62,6 +62,7 @@ func ReturnChunkDataForTestBigFile(t *testing.T) [][]byte {
 }
 
 func Test_Performance_Testing_10(t *testing.T) {
+	t.Skip()
 	numUploadsToDo := 10
 	logPerformanceResults(performanceTest(numUploadsToDo, t))
 }
