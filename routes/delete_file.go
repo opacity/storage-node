@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -37,17 +38,35 @@ func DeleteFileHandler() gin.HandlerFunc {
 func deleteFile(c *gin.Context) {
 	request := deleteFileReq{}
 
-	if err := utils.Validator.Struct(request); err != nil {
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		BadRequestResponse(c, err)
 		return
 	}
 
-	if _, err := returnAccountIfVerified(request.DeleteFile, request.Address, request.Signature, c); err != nil {
+	var account models.Account
+	var err error
+	if account, err = returnAccountIfVerified(request.DeleteFile, request.Address, request.Signature, c); err != nil {
 		return
 	}
 
 	if err := utils.DeleteDefaultBucketObject(request.DeleteFile.FileID); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	var completedFile models.CompletedFile
+	if completedFile, err = models.GetCompletedFileByFileID(request.DeleteFile.FileID); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	if err := account.UseStorageSpaceInByte(-1 * int(completedFile.FileSizeInByte)); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	if err := models.DB.Delete(&completedFile).Error; err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}

@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const defaultStorageUsedForTest = 10
+
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
 	return UploadFileObj{
@@ -50,7 +52,7 @@ func CreateUnpaidAccountForTest(accountID string, t *testing.T) models.Account {
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
 		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
-		StorageUsed:          10,
+		StorageUsed:          defaultStorageUsedForTest,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
@@ -74,7 +76,7 @@ func CreatePaidAccountForTest(accountID string, t *testing.T) models.Account {
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
 		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
-		StorageUsed:          10,
+		StorageUsed:          defaultStorageUsedForTest,
 		PaymentStatus:        models.InitialPaymentReceived,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),

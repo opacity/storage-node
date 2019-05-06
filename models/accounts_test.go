@@ -21,7 +21,7 @@ import (
 
 func returnValidAccount() Account {
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
-	accountID := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	accountID := utils.RandSeqFromRunes(40, []rune("abcdef01234567890"))
 
 	return Account{
 		AccountID:            accountID,
@@ -93,6 +93,15 @@ func Test_StorageLocation_Invalid_URL_Fails(t *testing.T) {
 func Test_StorageLimit_Less_Than_100_Fails(t *testing.T) {
 	account := returnValidAccount()
 	account.StorageLimit = 99
+
+	if err := utils.Validator.Struct(account); err == nil {
+		t.Fatalf("account should have failed validation")
+	}
+}
+
+func Test_StorageUsed_Less_Than_0_Fails(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageUsed = float64(-1)
 
 	if err := utils.Validator.Struct(account); err == nil {
 		t.Fatalf("account should have failed validation")
@@ -317,7 +326,9 @@ func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
+	startingSpaceUsed := account.StorageUsed
 	assert.Nil(t, account.UseStorageSpaceInByte(10*1e9 /* Upload 10GB. */))
+	assert.True(t, startingSpaceUsed == account.StorageUsed-10)
 }
 
 func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
@@ -328,6 +339,28 @@ func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
 	}
 
 	assert.NotNil(t, account.UseStorageSpaceInByte(95*1e9 /* Upload 95GB. */))
+}
+
+func Test_DeductSpaceUsed(t *testing.T) {
+	account := returnValidAccount()
+	account.PaymentStatus = PaymentRetrievalComplete
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	startingSpaceUsed := account.StorageUsed
+	assert.Nil(t, account.UseStorageSpaceInByte(-9*1e9 /* Deleted 9 GB file. */))
+	assert.True(t, startingSpaceUsed == account.StorageUsed+9)
+}
+
+func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
+	account := returnValidAccount()
+	account.PaymentStatus = PaymentRetrievalComplete
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	assert.NotNil(t, account.UseStorageSpaceInByte(-11*1e9 /* Deduct 11 GB file but only 10 GB uploaded. */))
 }
 
 func Test_CreateSpaceUsedReport(t *testing.T) {

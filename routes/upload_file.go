@@ -100,8 +100,12 @@ func uploadFile(c *gin.Context) {
 		file.UpdateCompletedIndexes(completedPart)
 	}
 
-	if file.UploadCompleted() {
-		err = file.FinishUpload()
+	completedFile, err := file.FinishUpload()
+	if err != nil && err != models.IncompleteUploadErr {
+		utils.LogIfError(err, nil)
+	}
+	if err == nil {
+		err := account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte))
 		utils.LogIfError(err, nil)
 	}
 

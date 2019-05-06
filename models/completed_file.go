@@ -45,3 +45,10 @@ func GetTotalFileSizeInByte() (int64, error) {
 	}
 	return total, nil
 }
+
+/*GetCompletedFileByFileID - return completed file object(first one) if there is not any error. */
+func GetCompletedFileByFileID(fileID string) (CompletedFile, error) {
+	completedFile := CompletedFile{}
+	err := DB.Where("file_id = ?", fileID).First(&completedFile).Error
+	return completedFile, err
+}

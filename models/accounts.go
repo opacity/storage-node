@@ -16,13 +16,13 @@ import (
 
 /*Account defines a model for managing a user subscription for uploads*/
 type Account struct {
-	AccountID            string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
+	AccountID            string            `gorm:"primary_key" json:"accountID" binding:"required,len=40"` // some hash of the user's master handle
 	CreatedAt            time.Time         `json:"createdAt"`
 	UpdatedAt            time.Time         `json:"updatedAt"`
 	MonthsInSubscription int               `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
 	StorageLocation      string            `json:"storageLocation" binding:"required,url"`                                                                            // where their files live, on S3 or elsewhere
 	StorageLimit         StorageLimitType  `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
-	StorageUsed          float64           `json:"storageUsed" binding:"required" example:"30"`                                                                       // how much storage they have used, in GB
+	StorageUsed          float64           `json:"storageUsed" binding:"required,gte=0" example:"30"`                                                                 // how much storage they have used, in GB
 	EthAddress           string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
 	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
@@ -170,7 +170,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 		return err
 	}
 	if !paid {
-		return errors.New("Not payment. Unable to update the storage")
+		return errors.New("No payment. Unable to update the storage")
 	}
 
 	inGb := float64(planToUsedInByte) / float64(1e9)
@@ -178,7 +178,10 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 		return errors.New("Unable to store more data")
 	}
 	account.StorageUsed = account.StorageUsed + inGb
-	return DB.Model(&account).Updates(Account{StorageUsed: account.StorageUsed + inGb}).Error
+	if err := utils.Validator.Struct(account); err != nil {
+		return err
+	}
+	return DB.Model(&account).Updates(Account{StorageUsed: account.StorageUsed}).Error
 }
 
 /*Return Account object(first one) if there is not any error. */
@@ -215,6 +218,10 @@ func GetAccountsByPaymentStatus(paymentStatus PaymentStatusType) []Account {
 /*SetAccountsToNextPaymentStatus transitions an account to the next payment status*/
 func SetAccountsToNextPaymentStatus(accounts []Account) {
 	for _, account := range accounts {
+		if err := utils.Validator.Struct(account); err != nil {
+			utils.LogIfError(err, nil)
+			continue
+		}
 		err := DB.Model(&account).Updates(Account{PaymentStatus: getNextPaymentStatus(account.PaymentStatus)}).Error
 		utils.LogIfError(err, nil)
 	}

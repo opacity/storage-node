@@ -57,6 +57,10 @@ const FirstChunkIndex = 1
 /*UploadStatusMap is for pretty printing the UploadStatus*/
 var UploadStatusMap = make(map[UploadStatusType]string)
 
+/*IncompleteUploadErr is what we will get if we call FinishUpload on an upload that is not done.
+It's not really an error.*/
+var IncompleteUploadErr = errors.New("missing some chunks, cannot finish upload")
+
 func init() {
 	UploadStatusMap[FileUploadNotStarted] = "FileUploadNotStarted"
 	UploadStatusMap[FileUploadStarted] = "FileUploadStarted"
@@ -180,17 +184,17 @@ func (file *File) UploadCompleted() bool {
 }
 
 /*FinishUpload - finishes the upload*/
-func (file *File) FinishUpload() error {
+func (file *File) FinishUpload() (CompletedFile, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
-		return errors.New("missing some chunks, cannot finish upload")
+		return CompletedFile{}, IncompleteUploadErr
 	}
 
 	completedParts := file.GetCompletedPartsAsArray()
 
 	objectKey := aws.StringValue(file.AwsObjectKey)
 	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
-		return err
+		return CompletedFile{}, err
 	}
 
 	objectSize := utils.GetDefaultBucketObjectSize(objectKey)
@@ -200,9 +204,9 @@ func (file *File) FinishUpload() error {
 		FileSizeInByte: objectSize,
 	}
 	if err := DB.Save(&compeletedFile).Error; err != nil {
-		return err
+		return CompletedFile{}, err
 	}
-	return DB.Delete(file).Error
+	return compeletedFile, DB.Delete(file).Error
 }
 
 /*CompleteUploadsNewerThan will attempt to finish the uploads of files created after the time provided*/
