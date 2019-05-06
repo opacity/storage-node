@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
@@ -35,8 +33,19 @@ type accountCreateRes struct {
 }
 
 type accountPaidRes struct {
-	PaymentStatus string `json:"paymentStatus" example:"paid"`
-	Error         error  `json:"error" example:"the error encountered while checking"`
+	PaymentStatus string        `json:"paymentStatus" example:"paid"`
+	Error         error         `json:"error" example:"the error encountered while checking"`
+	Account       accountGetObj `json:"account" binding:"required"`
+}
+
+type accountGetObj struct {
+	CreatedAt            time.Time               `json:"createdAt"`
+	UpdatedAt            time.Time               `json:"updatedAt"`
+	ExpirationDate       time.Time               `json:"expirationDate" binding:"required"`
+	MonthsInSubscription int                     `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
+	StorageLimit         models.StorageLimitType `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
+	StorageUsed          float64                 `json:"storageUsed" binding:"required" example:"30"`                                                                       // how much storage they have used, in GB
+	EthAddress           string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 }
 
 // CreateAccountHandler godoc
@@ -90,19 +99,7 @@ func createAccount(c *gin.Context) {
 		return
 	}
 
-	hash, err := hashRequestBody(request.AccountCreation, c)
-	if err != nil {
-		return
-	}
-
-	sigBytes, err := hex.DecodeString(request.Signature)
-	if err != nil {
-		BadRequestResponse(c, err)
-		return
-	}
-
-	publicKey, err := utils.Recover(hash, sigBytes)
-	accountID := strings.TrimPrefix(utils.PubkeyToAddress(*publicKey).String(), "0x")
+	accountID, err := returnAccountID(request.AccountCreation, request.Signature, c)
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
@@ -185,6 +182,15 @@ func checkAccountPaymentStatus(c *gin.Context) {
 	OkResponse(c, accountPaidRes{
 		PaymentStatus: createPaymentStatusResponse(paid, pending),
 		Error:         err,
+		Account: accountGetObj{
+			CreatedAt:            account.CreatedAt,
+			UpdatedAt:            account.UpdatedAt,
+			ExpirationDate:       account.ExpirationDate(),
+			MonthsInSubscription: account.MonthsInSubscription,
+			StorageLimit:         account.StorageLimit,
+			StorageUsed:          account.StorageUsed,
+			EthAddress:           account.EthAddress,
+		},
 	})
 }
 
