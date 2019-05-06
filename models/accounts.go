@@ -19,13 +19,13 @@ type Account struct {
 	AccountID            string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
 	CreatedAt            time.Time         `json:"createdAt"`
 	UpdatedAt            time.Time         `json:"updatedAt"`
-	MonthsInSubscription int               `json:"monthsInSubscription" binding:"required,gte=1"` // number of months in their subscription
-	StorageLocation      string            `json:"storageLocation" binding:"required,url"`        // where their files live, on S3 or elsewhere
-	StorageLimit         StorageLimitType  `json:"storageLimit" binding:"required,gte=100"`       // how much storage they are allowed, in GB
-	StorageUsed          float64           `json:"storageUsed" binding:"required"`                // how much storage they have used, in GB
-	EthAddress           string            `json:"ethAddress" binding:"required,len=42"`          // the eth address they will send payment to
-	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`       // the private key of the eth address
-	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`              // the status of their payment
+	MonthsInSubscription int               `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
+	StorageLocation      string            `json:"storageLocation" binding:"required,url"`                                                                            // where their files live, on S3 or elsewhere
+	StorageLimit         StorageLimitType  `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
+	StorageUsed          float64           `json:"storageUsed" binding:"required" example:"30"`                                                                       // how much storage they have used, in GB
+	EthAddress           string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
+	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
 	MetadataKey          string            `json:"metadataKey" binding:"omitempty,len=64"`
 }
 

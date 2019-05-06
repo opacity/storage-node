@@ -14,6 +14,53 @@ definitions:
     - cost
     - ethAddress
     type: object
+  routes.UploadFileObj:
+    properties:
+      chunkData:
+        example: a binary string of the chunk data
+        type: string
+      endIndex:
+        example: 2
+        type: integer
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+      partIndex:
+        example: 1
+        type: integer
+    required:
+    - chunkData
+    - endIndex
+    - fileHandle
+    - partIndex
+    type: object
+  routes.UploadFileReq:
+    properties:
+      address:
+        example: a 42-char eth address with 0x prefix
+        maxLength: 42
+        minLength: 42
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          V: sig[0:63]
+          R: sig[64:127]
+          S: sig[128:129]
+        example: a 130 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 130
+        minLength: 130
+        type: string
+      uploadFile:
+        $ref: '#/definitions/routes.UploadFileObj'
+        type: object
+    required:
+    - address
+    - signature
+    type: object
   routes.accountCreateObj:
     properties:
       durationInMonths:
@@ -60,8 +107,44 @@ definitions:
     required:
     - expirationDate
     type: object
+  routes.accountGetObj:
+    properties:
+      createdAt:
+        type: string
+      ethAddress:
+        description: the eth address they will send payment to
+        example: a 42-char eth address with 0x prefix
+        maxLength: 42
+        minLength: 42
+        type: string
+      expirationDate:
+        type: string
+      monthsInSubscription:
+        description: number of months in their subscription
+        example: 12
+        type: integer
+      storageLimit:
+        description: how much storage they are allowed, in GB
+        example: 100
+        type: integer
+      storageUsed:
+        description: how much storage they have used, in GB
+        example: 30
+        type: number
+      updatedAt:
+        type: string
+    required:
+    - ethAddress
+    - expirationDate
+    - monthsInSubscription
+    - storageLimit
+    - storageUsed
+    type: object
   routes.accountPaidRes:
     properties:
+      account:
+        $ref: '#/definitions/routes.accountGetObj'
+        type: object
       paymentStatus:
         example: paid
         type: string
@@ -208,53 +291,6 @@ definitions:
     - expirationDate
     - metadata
     - metadataKey
-    type: object
-  routes.UploadFileObj:
-    properties:
-      chunkData:
-        example: a binary string of the chunk data
-        type: string
-      endIndex:
-        example: 2
-        type: integer
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 64
-        minLength: 64
-        type: string
-      partIndex:
-        example: 1
-        type: integer
-    required:
-    - chunkData
-    - endIndex
-    - fileHandle
-    - partIndex
-    type: object
-  routes.UploadFileReq:
-    properties:
-      address:
-        example: a 42-char eth address with 0x prefix
-        maxLength: 42
-        minLength: 42
-        type: string
-      signature:
-        description: |-
-          signature without 0x prefix is broken into
-          V: sig[0:63]
-          R: sig[64:127]
-          S: sig[128:129]
-        example: a 130 character string created when you signed the request with your
-          private key or account handle
-        maxLength: 130
-        minLength: 130
-        type: string
-      uploadFile:
-        $ref: '#/definitions/routes.UploadFileObj'
-        type: object
-    required:
-    - address
-    - signature
     type: object
   routes.uploadFileRes:
     properties:

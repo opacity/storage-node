@@ -75,3 +75,24 @@ func returnAccountIfVerified(reqBody interface{}, address string, signature stri
 
 	return account, err
 }
+
+func returnAccountID(reqBody interface{}, signature string, c *gin.Context) (string, error) {
+	hash, err := hashRequestBody(reqBody, c)
+	if err != nil {
+		BadRequestResponse(c, err)
+		return "", err
+	}
+
+	sigBytes, err := hex.DecodeString(signature)
+	if err != nil {
+		BadRequestResponse(c, err)
+		return "", err
+	}
+
+	publicKey, err := utils.Recover(hash, sigBytes)
+	if err != nil {
+		BadRequestResponse(c, err)
+		return "", err
+	}
+	return strings.TrimPrefix(utils.PubkeyToAddress(*publicKey).String(), "0x"), nil
+}
