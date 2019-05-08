@@ -72,7 +72,7 @@ func CreateAccountHandler() gin.HandlerFunc {
 // @Success 200 {object} routes.accountPaidRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
-// @Router /api/v1/accounts/putAccountIDHere [get]
+// @Router /api/v1/accounts/{accountID} [get]
 /*CheckAccountPaymentStatusHandler is a handler for requests checking the payment status*/
 func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 	return ginHandlerFunc(checkAccountPaymentStatus)

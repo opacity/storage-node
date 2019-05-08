@@ -95,7 +95,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.GET(AccountsPath+"/:accountID", CheckAccountPaymentStatusHandler())
 
 	v1Router.POST(MetadataPath, UpdateMetadataHandler())
-	v1Router.GET(MetadataPath+"/:metadataKey", GetMetadataHandler())
+	v1Router.GET(MetadataPath, GetMetadataHandler())
 
 	v1Router.POST(UploadPath, UploadFileHandler())
 

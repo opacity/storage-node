@@ -26,6 +26,31 @@ type verification struct {
 	Address   string `json:"address" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"`
 }
 
+func verifyRequest_v2(reqBody string, dest interface{}, address string, signature string, c *gin.Context) error {
+	var err error
+	hash, err := hashRequestBody_v2(reqBody, c)
+
+	verified, err := utils.VerifyFromStrings(address, hex.EncodeToString(hash),
+		signature)
+	if err != nil {
+		BadRequestResponse(c, errors.New(errVerifying))
+		return err
+	}
+
+	if verified != true {
+		err = errors.New(signatureDidNotMatchResponse)
+		ForbiddenResponse(c, err)
+		return err
+	}
+
+	if err := utils.ParseRequestBody_v2(reqBody, dest); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
+		return err
+	}
+
+	return nil
+}
+
 func verifyRequest(reqBody interface{}, address string, signature string, c *gin.Context) error {
 	var err error
 	hash, err := hashRequestBody(reqBody, c)
@@ -56,6 +81,10 @@ func hashRequestBody(reqBody interface{}, c *gin.Context) ([]byte, error) {
 	}
 
 	return utils.Hash(reqJSON), nil
+}
+
+func hashRequestBody_v2(reqBody string, c *gin.Context) ([]byte, error) {
+	return utils.Hash([]byte(reqBody)), nil
 }
 
 func returnAccountIfVerified(reqBody interface{}, address string, signature string, c *gin.Context) (models.Account, error) {

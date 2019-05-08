@@ -30,7 +30,22 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := metadataTestHelperGetMetadata(t, testMetadataKey)
+	getMetadata := getMetadataObject{
+		MetadataKey: testMetadataKey,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	marshalledReq, _ := json.Marshal(getMetadata)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	verificationObj := returnSuccessVerificationForTest_v2(t, reqBody.String())
+
+	get := getMetadataReq{
+		verification: verificationObj,
+		RequestBody:  reqBody.String(),
+	}
+
+	w := metadataTestHelperGetMetadata(t, get)
 
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusOK {
@@ -43,7 +58,22 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 
-	w := metadataTestHelperGetMetadata(t, testMetadataKey)
+	getMetadata := getMetadataObject{
+		MetadataKey: testMetadataKey,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	marshalledReq, _ := json.Marshal(getMetadata)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	verificationObj := returnSuccessVerificationForTest_v2(t, reqBody.String())
+
+	get := getMetadataReq{
+		verification: verificationObj,
+		RequestBody:  reqBody.String(),
+	}
+
+	w := metadataTestHelperGetMetadata(t, get)
 
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusNotFound {
@@ -68,11 +98,14 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	verificationObj := returnSuccessVerificationForTest(t, updateMetadataObj)
+	marshalledReq, _ := json.Marshal(updateMetadataObj)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	verificationObj := returnSuccessVerificationForTest_v2(t, reqBody.String())
 
 	post := updateMetadataReq{
 		verification: verificationObj,
-		Metadata:     updateMetadataObj,
+		RequestBody:  reqBody.String(),
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
@@ -98,11 +131,14 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	verificationObj := returnSuccessVerificationForTest(t, updateMetadataObj)
+	marshalledReq, _ := json.Marshal(updateMetadataObj)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	verificationObj := returnSuccessVerificationForTest_v2(t, reqBody.String())
 
 	post := updateMetadataReq{
 		verification: verificationObj,
-		Metadata:     updateMetadataObj,
+		RequestBody:  reqBody.String(),
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
@@ -123,11 +159,14 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	verificationObj := returnFailedVerificationForTest(t, updateMetadataObj)
+	marshalledReq, _ := json.Marshal(updateMetadataObj)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	verificationObj := returnFailedVerificationForTest_v2(t, reqBody.String())
 
 	post := updateMetadataReq{
 		verification: verificationObj,
-		Metadata:     updateMetadataObj,
+		RequestBody:  reqBody.String(),
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
@@ -135,15 +174,19 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 	confirmVerifyFailedForTest(t, w)
 }
 
-func metadataTestHelperGetMetadata(t *testing.T, metadataKey string) *httptest.ResponseRecorder {
+func metadataTestHelperGetMetadata(t *testing.T, get getMetadataReq) *httptest.ResponseRecorder {
 	router := returnEngine()
 	v1 := returnV1Group(router)
-	v1.GET(MetadataPath+"/:metadataKey", GetMetadataHandler())
+	v1.GET(MetadataPath, GetMetadataHandler())
+
+	marshalledReq, _ := json.Marshal(get)
+
+	reqBody := bytes.NewBuffer(marshalledReq)
 
 	// Create the mock request you'd like to test. Make sure the second argument
 	// here is the same as one of the routes you defined in the router setup
 	// block!
-	req, err := http.NewRequest(http.MethodGet, v1.BasePath()+MetadataPath+"/"+metadataKey, nil)
+	req, err := http.NewRequest(http.MethodGet, v1.BasePath()+MetadataPath, reqBody)
 	if err != nil {
 		t.Fatalf("Couldn't create request: %v\n", err)
 	}
@@ -163,6 +206,7 @@ func metadataTestHelperUpdateMetadata(t *testing.T, post updateMetadataReq) *htt
 	v1.POST(MetadataPath, UpdateMetadataHandler())
 
 	marshalledReq, _ := json.Marshal(post)
+
 	reqBody := bytes.NewBuffer(marshalledReq)
 
 	// Create the mock request you'd like to test. Make sure the second argument

@@ -82,7 +82,7 @@
                 }
             }
         },
-        "/api/v1/accounts/putAccountIDHere": {
+        "/api/v1/accounts/{accountID}": {
             "get": {
                 "description": "check the payment status of an account",
                 "consumes": [
@@ -221,15 +221,52 @@
             }
         },
         "/api/v1/metadata": {
-            "post": {
-                "description": "update metadata",
+            "get": {
+                "description": "requestBody should be a stringified version of:\n{\n\"metadataKey\": \"a 64-char hex string created deterministically from your account handle or private key\",\n\"timestamp\": 1557346389\n}",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "update metadata",
+                "summary": "Retrieve account metadata",
+                "parameters": [
+                    {
+                        "description": "get metadata object",
+                        "name": "getMetadataReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.getMetadataReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.getMetadataRes"
+                        }
+                    },
+                    "404": {
+                        "description": "no value found for that key",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "requestBody should be a stringified version of:\n{\n\"metadataKey\": \"a 64-char hex string created deterministically from your account handle or private key\",\n\"metadata\": \"your (updated) account metadata\",\n\"timestamp\": 1557346389\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Update metadata",
                 "parameters": [
                     {
                         "description": "update metadata object",
@@ -270,42 +307,6 @@
                     },
                     "500": {
                         "description": "some information about the internal error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/metadata/putMetadataKeyHere": {
-            "get": {
-                "description": "retrieve account metadata",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "retrieve account metadata",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "your metadata key which is 64-char hex string created deterministically from your account handle or private key",
-                        "name": "metadataKey",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/routes.getMetadataRes"
-                        }
-                    },
-                    "404": {
-                        "description": "no value found for that key",
                         "schema": {
                             "type": "string"
                         }
@@ -646,6 +647,33 @@
                 }
             }
         },
+        "routes.getMetadataReq": {
+            "type": "object",
+            "required": [
+                "address",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "maxLength": 42,
+                    "minLength": 42,
+                    "example": "a 42-char eth address with 0x prefix"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "should produce routes.getMetadataObject, see description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nV: sig[0:63]\nR: sig[64:127]\nS: sig[128:129]",
+                    "type": "string",
+                    "maxLength": 130,
+                    "minLength": 130,
+                    "example": "a 130 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
         "routes.getMetadataRes": {
             "type": "object",
             "required": [
@@ -661,31 +689,11 @@
                 }
             }
         },
-        "routes.updateMetadataObject": {
-            "type": "object",
-            "required": [
-                "metadata",
-                "metadataKey",
-                "timestamp"
-            ],
-            "properties": {
-                "metadata": {
-                    "type": "string",
-                    "example": "your (updated) account metadata"
-                },
-                "metadataKey": {
-                    "type": "string",
-                    "example": "a 64-char hex string created deterministically from your account handle or private key"
-                },
-                "timestamp": {
-                    "type": "integer"
-                }
-            }
-        },
         "routes.updateMetadataReq": {
             "type": "object",
             "required": [
                 "address",
+                "requestBody",
                 "signature"
             ],
             "properties": {
@@ -695,9 +703,9 @@
                     "minLength": 42,
                     "example": "a 42-char eth address with 0x prefix"
                 },
-                "metadata": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.updateMetadataObject"
+                "requestBody": {
+                    "type": "string",
+                    "example": "should produce routes.updateMetadataObject, see description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nV: sig[0:63]\nR: sig[64:127]\nS: sig[128:129]",
