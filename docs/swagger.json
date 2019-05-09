@@ -178,7 +178,7 @@
         },
         "/api/v1/file": {
             "delete": {
-                "description": "delete a file",
+                "description": "delete a file\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileID\": \"the handle of the file\",\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -533,22 +533,11 @@
                 }
             }
         },
-        "routes.deleteFileObj": {
-            "type": "object",
-            "required": [
-                "fileID"
-            ],
-            "properties": {
-                "fileID": {
-                    "type": "string",
-                    "example": "the handle of the file"
-                }
-            }
-        },
         "routes.deleteFileReq": {
             "type": "object",
             "required": [
                 "address",
+                "requestBody",
                 "signature"
             ],
             "properties": {
@@ -558,9 +547,9 @@
                     "minLength": 42,
                     "example": "a 42-char eth address with 0x prefix"
                 },
-                "deleteFile": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.deleteFileObj"
+                "requestBody": {
+                    "type": "string",
+                    "example": "should produce routes.deleteFileObj, see description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nV: sig[0:63]\nR: sig[64:127]\nS: sig[128:129]",

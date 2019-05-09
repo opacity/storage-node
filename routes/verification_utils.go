@@ -45,6 +45,7 @@ func verifyRequest_v2(reqBody string, dest interface{}, address string, signatur
 
 	if err := utils.ParseRequestBody_v2(reqBody, dest); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
+		BadRequestResponse(c, err)
 		return err
 	}
 

@@ -128,14 +128,6 @@ definitions:
         example: paid
         type: string
     type: object
-  routes.deleteFileObj:
-    properties:
-      fileID:
-        example: the handle of the file
-        type: string
-    required:
-    - fileID
-    type: object
   routes.deleteFileReq:
     properties:
       address:
@@ -143,9 +135,9 @@ definitions:
         maxLength: 42
         minLength: 42
         type: string
-      deleteFile:
-        $ref: '#/definitions/routes.deleteFileObj'
-        type: object
+      requestBody:
+        example: should produce routes.deleteFileObj, see description for example
+        type: string
       signature:
         description: |-
           signature without 0x prefix is broken into
@@ -159,6 +151,7 @@ definitions:
         type: string
     required:
     - address
+    - requestBody
     - signature
     type: object
   routes.deleteFileRes:
@@ -458,7 +451,12 @@ paths:
     delete:
       consumes:
       - application/json
-      description: delete a file
+      description: |-
+        delete a file
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileID": "the handle of the file",
+        }
       parameters:
       - description: file deletion object
         in: body
