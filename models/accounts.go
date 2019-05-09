@@ -16,7 +16,7 @@ import (
 
 /*Account defines a model for managing a user subscription for uploads*/
 type Account struct {
-	AccountID            string            `gorm:"primary_key" json:"accountID" binding:"required,len=40"` // some hash of the user's master handle
+	AccountID            string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
 	CreatedAt            time.Time         `json:"createdAt"`
 	UpdatedAt            time.Time         `json:"updatedAt"`
 	MonthsInSubscription int               `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription

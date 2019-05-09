@@ -21,7 +21,7 @@ import (
 
 func returnValidAccount() Account {
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
-	accountID := utils.RandSeqFromRunes(40, []rune("abcdef01234567890"))
+	accountID := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 
 	return Account{
 		AccountID:            accountID,
