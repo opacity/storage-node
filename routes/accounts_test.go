@@ -71,7 +71,7 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 	reqJSON, _ := json.Marshal(body)
 	reqBody := bytes.NewBuffer(reqJSON)
 
-	verificationObj := setupVerificationWithPrivateKeyForTest_v2(t, reqBody.String(), privateKeyToSignWith)
+	verificationObj := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKeyToSignWith)
 
 	return getAccountDataReq{
 		RequestBody:  reqBody.String(),

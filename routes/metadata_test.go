@@ -38,7 +38,7 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	marshalledReq, _ := json.Marshal(getMetadata)
 	reqBody := bytes.NewBuffer(marshalledReq)
 
-	verificationObj := returnSuccessVerificationForTest_v2(t, reqBody.String())
+	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
 
 	get := getMetadataReq{
 		verification: verificationObj,
@@ -66,7 +66,7 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 	marshalledReq, _ := json.Marshal(getMetadata)
 	reqBody := bytes.NewBuffer(marshalledReq)
 
-	verificationObj := returnSuccessVerificationForTest_v2(t, reqBody.String())
+	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
 
 	get := getMetadataReq{
 		verification: verificationObj,
@@ -101,7 +101,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	marshalledReq, _ := json.Marshal(updateMetadataObj)
 	reqBody := bytes.NewBuffer(marshalledReq)
 
-	verificationObj := returnSuccessVerificationForTest_v2(t, reqBody.String())
+	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
 
 	post := updateMetadataReq{
 		verification: verificationObj,
@@ -134,7 +134,7 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	marshalledReq, _ := json.Marshal(updateMetadataObj)
 	reqBody := bytes.NewBuffer(marshalledReq)
 
-	verificationObj := returnSuccessVerificationForTest_v2(t, reqBody.String())
+	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
 
 	post := updateMetadataReq{
 		verification: verificationObj,
@@ -162,7 +162,7 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 	marshalledReq, _ := json.Marshal(updateMetadataObj)
 	reqBody := bytes.NewBuffer(marshalledReq)
 
-	verificationObj := returnFailedVerificationForTest_v2(t, reqBody.String())
+	verificationObj := returnFailedVerificationForTest(t, reqBody.String())
 
 	post := updateMetadataReq{
 		verification: verificationObj,

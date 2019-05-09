@@ -37,7 +37,7 @@ func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKe
 	marshalledReq, _ := json.Marshal(body)
 	reqBody := bytes.NewBuffer(marshalledReq)
 
-	verificationBody := setupVerificationWithPrivateKeyForTest_v2(t, reqBody.String(), privateKey)
+	verificationBody := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
 
 	return UploadFileReq{
 		RequestBody:  reqBody.String(),
@@ -112,7 +112,7 @@ func ReturnChunkDataForTest(t *testing.T) []byte {
 	return buffer
 }
 
-func returnSuccessVerificationForTest(t *testing.T, reqBody interface{}) verification {
+func returnSuccessVerificationForTest(t *testing.T, reqBody string) verification {
 	abortIfNotTesting(t)
 
 	privateKey, err := utils.GenerateKey()
@@ -120,34 +120,7 @@ func returnSuccessVerificationForTest(t *testing.T, reqBody interface{}) verific
 	return setupVerificationWithPrivateKeyForTest(t, reqBody, privateKey)
 }
 
-func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody interface{}, privateKey *ecdsa.PrivateKey) verification {
-	abortIfNotTesting(t)
-
-	reqJSON, err := json.Marshal(reqBody)
-	assert.Nil(t, err)
-	hash := utils.Hash(reqJSON)
-
-	assert.Nil(t, err)
-	signature, err := utils.Sign(hash, privateKey)
-	assert.Nil(t, err)
-
-	verification := verification{
-		Signature: hex.EncodeToString(signature),
-		Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
-	}
-
-	return verification
-}
-
-func returnSuccessVerificationForTest_v2(t *testing.T, reqBody string) verification {
-	abortIfNotTesting(t)
-
-	privateKey, err := utils.GenerateKey()
-	assert.Nil(t, err)
-	return setupVerificationWithPrivateKeyForTest_v2(t, reqBody, privateKey)
-}
-
-func setupVerificationWithPrivateKeyForTest_v2(t *testing.T, reqBody string, privateKey *ecdsa.PrivateKey) verification {
+func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privateKey *ecdsa.PrivateKey) verification {
 	abortIfNotTesting(t)
 
 	hash := utils.Hash([]byte(reqBody))
@@ -163,29 +136,7 @@ func setupVerificationWithPrivateKeyForTest_v2(t *testing.T, reqBody string, pri
 	return verification
 }
 
-func returnFailedVerificationForTest(t *testing.T, reqBody interface{}) verification {
-	abortIfNotTesting(t)
-
-	reqJSON, err := json.Marshal(reqBody)
-	assert.Nil(t, err)
-	hash := utils.Hash(reqJSON)
-
-	privateKeyToSignWith, err := utils.GenerateKey()
-	assert.Nil(t, err)
-	wrongPrivateKey, err := utils.GenerateKey()
-	assert.Nil(t, err)
-	signature, err := utils.Sign(hash, privateKeyToSignWith)
-	assert.Nil(t, err)
-
-	verification := verification{
-		Signature: hex.EncodeToString(signature),
-		Address:   utils.PubkeyToAddress(wrongPrivateKey.PublicKey).Hex(),
-	}
-
-	return verification
-}
-
-func returnFailedVerificationForTest_v2(t *testing.T, reqBody string) verification {
+func returnFailedVerificationForTest(t *testing.T, reqBody string) verification {
 	abortIfNotTesting(t)
 
 	hash := utils.Hash([]byte(reqBody))

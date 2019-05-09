@@ -62,7 +62,7 @@ func uploadFile(c *gin.Context) {
 
 	var account models.Account
 	var err error
-	if account, err = returnAccountIfVerified_v2(request.RequestBody, &requestBodyParsed, request.Address,
+	if account, err = returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.Address,
 		request.Signature, c); err != nil {
 		return
 	}

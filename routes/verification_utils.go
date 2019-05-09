@@ -26,9 +26,8 @@ type verification struct {
 	Address   string `json:"address" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"`
 }
 
-func verifyRequest_v2(reqBody string, dest interface{}, address string, signature string, c *gin.Context) error {
-	var err error
-	hash, err := hashRequestBody_v2(reqBody, c)
+func verifyAndParseStringRequest(reqAsString string, dest interface{}, address string, signature string, c *gin.Context) error {
+	hash := utils.Hash([]byte(reqAsString))
 
 	verified, err := utils.VerifyFromStrings(address, hex.EncodeToString(hash),
 		signature)
@@ -43,7 +42,7 @@ func verifyRequest_v2(reqBody string, dest interface{}, address string, signatur
 		return err
 	}
 
-	if err := utils.ParseRequestBody_v2(reqBody, dest); err != nil {
+	if err := utils.ParseStringifiedRequest(reqAsString, dest); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
 		BadRequestResponse(c, err)
 		return err
@@ -52,7 +51,7 @@ func verifyRequest_v2(reqBody string, dest interface{}, address string, signatur
 	return nil
 }
 
-func verifyRequest(reqBody interface{}, address string, signature string, c *gin.Context) error {
+func verifyParsedRequest(reqBody interface{}, address string, signature string, c *gin.Context) error {
 	var err error
 	hash, err := hashRequestBody(reqBody, c)
 
@@ -84,13 +83,9 @@ func hashRequestBody(reqBody interface{}, c *gin.Context) ([]byte, error) {
 	return utils.Hash(reqJSON), nil
 }
 
-func hashRequestBody_v2(reqBody string, c *gin.Context) ([]byte, error) {
-	return utils.Hash([]byte(reqBody)), nil
-}
-
-func returnAccountIfVerified(reqBody interface{}, address string, signature string, c *gin.Context) (models.Account, error) {
+func returnAccountIfVerifiedFromParsedRequest(reqBody interface{}, address string, signature string, c *gin.Context) (models.Account, error) {
 	var account models.Account
-	if err := verifyRequest(reqBody, address, signature, c); err != nil {
+	if err := verifyParsedRequest(reqBody, address, signature, c); err != nil {
 		return account, err
 	}
 
@@ -106,9 +101,9 @@ func returnAccountIfVerified(reqBody interface{}, address string, signature stri
 	return account, err
 }
 
-func returnAccountIfVerified_v2(reqBody string, dest interface{}, address string, signature string, c *gin.Context) (models.Account, error) {
+func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface{}, address string, signature string, c *gin.Context) (models.Account, error) {
 	var account models.Account
-	if err := verifyRequest_v2(reqBody, dest, address, signature, c); err != nil {
+	if err := verifyAndParseStringRequest(reqAsString, dest, address, signature, c); err != nil {
 		return account, err
 	}
 
@@ -124,7 +119,7 @@ func returnAccountIfVerified_v2(reqBody string, dest interface{}, address string
 	return account, err
 }
 
-func returnAccountID(reqBody interface{}, signature string, c *gin.Context) (string, error) {
+func returnAccountIdWithParsedRequest(reqBody interface{}, signature string, c *gin.Context) (string, error) {
 	hash, err := hashRequestBody(reqBody, c)
 	if err != nil {
 		BadRequestResponse(c, err)
@@ -145,12 +140,8 @@ func returnAccountID(reqBody interface{}, signature string, c *gin.Context) (str
 	return strings.TrimPrefix(utils.PubkeyToAddress(*publicKey).String(), "0x"), nil
 }
 
-func returnAccountID_v2(reqBody string, signature string, c *gin.Context) (string, error) {
-	hash, err := hashRequestBody_v2(reqBody, c)
-	if err != nil {
-		BadRequestResponse(c, err)
-		return "", err
-	}
+func returnAccountIdWithStringRequest(reqAsString string, signature string, c *gin.Context) (string, error) {
+	hash := utils.Hash([]byte(reqAsString))
 
 	sigBytes, err := hex.DecodeString(signature)
 	if err != nil {

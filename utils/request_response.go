@@ -19,9 +19,9 @@ func ParseRequestBody(req *http.Request, dest interface{}) error {
 	return Validator.Struct(dest)
 }
 
-/*ParseRequestBody take a request and parses the body to the target interface.*/
-func ParseRequestBody_v2(body string, dest interface{}) error {
-	if err := parse_v2(body, dest); err != nil {
+/*ParseStringifiedRequest takes a stringified request and parses the body to the target interface.*/
+func ParseStringifiedRequest(body string, dest interface{}) error {
+	if err := json.Unmarshal([]byte(body), dest); err != nil {
 		return err
 	}
 
@@ -45,8 +45,4 @@ func parse(body io.ReadCloser, dest interface{}) error {
 		return err
 	}
 	return json.Unmarshal(bodyBytes, dest)
-}
-
-func parse_v2(body string, dest interface{}) error {
-	return json.Unmarshal([]byte(body), dest)
 }

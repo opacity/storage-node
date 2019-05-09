@@ -106,7 +106,7 @@ func createAccount(c *gin.Context) {
 	}
 
 	requestBodyParsed := accountCreateObj{}
-	if err := utils.ParseRequestBody_v2(request.RequestBody, &requestBodyParsed); err != nil {
+	if err := utils.ParseStringifiedRequest(request.RequestBody, &requestBodyParsed); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		BadRequestResponse(c, err)
 		return
@@ -125,7 +125,7 @@ func createAccount(c *gin.Context) {
 		return
 	}
 
-	accountID, err := returnAccountID_v2(request.RequestBody, request.Signature, c)
+	accountID, err := returnAccountIdWithStringRequest(request.RequestBody, request.Signature, c)
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
@@ -192,7 +192,7 @@ func checkAccountPaymentStatus(c *gin.Context) {
 
 	requestBodyParsed := accountGetReqObj{}
 
-	account, err := returnAccountIfVerified_v2(request.RequestBody, &requestBodyParsed,
+	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed,
 		request.Address, request.Signature, c)
 	if err != nil {
 		return
