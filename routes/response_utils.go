@@ -2,6 +2,7 @@ package routes
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -47,6 +48,10 @@ func AccountNotPaidResponse(c *gin.Context, response interface{}) {
 	}
 	c.AbortWithStatusJSON(http.StatusForbidden, response)
 	utils.Metrics_403_Response_Counter.Inc()
+}
+
+func AccountNotEnoughSpaceResponse(c *gin.Context) {
+	BadRequestResponse(c, errors.New("Account does not have enough space to upload more object."))
 }
 
 func NotFoundResponse(c *gin.Context, err error) {
