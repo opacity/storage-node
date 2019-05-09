@@ -156,14 +156,6 @@ definitions:
     type: object
   routes.deleteFileRes:
     type: object
-  routes.downloadFileObj:
-    properties:
-      fileID:
-        example: the handle of the file
-        type: string
-    required:
-    - fileID
-    type: object
   routes.downloadFileReq:
     properties:
       address:
@@ -171,9 +163,9 @@ definitions:
         maxLength: 42
         minLength: 42
         type: string
-      downloadFile:
-        $ref: '#/definitions/routes.downloadFileObj'
-        type: object
+      requestBody:
+        example: should produce routes.downloadFileObj, see description for example
+        type: string
       signature:
         description: |-
           signature without 0x prefix is broken into
@@ -187,6 +179,7 @@ definitions:
         type: string
     required:
     - address
+    - requestBody
     - signature
     type: object
   routes.downloadFileRes:
@@ -417,7 +410,12 @@ paths:
     get:
       consumes:
       - application/json
-      description: download a file
+      description: |-
+        download a file
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileID": "the handle of the file",
+        }
       parameters:
       - description: download object
         in: body
