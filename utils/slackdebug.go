@@ -32,7 +32,7 @@ func SlackLogError(message string) {
 }
 
 func SlackLogWithLevel(message string, level LogLevel) {
-	GetDefaultLogger().Info(Env.DisplayName + ": " + message)
+	GetDefaultLogger().Info(message)
 
 	if len(Env.SlackDebugUrl) == 0 {
 		return
@@ -40,7 +40,7 @@ func SlackLogWithLevel(message string, level LogLevel) {
 
 	attachment := map[string]string{
 		"color": getLogLevelColor(level),
-		"text":  message,
+		"text":  Env.DisplayName + ": " + message,
 	}
 
 	values := map[string]interface{}{

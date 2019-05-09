@@ -114,7 +114,7 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			request := routes.ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 
 			// get the file handle
-			fileHandle := request.UploadFile.FileHandle
+			fileHandle := uploadBody.FileHandle
 
 			// create a paid account
 			routes.CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
