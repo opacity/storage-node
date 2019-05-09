@@ -14,34 +14,15 @@ definitions:
     - cost
     - ethAddress
     type: object
-  routes.UploadFileObj:
-    properties:
-      chunkData:
-        example: a binary string of the chunk data
-        type: string
-      endIndex:
-        example: 2
-        type: integer
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 64
-        minLength: 64
-        type: string
-      partIndex:
-        example: 1
-        type: integer
-    required:
-    - chunkData
-    - endIndex
-    - fileHandle
-    - partIndex
-    type: object
   routes.UploadFileReq:
     properties:
       address:
         example: a 42-char eth address with 0x prefix
         maxLength: 42
         minLength: 42
+        type: string
+      requestBody:
+        example: should produce routes.UploadFileObj, see description for example
         type: string
       signature:
         description: |-
@@ -54,11 +35,9 @@ definitions:
         maxLength: 130
         minLength: 130
         type: string
-      uploadFile:
-        $ref: '#/definitions/routes.UploadFileObj'
-        type: object
     required:
     - address
+    - requestBody
     - signature
     type: object
   routes.accountCreateReq:
@@ -558,8 +537,15 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: upload a chunk of a file. The first partIndex must be 1. The endIndex
-        must be greater than or equal to partIndex.
+      description: |-
+        upload a chunk of a file. The first partIndex must be 1. The endIndex must be greater than or equal to partIndex.
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "chunkData": "a binary string of the chunk data",
+        "fileHandle": "a deterministically created file handle",
+        "partIndex": 1,
+        "endIndex": 2
+        }
       parameters:
       - description: an object to upload a chunk of a file
         in: body

@@ -34,10 +34,13 @@ func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKey *ecdsa.PrivateKey) UploadFileReq {
 	abortIfNotTesting(t)
 
-	verificationBody := setupVerificationWithPrivateKeyForTest(t, body, privateKey)
+	marshalledReq, _ := json.Marshal(body)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	verificationBody := setupVerificationWithPrivateKeyForTest_v2(t, reqBody.String(), privateKey)
 
 	return UploadFileReq{
-		UploadFile:   body,
+		RequestBody:  reqBody.String(),
 		verification: verificationBody,
 	}
 }

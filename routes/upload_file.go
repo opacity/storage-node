@@ -19,7 +19,7 @@ type UploadFileObj struct {
 
 type UploadFileReq struct {
 	verification
-	UploadFile UploadFileObj `form:"uploadFile" binding:"required"`
+	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.UploadFileObj, see description for example"`
 }
 
 type uploadFileRes struct {
@@ -32,6 +32,13 @@ type uploadFileRes struct {
 // @Accept  mpfd
 // @Produce  json
 // @Param UploadFileReq body routes.UploadFileReq true "an object to upload a chunk of a file"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"chunkData": "a binary string of the chunk data",
+// @description 	"fileHandle": "a deterministically created file handle",
+// @description 	"partIndex": 1,
+// @description 	"endIndex": 2
+// @description }
 // @Success 200 {object} routes.uploadFileRes
 // @Failure 403 {object} routes.accountCreateRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -51,8 +58,12 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	account, err := returnAccountIfVerified(request.UploadFile, request.Address, request.Signature, c)
-	if err != nil {
+	requestBodyParsed := UploadFileObj{}
+
+	var account models.Account
+	var err error
+	if account, err = returnAccountIfVerified_v2(request.RequestBody, &requestBodyParsed, request.Address,
+		request.Signature, c); err != nil {
 		return
 	}
 
@@ -76,8 +87,8 @@ func uploadFile(c *gin.Context) {
 	}
 
 	file, err := models.GetOrCreateFile(models.File{
-		FileID:    request.UploadFile.FileHandle,
-		EndIndex:  request.UploadFile.EndIndex,
+		FileID:    requestBodyParsed.FileHandle,
+		EndIndex:  requestBodyParsed.EndIndex,
 		ExpiredAt: account.ExpirationDate(),
 	})
 	if err != nil {
@@ -87,10 +98,10 @@ func uploadFile(c *gin.Context) {
 
 	var multipartErr error
 	var completedPart *s3.CompletedPart
-	if request.UploadFile.PartIndex == models.FirstChunkIndex {
-		completedPart, multipartErr = handleFirstChunk(file, request.UploadFile.PartIndex, request.UploadFile.ChunkData)
+	if requestBodyParsed.PartIndex == models.FirstChunkIndex {
+		completedPart, multipartErr = handleFirstChunk(file, requestBodyParsed.PartIndex, requestBodyParsed.ChunkData)
 	} else {
-		completedPart, multipartErr = handleOtherChunk(file, request.UploadFile.PartIndex, request.UploadFile.ChunkData)
+		completedPart, multipartErr = handleOtherChunk(file, requestBodyParsed.PartIndex, requestBodyParsed.ChunkData)
 	}
 
 	if multipartErr != nil {

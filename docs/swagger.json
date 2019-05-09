@@ -317,7 +317,7 @@
         },
         "/api/v1/upload": {
             "post": {
-                "description": "upload a chunk of a file. The first partIndex must be 1. The endIndex must be greater than or equal to partIndex.",
+                "description": "upload a chunk of a file. The first partIndex must be 1. The endIndex must be greater than or equal to partIndex.\nrequestBody should be a stringified version of (values are just examples):\n{\n\"chunkData\": \"a binary string of the chunk data\",\n\"fileHandle\": \"a deterministically created file handle\",\n\"partIndex\": 1,\n\"endIndex\": 2\n}",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -388,39 +388,11 @@
                 }
             }
         },
-        "routes.UploadFileObj": {
-            "type": "object",
-            "required": [
-                "chunkData",
-                "endIndex",
-                "fileHandle",
-                "partIndex"
-            ],
-            "properties": {
-                "chunkData": {
-                    "type": "string",
-                    "example": "a binary string of the chunk data"
-                },
-                "endIndex": {
-                    "type": "integer",
-                    "example": 2
-                },
-                "fileHandle": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 64,
-                    "example": "a deterministically created file handle"
-                },
-                "partIndex": {
-                    "type": "integer",
-                    "example": 1
-                }
-            }
-        },
         "routes.UploadFileReq": {
             "type": "object",
             "required": [
                 "address",
+                "requestBody",
                 "signature"
             ],
             "properties": {
@@ -430,16 +402,16 @@
                     "minLength": 42,
                     "example": "a 42-char eth address with 0x prefix"
                 },
+                "requestBody": {
+                    "type": "string",
+                    "example": "should produce routes.UploadFileObj, see description for example"
+                },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nV: sig[0:63]\nR: sig[64:127]\nS: sig[128:129]",
                     "type": "string",
                     "maxLength": 130,
                     "minLength": 130,
                     "example": "a 130 character string created when you signed the request with your private key or account handle"
-                },
-                "uploadFile": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.UploadFileObj"
                 }
             }
         },
