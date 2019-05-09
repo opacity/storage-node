@@ -36,7 +36,7 @@ func initFileUpload(c *gin.Context) {
 		return
 	}
 
-	account, err := returnAccountIfVerified(request.InitFileUpload, request.Address, request.Signature, c)
+	account, err := returnAccountIfVerifiedFromParsedRequest(request.InitFileUpload, request.Address, request.Signature, c)
 	if err != nil {
 		return
 	}
