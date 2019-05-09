@@ -23,8 +23,8 @@ type accountCreateObj struct {
 }
 
 type accountCreateReq struct {
-	Signature       string           `json:"signature" binding:"required,len=130" minLength:"130" maxLength:"130" example:"a 130 character string created when you signed the request with your private key or account handle"`
-	AccountCreation accountCreateObj `json:"accountCreation" binding:"required"`
+	Signature   string `json:"signature" binding:"required,len=130" minLength:"130" maxLength:"130" example:"a 130 character string created when you signed the request with your private key or account handle"`
+	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.accountCreateObj, see description for example"`
 }
 
 type accountCreateRes struct {
@@ -48,12 +48,27 @@ type accountGetObj struct {
 	EthAddress           string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 }
 
+type accountGetReqObj struct {
+	Timestamp int64 `json:"timestamp" binding:"required"`
+}
+
+type getAccountDataReq struct {
+	verification
+	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.accountGetReqObj, see description for example"`
+}
+
 // CreateAccountHandler godoc
 // @Summary create an account
 // @Description create an account
 // @Accept  json
 // @Produce  json
 // @Param accountCreateReq body routes.accountCreateReq true "account creation object"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"storageLimit": 100,
+// @description 	"durationInMonths": 12,
+// @description 	"metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
+// @description }
 // @Success 200 {object} routes.accountCreateRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 503 {string} string "error encrypting private key: (with the error)"
@@ -68,11 +83,15 @@ func CreateAccountHandler() gin.HandlerFunc {
 // @Description check the payment status of an account
 // @Accept  json
 // @Produce  json
-// @Param accountID path string true "your account id a.k.a. the public address of your private key"
+// @Param getAccountDataReq body routes.getAccountDataReq true "account payment status check object"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"timestamp": 1557346389
+// @description }
 // @Success 200 {object} routes.accountPaidRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
-// @Router /api/v1/accounts/{accountID} [get]
+// @Router /api/v1/accounts [get]
 /*CheckAccountPaymentStatusHandler is a handler for requests checking the payment status*/
 func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 	return ginHandlerFunc(checkAccountPaymentStatus)
@@ -86,6 +105,13 @@ func createAccount(c *gin.Context) {
 		return
 	}
 
+	requestBodyParsed := accountCreateObj{}
+	if err := utils.ParseRequestBody_v2(request.RequestBody, &requestBodyParsed); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
+		BadRequestResponse(c, err)
+		return
+	}
+
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
 	if err != nil {
 		err = fmt.Errorf("error generating account wallet:  %v", err)
@@ -93,13 +119,13 @@ func createAccount(c *gin.Context) {
 		return
 	}
 
-	storageLimit, ok := models.StorageLimitMap[request.AccountCreation.StorageLimit]
+	storageLimit, ok := models.StorageLimitMap[requestBodyParsed.StorageLimit]
 	if !ok {
 		BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
 		return
 	}
 
-	accountID, err := returnAccountID(request.AccountCreation, request.Signature, c)
+	accountID, err := returnAccountID_v2(request.RequestBody, request.Signature, c)
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
@@ -114,12 +140,12 @@ func createAccount(c *gin.Context) {
 
 	account := models.Account{
 		AccountID:            accountID,
-		MetadataKey:          request.AccountCreation.MetadataKey,
+		MetadataKey:          requestBodyParsed.MetadataKey,
 		StorageLimit:         storageLimit,
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:        models.InitialPaymentInProgress,
-		MonthsInSubscription: request.AccountCreation.DurationInMonths,
+		MonthsInSubscription: requestBodyParsed.DurationInMonths,
 	}
 
 	if err := utils.Validator.Struct(account); err == nil {
@@ -157,11 +183,18 @@ func createAccount(c *gin.Context) {
 }
 
 func checkAccountPaymentStatus(c *gin.Context) {
-	accountID := c.Param("accountID")
+	request := getAccountDataReq{}
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
+		BadRequestResponse(c, err)
+		return
+	}
 
-	account, err := models.GetAccountById(accountID)
+	requestBodyParsed := accountGetReqObj{}
+
+	account, err := returnAccountIfVerified_v2(request.RequestBody, &requestBodyParsed,
+		request.Address, request.Signature, c)
 	if err != nil {
-		AccountNotFoundResponse(c, accountID)
 		return
 	}
 

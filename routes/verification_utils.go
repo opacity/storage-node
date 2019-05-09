@@ -105,8 +105,47 @@ func returnAccountIfVerified(reqBody interface{}, address string, signature stri
 	return account, err
 }
 
+func returnAccountIfVerified_v2(reqBody string, dest interface{}, address string, signature string, c *gin.Context) (models.Account, error) {
+	var account models.Account
+	if err := verifyRequest_v2(reqBody, dest, address, signature, c); err != nil {
+		return account, err
+	}
+
+	accountID := strings.TrimPrefix(address, "0x")
+
+	// validate user
+	account, err := models.GetAccountById(accountID)
+	if err != nil || len(account.AccountID) == 0 {
+		AccountNotFoundResponse(c, accountID)
+		return account, err
+	}
+
+	return account, err
+}
+
 func returnAccountID(reqBody interface{}, signature string, c *gin.Context) (string, error) {
 	hash, err := hashRequestBody(reqBody, c)
+	if err != nil {
+		BadRequestResponse(c, err)
+		return "", err
+	}
+
+	sigBytes, err := hex.DecodeString(signature)
+	if err != nil {
+		BadRequestResponse(c, err)
+		return "", err
+	}
+
+	publicKey, err := utils.Recover(hash, sigBytes)
+	if err != nil {
+		BadRequestResponse(c, err)
+		return "", err
+	}
+	return strings.TrimPrefix(utils.PubkeyToAddress(*publicKey).String(), "0x"), nil
+}
+
+func returnAccountID_v2(reqBody string, signature string, c *gin.Context) (string, error) {
+	hash, err := hashRequestBody_v2(reqBody, c)
 	if err != nil {
 		BadRequestResponse(c, err)
 		return "", err

@@ -61,33 +61,11 @@ definitions:
     - address
     - signature
     type: object
-  routes.accountCreateObj:
-    properties:
-      durationInMonths:
-        example: 12
-        minimum: 1
-        type: integer
-      metadataKey:
-        example: a 64-char hex string created deterministically from your account
-          handle or private key
-        maxLength: 64
-        minLength: 64
-        type: string
-      storageLimit:
-        example: 100
-        maximum: 100
-        minimum: 100
-        type: integer
-    required:
-    - durationInMonths
-    - metadataKey
-    - storageLimit
-    type: object
   routes.accountCreateReq:
     properties:
-      accountCreation:
-        $ref: '#/definitions/routes.accountCreateObj'
-        type: object
+      requestBody:
+        example: should produce routes.accountCreateObj, see description for example
+        type: string
       signature:
         example: a 130 character string created when you signed the request with your
           private key or account handle
@@ -95,6 +73,7 @@ definitions:
         minLength: 130
         type: string
     required:
+    - requestBody
     - signature
     type: object
   routes.accountCreateRes:
@@ -225,6 +204,32 @@ definitions:
         example: a URL to use to download the file
         type: string
     type: object
+  routes.getAccountDataReq:
+    properties:
+      address:
+        example: a 42-char eth address with 0x prefix
+        maxLength: 42
+        minLength: 42
+        type: string
+      requestBody:
+        example: should produce routes.accountGetReqObj, see description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          V: sig[0:63]
+          R: sig[64:127]
+          S: sig[128:129]
+        example: a 130 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 130
+        minLength: 130
+        type: string
+    required:
+    - address
+    - requestBody
+    - signature
+    type: object
   routes.getMetadataReq:
     properties:
       address:
@@ -345,10 +350,51 @@ paths:
             type: object
       summary: get statistics
   /api/v1/accounts:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        check the payment status of an account
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "timestamp": 1557346389
+        }
+      parameters:
+      - description: account payment status check object
+        in: body
+        name: getAccountDataReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.getAccountDataReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.accountPaidRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+      summary: check the payment status of an account
     post:
       consumes:
       - application/json
-      description: create an account
+      description: |-
+        create an account
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "storageLimit": 100,
+        "durationInMonths": 12,
+        "metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
+        }
       parameters:
       - description: account creation object
         in: body
@@ -374,34 +420,6 @@ paths:
           schema:
             type: string
       summary: create an account
-  /api/v1/accounts/{accountID}:
-    get:
-      consumes:
-      - application/json
-      description: check the payment status of an account
-      parameters:
-      - description: your account id a.k.a. the public address of your private key
-        in: path
-        name: accountID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.accountPaidRes'
-            type: object
-        "400":
-          description: 'bad request, unable to parse request body: (with the error)'
-          schema:
-            type: string
-        "404":
-          description: 'no account with that id: (with your accountID)'
-          schema:
-            type: string
-      summary: check the payment status of an account
   /api/v1/download:
     get:
       consumes:
@@ -471,7 +489,7 @@ paths:
       consumes:
       - application/json
       description: |-
-        requestBody should be a stringified version of:
+        requestBody should be a stringified version of (values are just examples):
         {
         "metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
         "timestamp": 1557346389
@@ -501,7 +519,7 @@ paths:
       consumes:
       - application/json
       description: |-
-        requestBody should be a stringified version of:
+        requestBody should be a stringified version of (values are just examples):
         {
         "metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
         "metadata": "your (updated) account metadata",

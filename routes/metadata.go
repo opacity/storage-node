@@ -48,7 +48,7 @@ type getMetadataRes struct {
 // @Accept  json
 // @Produce  json
 // @Param getMetadataReq body routes.getMetadataReq true "get metadata object"
-// @description requestBody should be a stringified version of:
+// @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
 // @description 	"timestamp": 1557346389
@@ -66,7 +66,7 @@ func GetMetadataHandler() gin.HandlerFunc {
 // @Accept  json
 // @Produce  json
 // @Param updateMetadataReq body routes.updateMetadataReq true "update metadata object"
-// @description requestBody should be a stringified version of:
+// @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
 // @description 	"metadata": "your (updated) account metadata",
