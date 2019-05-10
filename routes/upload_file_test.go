@@ -166,6 +166,16 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 	account := CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
 
+	objectKey, uploadID, err := utils.CreateMultiPartUpload(uploadBody.FileHandle)
+	assert.Nil(t, err)
+	models.DB.Create(&models.File{
+		FileID:       uploadBody.FileHandle,
+		AwsUploadID:  uploadID,
+		AwsObjectKey: objectKey,
+		EndIndex:     uploadBody.EndIndex,
+		ExpiredAt:    account.ExpirationDate(),
+	})
+
 	w := UploadFileHelperForTest(t, request)
 
 	if w.Code != http.StatusOK {
@@ -173,12 +183,6 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	}
 	uploadBody.PartIndex++
 	uploadBody.ChunkData = string(chunkDataPart2)
-
-	filesInDB := []models.File{}
-	models.DB.Where("file_id = ?", uploadBody.FileHandle).Find(&filesInDB)
-	assert.Equal(t, 1, len(filesInDB))
-
-	objectKey := aws.StringValue(filesInDB[0].AwsObjectKey)
 
 	request = ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 
@@ -188,18 +192,16 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
 
-	filesInDB = []models.File{}
-	models.DB.Where("file_id = ?", uploadBody.FileHandle).Find(&filesInDB)
-	assert.Equal(t, 0, len(filesInDB))
+	file, _ = models.GetFileById(uploadBody.FileHandle)
+	assert.True(t, len(file.FileID) == 0)
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
 	assert.Nil(t, err)
 
 	assert.True(t, updatedAccount.StorageUsed > account.StorageUsed)
 
-	completedFiles := []models.CompletedFile{}
-	models.DB.Where("file_id = ?", uploadBody.FileHandle).Find(&completedFiles)
-	assert.Equal(t, 1, len(completedFiles))
+	completedFile, _ := models.GetCompletedFileByFileID(uploadBody.FileHandle)
+	assert.Equal(t, completedFile.FileID, uploadBody.FileHandle)
 
 	err = utils.DeleteDefaultBucketObject(objectKey)
 	assert.Nil(t, err)
