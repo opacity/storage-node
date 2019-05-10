@@ -26,6 +26,14 @@ type uploadFileRes struct {
 	Status string `json:"status" example:"Chunk is uploaded"`
 }
 
+var chunkUploadCompletedRes = uploadFileRes{
+	Status: "Chunk is uploaded",
+}
+
+var fileUploadCompletedRes = uploadFileRes{
+	Status: "File is uploaded",
+}
+
 // UploadFileHandler godoc
 // @Summary upload a chunk of a file
 // @Description upload a chunk of a file. The first partIndex must be 1. The endIndex must be greater than or equal to partIndex.
@@ -59,7 +67,7 @@ func uploadFile(c *gin.Context) {
 
 	requestBodyParsed := UploadFileObj{}
 
-	err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
+	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
 	if err != nil {
 		return
 	}
@@ -80,34 +88,22 @@ func uploadFile(c *gin.Context) {
 	completedFile, err := file.FinishUpload()
 	if err != nil {
 		if err == models.IncompleteUploadErr {
-			OkResponse(c, uploadFileRes{
-				Status: "Chunk is uploaded",
-			})
+			OkResponse(c, chunkUploadCompletedRes)
 			return
 		}
 		InternalErrorResponse(c, err)
 		return
 	}
 
-	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
-	if err != nil {
-		InternalErrorResponse(c, err)
-		return
-	}
-
 	if err := account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte)); err != nil {
-		utils.LogIfError(err, nil)
 		InternalErrorResponse(c, err)
 		return
 	}
 
-	OkResponse(c, uploadFileRes{
-		Status: "Upload is completed",
-	})
+	OkResponse(c, fileUploadCompletedRes)
 }
 
 func handleChunkData(file models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {
-	completedPart, err := utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
+	return utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
 		[]byte(chunkData), chunkIndex)
-	return completedPart, err
 }
