@@ -26,7 +26,32 @@ type verification struct {
 	Address   string `json:"address" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"`
 }
 
-func verifyRequest(reqBody interface{}, address string, signature string, c *gin.Context) error {
+func verifyAndParseStringRequest(reqAsString string, dest interface{}, address string, signature string, c *gin.Context) error {
+	hash := utils.Hash([]byte(reqAsString))
+
+	verified, err := utils.VerifyFromStrings(address, hex.EncodeToString(hash),
+		signature)
+	if err != nil {
+		BadRequestResponse(c, errors.New(errVerifying))
+		return err
+	}
+
+	if verified != true {
+		err = errors.New(signatureDidNotMatchResponse)
+		ForbiddenResponse(c, err)
+		return err
+	}
+
+	if err := utils.ParseStringifiedRequest(reqAsString, dest); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
+		BadRequestResponse(c, err)
+		return err
+	}
+
+	return nil
+}
+
+func verifyParsedRequest(reqBody interface{}, address string, signature string, c *gin.Context) error {
 	var err error
 	hash, err := hashRequestBody(reqBody, c)
 
@@ -58,9 +83,9 @@ func hashRequestBody(reqBody interface{}, c *gin.Context) ([]byte, error) {
 	return utils.Hash(reqJSON), nil
 }
 
-func returnAccountIfVerified(reqBody interface{}, address string, signature string, c *gin.Context) (models.Account, error) {
+func returnAccountIfVerifiedFromParsedRequest(reqBody interface{}, address string, signature string, c *gin.Context) (models.Account, error) {
 	var account models.Account
-	if err := verifyRequest(reqBody, address, signature, c); err != nil {
+	if err := verifyParsedRequest(reqBody, address, signature, c); err != nil {
 		return account, err
 	}
 
@@ -76,12 +101,47 @@ func returnAccountIfVerified(reqBody interface{}, address string, signature stri
 	return account, err
 }
 
-func returnAccountID(reqBody interface{}, signature string, c *gin.Context) (string, error) {
+func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface{}, address string, signature string, c *gin.Context) (models.Account, error) {
+	var account models.Account
+	if err := verifyAndParseStringRequest(reqAsString, dest, address, signature, c); err != nil {
+		return account, err
+	}
+
+	accountID := strings.TrimPrefix(address, "0x")
+
+	// validate user
+	account, err := models.GetAccountById(accountID)
+	if err != nil || len(account.AccountID) == 0 {
+		AccountNotFoundResponse(c, accountID)
+		return account, err
+	}
+
+	return account, err
+}
+
+func returnAccountIdWithParsedRequest(reqBody interface{}, signature string, c *gin.Context) (string, error) {
 	hash, err := hashRequestBody(reqBody, c)
 	if err != nil {
 		BadRequestResponse(c, err)
 		return "", err
 	}
+
+	sigBytes, err := hex.DecodeString(signature)
+	if err != nil {
+		BadRequestResponse(c, err)
+		return "", err
+	}
+
+	publicKey, err := utils.Recover(hash, sigBytes)
+	if err != nil {
+		BadRequestResponse(c, err)
+		return "", err
+	}
+	return strings.TrimPrefix(utils.PubkeyToAddress(*publicKey).String(), "0x"), nil
+}
+
+func returnAccountIdWithStringRequest(reqAsString string, signature string, c *gin.Context) (string, error) {
+	hash := utils.Hash([]byte(reqAsString))
 
 	sigBytes, err := hex.DecodeString(signature)
 	if err != nil {

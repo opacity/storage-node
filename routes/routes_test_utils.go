@@ -34,10 +34,13 @@ func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKey *ecdsa.PrivateKey) UploadFileReq {
 	abortIfNotTesting(t)
 
-	verificationBody := setupVerificationWithPrivateKeyForTest(t, body, privateKey)
+	marshalledReq, _ := json.Marshal(body)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	verificationBody := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
 
 	return UploadFileReq{
-		UploadFile:   body,
+		RequestBody:  reqBody.String(),
 		verification: verificationBody,
 	}
 }
@@ -109,7 +112,7 @@ func ReturnChunkDataForTest(t *testing.T) []byte {
 	return buffer
 }
 
-func returnSuccessVerificationForTest(t *testing.T, reqBody interface{}) verification {
+func returnSuccessVerificationForTest(t *testing.T, reqBody string) verification {
 	abortIfNotTesting(t)
 
 	privateKey, err := utils.GenerateKey()
@@ -117,14 +120,11 @@ func returnSuccessVerificationForTest(t *testing.T, reqBody interface{}) verific
 	return setupVerificationWithPrivateKeyForTest(t, reqBody, privateKey)
 }
 
-func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody interface{}, privateKey *ecdsa.PrivateKey) verification {
+func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privateKey *ecdsa.PrivateKey) verification {
 	abortIfNotTesting(t)
 
-	reqJSON, err := json.Marshal(reqBody)
-	assert.Nil(t, err)
-	hash := utils.Hash(reqJSON)
+	hash := utils.Hash([]byte(reqBody))
 
-	assert.Nil(t, err)
 	signature, err := utils.Sign(hash, privateKey)
 	assert.Nil(t, err)
 
@@ -136,12 +136,10 @@ func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody interface{}, p
 	return verification
 }
 
-func returnFailedVerificationForTest(t *testing.T, reqBody interface{}) verification {
+func returnFailedVerificationForTest(t *testing.T, reqBody string) verification {
 	abortIfNotTesting(t)
 
-	reqJSON, err := json.Marshal(reqBody)
-	assert.Nil(t, err)
-	hash := utils.Hash(reqJSON)
+	hash := utils.Hash([]byte(reqBody))
 
 	privateKeyToSignWith, err := utils.GenerateKey()
 	assert.Nil(t, err)

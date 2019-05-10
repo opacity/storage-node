@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"net/http"
-	"strings"
 
 	"math/big"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/ethereum/go-ethereum/common"
@@ -29,8 +29,9 @@ func Test_Init_Upload_Files(t *testing.T) {
 func Test_Upload_File_Bad_Request(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
-	request := ReturnValidUploadFileReqForTest(t, ReturnValidUploadFileBodyForTest(t), privateKey)
-	request.UploadFile.PartIndex = 0
+	body := ReturnValidUploadFileBodyForTest(t)
+	body.PartIndex = 0
+	request := ReturnValidUploadFileReqForTest(t, body, privateKey)
 
 	w := UploadFileHelperForTest(t, request)
 
@@ -80,12 +81,12 @@ func Test_Upload_File_Account_Paid_Upload_Starts(t *testing.T) {
 
 	uploadBody := ReturnValidUploadFileBodyForTest(t)
 	uploadBody.ChunkData = string(ReturnChunkDataForTest(t))
+	fileId := uploadBody.FileHandle
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 	CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
 
-	fileId := request.UploadFile.FileHandle
 	filesInDB := []models.File{}
 	models.DB.Where("file_id = ?", fileId).Find(&filesInDB)
 	assert.Equal(t, 0, len(filesInDB))
@@ -136,7 +137,7 @@ func Test_Upload_File_Account_Paid_Upload_Continues(t *testing.T) {
 	}
 
 	filesInDB := []models.File{}
-	models.DB.Where("file_id = ?", request.UploadFile.FileHandle).Find(&filesInDB)
+	models.DB.Where("file_id = ?", uploadBody.FileHandle).Find(&filesInDB)
 	assert.Equal(t, 1, len(filesInDB))
 
 	completedPartsAsArray := filesInDB[0].GetCompletedPartsAsArray()
@@ -174,7 +175,7 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	uploadBody.ChunkData = string(chunkDataPart2)
 
 	filesInDB := []models.File{}
-	models.DB.Where("file_id = ?", request.UploadFile.FileHandle).Find(&filesInDB)
+	models.DB.Where("file_id = ?", uploadBody.FileHandle).Find(&filesInDB)
 	assert.Equal(t, 1, len(filesInDB))
 
 	objectKey := aws.StringValue(filesInDB[0].AwsObjectKey)
@@ -188,7 +189,7 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	}
 
 	filesInDB = []models.File{}
-	models.DB.Where("file_id = ?", request.UploadFile.FileHandle).Find(&filesInDB)
+	models.DB.Where("file_id = ?", uploadBody.FileHandle).Find(&filesInDB)
 	assert.Equal(t, 0, len(filesInDB))
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
@@ -197,7 +198,7 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	assert.True(t, updatedAccount.StorageUsed > account.StorageUsed)
 
 	completedFiles := []models.CompletedFile{}
-	models.DB.Where("file_id = ?", request.UploadFile.FileHandle).Find(&completedFiles)
+	models.DB.Where("file_id = ?", uploadBody.FileHandle).Find(&completedFiles)
 	assert.Equal(t, 1, len(completedFiles))
 
 	err = utils.DeleteDefaultBucketObject(objectKey)

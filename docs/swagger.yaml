@@ -14,34 +14,15 @@ definitions:
     - cost
     - ethAddress
     type: object
-  routes.UploadFileObj:
-    properties:
-      chunkData:
-        example: a binary string of the chunk data
-        type: string
-      endIndex:
-        example: 2
-        type: integer
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 64
-        minLength: 64
-        type: string
-      partIndex:
-        example: 1
-        type: integer
-    required:
-    - chunkData
-    - endIndex
-    - fileHandle
-    - partIndex
-    type: object
   routes.UploadFileReq:
     properties:
       address:
         example: a 42-char eth address with 0x prefix
         maxLength: 42
         minLength: 42
+        type: string
+      requestBody:
+        example: should produce routes.UploadFileObj, see description for example
         type: string
       signature:
         description: |-
@@ -54,40 +35,16 @@ definitions:
         maxLength: 130
         minLength: 130
         type: string
-      uploadFile:
-        $ref: '#/definitions/routes.UploadFileObj'
-        type: object
     required:
     - address
+    - requestBody
     - signature
-    type: object
-  routes.accountCreateObj:
-    properties:
-      durationInMonths:
-        example: 12
-        minimum: 1
-        type: integer
-      metadataKey:
-        example: a 64-char hex string created deterministically from your account
-          handle or private key
-        maxLength: 64
-        minLength: 64
-        type: string
-      storageLimit:
-        example: 100
-        maximum: 100
-        minimum: 100
-        type: integer
-    required:
-    - durationInMonths
-    - metadataKey
-    - storageLimit
     type: object
   routes.accountCreateReq:
     properties:
-      accountCreation:
-        $ref: '#/definitions/routes.accountCreateObj'
-        type: object
+      requestBody:
+        example: should produce routes.accountCreateObj, see description for example
+        type: string
       signature:
         example: a 130 character string created when you signed the request with your
           private key or account handle
@@ -95,6 +52,7 @@ definitions:
         minLength: 130
         type: string
     required:
+    - requestBody
     - signature
     type: object
   routes.accountCreateRes:
@@ -149,14 +107,6 @@ definitions:
         example: paid
         type: string
     type: object
-  routes.deleteFileObj:
-    properties:
-      fileID:
-        example: the handle of the file
-        type: string
-    required:
-    - fileID
-    type: object
   routes.deleteFileReq:
     properties:
       address:
@@ -164,9 +114,9 @@ definitions:
         maxLength: 42
         minLength: 42
         type: string
-      deleteFile:
-        $ref: '#/definitions/routes.deleteFileObj'
-        type: object
+      requestBody:
+        example: should produce routes.deleteFileObj, see description for example
+        type: string
       signature:
         description: |-
           signature without 0x prefix is broken into
@@ -180,17 +130,10 @@ definitions:
         type: string
     required:
     - address
+    - requestBody
     - signature
     type: object
   routes.deleteFileRes:
-    type: object
-  routes.downloadFileObj:
-    properties:
-      fileID:
-        example: the handle of the file
-        type: string
-    required:
-    - fileID
     type: object
   routes.downloadFileReq:
     properties:
@@ -199,9 +142,9 @@ definitions:
         maxLength: 42
         minLength: 42
         type: string
-      downloadFile:
-        $ref: '#/definitions/routes.downloadFileObj'
-        type: object
+      requestBody:
+        example: should produce routes.downloadFileObj, see description for example
+        type: string
       signature:
         description: |-
           signature without 0x prefix is broken into
@@ -215,6 +158,7 @@ definitions:
         type: string
     required:
     - address
+    - requestBody
     - signature
     type: object
   routes.downloadFileRes:
@@ -224,6 +168,58 @@ definitions:
           it from this node.
         example: a URL to use to download the file
         type: string
+    type: object
+  routes.getAccountDataReq:
+    properties:
+      address:
+        example: a 42-char eth address with 0x prefix
+        maxLength: 42
+        minLength: 42
+        type: string
+      requestBody:
+        example: should produce routes.accountGetReqObj, see description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          V: sig[0:63]
+          R: sig[64:127]
+          S: sig[128:129]
+        example: a 130 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 130
+        minLength: 130
+        type: string
+    required:
+    - address
+    - requestBody
+    - signature
+    type: object
+  routes.getMetadataReq:
+    properties:
+      address:
+        example: a 42-char eth address with 0x prefix
+        maxLength: 42
+        minLength: 42
+        type: string
+      requestBody:
+        example: should produce routes.getMetadataObject, see description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          V: sig[0:63]
+          R: sig[64:127]
+          S: sig[128:129]
+        example: a 130 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 130
+        minLength: 130
+        type: string
+    required:
+    - address
+    - requestBody
+    - signature
     type: object
   routes.getMetadataRes:
     properties:
@@ -235,22 +231,6 @@ definitions:
     required:
     - expirationDate
     type: object
-  routes.updateMetadataObject:
-    properties:
-      metadata:
-        example: your (updated) account metadata
-        type: string
-      metadataKey:
-        example: a 64-char hex string created deterministically from your account
-          handle or private key
-        type: string
-      timestamp:
-        type: integer
-    required:
-    - metadata
-    - metadataKey
-    - timestamp
-    type: object
   routes.updateMetadataReq:
     properties:
       address:
@@ -258,9 +238,9 @@ definitions:
         maxLength: 42
         minLength: 42
         type: string
-      metadata:
-        $ref: '#/definitions/routes.updateMetadataObject'
-        type: object
+      requestBody:
+        example: should produce routes.updateMetadataObject, see description for example
+        type: string
       signature:
         description: |-
           signature without 0x prefix is broken into
@@ -274,6 +254,7 @@ definitions:
         type: string
     required:
     - address
+    - requestBody
     - signature
     type: object
   routes.updateMetadataRes:
@@ -334,10 +315,51 @@ paths:
             type: object
       summary: get statistics
   /api/v1/accounts:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        check the payment status of an account
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "timestamp": 1557346389
+        }
+      parameters:
+      - description: account payment status check object
+        in: body
+        name: getAccountDataReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.getAccountDataReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.accountPaidRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+      summary: check the payment status of an account
     post:
       consumes:
       - application/json
-      description: create an account
+      description: |-
+        create an account
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "storageLimit": 100,
+        "durationInMonths": 12,
+        "metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
+        }
       parameters:
       - description: account creation object
         in: body
@@ -363,39 +385,16 @@ paths:
           schema:
             type: string
       summary: create an account
-  /api/v1/accounts/putAccountIDHere:
-    get:
-      consumes:
-      - application/json
-      description: check the payment status of an account
-      parameters:
-      - description: your account id a.k.a. the public address of your private key
-        in: path
-        name: accountID
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.accountPaidRes'
-            type: object
-        "400":
-          description: 'bad request, unable to parse request body: (with the error)'
-          schema:
-            type: string
-        "404":
-          description: 'no account with that id: (with your accountID)'
-          schema:
-            type: string
-      summary: check the payment status of an account
   /api/v1/download:
     get:
       consumes:
       - application/json
-      description: download a file
+      description: |-
+        download a file
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileID": "the handle of the file",
+        }
       parameters:
       - description: download object
         in: body
@@ -429,7 +428,12 @@ paths:
     delete:
       consumes:
       - application/json
-      description: delete a file
+      description: |-
+        delete a file
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileID": "the handle of the file",
+        }
       parameters:
       - description: file deletion object
         in: body
@@ -456,10 +460,46 @@ paths:
             type: string
       summary: delete a file
   /api/v1/metadata:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
+        "timestamp": 1557346389
+        }
+      parameters:
+      - description: get metadata object
+        in: body
+        name: getMetadataReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.getMetadataReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.getMetadataRes'
+            type: object
+        "404":
+          description: no value found for that key
+          schema:
+            type: string
+      summary: Retrieve account metadata
     post:
       consumes:
       - application/json
-      description: update metadata
+      description: |-
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
+        "metadata": "your (updated) account metadata",
+        "timestamp": 1557346389
+        }
       parameters:
       - description: update metadata object
         in: body
@@ -492,38 +532,20 @@ paths:
           description: some information about the internal error
           schema:
             type: string
-      summary: update metadata
-  /api/v1/metadata/putMetadataKeyHere:
-    get:
-      consumes:
-      - application/json
-      description: retrieve account metadata
-      parameters:
-      - description: your metadata key which is 64-char hex string created deterministically
-          from your account handle or private key
-        in: path
-        name: metadataKey
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.getMetadataRes'
-            type: object
-        "404":
-          description: no value found for that key
-          schema:
-            type: string
-      summary: retrieve account metadata
+      summary: Update metadata
   /api/v1/upload:
     post:
       consumes:
       - multipart/form-data
-      description: upload a chunk of a file. The first partIndex must be 1. The endIndex
-        must be greater than or equal to partIndex.
+      description: |-
+        upload a chunk of a file. The first partIndex must be 1. The endIndex must be greater than or equal to partIndex.
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "chunkData": "a binary string of the chunk data",
+        "fileHandle": "a deterministically created file handle",
+        "partIndex": 1,
+        "endIndex": 2
+        }
       parameters:
       - description: an object to upload a chunk of a file
         in: body

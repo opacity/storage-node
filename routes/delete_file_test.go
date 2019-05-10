@@ -38,11 +38,14 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 		FileID: fileID,
 	}
 
-	verificationBody := setupVerificationWithPrivateKeyForTest(t, deleteFileObject, privateKey)
+	marshalledReq, _ := json.Marshal(deleteFileObject)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	verificationBody := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
 
 	request := deleteFileReq{
 		verification: verificationBody,
-		DeleteFile:   deleteFileObject,
+		RequestBody:  reqBody.String(),
 	}
 
 	w := deleteFileHelperForTest(t, request)

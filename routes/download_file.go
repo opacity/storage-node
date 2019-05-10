@@ -15,7 +15,7 @@ type downloadFileObj struct {
 
 type downloadFileReq struct {
 	verification
-	DownloadFile downloadFileObj `json:"downloadFile" binding:"required"`
+	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.downloadFileObj, see description for example"`
 }
 
 type downloadFileRes struct {
@@ -30,6 +30,10 @@ type downloadFileRes struct {
 // @Accept  json
 // @Produce  json
 // @Param downloadFileReq body routes.downloadFileReq true "download object"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"fileID": "the handle of the file",
+// @description }
 // @Success 200 {object} routes.downloadFileRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "such data does not exist"
@@ -49,28 +53,32 @@ func downloadFile(c *gin.Context) {
 		return
 	}
 
-	if _, err := returnAccountIfVerified(request.DownloadFile, request.Address, request.Signature, c); err != nil {
+	requestBodyParsed := downloadFileObj{}
+
+	var err error
+	if _, err = returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.Address,
+		request.Signature, c); err != nil {
 		return
 	}
 
 	// verify object existed in S3
-	if !utils.DoesDefaultBucketObjectExist(request.DownloadFile.FileID) {
+	if !utils.DoesDefaultBucketObjectExist(requestBodyParsed.FileID) {
 		NotFoundResponse(c, errors.New("such data does not exist"))
 		return
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(request.DownloadFile.FileID, utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(requestBodyParsed.FileID, utils.CannedAcl_PublicRead); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
-	if err := models.ExpireObject(request.DownloadFile.FileID); err != nil {
+	if err := models.ExpireObject(requestBodyParsed.FileID); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
 	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName,
-		request.DownloadFile.FileID)
+		requestBodyParsed.FileID)
 	OkResponse(c, downloadFileRes{
 		// Redirect to a different URL that client would have authorization to download it.
 		FileDownloadUrl: url,

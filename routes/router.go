@@ -95,10 +95,10 @@ func returnV1Group(router *gin.Engine) *gin.RouterGroup {
 
 func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(AccountsPath, CreateAccountHandler())
-	v1Router.GET(AccountsPath+"/:accountID", CheckAccountPaymentStatusHandler())
+	v1Router.GET(AccountsPath, CheckAccountPaymentStatusHandler())
 
 	v1Router.POST(MetadataPath, UpdateMetadataHandler())
-	v1Router.GET(MetadataPath+"/:metadataKey", GetMetadataHandler())
+	v1Router.GET(MetadataPath, GetMetadataHandler())
 
 	v1Router.POST(InitUploadPath, InitFileUploadHandler())
 	v1Router.POST(UploadPath, UploadFileHandler())

@@ -11,6 +11,12 @@ import (
 
 	"math/big"
 
+	"crypto/ecdsa"
+
+	"strings"
+
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -29,21 +35,54 @@ func returnValidCreateAccountBody() accountCreateObj {
 
 func returnValidCreateAccountReq(body accountCreateObj) accountCreateReq {
 	reqJSON, _ := json.Marshal(body)
-	hash := utils.Hash(reqJSON)
+	reqBody := bytes.NewBuffer(reqJSON)
+	hash := utils.Hash(reqBody.Bytes())
 
 	privateKeyToSignWith, _ := utils.GenerateKey()
 	signature, _ := utils.Sign(hash, privateKeyToSignWith)
 
 	return accountCreateReq{
-		AccountCreation: body,
-		Signature:       hex.EncodeToString(signature),
+		RequestBody: reqBody.String(),
+		Signature:   hex.EncodeToString(signature),
+	}
+}
+
+func returnValidAccountAndPrivateKey() (models.Account, *ecdsa.PrivateKey) {
+	privateKeyToSignWith, _ := utils.GenerateKey()
+
+	accountID := strings.TrimPrefix(utils.PubkeyToAddress(privateKeyToSignWith.PublicKey).String(), "0x")
+
+	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+
+	return models.Account{
+		AccountID:            accountID,
+		MonthsInSubscription: models.DefaultMonthsPerSubscription,
+		StorageLocation:      "https://createdInRoutesAccountsTest.com/12345",
+		StorageLimit:         models.BasicStorageLimit,
+		StorageUsed:          10,
+		PaymentStatus:        models.InitialPaymentInProgress,
+		EthAddress:           ethAddress.String(),
+		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
+		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+	}, privateKeyToSignWith
+}
+
+func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToSignWith *ecdsa.PrivateKey) getAccountDataReq {
+	reqJSON, _ := json.Marshal(body)
+	reqBody := bytes.NewBuffer(reqJSON)
+
+	verificationObj := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKeyToSignWith)
+
+	return getAccountDataReq{
+		RequestBody:  reqBody.String(),
+		verification: verificationObj,
 	}
 }
 
 func returnValidAccount() models.Account {
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
-	accountID := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	accountID := utils.RandSeqFromRunes(40, []rune("abcdef01234567890"))
 
 	return models.Account{
 		AccountID:            accountID,
@@ -118,9 +157,12 @@ func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) {
-	account := returnValidAccount()
+	_, privateKey := returnValidAccountAndPrivateKey()
+	validReq := returnValidGetAccountReq(t, accountGetReqObj{
+		Timestamp: time.Now().Unix(),
+	}, privateKey)
 
-	w := accountsTestHelperCheckAccountPaymentStatus(t, account.AccountID)
+	w := accountsTestHelperCheckAccountPaymentStatus(t, validReq)
 
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusNotFound {
@@ -131,8 +173,11 @@ func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) 
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExists(t *testing.T) {
-	account := returnValidAccount()
-	// Add account to DB
+	account, privateKey := returnValidAccountAndPrivateKey()
+	validReq := returnValidGetAccountReq(t, accountGetReqObj{
+		Timestamp: time.Now().Unix(),
+	}, privateKey)
+	//	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -141,7 +186,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExists(t *testi
 		return true, nil
 	}
 
-	w := accountsTestHelperCheckAccountPaymentStatus(t, account.AccountID)
+	w := accountsTestHelperCheckAccountPaymentStatus(t, validReq)
 
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusOK {
@@ -176,15 +221,18 @@ func accountsTestHelperCreateAccount(t *testing.T, post accountCreateReq) *httpt
 	return w
 }
 
-func accountsTestHelperCheckAccountPaymentStatus(t *testing.T, accountID string) *httptest.ResponseRecorder {
+func accountsTestHelperCheckAccountPaymentStatus(t *testing.T, get getAccountDataReq) *httptest.ResponseRecorder {
 	router := returnEngine()
 	v1 := returnV1Group(router)
-	v1.GET(AccountsPath+"/:accountID", CheckAccountPaymentStatusHandler())
+	v1.GET(AccountsPath, CheckAccountPaymentStatusHandler())
+
+	marshalledReq, _ := json.Marshal(get)
+	reqBody := bytes.NewBuffer(marshalledReq)
 
 	// Create the mock request you'd like to test. Make sure the second argument
 	// here is the same as one of the routes you defined in the router setup
 	// block!
-	req, err := http.NewRequest(http.MethodGet, v1.BasePath()+AccountsPath+"/"+accountID, nil)
+	req, err := http.NewRequest(http.MethodGet, v1.BasePath()+AccountsPath, reqBody)
 	if err != nil {
 		t.Fatalf("Couldn't create request: %v\n", err)
 	}

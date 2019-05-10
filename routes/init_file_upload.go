@@ -11,7 +11,7 @@ import (
 type InitFileUploadObject struct {
 	FileHandle     string `form:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
 	FileSizeInByte int64  `form:"fileSizeInByte" binding:"required" example:"200000000000006"`
-	EndIndex       int    `form:"endIndex" binding:"required,gtefield=PartIndex" example:"2"`
+	EndIndex       int    `form:"endIndex" binding:"required" example:"2"`
 }
 
 type InitFileUploadReq struct {
@@ -36,7 +36,7 @@ func initFileUpload(c *gin.Context) {
 		return
 	}
 
-	account, err := returnAccountIfVerified(request.InitFileUpload, request.Address, request.Signature, c)
+	account, err := returnAccountIfVerifiedFromParsedRequest(request.InitFileUpload, request.Address, request.Signature, c)
 	if err != nil {
 		return
 	}

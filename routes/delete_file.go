@@ -14,7 +14,7 @@ type deleteFileObj struct {
 
 type deleteFileReq struct {
 	verification
-	DeleteFile deleteFileObj `json:"deleteFile" binding:"required"`
+	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.deleteFileObj, see description for example"`
 }
 
 type deleteFileRes struct {
@@ -26,6 +26,10 @@ type deleteFileRes struct {
 // @Accept  json
 // @Produce  json
 // @Param deleteFileReq body routes.deleteFileReq true "file deletion object"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"fileID": "the handle of the file",
+// @description }
 // @Success 200 {object} routes.deleteFileRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 500 {string} string "some information about the internal error"
@@ -44,19 +48,22 @@ func deleteFile(c *gin.Context) {
 		return
 	}
 
+	requestBodyParsed := deleteFileObj{}
+
 	var account models.Account
 	var err error
-	if account, err = returnAccountIfVerified(request.DeleteFile, request.Address, request.Signature, c); err != nil {
+	if account, err = returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.Address,
+		request.Signature, c); err != nil {
 		return
 	}
 
-	if err := utils.DeleteDefaultBucketObject(request.DeleteFile.FileID); err != nil {
+	if err := utils.DeleteDefaultBucketObject(requestBodyParsed.FileID); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
 	var completedFile models.CompletedFile
-	if completedFile, err = models.GetCompletedFileByFileID(request.DeleteFile.FileID); err != nil {
+	if completedFile, err = models.GetCompletedFileByFileID(requestBodyParsed.FileID); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
