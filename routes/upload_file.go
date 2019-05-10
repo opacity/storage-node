@@ -26,6 +26,14 @@ type uploadFileRes struct {
 	Status string `json:"status" example:"Chunk is uploaded"`
 }
 
+var chunkUploadCompletedRes = uploadFileRes{
+	Status: "Chunk is uploaded",
+}
+
+var fileUploadCompletedRes = uploadFileRes{
+	Status: "File is uploaded",
+}
+
 // UploadFileHandler godoc
 // @Summary upload a chunk of a file
 // @Description upload a chunk of a file. The first partIndex must be 1. The endIndex must be greater than or equal to partIndex.
@@ -53,8 +61,7 @@ func uploadFile(c *gin.Context) {
 	request := UploadFileReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequestResponse(c, err)
+		BadRequestResponse(c, fmt.Errorf("bad request, unable to parse request body:  %v", err))
 		return
 	}
 
@@ -65,79 +72,38 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	paid, err := account.CheckIfPaid()
-
-	if err == nil && !paid {
-		cost, _ := account.Cost()
-		response := accountCreateRes{
-			Invoice: models.Invoice{
-				Cost:       cost,
-				EthAddress: account.EthAddress,
-			},
-			ExpirationDate: account.ExpirationDate(),
-		}
-		AccountNotPaidResponse(c, response)
-		return
-	}
-	if err != nil {
-		InternalErrorResponse(c, err)
+	file, err := models.GetFileById(requestBodyParsed.FileHandle)
+	if err != nil || len(file.FileID) == 0 {
+		FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 		return
 	}
 
-	file, err := models.GetOrCreateFile(models.File{
-		FileID:    requestBodyParsed.FileHandle,
-		EndIndex:  requestBodyParsed.EndIndex,
-		ExpiredAt: account.ExpirationDate(),
-	})
-	if err != nil {
-		InternalErrorResponse(c, err)
-		return
-	}
-
-	var multipartErr error
-	var completedPart *s3.CompletedPart
-	if requestBodyParsed.PartIndex == models.FirstChunkIndex {
-		completedPart, multipartErr = handleFirstChunk(file, requestBodyParsed.PartIndex, requestBodyParsed.ChunkData)
-	} else {
-		completedPart, multipartErr = handleOtherChunk(file, requestBodyParsed.PartIndex, requestBodyParsed.ChunkData)
-	}
-
+	completedPart, multipartErr := handleChunkData(file, requestBodyParsed.PartIndex, requestBodyParsed.ChunkData)
 	if multipartErr != nil {
 		InternalErrorResponse(c, multipartErr)
 		return
-	} else {
-		file.UpdateCompletedIndexes(completedPart)
 	}
+	file.UpdateCompletedIndexes(completedPart)
 
 	completedFile, err := file.FinishUpload()
-	if err != nil && err != models.IncompleteUploadErr {
-		utils.LogIfError(err, nil)
-	}
-	if err == nil {
-		err := account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte))
-		utils.LogIfError(err, nil)
+	if err != nil {
+		if err == models.IncompleteUploadErr {
+			OkResponse(c, chunkUploadCompletedRes)
+			return
+		}
+		InternalErrorResponse(c, err)
+		return
 	}
 
-	OkResponse(c, uploadFileRes{
-		Status: "Chunk is uploaded",
-	})
+	if err := account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte)); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	OkResponse(c, fileUploadCompletedRes)
 }
 
-func handleFirstChunk(file *models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {
-	key, uploadID, err := utils.CreateMultiPartUpload(file.FileID)
-	if err != nil {
-		return nil, err
-	}
-	err = file.UpdateKeyAndUploadID(key, uploadID)
-	if err != nil {
-		return nil, err
-	}
-
-	return handleOtherChunk(file, chunkIndex, chunkData)
-}
-
-func handleOtherChunk(file *models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {
-	completedPart, err := utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
+func handleChunkData(file models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {
+	return utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
 		[]byte(chunkData), chunkIndex)
-	return completedPart, err
 }

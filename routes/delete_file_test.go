@@ -94,6 +94,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 	account := CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
 
+	InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
 	w := UploadFileHelperForTest(t, request)
 
 	if w.Code != http.StatusOK {
