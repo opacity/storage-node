@@ -4,12 +4,12 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
-
-	"net/http"
-	"net/http/httptest"
+	"time"
 
 	"bytes"
 
@@ -167,8 +167,8 @@ func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
 	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
 }
 
-func InitUploadFileForTest(t *testing.T, fileID string, endIndx int64) {
-	objectKey, uploadID, err := utils.CreateMultiPartUpload(uploadBody.FileHandle)
+func InitUploadFileForTest(t *testing.T, fileID string, endIndx int) {
+	objectKey, uploadID, err := utils.CreateMultiPartUpload(fileID)
 	assert.Nil(t, err)
 	err = models.DB.Create(&models.File{
 		FileID:       fileID,
