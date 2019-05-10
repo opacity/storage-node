@@ -163,7 +163,7 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 	account := CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
 
-	InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
+	objectKey := InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
 	w := UploadFileHelperForTest(t, request)
 
 	if w.Code != http.StatusOK {
@@ -191,6 +191,6 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	completedFile, _ := models.GetCompletedFileByFileID(uploadBody.FileHandle)
 	assert.Equal(t, completedFile.FileID, uploadBody.FileHandle)
 
-	err = utils.DeleteDefaultBucketObject(*objectKey)
+	err = utils.DeleteDefaultBucketObject(objectKey)
 	assert.Nil(t, err)
 }

@@ -167,7 +167,7 @@ func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
 	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
 }
 
-func InitUploadFileForTest(t *testing.T, fileID string, endIndx int) {
+func InitUploadFileForTest(t *testing.T, fileID string, endIndx int) string {
 	objectKey, uploadID, err := utils.CreateMultiPartUpload(fileID)
 	assert.Nil(t, err)
 	err = models.DB.Create(&models.File{
@@ -178,6 +178,7 @@ func InitUploadFileForTest(t *testing.T, fileID string, endIndx int) {
 		ExpiredAt:    time.Now().AddDate(1, 0, 0),
 	}).Error
 	assert.Nil(t, err)
+	return *objectKey
 }
 
 func UploadFileHelperForTest(t *testing.T, post UploadFileReq) *httptest.ResponseRecorder {
