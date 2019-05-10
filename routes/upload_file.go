@@ -65,9 +65,9 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	file, err := models.GetFileByIdrequestBodyParsed.FileHandle)
-	if err != nil {
-		InternalErrorResponse(c, err)
+	file, err := models.GetFileById(requestBodyParsed.FileHandle)
+	if err != nil || len(file.FileID) == 0 {
+		FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 		return
 	}
 
@@ -88,12 +88,12 @@ func uploadFile(c *gin.Context) {
 		InternalErrorResponse(c, err)
 		return
 	}
-	
- 	if err := account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte)); err != nil {
+
+	if err := account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte)); err != nil {
 		utils.LogIfError(err, nil)
 		InternalErrorResponse(c, err)
 		return
-	 }
+	}
 
 	OkResponse(c, uploadFileRes{
 		Status: "Chunk is uploaded",

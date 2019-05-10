@@ -31,8 +31,11 @@ func ServiceUnavailableResponse(c *gin.Context, err error) {
 }
 
 func AccountNotFoundResponse(c *gin.Context, id string) {
-	c.AbortWithStatusJSON(http.StatusNotFound, fmt.Sprintf("no account with that id: %s", id))
-	utils.Metrics_404_Response_Counter.Inc()
+	NotFoundResponse(c, fmt.Errorf("no account with that id: %s", id))
+}
+
+func FileNotFoundResponse(c *gin.Context, fileId string) {
+	NotFoundResponse(c, fmt.Errorf("no file with that id: %s", fileId))
 }
 
 func ForbiddenResponse(c *gin.Context, err error) {

@@ -209,7 +209,7 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 	return compeletedFile, DB.Delete(file).Error
 }
 
-/*Return File object(first one) if there is not any error. */
+/*Return File object(first one) if there is not any error. If not found, return nil without error. */
 func GetFileById(fileID string) (File, error) {
 	file := File{}
 	err := DB.Where("file_id = ?", fileID).First(&file).Error
