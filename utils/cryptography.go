@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-const sigLengthInBytes = 64
+const SigLengthInBytes = 64
 
 /*Encrypt encrypts a secret using a key and a nonce*/
 func Encrypt(key string, secret string, nonce string) []byte {
@@ -101,8 +101,8 @@ func Recover(hash []byte, sig []byte) (*ecdsa.PublicKey, error) {
 
 /*Verify verifies that a particular key was the signer of a message*/
 func Verify(pubKey []byte, hash []byte, sig []byte) (bool, error) {
-	if len(sig) > sigLengthInBytes {
-		sig = sig[:sigLengthInBytes]
+	if len(sig) > SigLengthInBytes {
+		sig = sig[:SigLengthInBytes]
 	}
 	return crypto.VerifySignature(pubKey, hash, sig), nil
 }
@@ -146,4 +146,10 @@ func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
 /*PubkeyToHex takes a public key and converts it to a hex string*/
 func PubkeyToHex(p ecdsa.PublicKey) string {
 	return hex.EncodeToString(crypto.FromECDSAPub(&p))
+}
+
+/*PubkeyCompressedToHex takes a public key, compresses it and converts it to a hex string*/
+func PubkeyCompressedToHex(p ecdsa.PublicKey) string {
+	compressed := crypto.CompressPubkey(&p)
+	return hex.EncodeToString(compressed)
 }

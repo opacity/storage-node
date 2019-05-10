@@ -140,6 +140,8 @@ func returnAccountId(hash []byte, signature string, c *gin.Context) (string, err
 		return "", err
 	}
 
+	// TODO make sure this is the compressed public key and check with frontend that they'll be sending the compressed
+	// TODO version
 	accountID, err := utils.HashString(utils.PubkeyToHex(*publicKey))
 	if err != nil {
 		InternalErrorResponse(c, err)

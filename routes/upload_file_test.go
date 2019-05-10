@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"math/big"
-	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/ethereum/go-ethereum/common"
@@ -56,7 +55,9 @@ func Test_Upload_File_Account_Not_Paid(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	request := ReturnValidUploadFileReqForTest(t, ReturnValidUploadFileBodyForTest(t), privateKey)
-	CreateUnpaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
+	accountID, err := utils.HashString(request.PublicKey)
+	assert.Nil(t, err)
+	CreateUnpaidAccountForTest(accountID, t)
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return false, nil
@@ -85,7 +86,9 @@ func Test_Upload_File_Account_Paid_Upload_Starts(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-	CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
+	accountID, err := utils.HashString(request.PublicKey)
+	assert.Nil(t, err)
+	CreatePaidAccountForTest(accountID, t)
 
 	filesInDB := []models.File{}
 	models.DB.Where("file_id = ?", fileId).Find(&filesInDB)
@@ -118,7 +121,9 @@ func Test_Upload_File_Account_Paid_Upload_Continues(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-	CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
+	accountID, err := utils.HashString(request.PublicKey)
+	assert.Nil(t, err)
+	CreatePaidAccountForTest(accountID, t)
 
 	w := UploadFileHelperForTest(t, request)
 
@@ -164,7 +169,9 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-	account := CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
+	accountID, err := utils.HashString(request.PublicKey)
+	assert.Nil(t, err)
+	account := CreatePaidAccountForTest(accountID, t)
 
 	w := UploadFileHelperForTest(t, request)
 
