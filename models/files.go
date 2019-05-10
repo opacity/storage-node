@@ -209,6 +209,13 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 	return compeletedFile, DB.Delete(file).Error
 }
 
+/*Return File object(first one) if there is not any error. */
+func GetFileById(fileID string) (File, error) {
+	file := File{}
+	err := DB.Where("file_id = ?", fileID).First(&file).Error
+	return file, err
+}
+
 /*CompleteUploadsNewerThan will attempt to finish the uploads of files created after the time provided*/
 func CompleteUploadsNewerThan(createdAtTime time.Time) error {
 	files := []File{}
