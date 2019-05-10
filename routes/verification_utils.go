@@ -26,11 +26,11 @@ type verification struct {
 	Address   string `json:"address" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"`
 }
 
-func verifyAndParseStringRequest(reqAsString string, dest interface{}, address string, signature string, c *gin.Context) error {
+func verifyAndParseStringRequest(reqAsString string, dest interface{}, verificationData verification, c *gin.Context) error {
 	hash := utils.Hash([]byte(reqAsString))
 
-	verified, err := utils.VerifyFromStrings(address, hex.EncodeToString(hash),
-		signature)
+	verified, err := utils.VerifyFromStrings(verificationData.Address, hex.EncodeToString(hash),
+		verificationData.Signature)
 	if err != nil {
 		BadRequestResponse(c, errors.New(errVerifying))
 		return err
@@ -101,13 +101,13 @@ func returnAccountIfVerifiedFromParsedRequest(reqBody interface{}, address strin
 	return account, err
 }
 
-func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface{}, address string, signature string, c *gin.Context) (models.Account, error) {
+func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface{}, verificationData verification, c *gin.Context) (models.Account, error) {
 	var account models.Account
-	if err := verifyAndParseStringRequest(reqAsString, dest, address, signature, c); err != nil {
+	if err := verifyAndParseStringRequest(reqAsString, dest, verificationData, c); err != nil {
 		return account, err
 	}
 
-	accountID := strings.TrimPrefix(address, "0x")
+	accountID := strings.TrimPrefix(verificationData.Address, "0x")
 
 	// validate user
 	account, err := models.GetAccountById(accountID)
