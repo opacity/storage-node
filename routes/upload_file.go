@@ -72,13 +72,11 @@ func uploadFile(c *gin.Context) {
 	}
 
 	completedPart, multipartErr := handleChunkData(file, requestBodyParsed.PartIndex, requestBodyParsed.ChunkData)
-
 	if multipartErr != nil {
 		InternalErrorResponse(c, multipartErr)
 		return
-	} else {
-		file.UpdateCompletedIndexes(completedPart)
 	}
+	file.UpdateCompletedIndexes(completedPart)
 
 	completedFile, err := file.FinishUpload()
 	if err != nil {
