@@ -70,7 +70,7 @@ func createCompletedFile(t *testing.T, fileSize int64) models.CompletedFile {
 }
 
 func createNewAccount(t *testing.T) models.Account {
-	accountID := utils.RandSeqFromRunes(40, []rune("abcdef01234567890"))
+	accountID := utils.RandSeqFromRunes(models.AccountIDLength, []rune("abcdef01234567890"))
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
 	account := models.Account{

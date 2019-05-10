@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,12 +84,18 @@ func Test_Verify(t *testing.T) {
 	privateKey, err := GenerateKey()
 	assert.Nil(t, err)
 
-	publicAddressAsBytes := PubkeyToAddress(privateKey.PublicKey).Bytes()
+	publicKeyAsBytes := crypto.FromECDSAPub(&privateKey.PublicKey)
 
 	signature, err := Sign(msg, privateKey)
 	assert.Nil(t, err)
 
-	isMatch, err := Verify(publicAddressAsBytes, msg, signature)
+	// matches with 64 bytes
+	isMatch, err := Verify(publicKeyAsBytes, msg, signature)
+	assert.Nil(t, err)
+	assert.True(t, isMatch)
+
+	// matches with 65 bytes
+	isMatch, err = Verify(publicKeyAsBytes, msg, signature[:len(signature)-1])
 	assert.Nil(t, err)
 	assert.True(t, isMatch)
 }
@@ -98,12 +105,20 @@ func Test_VerifyFromStrings(t *testing.T) {
 	privateKey, err := GenerateKey()
 	assert.Nil(t, err)
 
-	publicAddressAsString := PubkeyToAddress(privateKey.PublicKey).Hex()
+	publicKeyAsString := PubkeyToHex(privateKey.PublicKey)
 
 	signature, err := Sign(msg, privateKey)
 	assert.Nil(t, err)
 
-	isMatch, err := VerifyFromStrings(publicAddressAsString, hex.EncodeToString(msg), hex.EncodeToString(signature))
+	sig := hex.EncodeToString(signature)
+
+	// matches with 130 characters
+	isMatch, err := VerifyFromStrings(publicKeyAsString, hex.EncodeToString(msg), sig)
+	assert.Nil(t, err)
+	assert.True(t, isMatch)
+
+	// matches with 128 characters
+	isMatch, err = VerifyFromStrings(publicKeyAsString, hex.EncodeToString(msg), sig[:len(sig)-2])
 	assert.Nil(t, err)
 	assert.True(t, isMatch)
 }

@@ -82,7 +82,7 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 func returnValidAccount() models.Account {
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
-	accountID := utils.RandSeqFromRunes(40, []rune("abcdef01234567890"))
+	accountID := utils.RandSeqFromRunes(models.AccountIDLength, []rune("abcdef01234567890"))
 
 	return models.Account{
 		AccountID:            accountID,

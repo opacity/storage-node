@@ -130,7 +130,7 @@ func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privat
 
 	verification := verification{
 		Signature: hex.EncodeToString(signature),
-		Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
+		PublicKey: utils.PubkeyToHex(privateKey.PublicKey),
 	}
 
 	return verification
@@ -150,7 +150,7 @@ func returnFailedVerificationForTest(t *testing.T, reqBody string) verification 
 
 	verification := verification{
 		Signature: hex.EncodeToString(signature),
-		Address:   utils.PubkeyToAddress(wrongPrivateKey.PublicKey).Hex(),
+		PublicKey: utils.PubkeyToHex(wrongPrivateKey.PublicKey),
 	}
 
 	return verification
