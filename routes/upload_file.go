@@ -81,7 +81,7 @@ func uploadFile(c *gin.Context) {
 	if err != nil {
 		if err == models.IncompleteUploadErr {
 			OkResponse(c, uploadFileRes{
-				Status: "Chunk is uploaded"
+				Status: "Chunk is uploaded",
 			})
 			return
 		}
