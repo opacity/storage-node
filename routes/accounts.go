@@ -193,7 +193,7 @@ func checkAccountPaymentStatus(c *gin.Context) {
 	requestBodyParsed := accountGetReqObj{}
 
 	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed,
-		request.Address, request.Signature, c)
+		request.verification, c)
 	if err != nil {
 		return
 	}

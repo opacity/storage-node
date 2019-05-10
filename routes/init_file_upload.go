@@ -8,7 +8,7 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type InitFileUploadObject struct {
+type InitFileUploadObj struct {
 	FileHandle     string `form:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
 	FileSizeInByte int64  `form:"fileSizeInByte" binding:"required" example:"200000000000006"`
 	EndIndex       int    `form:"endIndex" binding:"required" example:"2"`
@@ -16,7 +16,7 @@ type InitFileUploadObject struct {
 
 type InitFileUploadReq struct {
 	verification
-	InitFileUpload InitFileUploadObject `json:"initFileUpload" binding:"required"`
+	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj, see description for example"`
 }
 
 type InitFileUploadRes struct {
@@ -36,7 +36,9 @@ func initFileUpload(c *gin.Context) {
 		return
 	}
 
-	account, err := returnAccountIfVerifiedFromParsedRequest(request.InitFileUpload, request.Address, request.Signature, c)
+	requestBodyParsed := InitFileUploadObj{}
+
+	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
 	if err != nil {
 		return
 	}
@@ -45,19 +47,19 @@ func initFileUpload(c *gin.Context) {
 		return
 	}
 
-	if !checkHaveEnoughStorageSpace(account, request.InitFileUpload, c) {
+	if !checkHaveEnoughStorageSpace(account, requestBodyParsed.FileSizeInByte, c) {
 		return
 	}
 
-	objKey, uploadID, err := utils.CreateMultiPartUpload(request.InitFileUpload.FileHandle)
+	objKey, uploadID, err := utils.CreateMultiPartUpload(requestBodyParsed.FileHandle)
 	if err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
 	file := models.File{
-		FileID:       request.InitFileUpload.FileHandle,
-		EndIndex:     request.InitFileUpload.EndIndex,
+		FileID:       requestBodyParsed.FileHandle,
+		EndIndex:     requestBodyParsed.EndIndex,
 		AwsUploadID:  uploadID,
 		AwsObjectKey: objKey,
 		ExpiredAt:    account.ExpirationDate(),
@@ -91,8 +93,8 @@ func verifyIfPaid(account models.Account, c *gin.Context) bool {
 	return true
 }
 
-func checkHaveEnoughStorageSpace(account models.Account, uploadObject InitFileUploadObject, c *gin.Context) bool {
-	inGb := float64(uploadObject.FileSizeInByte) / float64(1e9)
+func checkHaveEnoughStorageSpace(account models.Account, fileSizeInByte int64, c *gin.Context) bool {
+	inGb := float64(fileSizeInByte) / float64(1e9)
 	if inGb+account.StorageUsed > float64(account.StorageLimit) {
 		AccountNotEnoughSpaceResponse(c)
 		return false

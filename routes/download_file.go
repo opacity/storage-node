@@ -55,9 +55,7 @@ func downloadFile(c *gin.Context) {
 
 	requestBodyParsed := downloadFileObj{}
 
-	var err error
-	if _, err = returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.Address,
-		request.Signature, c); err != nil {
+	if _, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return
 	}
 

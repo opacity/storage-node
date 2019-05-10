@@ -94,7 +94,7 @@ func getMetadata(c *gin.Context) {
 
 	requestBodyParsed := getMetadataObject{}
 
-	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.Address, request.Signature, c); err != nil {
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return
 	}
 
@@ -120,7 +120,7 @@ func setMetadata(c *gin.Context) {
 
 	requestBodyParsed := updateMetadataObject{}
 
-	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.Address, request.Signature, c); err != nil {
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return
 	}
 
