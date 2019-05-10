@@ -53,8 +53,7 @@ func uploadFile(c *gin.Context) {
 	request := UploadFileReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequestResponse(c, err)
+		BadRequestResponse(c, fmt.Errorf("bad request, unable to parse request body:  %v", err))
 		return
 	}
 
@@ -80,9 +79,18 @@ func uploadFile(c *gin.Context) {
 
 	completedFile, err := file.FinishUpload()
 	if err != nil {
-		if err != models.IncompleteUploadErr {
-			utils.LogIfError(err, nil)
+		if err == models.IncompleteUploadErr {
+			OkResponse(c, uploadFileRes{
+				Status: "Chunk is uploaded"
+			})
+			return
 		}
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
+	if err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
@@ -94,11 +102,11 @@ func uploadFile(c *gin.Context) {
 	}
 
 	OkResponse(c, uploadFileRes{
-		Status: "Chunk is uploaded",
+		Status: "Upload is completed",
 	})
 }
 
-func handleChunkData(file *models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {
+func handleChunkData(file models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {
 	completedPart, err := utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
 		[]byte(chunkData), chunkIndex)
 	return completedPart, err
