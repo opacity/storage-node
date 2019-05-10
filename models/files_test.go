@@ -183,7 +183,7 @@ func Test_GetFileById(t *testing.T) {
 	result, err := GetFileById(file.FileID)
 
 	assert.Nil(t, err)
-	assert.Equal(t, result, file)
+	assert.Equal(t, result.FileID, file.FileID)
 }
 
 func Test_UpdateCompletedIndexes(t *testing.T) {
