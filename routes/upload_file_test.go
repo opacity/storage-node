@@ -200,6 +200,6 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	completedFile, _ := models.GetCompletedFileByFileID(uploadBody.FileHandle)
 	assert.Equal(t, completedFile.FileID, uploadBody.FileHandle)
 
-	err = utils.DeleteDefaultBucketObject(&objectKey)
+	err = utils.DeleteDefaultBucketObject(*objectKey)
 	assert.Nil(t, err)
 }
