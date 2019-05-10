@@ -163,16 +163,7 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 	account := CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
 
-	objectKey, uploadID, err := utils.CreateMultiPartUpload(uploadBody.FileHandle)
-	assert.Nil(t, err)
-	models.DB.Create(&models.File{
-		FileID:       uploadBody.FileHandle,
-		AwsUploadID:  uploadID,
-		AwsObjectKey: objectKey,
-		EndIndex:     uploadBody.EndIndex,
-		ExpiredAt:    account.ExpirationDate(),
-	})
-
+	InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
 	w := UploadFileHelperForTest(t, request)
 
 	if w.Code != http.StatusOK {
