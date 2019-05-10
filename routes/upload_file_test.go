@@ -5,11 +5,8 @@ import (
 
 	"net/http"
 
-	"math/big"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -192,7 +189,7 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
 
-	file, _ = models.GetFileById(uploadBody.FileHandle)
+	file, _ := models.GetFileById(uploadBody.FileHandle)
 	assert.True(t, len(file.FileID) == 0)
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
@@ -203,6 +200,6 @@ func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 	completedFile, _ := models.GetCompletedFileByFileID(uploadBody.FileHandle)
 	assert.Equal(t, completedFile.FileID, uploadBody.FileHandle)
 
-	err = utils.DeleteDefaultBucketObject(objectKey)
+	err = utils.DeleteDefaultBucketObject(&objectKey)
 	assert.Nil(t, err)
 }
