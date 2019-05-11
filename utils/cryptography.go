@@ -1,17 +1,16 @@
 package utils
 
 import (
-	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/ecdsa"
 	"encoding/hex"
 
-	"strings"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
+
+const SigLengthInBytes = 64
 
 /*Encrypt encrypts a secret using a key and a nonce*/
 func Encrypt(key string, secret string, nonce string) []byte {
@@ -81,6 +80,15 @@ func DecryptWithErrorReturn(key string, cipherText string, nonce string) ([]byte
 	})
 }
 
+/*HashString hashes input string arguments and outputs a hash encoded as a hex string*/
+func HashString(dataString string) (string, error) {
+	dataBytes, err := hex.DecodeString(dataString)
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(crypto.Keccak256(dataBytes)), nil
+}
+
 /*Hash hashes input byte arguments*/
 func Hash(data ...[]byte) []byte {
 	return crypto.Keccak256(data...)
@@ -91,20 +99,18 @@ func Recover(hash []byte, sig []byte) (*ecdsa.PublicKey, error) {
 	return crypto.SigToPub(hash, sig)
 }
 
-/*Verify recovers a public key and checks it against an existing, known public key, and returns true if they match*/
-func Verify(address []byte, hash []byte, sig []byte) (bool, error) {
-	pubkey, err := Recover(hash, sig)
-	if err != nil {
-		return false, err
+/*Verify verifies that a particular key was the signer of a message*/
+func Verify(pubKey []byte, hash []byte, sig []byte) (bool, error) {
+	if len(sig) > SigLengthInBytes {
+		sig = sig[:SigLengthInBytes]
 	}
-	addr := PubkeyToAddress(*pubkey)
-
-	return bytes.Equal(address, addr[:]), err
+	return crypto.VerifySignature(pubKey, hash, sig), nil
 }
 
-/*VerifyFromStrings recovers a public key and checks it against an existing, known public key, and returns true if they match*/
-func VerifyFromStrings(address string, hash string, sig string) (bool, error) {
-	addressBytes, err := hex.DecodeString(strings.TrimPrefix(address, "0x"))
+/*VerifyFromStrings verifies that a particular key was the signer of a message, with hex strings
+as arguments*/
+func VerifyFromStrings(publicKey string, hash string, sig string) (bool, error) {
+	publicKeyBytes, err := hex.DecodeString(publicKey)
 	if err != nil {
 		return false, err
 	}
@@ -119,7 +125,7 @@ func VerifyFromStrings(address string, hash string, sig string) (bool, error) {
 		return false, err
 	}
 
-	return Verify(addressBytes, hashBytes, sigBytes)
+	return Verify(publicKeyBytes, hashBytes, sigBytes)
 }
 
 /*Sign signs a message with a private key*/
@@ -135,4 +141,15 @@ func GenerateKey() (*ecdsa.PrivateKey, error) {
 /*PubkeyToAddress takes a public key and converts it to an ethereum public address*/
 func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
 	return crypto.PubkeyToAddress(p)
+}
+
+/*PubkeyToHex takes a public key and converts it to a hex string*/
+func PubkeyToHex(p ecdsa.PublicKey) string {
+	return hex.EncodeToString(crypto.FromECDSAPub(&p))
+}
+
+/*PubkeyCompressedToHex takes a public key, compresses it and converts it to a hex string*/
+func PubkeyCompressedToHex(p ecdsa.PublicKey) string {
+	compressed := crypto.CompressPubkey(&p)
+	return hex.EncodeToString(compressed)
 }

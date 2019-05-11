@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"net/http"
-	"strings"
 
 	"os"
 
@@ -117,7 +116,11 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			fileHandle := uploadBody.FileHandle
 
 			// create a paid account
-			routes.CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
+			accountID, err := utils.HashString(request.PublicKey)
+			assert.Nil(t, err)
+			routes.CreatePaidAccountForTest(accountID, t)
+
+			// init upload
 			routes.InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
 
 			// perform the first request and verify the expected status

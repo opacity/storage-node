@@ -126,11 +126,12 @@ func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privat
 	hash := utils.Hash([]byte(reqBody))
 
 	signature, err := utils.Sign(hash, privateKey)
+	signature = signature[:utils.SigLengthInBytes]
 	assert.Nil(t, err)
 
 	verification := verification{
 		Signature: hex.EncodeToString(signature),
-		Address:   utils.PubkeyToAddress(privateKey.PublicKey).Hex(),
+		PublicKey: utils.PubkeyCompressedToHex(privateKey.PublicKey),
 	}
 
 	return verification
@@ -146,11 +147,12 @@ func returnFailedVerificationForTest(t *testing.T, reqBody string) verification 
 	wrongPrivateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	signature, err := utils.Sign(hash, privateKeyToSignWith)
+	signature = signature[:utils.SigLengthInBytes]
 	assert.Nil(t, err)
 
 	verification := verification{
 		Signature: hex.EncodeToString(signature),
-		Address:   utils.PubkeyToAddress(wrongPrivateKey.PublicKey).Hex(),
+		PublicKey: utils.PubkeyCompressedToHex(wrongPrivateKey.PublicKey),
 	}
 
 	return verification

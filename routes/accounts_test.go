@@ -13,8 +13,6 @@ import (
 
 	"crypto/ecdsa"
 
-	"strings"
-
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -50,7 +48,7 @@ func returnValidCreateAccountReq(body accountCreateObj) accountCreateReq {
 func returnValidAccountAndPrivateKey() (models.Account, *ecdsa.PrivateKey) {
 	privateKeyToSignWith, _ := utils.GenerateKey()
 
-	accountID := strings.TrimPrefix(utils.PubkeyToAddress(privateKeyToSignWith.PublicKey).String(), "0x")
+	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKeyToSignWith.PublicKey))
 
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
@@ -82,7 +80,7 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 func returnValidAccount() models.Account {
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
-	accountID := utils.RandSeqFromRunes(40, []rune("abcdef01234567890"))
+	accountID := utils.RandSeqFromRunes(models.AccountIDLength, []rune("abcdef01234567890"))
 
 	return models.Account{
 		AccountID:            accountID,

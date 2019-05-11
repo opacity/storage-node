@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"testing"
 
 	"bytes"
@@ -92,7 +91,9 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-	account := CreatePaidAccountForTest(strings.TrimPrefix(request.Address, "0x"), t)
+	accountID, err := utils.HashString(request.PublicKey)
+	assert.Nil(t, err)
+	account := CreatePaidAccountForTest(accountID, t)
 
 	InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
 	w := UploadFileHelperForTest(t, request)
