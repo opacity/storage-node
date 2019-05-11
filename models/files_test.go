@@ -172,6 +172,20 @@ func Test_GetOrCreateFile_file_does_not_exist(t *testing.T) {
 	assert.Equal(t, aws.StringValue(shouldBeTheUploadKey), aws.StringValue(fileInDB.AwsObjectKey))
 }
 
+func Test_GetFileById(t *testing.T) {
+	file := returnValidFile()
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	result, err := GetFileById(file.FileID)
+
+	assert.Nil(t, err)
+	assert.Equal(t, result.FileID, file.FileID)
+}
+
 func Test_UpdateCompletedIndexes(t *testing.T) {
 	file := returnValidFile()
 

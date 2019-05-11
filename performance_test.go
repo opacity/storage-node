@@ -120,6 +120,9 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			assert.Nil(t, err)
 			routes.CreatePaidAccountForTest(accountID, t)
 
+			// init upload
+			routes.InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
+
 			// perform the first request and verify the expected status
 			w := routes.UploadFileHelperForTest(t, request)
 			if w.Code != http.StatusOK {
