@@ -20,7 +20,7 @@ func (f fileCleaner) ScheduleInterval() string {
 func (f fileCleaner) Run() {
 	err := models.CompleteUploadsNewerThan(time.Now().Add(newerThanOffset))
 	utils.LogIfError(err, nil)
-	files, err = models.DeleteUploadsOlderThan(time.Now().Add(olderThanOffset))
+	files, err := models.DeleteUploadsOlderThan(time.Now().Add(olderThanOffset))
 	utils.LogIfError(err, nil)
 
 	if len(files) == 0 {
@@ -29,7 +29,7 @@ func (f fileCleaner) Run() {
 
 	var ids []string
 	for _, file := range files {
-		ids = append(models.GetFileMetadataKey(file.FileID))
+		ids = append(ids, models.GetFileMetadataKey(file.FileID))
 	}
 	err = utils.DeleteDefaultBucketObjects(ids)
 	utils.LogIfError(err, nil)
