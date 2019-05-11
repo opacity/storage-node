@@ -62,6 +62,7 @@ func getLifecyclesMap() map[string]s3.LifecycleRule {
 			Filter: &s3.LifecycleRuleFilter{
 				Prefix: aws.String(""),
 			},
+		}
 		testPrefixId: s3.LifecycleRule{
 			Expiration: &s3.LifecycleExpiration{
 				Days: aws.Int64(1),
