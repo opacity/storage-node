@@ -239,9 +239,9 @@ func CompleteUploadsNewerThan(createdAtTime time.Time) error {
 
 /*DeleteUploadsOlderThan will delete files older than the time provided.  If a file still isn't complete by the
 time passed in, the assumption is it error'd or will never be finished. */
-func DeleteUploadsOlderThan(createdAtTime time.Time) []File error {
+func DeleteUploadsOlderThan(createdAtTime time.Time) ([]File, error) {
 	files := []File{}
-	
+
 	if err := DB.Where("created_at < ?",
 		createdAtTime).Find(&files).Error; err != nil {
 		return files, err
