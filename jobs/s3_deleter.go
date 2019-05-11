@@ -26,6 +26,16 @@ func (e s3Deleter) Run() {
 		return
 	}
 
+	var metadatas []string
+	for _, fileID := range fileIDs {
+		metadatas = append(metadatas, models.GetFileMetadataKey(fileID))
+	}
+
+	if err := utils.DeleteDefaultBucketObjects(metadatas); err != nil {
+		utils.LogIfError(err, nil)
+		return
+	}
+
 	err = models.DeleteAllCompletedFiles(fileIDs)
 	utils.LogIfError(err, nil)
 }

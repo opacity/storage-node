@@ -7,67 +7,70 @@ import (
 )
 
 const (
-	multiUploadId    = "multi-upload"
+	multiUploadId = "multi-upload"
+
 	freeUploadId     = "free-upload"
 	freeUploadPrefix = "free_upload/"
+
+	testPrefixId = "unit-test"
+	testPrefix   = "test/"
 )
 
 type s3LifeCycleSetup struct{}
 
 func (e s3LifeCycleSetup) Run() error {
-	freeUploadErr := setFreeUploadRule()
-	multiUploadErr := setMultipartUploadRule()
-	return utils.CollectErrors([]error{freeUploadErr, multiUploadErr})
-}
+	lifecycles := getLifecyclesMap()
 
-func setFreeUploadRule() error {
 	rules, err := utils.GetDefaultBucketLifecycle()
 	if err != nil {
 		return err
 	}
 
-	for _, rule := range rules {
-		if (*rule.ID) == freeUploadId {
-			return nil
+	for k, v := range lifecycles { 
+		hasKey := false
+		for _, rule := range rules {
+			if (*rule.ID) == k {
+				hasKey = true
+				break
+			}
+		}
+		if !hasKey {
+			rules = append(rules, &v)
 		}
 	}
-
-	rules = append(rules, &s3.LifecycleRule{
-		Expiration: &s3.LifecycleExpiration{
-			Days: aws.Int64(30),
-		},
-		Filter: &s3.LifecycleRuleFilter{
-			Prefix: aws.String(freeUploadPrefix),
-		},
-		ID:     aws.String(freeUploadId),
-		Status: aws.String("Enabled"),
-	})
-
 	return utils.SetDefaultBucketLifecycle(rules)
 }
 
-func setMultipartUploadRule() error {
-	rules, err := utils.GetDefaultBucketLifecycle()
-	if err != nil {
-		return err
-	}
-
-	for _, rule := range rules {
-		if (*rule.ID) == multiUploadId {
-			return nil
-		}
-	}
-
-	rules = append(rules, &s3.LifecycleRule{
-		AbortIncompleteMultipartUpload: &s3.AbortIncompleteMultipartUpload{
-			DaysAfterInitiation: aws.Int64(1),
+func getLifecyclesMap() map[string]s3.LifecycleRule {
+	return map[string]s3.LifecycleRule{
+		freeUploadId: s3.LifecycleRule{
+			Expiration: &s3.LifecycleExpiration{
+				Days: aws.Int64(30),
+			},
+			Filter: &s3.LifecycleRuleFilter{
+				Prefix: aws.String(freeUploadPrefix),
+			},
+			ID:     aws.String(freeUploadId),
+			Status: aws.String("Enabled"),
 		},
-		Status: aws.String("Enabled"),
-		ID:     aws.String(multiUploadId),
-		Filter: &s3.LifecycleRuleFilter{
-			Prefix: aws.String(""),
+		multiUploadId: s3.LifecycleRule{
+			AbortIncompleteMultipartUpload: &s3.AbortIncompleteMultipartUpload{
+				DaysAfterInitiation: aws.Int64(1),
+			},
+			Status: aws.String("Enabled"),
+			ID:     aws.String(multiUploadId),
+			Filter: &s3.LifecycleRuleFilter{
+				Prefix: aws.String(""),
+			},
+		testPrefixId: s3.LifecycleRule{
+			Expiration: &s3.LifecycleExpiration{
+				Days: aws.Int64(1),
+			},
+			Filter: &s3.LifecycleRuleFilter{
+				Prefix: aws.String(testPrefix),
+			},
+			ID:     aws.String(testPrefixId),
+			Status: aws.String("Enabled"),
 		},
-	})
-
-	return utils.SetDefaultBucketLifecycle(rules)
+	}
 }
