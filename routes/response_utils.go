@@ -18,6 +18,8 @@ const REQUEST_UUID = "request_uuid"
 func InternalErrorResponse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
 	utils.Metrics_500_Response_Counter.Inc()
+
+	getLogger(c).LogIfError(err, nil)
 }
 
 func BadRequestResponse(c *gin.Context, err error) {
