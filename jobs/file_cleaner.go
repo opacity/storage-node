@@ -26,7 +26,6 @@ func (f fileCleaner) Run() {
 	if len(files) == 0 {
 		return
 	}
-
 	var ids []string
 	for _, file := range files {
 		ids = append(ids, models.GetFileMetadataKey(file.FileID))
