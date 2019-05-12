@@ -48,6 +48,9 @@ const (
 	/*UploadPath is the path for uploading files to paid accounts*/
 	UploadPath = "/upload"
 
+	/*UploadStatusPath is the path for checking upload status*/
+	UploadStatusPath = "/upload-status"
+
 	/*FilePath is the path for downloading and deleting files*/
 	FilePath = "/file"
 )
@@ -102,6 +105,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 
 	v1Router.POST(InitUploadPath, InitFileUploadHandler())
 	v1Router.POST(UploadPath, UploadFileHandler())
+	v1Router.GET(UploadStatusPath, GetUploadStatusHandler())
 
 	v1Router.POST("/free_upload", FreeUploadFileHandler())
 	v1Router.GET("/download", DownloadFileHandler())

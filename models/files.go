@@ -220,23 +220,6 @@ func GetFileById(fileID string) (File, error) {
 	return file, err
 }
 
-/*CompleteUploadsNewerThan will attempt to finish the uploads of files created after the time provided*/
-func CompleteUploadsNewerThan(createdAtTime time.Time) error {
-	files := []File{}
-	err := DB.Where("created_at > ?",
-		createdAtTime).Find(&files).Error
-
-	if err != nil {
-		return err
-	}
-
-	for _, file := range files {
-		file.FinishUpload()
-	}
-
-	return nil
-}
-
 /*DeleteUploadsOlderThan will delete files older than the time provided.  If a file still isn't complete by the
 time passed in, the assumption is it error'd or will never be finished. */
 func DeleteUploadsOlderThan(createdAtTime time.Time) ([]File, error) {
