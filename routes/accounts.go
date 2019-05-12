@@ -126,6 +126,9 @@ func createAccount(c *gin.Context) {
 	}
 
 	accountID, err := returnAccountIdWithStringRequest(request.RequestBody, request.Signature, c)
+	if err != nil {
+		return
+	}
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,

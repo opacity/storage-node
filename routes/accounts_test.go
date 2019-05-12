@@ -38,6 +38,7 @@ func returnValidCreateAccountReq(body accountCreateObj) accountCreateReq {
 
 	privateKeyToSignWith, _ := utils.GenerateKey()
 	signature, _ := utils.Sign(hash, privateKeyToSignWith)
+	signature = signature[:utils.SigLengthInBytes]
 
 	return accountCreateReq{
 		RequestBody: reqBody.String(),
