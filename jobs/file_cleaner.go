@@ -18,9 +18,7 @@ func (f fileCleaner) ScheduleInterval() string {
 }
 
 func (f fileCleaner) Run() {
-	err := models.CompleteUploadsNewerThan(time.Now().Add(newerThanOffset))
-	utils.LogIfError(err, nil)
-	err = models.DeleteUploadsOlderThan(time.Now().Add(olderThanOffset))
+	err := models.DeleteUploadsOlderThan(time.Now().Add(olderThanOffset))
 	utils.LogIfError(err, nil)
 }
 

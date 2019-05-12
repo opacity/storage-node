@@ -376,37 +376,6 @@ func Test_FinishUpload(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func Test_CompleteUploadsNewerThan(t *testing.T) {
-	DeleteFilesForTest(t)
-	file := returnValidFile()
-	file.EndIndex = 1
-
-	// Add file to DB
-	if err := DB.Create(&file).Error; err != nil {
-		t.Fatalf("should have created file but didn't: " + err.Error())
-	}
-
-	completedPartIndex1, err := multipartUploadOfSingleChunk(t, &file)
-	assert.Nil(t, err)
-
-	err = file.UpdateCompletedIndexes(completedPartIndex1)
-	assert.Nil(t, err)
-
-	actualFiles := []File{}
-	DB.Find(&actualFiles, "file_id = ?", file.FileID)
-	assert.Equal(t, 1, len(actualFiles))
-
-	objectKey := actualFiles[0].AwsObjectKey
-
-	CompleteUploadsNewerThan(time.Now().Add(-5 * time.Minute))
-	actualFiles = []File{}
-	DB.Find(&actualFiles, "file_id = ?", file.FileID)
-	assert.Equal(t, 0, len(actualFiles))
-
-	err = utils.DeleteDefaultBucketObject(aws.StringValue(objectKey))
-	assert.Nil(t, err)
-}
-
 func Test_DeleteUploadsOlderThan(t *testing.T) {
 	DeleteFilesForTest(t)
 	file := returnValidFile()
