@@ -21,6 +21,7 @@ const maxAllowedSecondsPerUpload = 10
 
 func deleteEverything(t *testing.T) {
 	// TODO:  Have all the s3 uploads go to one directory on s3 so we can make sure we delete all of them
+	// TODO:  Clean up after this test (completed files, any incomplete uploads in s3, etc.)
 	models.DeleteFilesForTest(t)
 	models.DeleteAccountsForTest(t)
 	models.DeleteCompletedFilesForTest(t)
@@ -97,8 +98,8 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			// create an array of arrays of bytes
 			arrayOfChunkDataBuffers := ReturnChunkDataForTestBigFile(t)
 
-			// set EndIndex to the length of the array of byte arrays
-			uploadBody.EndIndex = len(arrayOfChunkDataBuffers)
+			// set endIndex to the length of the array of byte arrays
+			endIndex := len(arrayOfChunkDataBuffers)
 
 			// start upload of first chunk
 			// set PartIndex to 1
@@ -118,10 +119,10 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			// create a paid account
 			accountID, err := utils.HashString(request.PublicKey)
 			assert.Nil(t, err)
-			routes.CreatePaidAccountForTest(accountID, t)
+			account := routes.CreatePaidAccountForTest(accountID, t)
 
 			// init upload
-			routes.InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
+			routes.InitUploadFileForTest(t, uploadBody.FileHandle, endIndex)
 
 			// perform the first request and verify the expected status
 			w := routes.UploadFileHelperForTest(t, request)
@@ -142,6 +143,11 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 				}
 				//}()
 			}
+
+			completedFile, err := routes.FinishUploadFileForTest(t, uploadBody.FileHandle)
+			assert.Nil(t, err)
+			err = account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte))
+			assert.Nil(t, err)
 
 			err = utils.DeleteDefaultBucketObject(fileHandle)
 			assert.Nil(t, err)

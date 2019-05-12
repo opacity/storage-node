@@ -14,7 +14,6 @@ type UploadFileObj struct {
 	ChunkData  string `form:"chunkData" binding:"required" example:"a binary string of the chunk data"`
 	FileHandle string `form:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
 	PartIndex  int    `form:"partIndex" binding:"required,gte=1" example:"1"`
-	EndIndex   int    `form:"endIndex" binding:"required,gtefield=PartIndex" example:"2"`
 }
 
 type UploadFileReq struct {
@@ -28,6 +27,10 @@ type uploadFileRes struct {
 
 var chunkUploadCompletedRes = uploadFileRes{
 	Status: "Chunk is uploaded",
+}
+
+var fileUploadPendingRes = uploadFileRes{
+	Status: "File is still uploading",
 }
 
 var fileUploadCompletedRes = uploadFileRes{
@@ -67,7 +70,7 @@ func uploadFile(c *gin.Context) {
 
 	requestBodyParsed := UploadFileObj{}
 
-	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
+	_, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
 	if err != nil {
 		return
 	}
@@ -83,24 +86,13 @@ func uploadFile(c *gin.Context) {
 		InternalErrorResponse(c, multipartErr)
 		return
 	}
-	file.UpdateCompletedIndexes(completedPart)
-
-	completedFile, err := file.FinishUpload()
+	err = file.UpdateCompletedIndexes(completedPart)
 	if err != nil {
-		if err == models.IncompleteUploadErr {
-			OkResponse(c, chunkUploadCompletedRes)
-			return
-		}
 		InternalErrorResponse(c, err)
 		return
 	}
 
-	if err := account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte)); err != nil {
-		InternalErrorResponse(c, err)
-		return
-	}
-
-	OkResponse(c, fileUploadCompletedRes)
+	OkResponse(c, chunkUploadCompletedRes)
 }
 
 func handleChunkData(file models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {

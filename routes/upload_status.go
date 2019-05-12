@@ -17,11 +17,11 @@ type uploadStatusReq struct {
 	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.UploadStatusObj, see description for example"`
 }
 
-func GetUploadStatusHandler() gin.HandlerFunc {
-	return ginHandlerFunc(getUploadStatus)
+func CheckUploadStatusHandler() gin.HandlerFunc {
+	return ginHandlerFunc(checkUploadStatus)
 }
 
-func getUploadStatus(c *gin.Context) {
+func checkUploadStatus(c *gin.Context) {
 	request := uploadStatusReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
@@ -45,7 +45,7 @@ func getUploadStatus(c *gin.Context) {
 	completedFile, err := file.FinishUpload()
 	if err != nil {
 		if err == models.IncompleteUploadErr {
-			OkResponse(c, chunkUploadCompletedRes)
+			OkResponse(c, fileUploadPendingRes)
 			return
 		}
 		InternalErrorResponse(c, err)

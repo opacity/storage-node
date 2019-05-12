@@ -27,7 +27,6 @@ func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 		ChunkData:  utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		FileHandle: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		PartIndex:  models.FirstChunkIndex,
-		EndIndex:   10,
 	}
 }
 
@@ -183,12 +182,45 @@ func InitUploadFileForTest(t *testing.T, fileID string, endIndx int) string {
 	return *objectKey
 }
 
+func FinishUploadFileForTest(t *testing.T, fileID string) (models.CompletedFile, error) {
+	file, err := models.GetFileById(fileID)
+	assert.Nil(t, err)
+	return file.FinishUpload()
+}
+
 func UploadFileHelperForTest(t *testing.T, post UploadFileReq) *httptest.ResponseRecorder {
 	abortIfNotTesting(t)
 
 	router := returnEngine()
 	v1 := returnV1Group(router)
 	v1.POST(UploadPath, UploadFileHandler())
+
+	marshalledReq, _ := json.Marshal(post)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	// Create the mock request you'd like to test. Make sure the second argument
+	// here is the same as one of the routes you defined in the router setup
+	// block!
+	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+UploadPath, reqBody)
+	if err != nil {
+		t.Fatalf("Couldn't create request: %v\n", err)
+	}
+
+	// Create a response recorder so you can inspect the response
+	w := httptest.NewRecorder()
+
+	// Perform the request
+	router.ServeHTTP(w, req)
+
+	return w
+}
+
+func UploadFileStatusHelperForTest(t *testing.T, post uploadStatusReq) *httptest.ResponseRecorder {
+	abortIfNotTesting(t)
+
+	router := returnEngine()
+	v1 := returnV1Group(router)
+	v1.POST(UploadStatusPath, CheckUploadStatusHandler())
 
 	marshalledReq, _ := json.Marshal(post)
 	reqBody := bytes.NewBuffer(marshalledReq)
