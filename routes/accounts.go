@@ -23,7 +23,7 @@ type accountCreateObj struct {
 }
 
 type accountCreateReq struct {
-	Signature   string `json:"signature" binding:"required,len=130" minLength:"130" maxLength:"130" example:"a 130 character string created when you signed the request with your private key or account handle"`
+	Signature   string `json:"signature" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a 128 character string created when you signed the request with your private key or account handle"`
 	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.accountCreateObj, see description for example"`
 }
 
