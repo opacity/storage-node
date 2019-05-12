@@ -17,6 +17,7 @@ type InitFileUploadObj struct {
 type InitFileUploadReq struct {
 	verification
 	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj, see description for example"`
+	Metadata    string `json:"metadata" binding:"required" example:"your (updated) file metadata"`
 }
 
 type InitFileUploadRes struct {
@@ -53,6 +54,11 @@ func initFileUpload(c *gin.Context) {
 
 	objKey, uploadID, err := utils.CreateMultiPartUpload(requestBodyParsed.FileHandle)
 	if err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), request.Metadata); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}

@@ -98,6 +98,10 @@ func (file *File) PrettyString() {
 	fmt.Println(file.CompletedIndexes)
 }
 
+func GetFileMetadataKey(fileID string) string {
+	return fileID + "/metadata"
+}
+
 /*GetOrCreateFile - Get or create the file. */
 func GetOrCreateFile(file File) (*File, error) {
 	getFileMutex.Lock()
@@ -218,18 +222,17 @@ func GetFileById(fileID string) (File, error) {
 
 /*DeleteUploadsOlderThan will delete files older than the time provided.  If a file still isn't complete by the
 time passed in, the assumption is it error'd or will never be finished. */
-func DeleteUploadsOlderThan(createdAtTime time.Time) error {
+func DeleteUploadsOlderThan(createdAtTime time.Time) ([]File, error) {
 	files := []File{}
-	err := DB.Where("created_at < ?",
-		createdAtTime).Find(&files).Error
 
-	if err != nil {
-		return err
+	if err := DB.Where("created_at < ?",
+		createdAtTime).Find(&files).Error; err != nil {
+		return files, err
 	}
 
 	for _, file := range files {
 		DB.Delete(file)
 	}
 
-	return nil
+	return files, nil
 }
