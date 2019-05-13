@@ -200,7 +200,7 @@ func Test_GetTotalCostInWei(t *testing.T) {
 
 	costInWei := account.GetTotalCostInWei()
 
-	assert.Equal(t, big.NewInt(1560000000000000000).String(), costInWei.String())
+	assert.Equal(t, big.NewInt(2000000000000000000).String(), costInWei.String())
 }
 
 func Test_CheckIfPaid_Has_Paid(t *testing.T) {

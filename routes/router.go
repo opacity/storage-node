@@ -36,6 +36,9 @@ const (
 	/*AccountsPath is the path for dealing with accounts*/
 	AccountsPath = "/accounts"
 
+	/*AccountDataPath is the path for retrieving data about an account*/
+	AccountDataPath = "/account-data"
+
 	/*AdminPath is a router group for admin task. */
 	AdminPath = "/admin"
 
@@ -98,14 +101,14 @@ func returnV1Group(router *gin.Engine) *gin.RouterGroup {
 
 func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(AccountsPath, CreateAccountHandler())
-	v1Router.GET(AccountsPath, CheckAccountPaymentStatusHandler())
+	v1Router.POST(AccountDataPath, CheckAccountPaymentStatusHandler())
 
 	v1Router.POST(MetadataPath, UpdateMetadataHandler())
 	v1Router.GET(MetadataPath, GetMetadataHandler())
 
 	v1Router.POST(InitUploadPath, InitFileUploadHandler())
 	v1Router.POST(UploadPath, UploadFileHandler())
-	v1Router.GET(UploadStatusPath, GetUploadStatusHandler())
+	v1Router.POST(UploadStatusPath, GetUploadStatusHandler())
 
 	v1Router.POST("/free_upload", FreeUploadFileHandler())
 	v1Router.GET("/download", DownloadFileHandler())
