@@ -44,8 +44,9 @@ type accountGetObj struct {
 	ExpirationDate       time.Time               `json:"expirationDate" binding:"required"`
 	MonthsInSubscription int                     `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
 	StorageLimit         models.StorageLimitType `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
-	StorageUsed          float64                 `json:"storageUsed" binding:"required" example:"30"`                                                                       // how much storage they have used, in GB
+	StorageUsed          float64                 `json:"storageUsed" binding:"exists" example:"30"`                                                                         // how much storage they have used, in GB
 	EthAddress           string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	Cost                 float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
 }
 
 type accountGetReqObj struct {
@@ -215,6 +216,8 @@ func checkAccountPaymentStatus(c *gin.Context) {
 		pending, err = account.CheckIfPending()
 	}
 
+	cost, _ := account.Cost()
+
 	OkResponse(c, accountPaidRes{
 		PaymentStatus: createPaymentStatusResponse(paid, pending),
 		Error:         err,
@@ -226,6 +229,7 @@ func checkAccountPaymentStatus(c *gin.Context) {
 			StorageLimit:         account.StorageLimit,
 			StorageUsed:          account.StorageUsed,
 			EthAddress:           account.EthAddress,
+			Cost:                 cost,
 		},
 	})
 }

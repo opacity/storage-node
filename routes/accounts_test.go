@@ -25,7 +25,7 @@ import (
 
 func returnValidCreateAccountBody() accountCreateObj {
 	return accountCreateObj{
-		StorageLimit:     100,
+		StorageLimit:     int(models.BasicStorageLimit),
 		DurationInMonths: 12,
 		MetadataKey:      utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}

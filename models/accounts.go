@@ -48,8 +48,8 @@ type StorageLimitType int
 type PaymentStatusType int
 
 const (
-	/*BasicStorageLimit allows 100 GB on the basic plan*/
-	BasicStorageLimit StorageLimitType = iota + 100
+	/*BasicStorageLimit allows 128 GB on the basic plan*/
+	BasicStorageLimit StorageLimitType = iota + 128
 )
 
 const (
