@@ -34,11 +34,7 @@ func returnValidCreateAccountBody() accountCreateObj {
 func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCreateReq {
 	reqJSON, _ := json.Marshal(body)
 	reqBody := bytes.NewBuffer(reqJSON)
-	hash := utils.Hash(reqBody.Bytes())
 
-	privateKeyToSignWith, _ := utils.GenerateKey()
-	signature, _ := utils.Sign(hash, privateKeyToSignWith)
-	signature = signature[:utils.SigLengthInBytes]
 	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
 
 	return accountCreateReq{
@@ -47,14 +43,10 @@ func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCre
 	}
 }
 
-func returnFailedVerficationCreateAccountReq(t *testing.T, body accountCreateObj) accountCreateReq {
+func returnFailedVerificationCreateAccountReq(t *testing.T, body accountCreateObj) accountCreateReq {
 	reqJSON, _ := json.Marshal(body)
 	reqBody := bytes.NewBuffer(reqJSON)
-	hash := utils.Hash(reqBody.Bytes())
 
-	privateKeyToSignWith, _ := utils.GenerateKey()
-	signature, _ := utils.Sign(hash, privateKeyToSignWith)
-	signature = signature[:utils.SigLengthInBytes]
 	verificationObj := returnFailedVerificationForTest(t, reqBody.String())
 
 	return accountCreateReq{
@@ -147,7 +139,7 @@ func Test_ExpectErrorWithInvalidSignature(t *testing.T) {
 }
 
 func Test_ExpectErrorIfVerificationFails(t *testing.T) {
-	post := returnFailedVerficationCreateAccountReq(t, returnValidCreateAccountBody())
+	post := returnFailedVerificationCreateAccountReq(t, returnValidCreateAccountBody())
 
 	w := accountsTestHelperCreateAccount(t, post)
 
