@@ -97,9 +97,8 @@ func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface
 }
 
 func returnAccountIfVerified(publicKey string, c *gin.Context) (models.Account, error) {
-	accountID, err := utils.HashString(publicKey)
+	accountID, err := getAccountIdFromPublicKey(publicKey, c)
 	if err != nil {
-		InternalErrorResponse(c, err)
 		return models.Account{}, err
 	}
 
@@ -124,38 +123,22 @@ func returnAccountIdWithParsedRequest(reqBody interface{}, verificationData veri
 }
 
 func returnAccountIdWithStringRequest(reqAsString string, verificationData verification, c *gin.Context) (string, error) {
-
 	return returnAccountId(utils.Hash([]byte(reqAsString)), verificationData, c)
 }
 
 func returnAccountId(hash []byte, verificationData verification, c *gin.Context) (string, error) {
-	sigBytes, err := hex.DecodeString(verificationData.Signature)
-	if err != nil {
-		BadRequestResponse(c, err)
+	if err := verifyRequest(hash, verificationData.PublicKey, verificationData.Signature, c); err != nil {
 		return "", err
 	}
 
-	publicKeyBytes, err := hex.DecodeString(verificationData.PublicKey)
-	if err != nil {
-		BadRequestResponse(c, err)
-		return "", err
-	}
+	return getAccountIdFromPublicKey(verificationData.PublicKey, c)
+}
 
-	verified, err := utils.Verify(publicKeyBytes, hash, sigBytes)
-	if !verified {
-		err = errors.New(signatureDidNotMatchResponse)
-		ForbiddenResponse(c, err)
-		return "", err
-	}
-	if err != nil {
-		BadRequestResponse(c, errors.New(errVerifying))
-		return "", err
-	}
-	accountID, err := utils.HashString(verificationData.PublicKey)
+func getAccountIdFromPublicKey(publicKey string, c *gin.Context) (string, error) {
+	accountID, err := utils.HashString(publicKey)
 	if err != nil {
 		InternalErrorResponse(c, err)
 		return "", err
 	}
-
 	return accountID, err
 }

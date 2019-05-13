@@ -48,8 +48,8 @@ type StorageLimitType int
 type PaymentStatusType int
 
 const (
-	/*BasicStorageLimit allows 100 GB on the basic plan*/
-	BasicStorageLimit StorageLimitType = iota + 100
+	/*BasicStorageLimit allows 128 GB on the basic plan*/
+	BasicStorageLimit StorageLimitType = iota + 128
 )
 
 const (
@@ -79,7 +79,7 @@ default subscription is a year*/
 const DefaultMonthsPerSubscription = 12
 
 /*BasicSubscriptionDefaultCost is the cost for a default-length term of the basic plan*/
-const BasicSubscriptionDefaultCost = 1.56
+const BasicSubscriptionDefaultCost = 2.0
 
 /*AccountIDLength is the expected length of an accountID for an account*/
 const AccountIDLength = 64

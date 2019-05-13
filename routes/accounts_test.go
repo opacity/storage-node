@@ -25,7 +25,7 @@ import (
 
 func returnValidCreateAccountBody() accountCreateObj {
 	return accountCreateObj{
-		StorageLimit:     100,
+		StorageLimit:     int(models.BasicStorageLimit),
 		DurationInMonths: 12,
 		MetadataKey:      utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
@@ -243,7 +243,7 @@ func accountsTestHelperCreateAccount(t *testing.T, post accountCreateReq) *httpt
 func accountsTestHelperCheckAccountPaymentStatus(t *testing.T, get getAccountDataReq) *httptest.ResponseRecorder {
 	router := returnEngine()
 	v1 := returnV1Group(router)
-	v1.GET(AccountsPath, CheckAccountPaymentStatusHandler())
+	v1.POST(AccountDataPath, CheckAccountPaymentStatusHandler())
 
 	marshalledReq, _ := json.Marshal(get)
 	reqBody := bytes.NewBuffer(marshalledReq)
@@ -251,7 +251,7 @@ func accountsTestHelperCheckAccountPaymentStatus(t *testing.T, get getAccountDat
 	// Create the mock request you'd like to test. Make sure the second argument
 	// here is the same as one of the routes you defined in the router setup
 	// block!
-	req, err := http.NewRequest(http.MethodGet, v1.BasePath()+AccountsPath, reqBody)
+	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+AccountDataPath, reqBody)
 	if err != nil {
 		t.Fatalf("Couldn't create request: %v\n", err)
 	}

@@ -200,7 +200,7 @@ func Test_GetTotalCostInWei(t *testing.T) {
 
 	costInWei := account.GetTotalCostInWei()
 
-	assert.Equal(t, big.NewInt(1560000000000000000).String(), costInWei.String())
+	assert.Equal(t, big.NewInt(2000000000000000000).String(), costInWei.String())
 }
 
 func Test_CheckIfPaid_Has_Paid(t *testing.T) {
@@ -338,7 +338,7 @@ func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	assert.NotNil(t, account.UseStorageSpaceInByte(95*1e9 /* Upload 95GB. */))
+	assert.NotNil(t, account.UseStorageSpaceInByte(123*1e9 /* Upload 95GB. */))
 }
 
 func Test_DeductSpaceUsed(t *testing.T) {
@@ -364,7 +364,7 @@ func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
 }
 
 func Test_CreateSpaceUsedReport(t *testing.T) {
-	expectedSpaceAlloted := 400
+	expectedSpaceAlloted := int(4 * BasicStorageLimit)
 	expectedSpaceUsed := 234.56
 
 	DeleteAccountsForTest(t)
