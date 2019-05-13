@@ -31,17 +31,27 @@ func returnValidCreateAccountBody() accountCreateObj {
 	}
 }
 
-func returnValidCreateAccountReq(body accountCreateObj) accountCreateReq {
+func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCreateReq {
 	reqJSON, _ := json.Marshal(body)
 	reqBody := bytes.NewBuffer(reqJSON)
-	hash := utils.Hash(reqBody.Bytes())
 
-	privateKeyToSignWith, _ := utils.GenerateKey()
-	signature, _ := utils.Sign(hash, privateKeyToSignWith)
+	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
 
 	return accountCreateReq{
-		RequestBody: reqBody.String(),
-		Signature:   hex.EncodeToString(signature),
+		RequestBody:  reqBody.String(),
+		verification: verificationObj,
+	}
+}
+
+func returnFailedVerificationCreateAccountReq(t *testing.T, body accountCreateObj) accountCreateReq {
+	reqJSON, _ := json.Marshal(body)
+	reqBody := bytes.NewBuffer(reqJSON)
+
+	verificationObj := returnFailedVerificationForTest(t, reqBody.String())
+
+	return accountCreateReq{
+		RequestBody:  reqBody.String(),
+		verification: verificationObj,
 	}
 }
 
@@ -106,7 +116,7 @@ func Test_Init_Accounts(t *testing.T) {
 }
 
 func Test_NoErrorsWithValidPost(t *testing.T) {
-	post := returnValidCreateAccountReq(returnValidCreateAccountBody())
+	post := returnValidCreateAccountReq(t, returnValidCreateAccountBody())
 
 	w := accountsTestHelperCreateAccount(t, post)
 
@@ -117,7 +127,7 @@ func Test_NoErrorsWithValidPost(t *testing.T) {
 }
 
 func Test_ExpectErrorWithInvalidSignature(t *testing.T) {
-	post := returnValidCreateAccountReq(returnValidCreateAccountBody())
+	post := returnValidCreateAccountReq(t, returnValidCreateAccountBody())
 	post.Signature = "abcdef"
 
 	w := accountsTestHelperCreateAccount(t, post)
@@ -128,10 +138,21 @@ func Test_ExpectErrorWithInvalidSignature(t *testing.T) {
 	}
 }
 
+func Test_ExpectErrorIfVerificationFails(t *testing.T) {
+	post := returnFailedVerificationCreateAccountReq(t, returnValidCreateAccountBody())
+
+	w := accountsTestHelperCreateAccount(t, post)
+
+	// Check to see if the response was what you expected
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
+	}
+}
+
 func Test_ExpectErrorWithInvalidStorageLimit(t *testing.T) {
 	body := returnValidCreateAccountBody()
 	body.StorageLimit = 99
-	post := returnValidCreateAccountReq(body)
+	post := returnValidCreateAccountReq(t, body)
 
 	w := accountsTestHelperCreateAccount(t, post)
 
@@ -144,7 +165,7 @@ func Test_ExpectErrorWithInvalidStorageLimit(t *testing.T) {
 func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
 	body := returnValidCreateAccountBody()
 	body.DurationInMonths = 0
-	post := returnValidCreateAccountReq(body)
+	post := returnValidCreateAccountReq(t, body)
 
 	w := accountsTestHelperCreateAccount(t, post)
 

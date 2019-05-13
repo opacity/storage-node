@@ -19,8 +19,8 @@ type verification struct {
 	// signature without 0x prefix is broken into
 	// R: sig[0:63]
 	// S: sig[64:127]
-	Signature string `json:"signature" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a 128 character string created when you signed the request with your private key or account handle"`
-	PublicKey string `json:"publicKey" binding:"required,len=66" minLength:"66" maxLength:"66" example:"a 66-character public key"`
+	Signature string `json:"signature" form:"signature" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a 128 character string created when you signed the request with your private key or account handle"`
+	PublicKey string `json:"publicKey" form:"publicKey" binding:"required,len=66" minLength:"66" maxLength:"66" example:"a 66-character public key"`
 }
 
 func verifyAndParseStringRequest(reqAsString string, dest interface{}, verificationData verification, c *gin.Context) error {
@@ -113,39 +113,49 @@ func returnAccountIfVerified(publicKey string, c *gin.Context) (models.Account, 
 	return account, err
 }
 
-func returnAccountIdWithParsedRequest(reqBody interface{}, signature string, c *gin.Context) (string, error) {
+func returnAccountIdWithParsedRequest(reqBody interface{}, verificationData verification, c *gin.Context) (string, error) {
 	hash, err := hashRequestBody(reqBody, c)
 	if err != nil {
 		BadRequestResponse(c, err)
 		return "", err
 	}
 
-	return returnAccountId(hash, signature, c)
+	return returnAccountId(hash, verificationData, c)
 }
 
-func returnAccountIdWithStringRequest(reqAsString string, signature string, c *gin.Context) (string, error) {
-	return returnAccountId(utils.Hash([]byte(reqAsString)), signature, c)
+func returnAccountIdWithStringRequest(reqAsString string, verificationData verification, c *gin.Context) (string, error) {
+
+	return returnAccountId(utils.Hash([]byte(reqAsString)), verificationData, c)
 }
 
-func returnAccountId(hash []byte, signature string, c *gin.Context) (string, error) {
-	sigBytes, err := hex.DecodeString(signature)
+func returnAccountId(hash []byte, verificationData verification, c *gin.Context) (string, error) {
+	sigBytes, err := hex.DecodeString(verificationData.Signature)
 	if err != nil {
 		BadRequestResponse(c, err)
 		return "", err
 	}
 
-	publicKey, err := utils.Recover(hash, sigBytes)
+	publicKeyBytes, err := hex.DecodeString(verificationData.PublicKey)
 	if err != nil {
 		BadRequestResponse(c, err)
 		return "", err
 	}
 
-	// TODO make sure this is the compressed public key and check with frontend that they'll be sending the compressed
-	// TODO version
-	accountID, err := utils.HashString(utils.PubkeyToHex(*publicKey))
+	verified, err := utils.Verify(publicKeyBytes, hash, sigBytes)
+	if !verified {
+		err = errors.New(signatureDidNotMatchResponse)
+		ForbiddenResponse(c, err)
+		return "", err
+	}
+	if err != nil {
+		BadRequestResponse(c, errors.New(errVerifying))
+		return "", err
+	}
+	accountID, err := utils.HashString(verificationData.PublicKey)
 	if err != nil {
 		InternalErrorResponse(c, err)
 		return "", err
 	}
-	return accountID, nil
+
+	return accountID, err
 }
