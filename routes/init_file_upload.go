@@ -3,6 +3,8 @@ package routes
 import (
 	"fmt"
 
+	"encoding/hex"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -16,15 +18,32 @@ type InitFileUploadObj struct {
 
 type InitFileUploadReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj, see description for example"`
-	Metadata    string `json:"metadata" binding:"required" example:"your (updated) file metadata"`
+	RequestBody string `form:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj, see description for example"`
+	Metadata    []byte `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
 }
 
 type InitFileUploadRes struct {
 	Status string `json:"status" example:"Success"`
 }
 
-// TODO: Update the godoc
+// InitFileUploadHandler godoc
+// @Summary start an upload
+// @Description start an upload
+// @Accept  mpfd
+// @Produce  json
+// @Param InitFileUploadReq body routes.InitFileUploadReq true "an object to start a file upload"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"fileHandle": "a deterministically created file handle",
+// @description 	"fileSizeInByte": "200000000000006",
+// @description 	"endIndex": 2
+// @description }
+// @Success 200 {object} routes.InitFileUploadRes
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 500 {string} string "some information about the internal error"
+// @Failure 403 {string} string "signature did not match"
+// @Router /api/v1/init-upload [post]
+/*InitFileUploadHandler is a handler for the user to start uploads*/
 func InitFileUploadHandler() gin.HandlerFunc {
 	return ginHandlerFunc(initFileUpload)
 }
@@ -58,7 +77,9 @@ func initFileUpload(c *gin.Context) {
 		return
 	}
 
-	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), request.Metadata); err != nil {
+	metadata := hex.EncodeToString(request.Metadata)
+
+	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), metadata); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
