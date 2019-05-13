@@ -23,7 +23,7 @@ type accountCreateObj struct {
 }
 
 type accountCreateReq struct {
-	Signature   string `json:"signature" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a 128 character string created when you signed the request with your private key or account handle"`
+	verification
 	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.accountCreateObj, see description for example"`
 }
 
@@ -125,7 +125,7 @@ func createAccount(c *gin.Context) {
 		return
 	}
 
-	accountID, err := returnAccountIdWithStringRequest(request.RequestBody, request.Signature, c)
+	accountID, err := returnAccountIdWithStringRequest(request.RequestBody, request.verification, c)
 	if err != nil {
 		return
 	}
