@@ -1,10 +1,9 @@
 package routes
 
 import (
-	"net/http"
-
 	"bytes"
 	"io"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -56,6 +55,7 @@ func initFileUpload(c *gin.Context) {
 
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
 	err := c.Request.ParseMultipartForm(MaxRequestSize)
+
 	if err != nil {
 		BadRequestResponse(c, err)
 		return
