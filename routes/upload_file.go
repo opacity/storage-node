@@ -59,8 +59,8 @@ func UploadFileHandler() gin.HandlerFunc {
 func uploadFile(c *gin.Context) {
 	request := UploadFileReq{}
 
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, utils.MaxMultiPartSize+10000)
-	err := c.Request.ParseMultipartForm(utils.MaxMultiPartSize + 10000)
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
+	err := c.Request.ParseMultipartForm(MaxRequestSize)
 	if err != nil {
 		BadRequestResponse(c, err)
 		return

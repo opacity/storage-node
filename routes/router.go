@@ -58,6 +58,8 @@ const (
 	FilePath = "/file"
 )
 
+const MaxRequestSize = utils.MaxMultiPartSize + 1000
+
 func init() {
 }
 

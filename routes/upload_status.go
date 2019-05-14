@@ -46,7 +46,7 @@ func checkUploadStatus(c *gin.Context) {
 		return
 	}
 
-	requestBodyParsed := UploadFileObj{}
+	requestBodyParsed := UploadStatusObj{}
 
 	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
 	if err != nil {
