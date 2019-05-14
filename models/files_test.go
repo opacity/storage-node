@@ -243,6 +243,43 @@ func Test_GetCompletedIndexesAsMap(t *testing.T) {
 	assert.Equal(t, expectedMap, actualMap)
 }
 
+func Test_GetIncompleteIndexesAsArray(t *testing.T) {
+	file := returnValidFile()
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	expectedMap := make(IndexMap)
+	startingMap := file.GetCompletedIndexesAsMap()
+	assert.Equal(t, expectedMap, startingMap)
+
+	completedPartIndex2 := returnCompletedPart(2)
+	completedPartIndex5 := returnCompletedPart(5)
+
+	expectedMap[*completedPartIndex2.PartNumber] = completedPartIndex2
+	expectedMap[*completedPartIndex5.PartNumber] = completedPartIndex5
+
+	err := file.UpdateCompletedIndexes(completedPartIndex2)
+	assert.Nil(t, err)
+	err = file.UpdateCompletedIndexes(completedPartIndex5)
+	assert.Nil(t, err)
+
+	actualFile := File{}
+	DB.First(&actualFile, "file_id = ?", file.FileID)
+	incompleteIndexes := actualFile.GetIncompleteIndexesAsArray()
+
+	for _, value := range incompleteIndexes {
+		if value == *completedPartIndex2.PartNumber || value == *completedPartIndex5.PartNumber {
+			t.Fatal("should only include incomplete indexes")
+		}
+		assert.True(t, value >= FirstChunkIndex && int(value) <= file.EndIndex)
+	}
+
+	assert.Equal(t, file.EndIndex-2, len(incompleteIndexes))
+}
+
 func Test_SaveCompletedIndexesAsString(t *testing.T) {
 	file := returnValidFile()
 

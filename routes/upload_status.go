@@ -17,6 +17,12 @@ type uploadStatusReq struct {
 	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.UploadStatusObj, see description for example"`
 }
 
+type missingChunksRes struct {
+	Status         string  `json:"status" example:"chunks missing"`
+	MissingIndexes []int64 `json:"missingIndexes" example:"[5, 7, 12]"`
+	EndIndex       int     `json:"endIndex" example:"2"`
+}
+
 // CheckUploadStatusHandler godoc
 // @Summary check status of an upload
 // @Description check status of an upload
@@ -46,10 +52,17 @@ func checkUploadStatus(c *gin.Context) {
 		return
 	}
 
-	requestBodyParsed := UploadFileObj{}
+	requestBodyParsed := UploadStatusObj{}
 
 	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
 	if err != nil {
+		return
+	}
+
+	completedFile, completedErr := models.GetCompletedFileByFileID(requestBodyParsed.FileHandle)
+	if completedErr == nil && len(completedFile.FileID) != 0 &&
+		utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(requestBodyParsed.FileHandle)) {
+		OkResponse(c, fileUploadCompletedRes)
 		return
 	}
 
@@ -59,10 +72,15 @@ func checkUploadStatus(c *gin.Context) {
 		return
 	}
 
-	completedFile, err := file.FinishUpload()
+	completedFile, err = file.FinishUpload()
 	if err != nil {
 		if err == models.IncompleteUploadErr {
-			OkResponse(c, chunkUploadCompletedRes)
+			incompleteIndexes := file.GetIncompleteIndexesAsArray()
+			OkResponse(c, missingChunksRes{
+				Status:         "chunks missing",
+				MissingIndexes: incompleteIndexes,
+				EndIndex:       file.EndIndex,
+			})
 			return
 		}
 		InternalErrorResponse(c, err)
