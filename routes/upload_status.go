@@ -53,13 +53,20 @@ func checkUploadStatus(c *gin.Context) {
 		return
 	}
 
+	completedFile, completedErr := models.GetCompletedFileByFileID(requestBodyParsed.FileHandle)
+	if completedErr == nil && len(completedFile.FileID) != 0 &&
+		utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(requestBodyParsed.FileHandle)) {
+		OkResponse(c, fileUploadCompletedRes)
+		return
+	}
+
 	file, err := models.GetFileById(requestBodyParsed.FileHandle)
 	if err != nil || len(file.FileID) == 0 {
 		FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 		return
 	}
 
-	completedFile, err := file.FinishUpload()
+	completedFile, err = file.FinishUpload()
 	if err != nil {
 		if err == models.IncompleteUploadErr {
 			OkResponse(c, chunkUploadCompletedRes)
