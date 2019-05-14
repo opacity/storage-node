@@ -75,6 +75,7 @@ func initFileUpload(c *gin.Context) {
 	_, err = io.Copy(&fileBytes, multiFile)
 	if err != nil {
 		InternalErrorResponse(c, err)
+		return
 	}
 
 	requestBodyParsed := InitFileUploadObj{}
