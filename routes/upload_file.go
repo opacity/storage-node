@@ -40,7 +40,6 @@ var fileUploadCompletedRes = uploadFileRes{
 // @Param UploadFileReq body routes.UploadFileReq true "an object to upload a chunk of a file"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"chunkData": "a binary string of the chunk data",
 // @description 	"fileHandle": "a deterministically created file handle",
 // @description 	"partIndex": 1,
 // @description 	"endIndex": 2

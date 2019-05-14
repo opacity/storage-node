@@ -14,12 +14,51 @@ definitions:
     - cost
     - ethAddress
     type: object
+  routes.InitFileUploadReq:
+    properties:
+      metadata:
+        example: the metadata of the file you are about to upload, as an array of
+          bytes
+        type: string
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: should produce routes.InitFileUploadObj, see description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - metadata
+    - publicKey
+    - requestBody
+    - signature
+    type: object
+  routes.InitFileUploadRes:
+    properties:
+      status:
+        example: Success
+        type: string
+    type: object
   routes.UploadFileReq:
     properties:
-      address:
-        example: a 42-char eth address with 0x prefix
-        maxLength: 42
-        minLength: 42
+      chunkData:
+        example: a binary string of the chunk data
+        type: string
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
         type: string
       requestBody:
         example: should produce routes.UploadFileObj, see description for example
@@ -27,31 +66,41 @@ definitions:
       signature:
         description: |-
           signature without 0x prefix is broken into
-          V: sig[0:63]
-          R: sig[64:127]
-          S: sig[128:129]
-        example: a 130 character string created when you signed the request with your
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
           private key or account handle
-        maxLength: 130
-        minLength: 130
+        maxLength: 128
+        minLength: 128
         type: string
     required:
-    - address
+    - chunkData
+    - publicKey
     - requestBody
     - signature
     type: object
   routes.accountCreateReq:
     properties:
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
       requestBody:
         example: should produce routes.accountCreateObj, see description for example
         type: string
       signature:
-        example: a 130 character string created when you signed the request with your
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
           private key or account handle
-        maxLength: 130
-        minLength: 130
+        maxLength: 128
+        minLength: 128
         type: string
     required:
+    - publicKey
     - requestBody
     - signature
     type: object
@@ -67,6 +116,9 @@ definitions:
     type: object
   routes.accountGetObj:
     properties:
+      cost:
+        example: 2
+        type: number
       createdAt:
         type: string
       ethAddress:
@@ -92,11 +144,11 @@ definitions:
       updatedAt:
         type: string
     required:
+    - cost
     - ethAddress
     - expirationDate
     - monthsInSubscription
     - storageLimit
-    - storageUsed
     type: object
   routes.accountPaidRes:
     properties:
@@ -109,10 +161,10 @@ definitions:
     type: object
   routes.deleteFileReq:
     properties:
-      address:
-        example: a 42-char eth address with 0x prefix
-        maxLength: 42
-        minLength: 42
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
         type: string
       requestBody:
         example: should produce routes.deleteFileObj, see description for example
@@ -120,16 +172,15 @@ definitions:
       signature:
         description: |-
           signature without 0x prefix is broken into
-          V: sig[0:63]
-          R: sig[64:127]
-          S: sig[128:129]
-        example: a 130 character string created when you signed the request with your
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
           private key or account handle
-        maxLength: 130
-        minLength: 130
+        maxLength: 128
+        minLength: 128
         type: string
     required:
-    - address
+    - publicKey
     - requestBody
     - signature
     type: object
@@ -137,10 +188,10 @@ definitions:
     type: object
   routes.downloadFileReq:
     properties:
-      address:
-        example: a 42-char eth address with 0x prefix
-        maxLength: 42
-        minLength: 42
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
         type: string
       requestBody:
         example: should produce routes.downloadFileObj, see description for example
@@ -148,16 +199,15 @@ definitions:
       signature:
         description: |-
           signature without 0x prefix is broken into
-          V: sig[0:63]
-          R: sig[64:127]
-          S: sig[128:129]
-        example: a 130 character string created when you signed the request with your
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
           private key or account handle
-        maxLength: 130
-        minLength: 130
+        maxLength: 128
+        minLength: 128
         type: string
     required:
-    - address
+    - publicKey
     - requestBody
     - signature
     type: object
@@ -171,10 +221,10 @@ definitions:
     type: object
   routes.getAccountDataReq:
     properties:
-      address:
-        example: a 42-char eth address with 0x prefix
-        maxLength: 42
-        minLength: 42
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
         type: string
       requestBody:
         example: should produce routes.accountGetReqObj, see description for example
@@ -182,25 +232,24 @@ definitions:
       signature:
         description: |-
           signature without 0x prefix is broken into
-          V: sig[0:63]
-          R: sig[64:127]
-          S: sig[128:129]
-        example: a 130 character string created when you signed the request with your
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
           private key or account handle
-        maxLength: 130
-        minLength: 130
+        maxLength: 128
+        minLength: 128
         type: string
     required:
-    - address
+    - publicKey
     - requestBody
     - signature
     type: object
   routes.getMetadataReq:
     properties:
-      address:
-        example: a 42-char eth address with 0x prefix
-        maxLength: 42
-        minLength: 42
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
         type: string
       requestBody:
         example: should produce routes.getMetadataObject, see description for example
@@ -208,16 +257,15 @@ definitions:
       signature:
         description: |-
           signature without 0x prefix is broken into
-          V: sig[0:63]
-          R: sig[64:127]
-          S: sig[128:129]
-        example: a 130 character string created when you signed the request with your
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
           private key or account handle
-        maxLength: 130
-        minLength: 130
+        maxLength: 128
+        minLength: 128
         type: string
     required:
-    - address
+    - publicKey
     - requestBody
     - signature
     type: object
@@ -233,10 +281,10 @@ definitions:
     type: object
   routes.updateMetadataReq:
     properties:
-      address:
-        example: a 42-char eth address with 0x prefix
-        maxLength: 42
-        minLength: 42
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
         type: string
       requestBody:
         example: should produce routes.updateMetadataObject, see description for example
@@ -244,16 +292,15 @@ definitions:
       signature:
         description: |-
           signature without 0x prefix is broken into
-          V: sig[0:63]
-          R: sig[64:127]
-          S: sig[128:129]
-        example: a 130 character string created when you signed the request with your
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
           private key or account handle
-        maxLength: 130
-        minLength: 130
+        maxLength: 128
+        minLength: 128
         type: string
     required:
-    - address
+    - publicKey
     - requestBody
     - signature
     type: object
@@ -314,8 +361,8 @@ paths:
             $ref: '#/definitions/routes.userStatsRes'
             type: object
       summary: get statistics
-  /api/v1/accounts:
-    get:
+  /api/v1/account-data:
+    post:
       consumes:
       - application/json
       description: |-
@@ -349,6 +396,7 @@ paths:
           schema:
             type: string
       summary: check the payment status of an account
+  /api/v1/accounts:
     post:
       consumes:
       - application/json
@@ -459,6 +507,47 @@ paths:
           schema:
             type: string
       summary: delete a file
+  /api/v1/init-upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        start an upload
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        "fileSizeInByte": "200000000000006",
+        "endIndex": 2
+        }
+      parameters:
+      - description: an object to start a file upload
+        in: body
+        name: InitFileUploadReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.InitFileUploadReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.InitFileUploadRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: start an upload
   /api/v1/metadata:
     get:
       consumes:
@@ -541,7 +630,6 @@ paths:
         upload a chunk of a file. The first partIndex must be 1. The endIndex must be greater than or equal to partIndex.
         requestBody should be a stringified version of (values are just examples):
         {
-        "chunkData": "a binary string of the chunk data",
         "fileHandle": "a deterministically created file handle",
         "partIndex": 1,
         "endIndex": 2
