@@ -108,7 +108,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 
 	v1Router.POST(InitUploadPath, InitFileUploadHandler())
 	v1Router.POST(UploadPath, UploadFileHandler())
-	v1Router.POST(UploadStatusPath, GetUploadStatusHandler())
+	v1Router.POST(UploadStatusPath, CheckUploadStatusHandler())
 
 	v1Router.POST("/free_upload", FreeUploadFileHandler())
 	v1Router.GET("/download", DownloadFileHandler())

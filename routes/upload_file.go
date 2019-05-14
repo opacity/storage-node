@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gin-gonic/gin"
@@ -57,6 +59,7 @@ func UploadFileHandler() gin.HandlerFunc {
 func uploadFile(c *gin.Context) {
 	request := UploadFileReq{}
 
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, utils.MaxMultiPartSize+10000)
 	err := c.Request.ParseMultipartForm(utils.MaxMultiPartSize + 10000)
 	if err != nil {
 		BadRequestResponse(c, err)
@@ -70,7 +73,8 @@ func uploadFile(c *gin.Context) {
 
 	requestBodyParsed := UploadFileObj{}
 
-	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
+	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed,
+		request.verification, c)
 	if err != nil {
 		return
 	}
@@ -86,7 +90,11 @@ func uploadFile(c *gin.Context) {
 		InternalErrorResponse(c, multipartErr)
 		return
 	}
-	file.UpdateCompletedIndexes(completedPart)
+	err = file.UpdateCompletedIndexes(completedPart)
+	if err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
 
 	completedFile, err := file.FinishUpload()
 	if err != nil {

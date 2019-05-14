@@ -326,6 +326,31 @@ definitions:
         example: Chunk is uploaded
         type: string
     type: object
+  routes.uploadStatusReq:
+    properties:
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: should produce routes.UploadStatusObj, see description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.userStatsRes:
     properties:
       uploadedFileSizeInMb:
@@ -664,4 +689,47 @@ paths:
           schema:
             type: string
       summary: upload a chunk of a file
+  /api/v1/upload-status:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        check status of an upload
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        }
+      parameters:
+      - description: an object to poll upload status
+        in: body
+        name: uploadStatusReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.uploadStatusReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.uploadFileRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: file or account not found
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: check status of an upload
 swagger: "2.0"
