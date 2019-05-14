@@ -152,7 +152,7 @@ func createAccount(c *gin.Context) {
 		MonthsInSubscription: requestBodyParsed.DurationInMonths,
 	}
 
-	if err := utils.Validator.Struct(account); err == nil {
+	if err := utils.Validator.Struct(account); err != nil {
 		BadRequestResponse(c, err)
 		return
 	}
