@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -47,6 +49,7 @@ func InitFileUploadHandler() gin.HandlerFunc {
 func initFileUpload(c *gin.Context) {
 	request := InitFileUploadReq{}
 
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, utils.MaxMultiPartSize+10000)
 	err := c.Request.ParseMultipartForm(utils.MaxMultiPartSize + 10000)
 	if err != nil {
 		BadRequestResponse(c, err)
@@ -73,7 +76,7 @@ func initFileUpload(c *gin.Context) {
 		return
 	}
 
-	objKey, uploadID, err := utils.CreateMultiPartUpload(requestBodyParsed.FileHandle)
+	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataKey(requestBodyParsed.FileHandle))
 	if err != nil {
 		InternalErrorResponse(c, err)
 		return

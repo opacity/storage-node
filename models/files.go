@@ -102,6 +102,10 @@ func GetFileMetadataKey(fileID string) string {
 	return fileID + "/metadata"
 }
 
+func GetFileDataKey(fileID string) string {
+	return fileID + "/file"
+}
+
 /*GetOrCreateFile - Get or create the file. */
 func GetOrCreateFile(file File) (*File, error) {
 	getFileMutex.Lock()
