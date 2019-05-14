@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"encoding/json"
-
 	"sync"
 
 	"github.com/aws/aws-sdk-go/aws"

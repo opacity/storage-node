@@ -38,7 +38,7 @@ type downloadFileRes struct {
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "such data does not exist"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/download [get]
+// @Router /api/v1/download [post]
 /*DownloadFileHandler handles the downloading of a file*/
 func DownloadFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(downloadFile)

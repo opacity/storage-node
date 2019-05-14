@@ -56,6 +56,9 @@ const (
 
 	/*FilePath is the path for downloading and deleting files*/
 	FilePath = "/file"
+
+	/*DownloadPath is the path for downloading files*/
+	DownloadPath = "/download"
 )
 
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
@@ -112,12 +115,10 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(UploadPath, UploadFileHandler())
 	v1Router.POST(UploadStatusPath, CheckUploadStatusHandler())
 
-	v1Router.POST("/free_upload", FreeUploadFileHandler())
-	v1Router.GET("/download", DownloadFileHandler())
-
 	// File endpoint
 	v1Router.DELETE(FilePath, DeleteFileHandler())
-	v1Router.GET(FilePath, DownloadFileHandler())
+	//v1Router.POST(DownloadPath, DownloadFileHandler())
+	v1Router.POST(DownloadPath, DownloadSimpleFileHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {

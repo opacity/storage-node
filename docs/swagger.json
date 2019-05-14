@@ -128,24 +128,24 @@
             }
         },
         "/api/v1/download": {
-            "get": {
-                "description": "download a file\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileID\": \"the handle of the file\",\n}",
+            "post": {
+                "description": "download a file without cryptographic verification",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "download a file",
+                "summary": "download a file without cryptographic verification",
                 "parameters": [
                     {
-                        "description": "download object",
-                        "name": "downloadFileReq",
+                        "description": "download object for non-signed requests",
+                        "name": "downloadSimpleFileObj",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.downloadFileReq"
+                            "$ref": "#/definitions/routes.downloadSimpleFileObj"
                         }
                     }
                 ],
@@ -737,6 +737,18 @@
                     "description": "Url should point to S3, thus client does not need to download it from this node.",
                     "type": "string",
                     "example": "a URL to use to download the file"
+                }
+            }
+        },
+        "routes.downloadSimpleFileObj": {
+            "type": "object",
+            "required": [
+                "fileID"
+            ],
+            "properties": {
+                "fileID": {
+                    "type": "string",
+                    "example": "the handle of the file"
                 }
             }
         },
