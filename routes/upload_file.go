@@ -3,6 +3,9 @@ package routes
 import (
 	"net/http"
 
+	"bytes"
+	"io"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gin-gonic/gin"
@@ -57,6 +60,8 @@ func UploadFileHandler() gin.HandlerFunc {
 }
 
 func uploadFile(c *gin.Context) {
+	defer c.Request.Body.Close()
+
 	request := UploadFileReq{}
 
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
@@ -67,8 +72,19 @@ func uploadFile(c *gin.Context) {
 	} else {
 		request.PublicKey = c.Request.FormValue("publicKey")
 		request.Signature = c.Request.FormValue("signature")
-		request.ChunkData = c.Request.FormValue("chunkData")
 		request.RequestBody = c.Request.FormValue("requestBody")
+	}
+
+	multiFile, _, err := c.Request.FormFile("chunkData")
+	defer multiFile.Close()
+	if err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+	var fileBytes bytes.Buffer
+	_, err = io.Copy(&fileBytes, multiFile)
+	if err != nil {
+		InternalErrorResponse(c, err)
 	}
 
 	requestBodyParsed := UploadFileObj{}
@@ -85,7 +101,7 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	completedPart, multipartErr := handleChunkData(file, requestBodyParsed.PartIndex, request.ChunkData)
+	completedPart, multipartErr := handleChunkData(file, requestBodyParsed.PartIndex, fileBytes.Bytes())
 	if multipartErr != nil {
 		InternalErrorResponse(c, multipartErr)
 		return
@@ -114,7 +130,7 @@ func uploadFile(c *gin.Context) {
 	OkResponse(c, fileUploadCompletedRes)
 }
 
-func handleChunkData(file models.File, chunkIndex int, chunkData string) (*s3.CompletedPart, error) {
+func handleChunkData(file models.File, chunkIndex int, chunkData []byte) (*s3.CompletedPart, error) {
 	return utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
-		[]byte(chunkData), chunkIndex)
+		chunkData, chunkIndex)
 }

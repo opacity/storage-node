@@ -3,6 +3,9 @@ package routes
 import (
 	"net/http"
 
+	"bytes"
+	"io"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -47,6 +50,8 @@ func InitFileUploadHandler() gin.HandlerFunc {
 }
 
 func initFileUpload(c *gin.Context) {
+	defer c.Request.Body.Close()
+
 	request := InitFileUploadReq{}
 
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
@@ -57,8 +62,19 @@ func initFileUpload(c *gin.Context) {
 	} else {
 		request.PublicKey = c.Request.FormValue("publicKey")
 		request.Signature = c.Request.FormValue("signature")
-		request.Metadata = c.Request.FormValue("metadata")
 		request.RequestBody = c.Request.FormValue("requestBody")
+	}
+
+	multiFile, _, err := c.Request.FormFile("metadata")
+	defer multiFile.Close()
+	if err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+	var fileBytes bytes.Buffer
+	_, err = io.Copy(&fileBytes, multiFile)
+	if err != nil {
+		InternalErrorResponse(c, err)
 	}
 
 	requestBodyParsed := InitFileUploadObj{}
@@ -82,7 +98,7 @@ func initFileUpload(c *gin.Context) {
 		return
 	}
 
-	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), request.Metadata); err != nil {
+	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), fileBytes.String()); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}

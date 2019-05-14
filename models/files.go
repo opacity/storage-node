@@ -163,6 +163,20 @@ func (file *File) GetCompletedPartsAsArray() []*s3.CompletedPart {
 	return completedParts
 }
 
+/*GetIncompleteIndexesAsArray returns an array of the missing indexes */
+func (file *File) GetIncompleteIndexesAsArray() []int64 {
+	completedIndexMap := file.GetCompletedIndexesAsMap()
+	var incompleteIndexes []int64
+
+	for index := FirstChunkIndex; index <= file.EndIndex; index++ {
+		if _, ok := completedIndexMap[int64(index)]; !ok {
+			incompleteIndexes = append(incompleteIndexes, int64(index))
+		}
+	}
+
+	return incompleteIndexes
+}
+
 /*SaveCompletedIndexesAsString accepts a map of chunk indexes, converts them to a string,
 and saves it to the file's CompletedIndexes.*/
 func (file *File) SaveCompletedIndexesAsString(completedIndexes IndexMap) error {
