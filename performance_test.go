@@ -103,14 +103,14 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			// start upload of first chunk
 			// set PartIndex to 1
 			uploadBody.PartIndex = 1
-			// first the first byte array
-			uploadBody.ChunkData = string(arrayOfChunkDataBuffers[0])
 
 			// remove first byte array from array of byte arrays
 			arrayOfChunkDataBuffers = arrayOfChunkDataBuffers[1:]
 
 			// create a valid request
 			request := routes.ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
+			// first the first byte array
+			request.ChunkData = string(arrayOfChunkDataBuffers[0])
 
 			// get the file handle
 			fileHandle := uploadBody.FileHandle
@@ -134,8 +134,8 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 				//TODO:  having issues when wrapping this in a go-routine.  Figure out why and uncomment out go-routine.
 				//go func() {
 				uploadBody.PartIndex = index + 2
-				uploadBody.ChunkData = string(buffer)
 				request := routes.ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
+				request.ChunkData = string(buffer)
 				w := routes.UploadFileHelperForTest(t, request)
 				if w.Code != http.StatusOK {
 					t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)

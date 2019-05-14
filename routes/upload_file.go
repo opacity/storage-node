@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gin-gonic/gin"
@@ -11,7 +9,6 @@ import (
 )
 
 type UploadFileObj struct {
-	ChunkData  string `form:"chunkData" binding:"required" example:"a binary string of the chunk data"`
 	FileHandle string `form:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
 	PartIndex  int    `form:"partIndex" binding:"required,gte=1" example:"1"`
 	EndIndex   int    `form:"endIndex" binding:"required,gtefield=PartIndex" example:"2"`
@@ -19,7 +16,8 @@ type UploadFileObj struct {
 
 type UploadFileReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.UploadFileObj, see description for example"`
+	ChunkData   string `form:"chunkData" binding:"required" example:"a binary string of the chunk data"`
+	RequestBody string `form:"requestBody" binding:"required" example:"should produce routes.UploadFileObj, see description for example"`
 }
 
 type uploadFileRes struct {
@@ -42,7 +40,6 @@ var fileUploadCompletedRes = uploadFileRes{
 // @Param UploadFileReq body routes.UploadFileReq true "an object to upload a chunk of a file"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"chunkData": "a binary string of the chunk data",
 // @description 	"fileHandle": "a deterministically created file handle",
 // @description 	"partIndex": 1,
 // @description 	"endIndex": 2
@@ -60,9 +57,15 @@ func UploadFileHandler() gin.HandlerFunc {
 func uploadFile(c *gin.Context) {
 	request := UploadFileReq{}
 
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		BadRequestResponse(c, fmt.Errorf("bad request, unable to parse request body:  %v", err))
+	err := c.Request.ParseMultipartForm(utils.MaxMultiPartSize + 10000)
+	if err != nil {
+		BadRequestResponse(c, err)
 		return
+	} else {
+		request.PublicKey = c.Request.FormValue("publicKey")
+		request.Signature = c.Request.FormValue("signature")
+		request.ChunkData = c.Request.FormValue("chunkData")
+		request.RequestBody = c.Request.FormValue("requestBody")
 	}
 
 	requestBodyParsed := UploadFileObj{}
@@ -78,7 +81,7 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	completedPart, multipartErr := handleChunkData(file, requestBodyParsed.PartIndex, requestBodyParsed.ChunkData)
+	completedPart, multipartErr := handleChunkData(file, requestBodyParsed.PartIndex, request.ChunkData)
 	if multipartErr != nil {
 		InternalErrorResponse(c, multipartErr)
 		return
