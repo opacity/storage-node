@@ -24,7 +24,6 @@ const defaultStorageUsedForTest = 10
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
 	return UploadFileObj{
-		ChunkData:  utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		FileHandle: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		PartIndex:  models.FirstChunkIndex,
 		EndIndex:   10,
@@ -42,6 +41,7 @@ func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKe
 	return UploadFileReq{
 		RequestBody:  reqBody.String(),
 		verification: verificationBody,
+		ChunkData:    utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
 }
 

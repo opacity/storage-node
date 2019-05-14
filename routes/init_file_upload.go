@@ -1,10 +1,6 @@
 package routes
 
 import (
-	"fmt"
-
-	"encoding/hex"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -19,7 +15,7 @@ type InitFileUploadObj struct {
 type InitFileUploadReq struct {
 	verification
 	RequestBody string `form:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj, see description for example"`
-	Metadata    []byte `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
+	Metadata    string `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
 }
 
 type InitFileUploadRes struct {
@@ -50,10 +46,16 @@ func InitFileUploadHandler() gin.HandlerFunc {
 
 func initFileUpload(c *gin.Context) {
 	request := InitFileUploadReq{}
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
+
+	err := c.Request.ParseMultipartForm(utils.MaxMultiPartSize + 10000)
+	if err != nil {
 		BadRequestResponse(c, err)
 		return
+	} else {
+		request.PublicKey = c.Request.FormValue("publicKey")
+		request.Signature = c.Request.FormValue("signature")
+		request.Metadata = c.Request.FormValue("metadata")
+		request.RequestBody = c.Request.FormValue("requestBody")
 	}
 
 	requestBodyParsed := InitFileUploadObj{}
@@ -77,9 +79,7 @@ func initFileUpload(c *gin.Context) {
 		return
 	}
 
-	metadata := hex.EncodeToString(request.Metadata)
-
-	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), metadata); err != nil {
+	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), request.Metadata); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
