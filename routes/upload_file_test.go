@@ -150,57 +150,57 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 //		aws.StringValue(filesInDB[0].AwsUploadID))
 //}
 
-func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
-	// TODO: Update tests to work with multipart-form requests
-	t.Skip()
-	models.DeleteAccountsForTest(t)
-	models.DeleteCompletedFilesForTest(t)
-	models.DeleteFilesForTest(t)
+// func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
+// 	// TODO: Update tests to work with multipart-form requests
+// 	t.Skip()
+// 	models.DeleteAccountsForTest(t)
+// 	models.DeleteCompletedFilesForTest(t)
+// 	models.DeleteFilesForTest(t)
 
-	uploadBody := ReturnValidUploadFileBodyForTest(t)
-	uploadBody.PartIndex = models.FirstChunkIndex
-	uploadBody.EndIndex = models.FirstChunkIndex + 1
+// 	uploadBody := ReturnValidUploadFileBodyForTest(t)
+// 	uploadBody.PartIndex = models.FirstChunkIndex
+// 	uploadBody.EndIndex = models.FirstChunkIndex + 1
 
-	chunkData := ReturnChunkDataForTest(t)
-	chunkDataPart1 := chunkData[0:utils.MaxMultiPartSizeForTest]
-	chunkDataPart2 := chunkData[utils.MaxMultiPartSizeForTest:]
+// 	chunkData := ReturnChunkDataForTest(t)
+// 	chunkDataPart1 := chunkData[0:utils.MaxMultiPartSizeForTest]
+// 	chunkDataPart2 := chunkData[utils.MaxMultiPartSizeForTest:]
 
-	privateKey, err := utils.GenerateKey()
-	assert.Nil(t, err)
-	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-	request.ChunkData = string(chunkDataPart1)
-	accountID, err := utils.HashString(request.PublicKey)
-	assert.Nil(t, err)
-	account := CreatePaidAccountForTest(accountID, t)
+// 	privateKey, err := utils.GenerateKey()
+// 	assert.Nil(t, err)
+// 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
+// 	request.ChunkData = string(chunkDataPart1)
+// 	accountID, err := utils.HashString(request.PublicKey)
+// 	assert.Nil(t, err)
+// 	account := CreatePaidAccountForTest(accountID, t)
 
-	objectKey := InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
-	w := UploadFileHelperForTest(t, request)
+// 	objectKey := InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
+// 	w := UploadFileHelperForTest(t, request)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
-	uploadBody.PartIndex++
+// 	if w.Code != http.StatusOK {
+// 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
+// 	}
+// 	uploadBody.PartIndex++
 
-	request = ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-	request.ChunkData = string(chunkDataPart2)
+// 	request = ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
+// 	request.ChunkData = string(chunkDataPart2)
 
-	w = UploadFileHelperForTest(t, request)
+// 	w = UploadFileHelperForTest(t, request)
 
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
+// 	if w.Code != http.StatusOK {
+// 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
+// 	}
 
-	file, _ := models.GetFileById(uploadBody.FileHandle)
-	assert.True(t, len(file.FileID) == 0)
+// 	file, _ := models.GetFileById(uploadBody.FileHandle)
+// 	assert.True(t, len(file.FileID) == 0)
 
-	updatedAccount, err := models.GetAccountById(account.AccountID)
-	assert.Nil(t, err)
+// 	updatedAccount, err := models.GetAccountById(account.AccountID)
+// 	assert.Nil(t, err)
 
-	assert.True(t, updatedAccount.StorageUsed > account.StorageUsed)
+// 	assert.True(t, updatedAccount.StorageUsed > account.StorageUsed)
 
-	completedFile, _ := models.GetCompletedFileByFileID(uploadBody.FileHandle)
-	assert.Equal(t, completedFile.FileID, uploadBody.FileHandle)
+// 	completedFile, _ := models.GetCompletedFileByFileID(uploadBody.FileHandle)
+// 	assert.Equal(t, completedFile.FileID, uploadBody.FileHandle)
 
-	err = utils.DeleteDefaultBucketObject(objectKey)
-	assert.Nil(t, err)
-}
+// 	err = utils.DeleteDefaultBucketObject(objectKey)
+// 	assert.Nil(t, err)
+// }
