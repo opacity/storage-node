@@ -19,8 +19,8 @@ type InitFileUploadObj struct {
 type InitFileUploadReq struct {
 	verification
 	requestBody
-	Metadata       string `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
-	MetadataAsFile string `formFile:"metadata"`
+	Metadata          string `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
+	MetadataAsFile    string `formFile:"metadata"`
 	initFileUploadObj InitFileUploadObj
 }
 
@@ -28,7 +28,7 @@ type InitFileUploadRes struct {
 	Status string `json:"status" example:"Success"`
 }
 
-func (v *InitFileUploadReq) getObjectRef() dest interface{} {
+func (v *InitFileUploadReq) getObjectRef() interface{} {
 	return &v.initFileUploadObj
 }
 
