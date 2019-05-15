@@ -97,9 +97,6 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			// create an array of arrays of bytes
 			arrayOfChunkDataBuffers := ReturnChunkDataForTestBigFile(t)
 
-			// set EndIndex to the length of the array of byte arrays
-			uploadBody.EndIndex = len(arrayOfChunkDataBuffers)
-
 			// start upload of first chunk
 			// set PartIndex to 1
 			uploadBody.PartIndex = 1
@@ -121,7 +118,7 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			routes.CreatePaidAccountForTest(accountID, t)
 
 			// init upload
-			routes.InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
+			routes.InitUploadFileForTest(t, uploadBody.FileHandle, len(arrayOfChunkDataBuffers))
 
 			// perform the first request and verify the expected status
 			w := routes.UploadFileHelperForTest(t, request)
