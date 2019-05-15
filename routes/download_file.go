@@ -65,12 +65,22 @@ func downloadFile(c *gin.Context) {
 		return
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(requestBodyParsed.FileID, utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(requestBodyParsed.FileID), utils.CannedAcl_PublicRead); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
-	if err := models.ExpireObject(requestBodyParsed.FileID); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(requestBodyParsed.FileID), utils.CannedAcl_PublicRead); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	if err := models.ExpireObject(models.GetFileDataKey(requestBodyParsed.FileID)); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	if err := models.ExpireObject(models.GetFileMetadataKey(requestBodyParsed.FileID)); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}

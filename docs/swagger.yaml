@@ -375,7 +375,7 @@ info:
     url: https://telegram.me/opacitystorage
   description: Opacity backend for file storage.
   license:
-    name: GNU GENERAL PUBLIC LICENSE
+    name: OPACITY LIMITED CODE REVIEW LICENSE LICENSE.md
   termsOfService: https://opacity.io/terms-of-service
   title: Storage Node
   version: "1.0"
@@ -576,8 +576,8 @@ paths:
           schema:
             type: string
       summary: start an upload
-  /api/v1/metadata:
-    get:
+  /api/v1/metadata/get:
+    post:
       consumes:
       - application/json
       description: |-
@@ -607,6 +607,7 @@ paths:
           schema:
             type: string
       summary: Retrieve account metadata
+  /api/v1/metadata/set:
     post:
       consumes:
       - application/json
@@ -655,12 +656,11 @@ paths:
       consumes:
       - multipart/form-data
       description: |-
-        upload a chunk of a file. The first partIndex must be 1. The endIndex must be greater than or equal to partIndex.
+        upload a chunk of a file. The first partIndex must be 1.
         requestBody should be a stringified version of (values are just examples):
         {
         "fileHandle": "a deterministically created file handle",
         "partIndex": 1,
-        "endIndex": 2
         }
       parameters:
       - description: an object to upload a chunk of a file

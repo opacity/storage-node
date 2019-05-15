@@ -49,6 +49,16 @@ func downloadSimpleFile(c *gin.Context) {
 		return
 	}
 
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(request.FileID), utils.CannedAcl_PublicRead); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(request.FileID), utils.CannedAcl_PublicRead); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
 	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName,
 		request.FileID)
 	OkResponse(c, downloadFileRes{
