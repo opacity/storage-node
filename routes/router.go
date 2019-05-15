@@ -25,7 +25,7 @@ import (
 // @contact.name Opacity Staff
 // @contact.url https://telegram.me/opacitystorage
 
-// @license.name GNU GENERAL PUBLIC LICENSE
+// @license.name OPACITY LIMITED CODE REVIEW LICENSE LICENSE.md
 
 var uptime time.Time
 
@@ -42,8 +42,11 @@ const (
 	/*AdminPath is a router group for admin task. */
 	AdminPath = "/admin"
 
-	/*MetadataPath is the path for dealing with metadata*/
-	MetadataPath = "/metadata"
+	/*MetadataGetPath is the path for getting metadata*/
+	MetadataGetPath = "/metadata/get"
+
+	/*MetadataSetPath is the path for setting metadata*/
+	MetadataSetPath = "/metadata/set"
 
 	/*InitUploadPath is the path for uploading files to paid accounts*/
 	InitUploadPath = "/init-upload"
@@ -108,8 +111,8 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(AccountsPath, CreateAccountHandler())
 	v1Router.POST(AccountDataPath, CheckAccountPaymentStatusHandler())
 
-	v1Router.POST(MetadataPath, UpdateMetadataHandler())
-	v1Router.GET(MetadataPath, GetMetadataHandler())
+	v1Router.POST(MetadataSetPath, UpdateMetadataHandler())
+	v1Router.POST(MetadataGetPath, GetMetadataHandler())
 
 	v1Router.POST(InitUploadPath, InitFileUploadHandler())
 	v1Router.POST(UploadPath, UploadFileHandler())

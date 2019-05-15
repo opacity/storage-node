@@ -92,5 +92,15 @@ func checkUploadStatus(c *gin.Context) {
 		return
 	}
 
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
+		InternalErrorResponse(c, err)
+		return
+	}
+
 	OkResponse(c, fileUploadCompletedRes)
 }

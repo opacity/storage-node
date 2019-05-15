@@ -12,7 +12,7 @@ import (
 
 // must be sorted alphabetically for JSON marshaling/stringifying
 type updateMetadataObject struct {
-	Metadata    string `json:"metadata" binding:"required,len=64" example:"your (updated) account metadata"`
+	Metadata    string `json:"metadata" binding:"required" example:"your (updated) account metadata"`
 	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically from your account handle or private key"`
 	Timestamp   int64  `json:"timestamp" binding:"required"`
 }
@@ -55,7 +55,7 @@ type getMetadataRes struct {
 // @description }
 // @Success 200 {object} routes.getMetadataRes
 // @Failure 404 {string} string "no value found for that key"
-// @Router /api/v1/metadata [get]
+// @Router /api/v1/metadata/get [post]
 /*GetMetadataHandler is a handler for getting the file metadata*/
 func GetMetadataHandler() gin.HandlerFunc {
 	return ginHandlerFunc(getMetadata)
@@ -77,7 +77,7 @@ func GetMetadataHandler() gin.HandlerFunc {
 // @Failure 404 {string} string "no value found for that key"
 // @Failure 403 {string} string "subscription expired"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/metadata [post]
+// @Router /api/v1/metadata/set [post]
 /*UpdateMetadataHandler is a handler for updating the file metadata*/
 func UpdateMetadataHandler() gin.HandlerFunc {
 	return ginHandlerFunc(setMetadata)

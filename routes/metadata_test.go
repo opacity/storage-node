@@ -177,7 +177,7 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 func metadataTestHelperGetMetadata(t *testing.T, get getMetadataReq) *httptest.ResponseRecorder {
 	router := returnEngine()
 	v1 := returnV1Group(router)
-	v1.GET(MetadataPath, GetMetadataHandler())
+	v1.GET(MetadataGetPath, GetMetadataHandler())
 
 	marshalledReq, _ := json.Marshal(get)
 
@@ -186,7 +186,7 @@ func metadataTestHelperGetMetadata(t *testing.T, get getMetadataReq) *httptest.R
 	// Create the mock request you'd like to test. Make sure the second argument
 	// here is the same as one of the routes you defined in the router setup
 	// block!
-	req, err := http.NewRequest(http.MethodGet, v1.BasePath()+MetadataPath, reqBody)
+	req, err := http.NewRequest(http.MethodGet, v1.BasePath()+MetadataGetPath, reqBody)
 	if err != nil {
 		t.Fatalf("Couldn't create request: %v\n", err)
 	}
@@ -203,7 +203,7 @@ func metadataTestHelperGetMetadata(t *testing.T, get getMetadataReq) *httptest.R
 func metadataTestHelperUpdateMetadata(t *testing.T, post updateMetadataReq) *httptest.ResponseRecorder {
 	router := returnEngine()
 	v1 := returnV1Group(router)
-	v1.POST(MetadataPath, UpdateMetadataHandler())
+	v1.POST(MetadataSetPath, UpdateMetadataHandler())
 
 	marshalledReq, _ := json.Marshal(post)
 
@@ -212,7 +212,7 @@ func metadataTestHelperUpdateMetadata(t *testing.T, post updateMetadataReq) *htt
 	// Create the mock request you'd like to test. Make sure the second argument
 	// here is the same as one of the routes you defined in the router setup
 	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+MetadataPath, reqBody)
+	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+MetadataSetPath, reqBody)
 	if err != nil {
 		t.Fatalf("Couldn't create request: %v\n", err)
 	}
