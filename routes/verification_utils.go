@@ -22,7 +22,7 @@ type verificationInterface interface {
 
 type parsableObject interface {
 	// Return the reference of object
-	getObjectRef() dest interface{}
+	getObjectRef() interface{}
 	getObjectAsString() string
 }
 
