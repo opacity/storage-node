@@ -88,9 +88,7 @@ func uploadFile(c *gin.Context) {
 
 	requestBodyParsed := UploadFileObj{}
 
-	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed,
-		request.verification, c)
-	if err != nil {
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return
 	}
 
