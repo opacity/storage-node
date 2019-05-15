@@ -80,7 +80,8 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 		}
 
 		if fileTag != "" {
-			strV, err := readFileFromForm(fileTag, c)
+			var err error
+			strV, err = readFileFromForm(fileTag, c)
 			if err != nil {
 				return err
 			}
