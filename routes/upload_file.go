@@ -16,7 +16,6 @@ import (
 type UploadFileObj struct {
 	FileHandle string `form:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
 	PartIndex  int    `form:"partIndex" binding:"required,gte=1" example:"1"`
-	EndIndex   int    `form:"endIndex" binding:"required,gtefield=PartIndex" example:"2"`
 }
 
 type UploadFileReq struct {
@@ -39,7 +38,7 @@ var fileUploadCompletedRes = uploadFileRes{
 
 // UploadFileHandler godoc
 // @Summary upload a chunk of a file
-// @Description upload a chunk of a file. The first partIndex must be 1. The endIndex must be greater than or equal to partIndex.
+// @Description upload a chunk of a file. The first partIndex must be 1.
 // @Accept  mpfd
 // @Produce  json
 // @Param UploadFileReq body routes.UploadFileReq true "an object to upload a chunk of a file"
@@ -47,7 +46,6 @@ var fileUploadCompletedRes = uploadFileRes{
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
 // @description 	"partIndex": 1,
-// @description 	"endIndex": 2
 // @description }
 // @Success 200 {object} routes.uploadFileRes
 // @Failure 403 {object} routes.accountCreateRes
@@ -113,22 +111,7 @@ func uploadFile(c *gin.Context) {
 		return
 	}
 
-	completedFile, err := file.FinishUpload()
-	if err != nil {
-		if err == models.IncompleteUploadErr {
-			OkResponse(c, chunkUploadCompletedRes)
-			return
-		}
-		InternalErrorResponse(c, err)
-		return
-	}
-
-	if err := account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte)); err != nil {
-		InternalErrorResponse(c, err)
-		return
-	}
-
-	OkResponse(c, fileUploadCompletedRes)
+	OkResponse(c, chunkUploadCompletedRes)
 }
 
 func handleChunkData(file models.File, chunkIndex int, chunkData []byte) (*s3.CompletedPart, error) {
