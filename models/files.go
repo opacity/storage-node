@@ -125,9 +125,6 @@ func (file *File) UpdateKeyAndUploadID(key, uploadID *string) error {
 
 /*UpdateCompletedIndexes - update the completed indexes*/
 func (file *File) UpdateCompletedIndexes(completedPart *s3.CompletedPart) error {
-	// TODO:  QA and see if we need this mutex?
-	file.Lock()
-	defer file.Unlock()
 	completedIndexes := file.GetCompletedIndexesAsMap()
 	completedIndexes[*completedPart.PartNumber] = completedPart
 	err := file.SaveCompletedIndexesAsString(completedIndexes)
