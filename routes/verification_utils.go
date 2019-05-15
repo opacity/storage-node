@@ -73,12 +73,14 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 		fileTag := field.Tag.Get("formFile")
 
 		if formTag == "" && fileTag == "" {
+			fmt.Println("Skip field without any tags")
 			continue
 		}
 
 		strV := ""
 		if formTag != "" {
 			strV = c.Request.FormValue(formTag)
+			fmt.Printf("Get strv via formTag %v\n", strV)
 		}
 
 		if fileTag != "" {
@@ -87,10 +89,13 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 			if err != nil {
 				return err
 			}
+			fmt.Printf("Get strv via fileTag %v\n", strV)
 		}
 
 		s.Field(i).SetString(strV)
 	}
+
+	fmt.Printf("s value %s\n", s)
 	if i, ok := dest.(verificationInterface); ok {
 		if ii, ok := dest.(parsableObjectInterface); ok {
 			return verifyAndParseStringRequest(ii.getObjectAsString(), ii.getObjectRef(), i.getVerification(), c)
