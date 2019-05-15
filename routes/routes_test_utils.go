@@ -26,7 +26,6 @@ func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	return UploadFileObj{
 		FileHandle: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		PartIndex:  models.FirstChunkIndex,
-		EndIndex:   10,
 	}
 }
 
