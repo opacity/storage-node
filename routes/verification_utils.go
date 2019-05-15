@@ -63,8 +63,10 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 		return err
 	}
 
-	t := reflect.TypeOf(dest)
 	v := reflect.ValueOf(&dest).Elem()
+	t := reflect.TypeOf(v)
+	s := reflect.Indirect(reflect.ValueOf(dest))
+
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i) // Get the field, returns https://golang.org/pkg/reflect/#StructField
 		formTag := field.Tag.Get("form")
@@ -87,7 +89,7 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 			}
 		}
 
-		v.Field(i).SetString(strV)
+		s.Field(i).SetString(strV)
 	}
 	if i, ok := dest.(verificationInterface); ok {
 		if ii, ok := dest.(parsableObjectInterface); ok {
