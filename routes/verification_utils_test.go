@@ -46,13 +46,14 @@ func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("POST", "/", body)
+	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
 
 	request := testVerifiedRequest{}
 	err := verifyAndParseFormRequest(&request, c)
 
 	assert.Nil(t, err)
-	assert.Equal(t, request.strValue, "strV")
-	assert.Equal(t, request.requestObject.data, "body")
+	assert.Equal(t, "strV", request.strValue)
+	assert.Equal(t, "body", request.requestObject.data)
 }
 
 func Test_verifyAndParseFormRequestWithNormalRequest(t *testing.T) {
@@ -65,12 +66,13 @@ func Test_verifyAndParseFormRequestWithNormalRequest(t *testing.T) {
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request, _ = http.NewRequest("POST", "/", body)
+	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
 
 	request := testSetRequest{}
 	err := verifyAndParseFormRequest(&request, c)
 
 	assert.Nil(t, err)
-	assert.Equal(t, request.strValue, "strV")
-	assert.Equal(t, request.fileObject, "test")
-	assert.Equal(t, request.emptyValue, "")
+	assert.Equal(t, "strV", request.strValue)
+	assert.Equal(t, "test", request.fileObject)
+	assert.Equal(t, "", request.emptyValue)
 }
