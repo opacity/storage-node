@@ -159,7 +159,6 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 
 // 	uploadBody := ReturnValidUploadFileBodyForTest(t)
 // 	uploadBody.PartIndex = models.FirstChunkIndex
-// 	uploadBody.EndIndex = models.FirstChunkIndex + 1
 
 // 	chunkData := ReturnChunkDataForTest(t)
 // 	chunkDataPart1 := chunkData[0:utils.MaxMultiPartSizeForTest]
@@ -173,7 +172,7 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 // 	assert.Nil(t, err)
 // 	account := CreatePaidAccountForTest(accountID, t)
 
-// 	objectKey := InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
+// 	objectKey := InitUploadFileForTest(t, uploadBody.FileHandle, models.FirstChunkIndex + 1)
 // 	w := UploadFileHelperForTest(t, request)
 
 // 	if w.Code != http.StatusOK {

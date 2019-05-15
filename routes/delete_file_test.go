@@ -85,7 +85,6 @@ func checkPrerequisites(t *testing.T, account models.Account, fileID string) {
 func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.PrivateKey) {
 	uploadBody := ReturnValidUploadFileBodyForTest(t)
 	uploadBody.PartIndex = models.FirstChunkIndex
-	uploadBody.EndIndex = models.FirstChunkIndex
 
 	chunkData := ReturnChunkDataForTest(t)
 
@@ -97,7 +96,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	assert.Nil(t, err)
 	account := CreatePaidAccountForTest(accountID, t)
 
-	InitUploadFileForTest(t, uploadBody.FileHandle, uploadBody.EndIndex)
+	InitUploadFileForTest(t, uploadBody.FileHandle, models.FirstChunkIndex)
 	w := UploadFileHelperForTest(t, request)
 
 	if w.Code != http.StatusOK {
