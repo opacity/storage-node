@@ -1,10 +1,14 @@
 package routes
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"reflect"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -20,7 +24,7 @@ type verificationInterface interface {
 	getAccount(c *gin.Context) (models.Account, error)
 }
 
-type parsableObject interface {
+type parsableObjectInterface interface {
 	// Return the reference of object
 	getObjectRef() interface{}
 	getObjectAsString() string
@@ -84,8 +88,8 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 
 		v.Field(i).SetString(strV)
 	}
-	if i, ok := dest.Type(verificationInterface); ok {
-		if ii, ok := dest.Type(parsableObject); ok {
+	if i, ok := dest.(verificationInterface); ok {
+		if ii, ok := dest.(parsableObjectInterface); ok {
 			return verifyAndParseStringRequest(ii.getObjectAsString(), ii.getObjectRef(), i.getVerification(), c)
 		}
 	}

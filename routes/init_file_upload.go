@@ -1,10 +1,6 @@
 package routes
 
 import (
-	"bytes"
-	"io"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -79,7 +75,7 @@ func initFileUpload(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), fileBytes.String()); err != nil {
+	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(request.initFileUploadObj.FileHandle), request.MetadataAsFile); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
