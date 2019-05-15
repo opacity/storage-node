@@ -15,12 +15,97 @@ const signatureDidNotMatchResponse = "signature did not match"
 const errVerifying = "error verifying signature"
 const marshalError = "bad request, unable to marshal request body: "
 
+type verificationInterface interface {
+	getVerification() verification
+	getAccount(c *gin.Context) (models.Account, error)
+}
+
+type parsableObject interface {
+	// Return the reference of object
+	getObjectRef() dest interface{}
+	getObjectAsString() string
+}
+
 type verification struct {
 	// signature without 0x prefix is broken into
 	// R: sig[0:63]
 	// S: sig[64:127]
 	Signature string `json:"signature" form:"signature" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a 128 character string created when you signed the request with your private key or account handle"`
 	PublicKey string `json:"publicKey" form:"publicKey" binding:"required,len=66" minLength:"66" maxLength:"66" example:"a 66-character public key"`
+}
+
+func (v verification) getVerification() verification {
+	return v
+}
+
+func (v verification) getAccount(c *gin.Context) (models.Account, error) {
+	return returnAccountIfVerified(v.PublicKey, c)
+}
+
+type requestBody struct {
+	RequestBody string `form:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj as example"`
+}
+
+func (v requestBody) getObjectAsString() string {
+	return v.RequestBody
+}
+
+func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
+	defer c.Request.Body.Close()
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
+	err := c.Request.ParseMultipartForm(MaxRequestSize)
+	if err != nil {
+		BadRequestResponse(c, err)
+		return err
+	}
+
+	t := reflect.TypeOf(dest)
+	v := reflect.ValueOf(&dest).Elem()
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i) // Get the field, returns https://golang.org/pkg/reflect/#StructField
+		formTag := field.Tag.Get("form")
+		fileTag := field.Tag.Get("formFile")
+
+		if formTag == "" && fileTag == "" {
+			continue
+		}
+
+		strV := ""
+		if formTag != "" {
+			strV = c.Request.FormValue(formTag)
+		}
+
+		if fileTag != "" {
+			strV, err := readFileFromForm(fileTag, c)
+			if err != nil {
+				return err
+			}
+		}
+
+		v.Field(i).SetString(strV)
+	}
+	if i, ok := dest.Type(verificationInterface); ok {
+		if ii, ok := dest.Type(parsableObject); ok {
+			return verifyAndParseStringRequest(ii.getObjectAsString(), ii.getObjectRef(), i.getVerification(), c)
+		}
+	}
+	return nil
+}
+
+func readFileFromForm(fileTag string, c *gin.Context) (string, error) {
+	multiFile, _, err := c.Request.FormFile(fileTag)
+	defer multiFile.Close()
+	if err != nil {
+		InternalErrorResponse(c, err)
+		return "", err
+	}
+	var fileBytes bytes.Buffer
+	_, err = io.Copy(&fileBytes, multiFile)
+	if err != nil {
+		InternalErrorResponse(c, err)
+		return "", err
+	}
+	return fileBytes.String(), nil
 }
 
 func verifyAndParseStringRequest(reqAsString string, dest interface{}, verificationData verification, c *gin.Context) error {

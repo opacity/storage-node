@@ -18,12 +18,18 @@ type InitFileUploadObj struct {
 
 type InitFileUploadReq struct {
 	verification
-	RequestBody string `form:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj, see description for example"`
-	Metadata    string `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
+	requestBody
+	Metadata       string `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
+	MetadataAsFile string `formFile:"metadata"`
+	initFileUploadObj InitFileUploadObj
 }
 
 type InitFileUploadRes struct {
 	Status string `json:"status" example:"Success"`
+}
+
+func (v *InitFileUploadReq) getObjectRef() dest interface{} {
+	return &v.initFileUploadObj
 }
 
 // InitFileUploadHandler godoc
@@ -49,38 +55,13 @@ func InitFileUploadHandler() gin.HandlerFunc {
 }
 
 func initFileUpload(c *gin.Context) {
-	defer c.Request.Body.Close()
-
 	request := InitFileUploadReq{}
 
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
-	err := c.Request.ParseMultipartForm(MaxRequestSize)
-
-	if err != nil {
-		BadRequestResponse(c, err)
-		return
-	} else {
-		request.PublicKey = c.Request.FormValue("publicKey")
-		request.Signature = c.Request.FormValue("signature")
-		request.RequestBody = c.Request.FormValue("requestBody")
-	}
-
-	multiFile, _, err := c.Request.FormFile("metadata")
-	defer multiFile.Close()
-	if err != nil {
-		InternalErrorResponse(c, err)
-		return
-	}
-	var fileBytes bytes.Buffer
-	_, err = io.Copy(&fileBytes, multiFile)
-	if err != nil {
-		InternalErrorResponse(c, err)
+	if err := verifyAndParseFormRequest(&request, c); err != nil {
 		return
 	}
 
-	requestBodyParsed := InitFileUploadObj{}
-
-	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
+	account, err := request.getAccount(c)
 	if err != nil {
 		return
 	}
@@ -89,24 +70,24 @@ func initFileUpload(c *gin.Context) {
 		return
 	}
 
-	if !checkHaveEnoughStorageSpace(account, requestBodyParsed.FileSizeInByte, c) {
+	if !checkHaveEnoughStorageSpace(account, request.initFileUploadObj.FileSizeInByte, c) {
 		return
 	}
 
-	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataKey(requestBodyParsed.FileHandle))
+	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataKey(request.initFileUploadObj.FileHandle))
 	if err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
-	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), fileBytes.String()); err != nil {
+	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(request.initFileUploadObj.FileHandle), fileBytes.String()); err != nil {
 		InternalErrorResponse(c, err)
 		return
 	}
 
 	file := models.File{
-		FileID:       requestBodyParsed.FileHandle,
-		EndIndex:     requestBodyParsed.EndIndex,
+		FileID:       request.initFileUploadObj.FileHandle,
+		EndIndex:     request.initFileUploadObj.EndIndex,
 		AwsUploadID:  uploadID,
 		AwsObjectKey: objKey,
 		ExpiredAt:    account.ExpirationDate(),
