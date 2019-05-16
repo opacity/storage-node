@@ -26,7 +26,7 @@ type testVerifiedRequest struct {
 type testSetRequest struct {
 	StrValue   string `form:"str"`
 	FileObject string `formFile:"file"`
-	EmptyValue string
+	emptyValue string
 }
 
 func (v *testVerifiedRequest) getObjectRef() interface{} {
@@ -52,7 +52,7 @@ func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 	err := verifyAndParseFormRequest(&request, c)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "strV", request.strValue)
+	assert.Equal(t, "strV", request.StrValue)
 	assert.Equal(t, "body", request.requestObject.data)
 }
 
@@ -72,7 +72,7 @@ func Test_verifyAndParseFormRequestWithNormalRequest(t *testing.T) {
 	err := verifyAndParseFormRequest(&request, c)
 
 	assert.Nil(t, err)
-	assert.Equal(t, "strV", request.strValue)
-	assert.Equal(t, "test", request.fileObject)
+	assert.Equal(t, "strV", request.StrValue)
+	assert.Equal(t, "test", request.FileObject)
 	assert.Equal(t, "", request.emptyValue)
 }
