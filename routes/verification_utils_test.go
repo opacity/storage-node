@@ -2,6 +2,7 @@ package routes
 
 import (
 	"bytes"
+	"encoding/json"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -37,7 +38,7 @@ func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 	obj := testRequestObject{
 		data: "some body message",
 	}
-	json, _ := json.Marshal(obj)
+	reqJSON, _ := json.Marshal(obj)
 	reqBody := bytes.NewBuffer(reqJSON)
 	verification := returnSuccessVerificationForTest(t, reqBody.String())
 	body := new(bytes.Buffer)
