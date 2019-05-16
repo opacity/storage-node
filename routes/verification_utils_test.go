@@ -34,8 +34,8 @@ func (v *testVerifiedRequest) getObjectRef() interface{} {
 }
 
 func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
-	body := "some body message"
-	verification := returnSuccessVerificationForTest(t, body)
+	bodyMsg := "some body message"
+	verification := returnSuccessVerificationForTest(t, bodyMsg)
 	body := new(bytes.Buffer)
 	mw := multipart.NewWriter(body)
 	mw.WriteField("signature", verification.Signature)
@@ -56,7 +56,7 @@ func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "strV", request.StrValue)
 	assert.Equal(t, "test", request.FileObject)
-	assert.Equal(t, body, request.requestObject.data)
+	assert.Equal(t, bodyMsg, request.requestObject.data)
 }
 
 func Test_verifyAndParseFormRequestWithNormalRequest(t *testing.T) {
