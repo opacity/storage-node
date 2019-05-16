@@ -20,22 +20,20 @@ func FreeUploadFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(freeUploadFile)
 }
 
-func freeUploadFile(c *gin.Context) {
+func freeUploadFile(c *gin.Context) error {
 	request := freeUploadFileReq{}
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	objectKey := fmt.Sprintf("%s%s", "free_upload/", request.UploadID)
 
 	if err := utils.SetDefaultBucketObject(objectKey, request.FileData); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
-	OkResponse(c, uploadFileRes{
+	return OkResponse(c, uploadFileRes{
 		Status: "File is uploaded",
 	})
 }

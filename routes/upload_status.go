@@ -44,63 +44,55 @@ func CheckUploadStatusHandler() gin.HandlerFunc {
 	return ginHandlerFunc(checkUploadStatus)
 }
 
-func checkUploadStatus(c *gin.Context) {
+func checkUploadStatus(c *gin.Context) error {
 	request := uploadStatusReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		BadRequestResponse(c, fmt.Errorf("bad request, unable to parse request body:  %v", err))
-		return
+		return BadRequestResponse(c, fmt.Errorf("bad request, unable to parse request body:  %v", err))
 	}
 
 	requestBodyParsed := UploadStatusObj{}
 
 	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
 	if err != nil {
-		return
+		return err
 	}
 
 	completedFile, completedErr := models.GetCompletedFileByFileID(requestBodyParsed.FileHandle)
 	if completedErr == nil && len(completedFile.FileID) != 0 &&
 		utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(requestBodyParsed.FileHandle)) {
-		OkResponse(c, fileUploadCompletedRes)
-		return
+		return OkResponse(c, fileUploadCompletedRes)
 	}
 
 	file, err := models.GetFileById(requestBodyParsed.FileHandle)
 	if err != nil || len(file.FileID) == 0 {
-		FileNotFoundResponse(c, requestBodyParsed.FileHandle)
-		return
+		return FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 	}
 
 	completedFile, err = file.FinishUpload()
 	if err != nil {
 		if err == models.IncompleteUploadErr {
 			incompleteIndexes := file.GetIncompleteIndexesAsArray()
-			OkResponse(c, missingChunksRes{
+			return OkResponse(c, missingChunksRes{
 				Status:         "chunks missing",
 				MissingIndexes: incompleteIndexes,
 				EndIndex:       file.EndIndex,
 			})
-			return
 		}
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte)); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
-	OkResponse(c, fileUploadCompletedRes)
+	return OkResponse(c, fileUploadCompletedRes)
 }

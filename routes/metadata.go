@@ -83,67 +83,62 @@ func UpdateMetadataHandler() gin.HandlerFunc {
 	return ginHandlerFunc(setMetadata)
 }
 
-func getMetadata(c *gin.Context) {
+func getMetadata(c *gin.Context) error {
 	request := getMetadataReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	requestBodyParsed := getMetadataObject{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
-		return
+		return err
 	}
 
 	metadata, expirationTime, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
 	if err != nil {
-		NotFoundResponse(c, err)
-		return
+		return NotFoundResponse(c, err)
 	}
-	OkResponse(c, getMetadataRes{
+
+	return OkResponse(c, getMetadataRes{
 		Metadata:       metadata,
 		ExpirationDate: expirationTime,
 	})
 }
 
-func setMetadata(c *gin.Context) {
+func setMetadata(c *gin.Context) error {
 	request := updateMetadataReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	requestBodyParsed := updateMetadataObject{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
-		return
+		return err
 	}
 
 	_, expirationTime, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
 
 	if err != nil {
-		NotFoundResponse(c, err)
-		return
+		return NotFoundResponse(c, err)
 	}
 
 	if expirationTime.Before(time.Now()) {
-		ForbiddenResponse(c, errors.New("subscription expired"))
-		return
+		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
 	ttl := time.Until(expirationTime)
 
 	if err := utils.BatchSet(&utils.KVPairs{requestBodyParsed.MetadataKey: requestBodyParsed.Metadata}, ttl); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
-	OkResponse(c, updateMetadataRes{
+	return OkResponse(c, updateMetadataRes{
 		MetadataKey:    requestBodyParsed.MetadataKey,
 		Metadata:       requestBodyParsed.Metadata,
 		ExpirationDate: expirationTime,

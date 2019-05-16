@@ -98,37 +98,33 @@ func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 	return ginHandlerFunc(checkAccountPaymentStatus)
 }
 
-func createAccount(c *gin.Context) {
+func createAccount(c *gin.Context) error {
 	request := accountCreateReq{}
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	requestBodyParsed := accountCreateObj{}
 	if err := utils.ParseStringifiedRequest(request.RequestBody, &requestBodyParsed); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
 	if err != nil {
 		err = fmt.Errorf("error generating account wallet:  %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	storageLimit, ok := models.StorageLimitMap[requestBodyParsed.StorageLimit]
 	if !ok {
-		BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
-		return
+		return BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
 	}
 
 	accountID, err := returnAccountIdWithStringRequest(request.RequestBody, request.verification, c)
 	if err != nil {
-		return
+		return err
 	}
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
@@ -138,8 +134,7 @@ func createAccount(c *gin.Context) {
 	)
 
 	if encryptErr != nil {
-		ServiceUnavailableResponse(c, fmt.Errorf("error encrypting private key:  %v", encryptErr))
-		return
+		return ServiceUnavailableResponse(c, fmt.Errorf("error encrypting private key:  %v", encryptErr))
 	}
 
 	account := models.Account{
@@ -153,20 +148,17 @@ func createAccount(c *gin.Context) {
 	}
 
 	if err := utils.Validator.Struct(account); err != nil {
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	cost, err := account.Cost()
 	if err != nil {
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	response := accountCreateRes{
@@ -178,20 +170,17 @@ func createAccount(c *gin.Context) {
 	}
 
 	if err := utils.Validator.Struct(&response); err != nil {
-		err = fmt.Errorf("could not create a valid response:  %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, fmt.Errorf("could not create a valid response:  %v", err))
 	}
 
-	OkResponse(c, response)
+	return OkResponse(c, response)
 }
 
-func checkAccountPaymentStatus(c *gin.Context) {
+func checkAccountPaymentStatus(c *gin.Context) error {
 	request := getAccountDataReq{}
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	requestBodyParsed := accountGetReqObj{}
@@ -199,7 +188,7 @@ func checkAccountPaymentStatus(c *gin.Context) {
 	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed,
 		request.verification, c)
 	if err != nil {
-		return
+		return err
 	}
 
 	pending := false
@@ -209,8 +198,7 @@ func checkAccountPaymentStatus(c *gin.Context) {
 	if paid && err == nil && initialPaymentStatus == models.InitialPaymentInProgress {
 		err := models.HandleMetadataKeyForPaidAccount(account)
 		if err != nil {
-			BadRequestResponse(c, err)
-			return
+			return BadRequestResponse(c, err)
 		}
 	} else if !paid && err == nil {
 		pending, err = account.CheckIfPending()
@@ -218,7 +206,7 @@ func checkAccountPaymentStatus(c *gin.Context) {
 
 	cost, _ := account.Cost()
 
-	OkResponse(c, accountPaidRes{
+	return OkResponse(c, accountPaidRes{
 		PaymentStatus: createPaymentStatusResponse(paid, pending),
 		Error:         err,
 		Account: accountGetObj{

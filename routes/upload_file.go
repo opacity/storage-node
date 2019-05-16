@@ -57,7 +57,7 @@ func UploadFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(uploadFile)
 }
 
-func uploadFile(c *gin.Context) {
+func uploadFile(c *gin.Context) error {
 	defer c.Request.Body.Close()
 
 	request := UploadFileReq{}
@@ -65,8 +65,7 @@ func uploadFile(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
 	err := c.Request.ParseMultipartForm(MaxRequestSize)
 	if err != nil {
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	} else {
 		request.PublicKey = c.Request.FormValue("publicKey")
 		request.Signature = c.Request.FormValue("signature")
@@ -76,40 +75,35 @@ func uploadFile(c *gin.Context) {
 	multiFile, _, err := c.Request.FormFile("chunkData")
 	defer multiFile.Close()
 	if err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 	var fileBytes bytes.Buffer
 	_, err = io.Copy(&fileBytes, multiFile)
 	if err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	requestBodyParsed := UploadFileObj{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	file, err := models.GetFileById(requestBodyParsed.FileHandle)
 	if err != nil || len(file.FileID) == 0 {
-		FileNotFoundResponse(c, requestBodyParsed.FileHandle)
-		return
+		return FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 	}
 
 	completedPart, multipartErr := handleChunkData(file, requestBodyParsed.PartIndex, fileBytes.Bytes())
 	if multipartErr != nil {
-		InternalErrorResponse(c, multipartErr)
-		return
+		return InternalErrorResponse(c, multipartErr)
 	}
 	err = file.UpdateCompletedIndexes(completedPart)
 	if err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
-	OkResponse(c, chunkUploadCompletedRes)
+	return OkResponse(c, chunkUploadCompletedRes)
 }
 
 func handleChunkData(file models.File, chunkIndex int, chunkData []byte) (*s3.CompletedPart, error) {

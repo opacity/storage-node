@@ -48,7 +48,7 @@ func InitFileUploadHandler() gin.HandlerFunc {
 	return ginHandlerFunc(initFileUpload)
 }
 
-func initFileUpload(c *gin.Context) {
+func initFileUpload(c *gin.Context) error {
 	defer c.Request.Body.Close()
 
 	request := InitFileUploadReq{}
@@ -57,8 +57,7 @@ func initFileUpload(c *gin.Context) {
 	err := c.Request.ParseMultipartForm(MaxRequestSize)
 
 	if err != nil {
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	} else {
 		request.PublicKey = c.Request.FormValue("publicKey")
 		request.Signature = c.Request.FormValue("signature")
@@ -68,40 +67,36 @@ func initFileUpload(c *gin.Context) {
 	multiFile, _, err := c.Request.FormFile("metadata")
 	defer multiFile.Close()
 	if err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 	var fileBytes bytes.Buffer
 	_, err = io.Copy(&fileBytes, multiFile)
 	if err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	requestBodyParsed := InitFileUploadObj{}
 
 	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
 	if err != nil {
-		return
+		return err
 	}
 
-	if !verifyIfPaid(account, c) {
-		return
+	if err := verifyIfPaid(account, c); err != nil {
+		return err
 	}
 
-	if !checkHaveEnoughStorageSpace(account, requestBodyParsed.FileSizeInByte, c) {
-		return
+	if err := checkHaveEnoughStorageSpace(account, requestBodyParsed.FileSizeInByte, c); err != nil {
+		return err
 	}
 
 	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataKey(requestBodyParsed.FileHandle))
 	if err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), fileBytes.String()); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	file := models.File{
@@ -112,16 +107,15 @@ func initFileUpload(c *gin.Context) {
 		ExpiredAt:    account.ExpirationDate(),
 	}
 	if err := models.DB.Create(&file).Error; err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
-	OkResponse(c, InitFileUploadRes{
+	return OkResponse(c, InitFileUploadRes{
 		Status: "File is init. Please continue to upload",
 	})
 }
 
-func verifyIfPaid(account models.Account, c *gin.Context) bool {
+func verifyIfPaid(account models.Account, c *gin.Context) error {
 	// Check if paid
 	paid, err := account.CheckIfPaid()
 
@@ -134,17 +128,15 @@ func verifyIfPaid(account models.Account, c *gin.Context) bool {
 			},
 			ExpirationDate: account.ExpirationDate(),
 		}
-		AccountNotPaidResponse(c, response)
-		return false
+		return AccountNotPaidResponse(c, response)
 	}
-	return true
+	return nil
 }
 
-func checkHaveEnoughStorageSpace(account models.Account, fileSizeInByte int64, c *gin.Context) bool {
+func checkHaveEnoughStorageSpace(account models.Account, fileSizeInByte int64, c *gin.Context) error {
 	inGb := float64(fileSizeInByte) / float64(1e9)
 	if inGb+account.StorageUsed > float64(account.StorageLimit) {
-		AccountNotEnoughSpaceResponse(c)
-		return false
+		return AccountNotEnoughSpaceResponse(c)
 	}
-	return true
+	return nil
 }

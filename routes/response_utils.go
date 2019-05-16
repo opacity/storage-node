@@ -15,66 +15,76 @@ import (
 
 const REQUEST_UUID = "request_uuid"
 
-func InternalErrorResponse(c *gin.Context, err error) {
+type handlerFunc func(*gin.Context) error
+
+func InternalErrorResponse(c *gin.Context, err error) error {
 	c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
 	utils.Metrics_500_Response_Counter.Inc()
 
 	getLogger(c).LogIfError(err, nil)
+	return err
 }
 
-func BadRequestResponse(c *gin.Context, err error) {
+func BadRequestResponse(c *gin.Context, err error) error {
 	c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 	utils.Metrics_400_Response_Counter.Inc()
+
+	return err
 }
 
-func ServiceUnavailableResponse(c *gin.Context, err error) {
+func ServiceUnavailableResponse(c *gin.Context, err error) error {
 	c.AbortWithStatusJSON(http.StatusServiceUnavailable, err.Error())
 	utils.Metrics_503_Response_Counter.Inc()
+
+	return err
 }
 
-func AccountNotFoundResponse(c *gin.Context, id string) {
-	NotFoundResponse(c, fmt.Errorf("no account with that id: %s", id))
+func AccountNotFoundResponse(c *gin.Context, id string) error {
+	return NotFoundResponse(c, fmt.Errorf("no account with that id: %s", id))
 }
 
-func FileNotFoundResponse(c *gin.Context, fileId string) {
-	NotFoundResponse(c, fmt.Errorf("no file with that id: %s", fileId))
+func FileNotFoundResponse(c *gin.Context, fileId string) error {
+	return NotFoundResponse(c, fmt.Errorf("no file with that id: %s", fileId))
 }
 
-func ForbiddenResponse(c *gin.Context, err error) {
+func ForbiddenResponse(c *gin.Context, err error) error {
 	c.AbortWithStatusJSON(http.StatusForbidden, err.Error())
 	utils.Metrics_403_Response_Counter.Inc()
+	return err
 }
 
-func AccountNotPaidResponse(c *gin.Context, response interface{}) {
+func AccountNotPaidResponse(c *gin.Context, response interface{}) error {
 	if err := utils.Validator.Struct(response); err != nil {
 		err = fmt.Errorf("could not create a valid response:  %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 	c.AbortWithStatusJSON(http.StatusForbidden, response)
 	utils.Metrics_403_Response_Counter.Inc()
+
+	return errors.New("Account not paid and forbidden to access the resource")
 }
 
-func AccountNotEnoughSpaceResponse(c *gin.Context) {
-	BadRequestResponse(c, errors.New("Account does not have enough space to upload more object."))
+func AccountNotEnoughSpaceResponse(c *gin.Context) error {
+	return BadRequestResponse(c, errors.New("Account does not have enough space to upload more object."))
 }
 
-func NotFoundResponse(c *gin.Context, err error) {
+func NotFoundResponse(c *gin.Context, err error) error {
 	c.AbortWithStatusJSON(http.StatusNotFound, err.Error())
 	utils.Metrics_404_Response_Counter.Inc()
+	return err
 }
 
-func OkResponse(c *gin.Context, response interface{}) {
+func OkResponse(c *gin.Context, response interface{}) error {
 	if err := utils.Validator.Struct(response); err != nil {
 		err = fmt.Errorf("could not create a valid response:  %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 	c.JSON(http.StatusOK, response)
 	utils.Metrics_200_Response_Counter.Inc()
+	return nil
 }
 
-func ginHandlerFunc(f gin.HandlerFunc) gin.HandlerFunc {
+func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 	injectToRecoverFromPanic := func(c *gin.Context) {
 		setUpSession(c)
 

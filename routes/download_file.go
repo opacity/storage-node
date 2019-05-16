@@ -44,50 +44,45 @@ func DownloadFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(downloadFile)
 }
 
-func downloadFile(c *gin.Context) {
+func downloadFile(c *gin.Context) error {
 	request := downloadFileReq{}
 
 	if err := utils.Validator.Struct(request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	requestBodyParsed := downloadFileObj{}
 
 	if _, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
-		return
+		return err
 	}
 
 	// verify object existed in S3
 	if !utils.DoesDefaultBucketObjectExist(requestBodyParsed.FileID) {
-		NotFoundResponse(c, errors.New("such data does not exist"))
-		return
+		return NotFoundResponse(c, errors.New("such data does not exist"))
+
 	}
 
 	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(requestBodyParsed.FileID), utils.CannedAcl_PublicRead); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(requestBodyParsed.FileID), utils.CannedAcl_PublicRead); err != nil {
 		InternalErrorResponse(c, err)
-		return
 	}
 
 	if err := models.ExpireObject(models.GetFileDataKey(requestBodyParsed.FileID)); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := models.ExpireObject(models.GetFileMetadataKey(requestBodyParsed.FileID)); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName,
 		requestBodyParsed.FileID)
-	OkResponse(c, downloadFileRes{
+	return OkResponse(c, downloadFileRes{
 		// Redirect to a different URL that client would have authorization to download it.
 		FileDownloadUrl: url,
 	})
