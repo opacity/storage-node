@@ -35,7 +35,7 @@ func (v *testVerifiedRequest) getObjectRef() interface{} {
 
 func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 	obj := testRequestObject{
-		data: "some body message"
+		data: "some body message",
 	}
 	json, _ := json.Marshal(obj)
 	reqBody := bytes.NewBuffer(reqJSON)
