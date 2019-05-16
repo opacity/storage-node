@@ -51,6 +51,7 @@ type requestBody struct {
 }
 
 func (v requestBody) getObjectAsString() string {
+	fmt.Printf("GetObjectAsString %v\n", v.RequestBody)
 	return v.RequestBody
 }
 

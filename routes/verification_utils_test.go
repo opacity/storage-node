@@ -40,6 +40,7 @@ func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 	}
 	reqJSON, _ := json.Marshal(obj)
 	reqBody := bytes.NewBuffer(reqJSON)
+	fmt.Printf("RequestBody %v\n", reqBody)
 	verification := returnSuccessVerificationForTest(t, reqBody.String())
 	body := new(bytes.Buffer)
 	mw := multipart.NewWriter(body)
