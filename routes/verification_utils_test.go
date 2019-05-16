@@ -34,11 +34,13 @@ func (v *testVerifiedRequest) getObjectRef() interface{} {
 }
 
 func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
+	body := "some body message"
+	verification := returnSuccessVerificationForTest(t, body)
 	body := new(bytes.Buffer)
 	mw := multipart.NewWriter(body)
-	mw.WriteField("signature", "signature")
-	mw.WriteField("publicKey", "public")
-	mw.WriteField("requestBody", "body")
+	mw.WriteField("signature", verification.Signature)
+	mw.WriteField("publicKey", verification.PublicKey)
+	mw.WriteField("requestBody", body)
 	mw.WriteField("str", "strV")
 	w, _ := mw.CreateFormFile("file", "test")
 	w.Write([]byte("test"))
@@ -53,7 +55,8 @@ func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, "strV", request.StrValue)
-	assert.Equal(t, "body", request.requestObject.data)
+	assert.Equal(t, "test", request.FileObject)
+	assert.Equal(t, body, request.requestObject.data)
 }
 
 func Test_verifyAndParseFormRequestWithNormalRequest(t *testing.T) {
