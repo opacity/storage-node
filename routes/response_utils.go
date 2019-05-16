@@ -61,7 +61,7 @@ func AccountNotPaidResponse(c *gin.Context, response interface{}) error {
 	c.AbortWithStatusJSON(http.StatusForbidden, response)
 	utils.Metrics_403_Response_Counter.Inc()
 
-	return error.New("Account not paid and forbidden to access the resource")
+	return errors.New("Account not paid and forbidden to access the resource")
 }
 
 func AccountNotEnoughSpaceResponse(c *gin.Context) error {
