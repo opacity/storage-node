@@ -63,9 +63,8 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 		return err
 	}
 
-	v := reflect.ValueOf(&dest).Elem()
-	t := reflect.TypeOf(v)
-	s := reflect.Indirect(reflect.ValueOf(dest))
+	t := reflect.ValueOf(dest).Elem().Type()
+	s := reflect.ValueOf(dest).Elem()
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i) // Get the field, returns https://golang.org/pkg/reflect/#StructField
@@ -92,6 +91,11 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 			fmt.Printf("Get strv via fileTag %v\n", strV)
 		}
 
+		if !s.Field(i).CanSet() {
+			err := fmt.Errorf("Field is not settable, It should be upper case but has this: %v", field)
+			InternalErrorResponse(c, err)
+			return err
+		}
 		s.Field(i).SetString(strV)
 	}
 
