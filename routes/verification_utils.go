@@ -47,11 +47,11 @@ func (v verification) getAccount(c *gin.Context) (models.Account, error) {
 }
 
 type requestBody struct {
-	RequestBody string `form:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj as example"`
+	RequestBody string `json:"requestBody" form:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj as example"`
 }
 
 func (v requestBody) getObjectAsString() string {
-	fmt.Printf("GetObjectAsString %v\n", v.RequestBody)
+	fmt.Printf("GetObjectAsString %v/%v\n", v, v.RequestBody)
 	return v.RequestBody
 }
 
@@ -89,6 +89,7 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 			}
 		}
 		if strV == "" {
+			fmt.Printf("Empty value for tag: %v/%v\n", fileTag, formTag)
 			continue
 		}
 
@@ -98,8 +99,11 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 			return err
 		}
 		s.Field(i).SetString(strV)
+
+		fmt.Printf("Set %v for %v\n", field, strV)
 	}
 
+	fmt.Printf("%v\n", dest)
 	if i, ok := dest.(verificationInterface); ok {
 		if ii, ok := dest.(parsableObjectInterface); ok {
 			return verifyAndParseStringRequest(ii.getObjectAsString(), ii.getObjectRef(), i.getVerification(), c)
