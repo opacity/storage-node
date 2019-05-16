@@ -18,15 +18,15 @@ type testRequestObject struct {
 type testVerifiedRequest struct {
 	verification
 	requestBody
-	strValue      string `form:"str"`
-	fileObject    string `formFile:"file"`
+	StrValue      string `form:"str"`
+	FileObject    string `formFile:"file"`
 	requestObject testRequestObject
 }
 
 type testSetRequest struct {
-	strValue   string `form:"str"`
-	fileObject string `formFile:"file"`
-	emptyValue string
+	StrValue   string `form:"str"`
+	FileObject string `formFile:"file"`
+	EmptyValue string
 }
 
 func (v *testVerifiedRequest) getObjectRef() interface{} {
