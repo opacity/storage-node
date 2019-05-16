@@ -119,8 +119,7 @@ func createAccount(c *gin.Context) error {
 
 	storageLimit, ok := models.StorageLimitMap[requestBodyParsed.StorageLimit]
 	if !ok {
-		BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
-		return
+		return BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
 	}
 
 	accountID, err := returnAccountIdWithStringRequest(request.RequestBody, request.verification, c)
@@ -171,8 +170,7 @@ func createAccount(c *gin.Context) error {
 	}
 
 	if err := utils.Validator.Struct(&response); err != nil {
-		err = fmt.Errorf("could not create a valid response:  %v", err)
-		return BadRequestResponse(c, err)
+		return BadRequestResponse(c, fmt.Errorf("could not create a valid response:  %v", err))
 	}
 
 	return OkResponse(c, response)
