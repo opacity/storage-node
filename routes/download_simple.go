@@ -29,39 +29,35 @@ func DownloadSimpleFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(downloadSimpleFile)
 }
 
-func downloadSimpleFile(c *gin.Context) {
+func downloadSimpleFile(c *gin.Context) error {
 	request := downloadSimpleFileObj{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 	// verify object existed in S3
 	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(request.FileID)) {
-		NotFoundResponse(c, errors.New("such data does not exist"))
-		return
+		return NotFoundResponse(c, errors.New("such data does not exist"))
 	}
 
 	if err := models.ExpireObject(models.GetFileDataKey(request.FileID)); err != nil {
 		err = fmt.Errorf("unable to ExpireObject:  %v", err)
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(request.FileID), utils.CannedAcl_PublicRead); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(request.FileID), utils.CannedAcl_PublicRead); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName,
 		request.FileID)
-	OkResponse(c, downloadFileRes{
+
+	return OkResponse(c, downloadFileRes{
 		// Redirect to a different URL that client would have authorization to download it.
 		FileDownloadUrl: url,
 	})

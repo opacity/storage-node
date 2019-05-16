@@ -31,9 +31,7 @@ func verifyAndParseStringRequest(reqAsString string, dest interface{}, verificat
 	}
 
 	if err := utils.ParseStringifiedRequest(reqAsString, dest); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
-		BadRequestResponse(c, err)
-		return err
+		return BadRequestResponse(c, fmt.Errorf("bad request, unable to parse request body: %v", err))
 	}
 
 	return nil
@@ -56,14 +54,11 @@ func verifyRequest(hash []byte, publicKey string, signature string, c *gin.Conte
 	verified, err := utils.VerifyFromStrings(publicKey, hex.EncodeToString(hash),
 		signature)
 	if err != nil {
-		BadRequestResponse(c, errors.New(errVerifying))
-		return err
+		return BadRequestResponse(c, errors.New(errVerifying))
 	}
 
 	if verified != true {
-		err = errors.New(signatureDidNotMatchResponse)
-		ForbiddenResponse(c, err)
-		return err
+		return ForbiddenResponse(c, errors.New(signatureDidNotMatchResponse))
 	}
 	return nil
 }
@@ -73,11 +68,10 @@ func hashRequestBody(reqBody interface{}, c *gin.Context) ([]byte, error) {
 	reqJSON, err := json.Marshal(reqBody)
 	if err != nil {
 		err = fmt.Errorf(marshalError+" %v", err)
-		BadRequestResponse(c, err)
-		return []byte{}, err
+		return []byte{}, BadRequestResponse(c, err)
 	}
 
-	return utils.Hash(reqJSON), nil
+	return utils.Hash(reqJSON), err
 }
 
 func returnAccountIfVerifiedFromParsedRequest(reqBody interface{}, verificationData verification, c *gin.Context) (models.Account, error) {
@@ -105,8 +99,7 @@ func returnAccountIfVerified(publicKey string, c *gin.Context) (models.Account, 
 	// validate user
 	account, err := models.GetAccountById(accountID)
 	if err != nil || len(account.AccountID) == 0 {
-		AccountNotFoundResponse(c, accountID)
-		return account, err
+		return account, AccountNotFoundResponse(c, accountID)
 	}
 
 	return account, err
@@ -115,7 +108,6 @@ func returnAccountIfVerified(publicKey string, c *gin.Context) (models.Account, 
 func returnAccountIdWithParsedRequest(reqBody interface{}, verificationData verification, c *gin.Context) (string, error) {
 	hash, err := hashRequestBody(reqBody, c)
 	if err != nil {
-		BadRequestResponse(c, err)
 		return "", err
 	}
 
@@ -137,8 +129,7 @@ func returnAccountId(hash []byte, verificationData verification, c *gin.Context)
 func getAccountIdFromPublicKey(publicKey string, c *gin.Context) (string, error) {
 	accountID, err := utils.HashString(publicKey)
 	if err != nil {
-		InternalErrorResponse(c, err)
-		return "", err
+		return "", InternalErrorResponse(c, err)
 	}
 	return accountID, err
 }

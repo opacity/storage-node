@@ -24,29 +24,23 @@ func UserStatsHandler() gin.HandlerFunc {
 	return ginHandlerFunc(userStats)
 }
 
-func userStats(c *gin.Context) {
+func userStats(c *gin.Context) error {
 	userCount := 0
 	if err := models.DB.Model(&models.Account{}).Count(&userCount).Error; err != nil {
-		utils.LogIfError(err, nil)
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	fileCount := 0
 	if err := models.DB.Model(&models.CompletedFile{}).Count(&fileCount).Error; err != nil {
-		utils.LogIfError(err, nil)
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	fileSizeInByte, err := models.GetTotalFileSizeInByte()
 	if err != nil {
-		utils.LogIfError(err, nil)
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
-	OkResponse(c, userStatsRes{
+	return OkResponse(c, userStatsRes{
 		UserAccountsCount:    userCount,
 		UploadedFilesCount:   fileCount,
 		UploadedFileSizeInMb: float64(fileSizeInByte) / 1000000.0,

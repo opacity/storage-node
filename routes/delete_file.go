@@ -39,42 +39,37 @@ func DeleteFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(deleteFile)
 }
 
-func deleteFile(c *gin.Context) {
+func deleteFile(c *gin.Context) error {
 	request := deleteFileReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		BadRequestResponse(c, err)
-		return
+		return BadRequestResponse(c, err)
 	}
 
 	requestBodyParsed := deleteFileObj{}
 
 	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
 	if err != nil {
-		return
+		return err
 	}
 
 	if err := utils.DeleteDefaultBucketObject(requestBodyParsed.FileID); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	var completedFile models.CompletedFile
 	if completedFile, err = models.GetCompletedFileByFileID(requestBodyParsed.FileID); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := account.UseStorageSpaceInByte(-1 * int(completedFile.FileSizeInByte)); err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := models.DB.Delete(&completedFile).Error; err != nil {
-		InternalErrorResponse(c, err)
-		return
+		return InternalErrorResponse(c, err)
 	}
 
-	OkResponse(c, deleteFileRes{})
+	return OkResponse(c, deleteFileRes{})
 }
