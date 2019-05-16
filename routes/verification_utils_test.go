@@ -40,7 +40,7 @@ func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 	mw := multipart.NewWriter(body)
 	mw.WriteField("signature", verification.Signature)
 	mw.WriteField("publicKey", verification.PublicKey)
-	mw.WriteField("requestBody", body)
+	mw.WriteField("requestBody", bodyMsg)
 	mw.WriteField("str", "strV")
 	w, _ := mw.CreateFormFile("file", "test")
 	w.Write([]byte("test"))
