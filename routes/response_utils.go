@@ -15,7 +15,7 @@ import (
 
 const REQUEST_UUID = "request_uuid"
 
-type handlerFunc func(*Context) error
+type handlerFunc func(*gin.Context) error
 
 func InternalErrorResponse(c *gin.Context, err error) error {
 	c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
