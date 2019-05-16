@@ -14,7 +14,7 @@ import (
 )
 
 type testRequestObject struct {
-	data string `json:"data"`
+	Data string `json:"data"`
 }
 
 type testVerifiedRequest struct {
@@ -37,11 +37,11 @@ func (v *testVerifiedRequest) getObjectRef() interface{} {
 
 func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 	obj := testRequestObject{
-		data: "some body message",
+		Data: "some body message",
 	}
 	reqJSON, _ := json.Marshal(obj)
 	reqBody := bytes.NewBuffer(reqJSON)
-	fmt.Printf("RequestBody %v\n", reqBody)
+	fmt.Printf("RequestBody-> %v\n", reqBody.String())
 	verification := returnSuccessVerificationForTest(t, reqBody.String())
 	body := new(bytes.Buffer)
 	mw := multipart.NewWriter(body)
@@ -63,7 +63,7 @@ func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "strV", request.StrValue)
 	assert.Equal(t, "test", request.FileObject)
-	assert.Equal(t, obj.data, request.requestObject.data)
+	assert.Equal(t, obj.Data, request.requestObject.Data)
 }
 
 func Test_verifyAndParseFormRequestWithNormalRequest(t *testing.T) {
