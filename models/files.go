@@ -21,15 +21,15 @@ var getFileMutex = &sync.Mutex{}
 type File struct {
 	/*FileID will either be the file handle, or a hash of the file handle.  We should add an appropriate length
 	restriction and can change the name to FileHandle if it is appropriate*/
-	FileID           string    `gorm:"primary_key" json:"fileID" binding:"required"`
-	CreatedAt        time.Time `json:"createdAt"`
-	UpdatedAt        time.Time `json:"updatedAt"`
-	ExpiredAt        time.Time `json:"expiredAt"`
-	AwsUploadID      *string   `json:"awsUploadID"`
-	AwsObjectKey     *string   `json:"awsObjectKey"`
-	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
-	CompletedIndexes *string   `json:"completedIndexes" gorm:"type:mediumtext"`
-	sync.Mutex
+	FileID           string                 `gorm:"primary_key" json:"fileID" binding:"required"`
+	CreatedAt        time.Time              `json:"createdAt"`
+	UpdatedAt        time.Time              `json:"updatedAt"`
+	ExpiredAt        time.Time              `json:"expiredAt"`
+	AwsUploadID      *string                `json:"awsUploadID"`
+	AwsObjectKey     *string                `json:"awsObjectKey"`
+	EndIndex         int                    `json:"endIndex" binding:"required,gte=1"`
+	CompletedIndexes *string                `json:"completedIndexes" gorm:"type:mediumtext"`
+	PartsChannel     chan *s3.CompletedPart `gorm:"-"`
 }
 
 type IndexMap map[int64]*s3.CompletedPart
@@ -70,6 +70,30 @@ func init() {
 /*BeforeCreate - callback called before the row is created*/
 func (file *File) BeforeCreate(scope *gorm.Scope) error {
 	return nil
+}
+
+/*AfterCreate - callback called after the row is created*/
+func (file *File) AfterCreate(scope *gorm.Scope) error {
+	file.PartsChannel = make(chan *s3.CompletedPart, file.EndIndex)
+	go file.CompletedPartsWorker(file.PartsChannel)
+	return nil
+}
+
+/*BeforeDelete - callback called before row is deleted*/
+func (file *File) BeforeDelete() {
+	if file.PartsChannel == nil {
+		close(file.PartsChannel)
+	}
+}
+
+/*CompletedPartsWorker accepts the completed parts and lines them up for processing, for a particular file*/
+func (file *File) CompletedPartsWorker(parts <-chan *s3.CompletedPart) {
+	for part := range parts {
+		completedIndexes := file.GetCompletedIndexesAsMap()
+		completedIndexes[*part.PartNumber] = part
+		err := file.SaveCompletedIndexesAsString(completedIndexes)
+		utils.PanicOnError(err)
+	}
 }
 
 /*PrettyString - print the file in a friendly way.  Not used for external logging, just for watching in the
@@ -123,13 +147,55 @@ func (file *File) UpdateKeyAndUploadID(key, uploadID *string) error {
 	return nil
 }
 
-/*UpdateCompletedIndexes - update the completed indexes*/
-func (file *File) UpdateCompletedIndexes(completedPart *s3.CompletedPart) error {
-	completedIndexes := file.GetCompletedIndexesAsMap()
-	completedIndexes[*completedPart.PartNumber] = completedPart
-	err := file.SaveCompletedIndexesAsString(completedIndexes)
+///*UpdateCompletedIndexes - update the completed indexes*/
+//func (file *File) UpdateCompletedIndexes(completedPart *s3.CompletedPart) error {
+//	completedIndexes := file.GetCompletedIndexesAsMap()
+//	completedIndexes[*completedPart.PartNumber] = completedPart
+//	err := file.SaveCompletedIndexesAsString(completedIndexes)
+//
+//	return err
+//}
 
-	return err
+/*UpdateCompletedIndexesInTx - update the completed indexes of a file, in a DB transaction*/
+func (file *File) UpdateCompletedIndexesInTx(fileID string, completedPart *s3.CompletedPart) error {
+	tx := DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Error; err != nil {
+		return err
+	}
+
+	foundFile := File{}
+	err := tx.Where("file_id = ?", fileID).First(&foundFile).Error
+	if err != nil {
+		return err
+	}
+	var completedIndexes IndexMap
+	if foundFile.CompletedIndexes == nil {
+		completedIndexes = make(IndexMap)
+	} else {
+		err := json.Unmarshal([]byte(*(foundFile.CompletedIndexes)), &completedIndexes)
+		if err != nil {
+			return err
+		}
+	}
+
+	completedIndexes[*completedPart.PartNumber] = completedPart
+	indexAsBytes, err := json.Marshal(completedIndexes)
+	if err != nil {
+		return err
+	}
+	indexAsString := string(indexAsBytes)
+
+	if err = tx.Model(&file).UpdateColumn("completed_indexes", &indexAsString).Error; err != nil {
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 /*GetCompletedIndexesAsMap takes the file's CompletedIndexes, converts them to a map,
@@ -174,12 +240,16 @@ func (file *File) GetIncompleteIndexesAsArray() []int64 {
 }
 
 /*SaveCompletedIndexesAsString accepts a map of chunk indexes, converts them to a string,
-and saves it to the file's CompletedIndexes.*/
+and saves it to the file's CompletedIndexes.
+*/
 func (file *File) SaveCompletedIndexesAsString(completedIndexes IndexMap) error {
 	indexAsBytes, err := json.Marshal(completedIndexes)
-	utils.PanicOnError(err)
+	if err != nil {
+		return err
+	}
 	indexAsString := string(indexAsBytes)
-	if err = DB.Model(&file).Update("completed_indexes", &indexAsString).Error; err != nil {
+	err = DB.Model(&file).UpdateColumn("completed_indexes", &indexAsString).Error
+	if err != nil {
 		return err
 	}
 

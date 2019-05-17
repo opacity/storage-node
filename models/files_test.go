@@ -186,7 +186,7 @@ func Test_GetFileById(t *testing.T) {
 	assert.Equal(t, result.FileID, file.FileID)
 }
 
-func Test_UpdateCompletedIndexes(t *testing.T) {
+func Test_PartsChannelUpdatesCompletedIndexes(t *testing.T) {
 	file := returnValidFile()
 
 	// Add file to DB
@@ -201,16 +201,67 @@ func Test_UpdateCompletedIndexes(t *testing.T) {
 	expectedMap[*completedPartIndex2.PartNumber] = completedPartIndex2
 	expectedMap[*completedPartIndex5.PartNumber] = completedPartIndex5
 
-	err := file.UpdateCompletedIndexes(completedPartIndex2)
-	assert.Nil(t, err)
-	err = file.UpdateCompletedIndexes(completedPartIndex5)
-	assert.Nil(t, err)
+	file.PartsChannel <- completedPartIndex2
+	file.PartsChannel <- completedPartIndex5
 
-	actualFile := File{}
-	DB.First(&actualFile, "file_id = ?", file.FileID)
-	actualMap := actualFile.GetCompletedIndexesAsMap()
+	time.Sleep(1 * time.Second)
 
-	assert.Equal(t, expectedMap, actualMap)
+	waitForExpectedMap(expectedMap, file.FileID, t, 5)
+}
+
+func waitForExpectedMap(expectedMap IndexMap, fileID string, t *testing.T, maxTries int) {
+	tries := 0
+
+	for {
+		time.Sleep(300 * time.Millisecond)
+		actualFile := File{}
+		DB.First(&actualFile, "file_id = ?", fileID)
+		actualMap := actualFile.GetCompletedIndexesAsMap()
+		if assert.Equal(t, expectedMap, actualMap) {
+			break
+		}
+		if tries >= maxTries {
+			t.Fatal("did not complete scale test in alloted number of tries")
+			break
+		}
+		tries++
+	}
+}
+
+func Test_PartsChannel_at_Scale(t *testing.T) {
+	file := returnValidFile()
+	file.EndIndex = 500
+	maxTries := 50
+
+	// Add file to DB
+	if err := DB.Create(&file).Error; err != nil {
+		t.Fatalf("should have created file but didn't: " + err.Error())
+	}
+
+	for i := 1; i <= file.EndIndex; i++ {
+		go func(i int, file File) {
+			completedPart := returnCompletedPart(i)
+			file.PartsChannel <- completedPart
+		}(i, file)
+	}
+
+	tries := 0
+
+	for {
+		time.Sleep(300 * time.Millisecond)
+		actualFile := File{}
+		DB.First(&actualFile, "file_id = ?", file.FileID)
+		incompleteIndexes := actualFile.GetIncompleteIndexesAsArray()
+		completed := actualFile.UploadCompleted()
+		if len(incompleteIndexes) == 0 && completed {
+			break
+		}
+		if tries >= maxTries {
+			t.Fatal("did not complete scale test in alloted number of tries")
+			break
+		}
+		tries++
+	}
 }
 
 func Test_GetCompletedIndexesAsMap(t *testing.T) {
@@ -231,16 +282,10 @@ func Test_GetCompletedIndexesAsMap(t *testing.T) {
 	expectedMap[*completedPartIndex2.PartNumber] = completedPartIndex2
 	expectedMap[*completedPartIndex5.PartNumber] = completedPartIndex5
 
-	err := file.UpdateCompletedIndexes(completedPartIndex2)
-	assert.Nil(t, err)
-	err = file.UpdateCompletedIndexes(completedPartIndex5)
-	assert.Nil(t, err)
+	file.PartsChannel <- completedPartIndex2
+	file.PartsChannel <- completedPartIndex5
 
-	actualFile := File{}
-	DB.First(&actualFile, "file_id = ?", file.FileID)
-	actualMap := actualFile.GetCompletedIndexesAsMap()
-
-	assert.Equal(t, expectedMap, actualMap)
+	waitForExpectedMap(expectedMap, file.FileID, t, 5)
 }
 
 func Test_GetIncompleteIndexesAsArray(t *testing.T) {
@@ -261,10 +306,10 @@ func Test_GetIncompleteIndexesAsArray(t *testing.T) {
 	expectedMap[*completedPartIndex2.PartNumber] = completedPartIndex2
 	expectedMap[*completedPartIndex5.PartNumber] = completedPartIndex5
 
-	err := file.UpdateCompletedIndexes(completedPartIndex2)
-	assert.Nil(t, err)
-	err = file.UpdateCompletedIndexes(completedPartIndex5)
-	assert.Nil(t, err)
+	file.PartsChannel <- completedPartIndex2
+	file.PartsChannel <- completedPartIndex5
+
+	waitForExpectedMap(expectedMap, file.FileID, t, 5)
 
 	actualFile := File{}
 	DB.First(&actualFile, "file_id = ?", file.FileID)
@@ -352,10 +397,14 @@ func Test_GetCompletedPartsAsArray(t *testing.T) {
 	completedPartIndex2 := returnCompletedPart(2)
 	completedPartIndex5 := returnCompletedPart(5)
 
-	err := file.UpdateCompletedIndexes(completedPartIndex2)
-	assert.Nil(t, err)
-	err = file.UpdateCompletedIndexes(completedPartIndex5)
-	assert.Nil(t, err)
+	file.PartsChannel <- completedPartIndex2
+	file.PartsChannel <- completedPartIndex5
+
+	expectedMap := make(IndexMap)
+	expectedMap[*completedPartIndex2.PartNumber] = completedPartIndex2
+	expectedMap[*completedPartIndex5.PartNumber] = completedPartIndex5
+
+	waitForExpectedMap(expectedMap, file.FileID, t, 5)
 
 	actualFile := File{}
 	DB.First(&actualFile, "file_id = ?", file.FileID)
@@ -386,8 +435,7 @@ func Test_FinishUpload(t *testing.T) {
 	completedPartIndex1, err := multipartUploadOfSingleChunk(t, &file)
 	assert.Nil(t, err)
 
-	err = file.UpdateCompletedIndexes(completedPartIndex1)
-	assert.Nil(t, err)
+	file.PartsChannel <- completedPartIndex1
 
 	actualFiles := []File{}
 	DB.Find(&actualFiles, "file_id = ?", file.FileID)

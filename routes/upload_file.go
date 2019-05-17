@@ -98,10 +98,8 @@ func uploadFile(c *gin.Context) error {
 	if multipartErr != nil {
 		return InternalErrorResponse(c, multipartErr)
 	}
-	err = file.UpdateCompletedIndexes(completedPart)
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
+
+	file.PartsChannel <- completedPart
 
 	return OkResponse(c, chunkUploadCompletedRes)
 }
