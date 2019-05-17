@@ -66,7 +66,7 @@ func initFileUpload(c *gin.Context) error {
 		return err
 	}
 
-	if err := checkHaveEnoughStorageSpace(account, requestBodyParsed.FileSizeInByte, c); err != nil {
+	if err := checkHaveEnoughStorageSpace(account, request.initFileUploadObj.FileSizeInByte, c); err != nil {
 		return err
 	}
 
