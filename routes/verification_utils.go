@@ -70,34 +70,33 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i) // Get the field, returns https://golang.org/pkg/reflect/#StructField
 		if field.Anonymous {
+			// Only go 1 level down
 			for j := 0; j < field.Type.NumField(); j++ {
 				nestField := field.Type.Field(j)
 				strV, err := readValueFromPostForm(nestField, c)
 				if err != nil {
 					return err
 				}
+				if strV == "" {
+					continue
+				}
 				if !s.Field(i).Field(j).CanSet() {
-					return InternalErrorResponse()
+					return InternalErrorResponse(c, fmt.Errorf("Field is not settable, It should be upper case but has this: %v", nestField))
 				}
 				s.Field(i).Field(j).SetString(strV)
 		}
+
 		strV, err := readValueFromPostForm(field, c)
 		if err != nil {
 			return err
 		}
-
 		if strV == "" {
 			continue
 		}
-
 		if !s.Field(i).CanSet() {
-			err := fmt.Errorf("Field is not settable, It should be upper case but has this: %v", field)
-			InternalErrorResponse(c, err)
-			return err
+			return InternalErrorResponse(c, fmt.Errorf("Field is not settable, It should be upper case but has this: %v", field))
 		}
 		s.Field(i).SetString(strV)
-
-		fmt.Printf("Set %v for %v\n", field, strV)
 	}
 
 	fmt.Printf("%v\n", dest)
@@ -129,16 +128,6 @@ func readValueFromPostForm(field reflect.StructField, c *gin.Context) (string, e
 		}
 	}
 	return strV, nil
-}
-
-func setValue(v reflect.Value, value string,  c *gin.Context) error {
-	if v.CanSet() {
-		err := fmt.Errorf("Field is not settable, It should be upper case but has this: %v", v)
-		InternalErrorResponse(c, err)
-		return err
-	}
-	v.SetString(value)
-	return nil
 }
 
 func readFileFromForm(fileTag string, c *gin.Context) (string, error) {
