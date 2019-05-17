@@ -1,21 +1,16 @@
 package models
 
 import (
-	"errors"
-	"time"
-
-	"fmt"
-
 	"encoding/json"
-	"sync"
+	"errors"
+	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
 )
-
-var getFileMutex = &sync.Mutex{}
 
 /*File defines a model for managing a user subscription for uploads*/
 type File struct {
@@ -29,7 +24,6 @@ type File struct {
 	AwsObjectKey     *string   `json:"awsObjectKey"`
 	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
 	CompletedIndexes *string   `json:"completedIndexes" gorm:"type:mediumtext"`
-	sync.Mutex
 }
 
 type IndexMap map[int64]*s3.CompletedPart
@@ -107,8 +101,6 @@ func GetFileDataKey(fileID string) string {
 
 /*GetOrCreateFile - Get or create the file. */
 func GetOrCreateFile(file File) (*File, error) {
-	getFileMutex.Lock()
-	defer getFileMutex.Unlock()
 	var fileFromDB File
 	err := DB.Where(File{FileID: file.FileID}).Attrs(file).FirstOrCreate(&fileFromDB).Error
 
