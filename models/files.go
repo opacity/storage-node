@@ -15,8 +15,6 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-var getFileMutex = &sync.Mutex{}
-
 /*File defines a model for managing a user subscription for uploads*/
 type File struct {
 	/*FileID will either be the file handle, or a hash of the file handle.  We should add an appropriate length
@@ -107,8 +105,6 @@ func GetFileDataKey(fileID string) string {
 
 /*GetOrCreateFile - Get or create the file. */
 func GetOrCreateFile(file File) (*File, error) {
-	getFileMutex.Lock()
-	defer getFileMutex.Unlock()
 	var fileFromDB File
 	err := DB.Where(File{FileID: file.FileID}).Attrs(file).FirstOrCreate(&fileFromDB).Error
 
