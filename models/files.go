@@ -1,13 +1,10 @@
 package models
 
 import (
-	"errors"
-	"time"
-
-	"fmt"
-
 	"encoding/json"
-	"sync"
+	"errors"
+	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -27,7 +24,6 @@ type File struct {
 	AwsObjectKey     *string   `json:"awsObjectKey"`
 	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
 	CompletedIndexes *string   `json:"completedIndexes" gorm:"type:mediumtext"`
-	sync.Mutex
 }
 
 type IndexMap map[int64]*s3.CompletedPart
