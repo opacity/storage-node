@@ -69,27 +69,24 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i) // Get the field, returns https://golang.org/pkg/reflect/#StructField
-		formTag := field.Tag.Get("form")
-		fileTag := field.Tag.Get("formFile")
-
-		if formTag == "" && fileTag == "" {
-			continue
+		if field.Anonymous {
+			for j := 0; j < field.Type.NumField(); j++ {
+				nestField := field.Type.Field(j)
+				strV, err := readValueFromPostForm(nestField, c)
+				if err != nil {
+					return err
+				}
+				if !s.Field(i).Field(j).CanSet() {
+					return InternalErrorResponse()
+				}
+				s.Field(i).Field(j).SetString(strV)
+		}
+		strV, err := readValueFromPostForm(field, c)
+		if err != nil {
+			return err
 		}
 
-		strV := ""
-		if formTag != "" {
-			strV = c.Request.FormValue(formTag)
-		}
-
-		if fileTag != "" {
-			var err error
-			strV, err = readFileFromForm(fileTag, c)
-			if err != nil {
-				return err
-			}
-		}
 		if strV == "" {
-			fmt.Printf("Empty value for tag: %v/%v\n", fileTag, formTag)
 			continue
 		}
 
@@ -109,6 +106,38 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 			return verifyAndParseStringRequest(ii.getObjectAsString(), ii.getObjectRef(), i.getVerification(), c)
 		}
 	}
+	return nil
+}
+
+func readValueFromPostForm(field reflect.StructField, c *gin.Context) (string, error) {
+	strV := ""
+	formTag := field.Tag.Get("form")
+	fileTag := field.Tag.Get("formFile")
+
+	if formTag == "" && fileTag == "" {
+		return "", nil
+	}
+	if formTag != "" {
+		strV = c.Request.FormValue(formTag)
+	}
+
+	if fileTag != "" {
+		var err error
+		strV, err = readFileFromForm(fileTag, c)
+		if err != nil {
+			return "", err
+		}
+	}
+	return strV, nil
+}
+
+func setValue(v reflect.Value, value string,  c *gin.Context) error {
+	if v.CanSet() {
+		err := fmt.Errorf("Field is not settable, It should be upper case but has this: %v", v)
+		InternalErrorResponse(c, err)
+		return err
+	}
+	v.SetString(value)
 	return nil
 }
 
