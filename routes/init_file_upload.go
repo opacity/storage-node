@@ -1,10 +1,6 @@
 package routes
 
 import (
-	"bytes"
-	"io"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -18,12 +14,18 @@ type InitFileUploadObj struct {
 
 type InitFileUploadReq struct {
 	verification
-	RequestBody string `form:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj, see description for example"`
-	Metadata    string `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
+	requestBody
+	Metadata          string `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
+	MetadataAsFile    string `formFile:"metadata"`
+	initFileUploadObj InitFileUploadObj
 }
 
 type InitFileUploadRes struct {
 	Status string `json:"status" example:"Success"`
+}
+
+func (v *InitFileUploadReq) getObjectRef() interface{} {
+	return &v.initFileUploadObj
 }
 
 // InitFileUploadHandler godoc
@@ -49,35 +51,13 @@ func InitFileUploadHandler() gin.HandlerFunc {
 }
 
 func initFileUpload(c *gin.Context) error {
-	defer c.Request.Body.Close()
-
 	request := InitFileUploadReq{}
 
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
-	err := c.Request.ParseMultipartForm(MaxRequestSize)
-
-	if err != nil {
-		return BadRequestResponse(c, err)
-	} else {
-		request.PublicKey = c.Request.FormValue("publicKey")
-		request.Signature = c.Request.FormValue("signature")
-		request.RequestBody = c.Request.FormValue("requestBody")
+	if err := verifyAndParseFormRequest(&request, c); err != nil {
+		return err
 	}
 
-	multiFile, _, err := c.Request.FormFile("metadata")
-	defer multiFile.Close()
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
-	var fileBytes bytes.Buffer
-	_, err = io.Copy(&fileBytes, multiFile)
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
-
-	requestBodyParsed := InitFileUploadObj{}
-
-	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
+	account, err := request.getAccount(c)
 	if err != nil {
 		return err
 	}
@@ -86,22 +66,22 @@ func initFileUpload(c *gin.Context) error {
 		return err
 	}
 
-	if err := checkHaveEnoughStorageSpace(account, requestBodyParsed.FileSizeInByte, c); err != nil {
+	if err := checkHaveEnoughStorageSpace(account, request.initFileUploadObj.FileSizeInByte, c); err != nil {
 		return err
 	}
 
-	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataKey(requestBodyParsed.FileHandle))
+	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataKey(request.initFileUploadObj.FileHandle))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(requestBodyParsed.FileHandle), fileBytes.String()); err != nil {
+	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(request.initFileUploadObj.FileHandle), request.MetadataAsFile); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
 	file := models.File{
-		FileID:       requestBodyParsed.FileHandle,
-		EndIndex:     requestBodyParsed.EndIndex,
+		FileID:       request.initFileUploadObj.FileHandle,
+		EndIndex:     request.initFileUploadObj.EndIndex,
 		AwsUploadID:  uploadID,
 		AwsObjectKey: objKey,
 		ExpiredAt:    account.ExpirationDate(),
