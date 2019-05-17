@@ -56,7 +56,6 @@ type requestBody struct {
 }
 
 func (v requestBody) getObjectAsString() string {
-	fmt.Printf("GetObjectAsString %v/%v\n", v, v.RequestBody)
 	return v.RequestBody
 }
 
@@ -65,8 +64,7 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
 	err := c.Request.ParseMultipartForm(MaxRequestSize)
 	if err != nil {
-		BadRequestResponse(c, err)
-		return err
+		return BadRequestResponse(c, err)
 	}
 
 	t := reflect.ValueOf(dest).Elem().Type()
@@ -105,7 +103,6 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 		s.Field(i).SetString(strV)
 	}
 
-	fmt.Printf("%v\n", dest)
 	if i, ok := dest.(verificationInterface); ok {
 		if ii, ok := dest.(parsableObjectInterface); ok {
 			return verifyAndParseStringRequest(ii.getObjectAsString(), ii.getObjectRef(), i.getVerification(), c)
