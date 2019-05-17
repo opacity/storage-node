@@ -15,9 +15,14 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-const signatureDidNotMatchResponse = "signature did not match"
-const errVerifying = "error verifying signature"
-const marshalError = "bad request, unable to marshal request body: "
+const (
+	signatureDidNotMatchResponse = "signature did not match"
+	errVerifying                 = "error verifying signature"
+	marshalError                 = "bad request, unable to marshal request body: "
+
+	postFormTag     = "form"
+	postFormFileTag = "formFile"
+)
 
 type verificationInterface interface {
 	getVerification() verification
@@ -73,7 +78,7 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 			// Only go 1 level down
 			for j := 0; j < field.Type.NumField(); j++ {
 				nestField := field.Type.Field(j)
-				strV, err := readValueFromPostForm(nestField, c)
+				strV, err := getValueFromPostForm(nestField, c)
 				if err != nil {
 					return err
 				}
@@ -84,9 +89,10 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 					return InternalErrorResponse(c, fmt.Errorf("Field is not settable, It should be upper case but has this: %v", nestField))
 				}
 				s.Field(i).Field(j).SetString(strV)
+			}
 		}
 
-		strV, err := readValueFromPostForm(field, c)
+		strV, err := getValueFromPostForm(field, c)
 		if err != nil {
 			return err
 		}
@@ -108,10 +114,10 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 	return nil
 }
 
-func readValueFromPostForm(field reflect.StructField, c *gin.Context) (string, error) {
+func getValueFromPostForm(field reflect.StructField, c *gin.Context) (string, error) {
 	strV := ""
-	formTag := field.Tag.Get("form")
-	fileTag := field.Tag.Get("formFile")
+	formTag := field.Tag.Get(postFormTag)
+	fileTag := field.Tag.Get(postFormFileTag)
 
 	if formTag == "" && fileTag == "" {
 		return "", nil
@@ -121,11 +127,7 @@ func readValueFromPostForm(field reflect.StructField, c *gin.Context) (string, e
 	}
 
 	if fileTag != "" {
-		var err error
-		strV, err = readFileFromForm(fileTag, c)
-		if err != nil {
-			return "", err
-		}
+		return readFileFromForm(fileTag, c)
 	}
 	return strV, nil
 }
@@ -134,14 +136,11 @@ func readFileFromForm(fileTag string, c *gin.Context) (string, error) {
 	multiFile, _, err := c.Request.FormFile(fileTag)
 	defer multiFile.Close()
 	if err != nil {
-		InternalErrorResponse(c, err)
-		return "", err
+		return "", InternalErrorResponse(c, err)
 	}
 	var fileBytes bytes.Buffer
-	_, err = io.Copy(&fileBytes, multiFile)
-	if err != nil {
-		InternalErrorResponse(c, err)
-		return "", err
+	if _, err := io.Copy(&fileBytes, multiFile); err != nil {
+		return "", InternalErrorResponse(c, err)
 	}
 	return fileBytes.String(), nil
 }
