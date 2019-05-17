@@ -60,6 +60,25 @@ func multipartUploadOfSingleChunk(t *testing.T, f *File) (*s3.CompletedPart, err
 	return completedPart, err
 }
 
+func waitForExpectedMap(expectedMap IndexMap, fileID string, t *testing.T, maxTries int) {
+	tries := 0
+
+	for {
+		time.Sleep(300 * time.Millisecond)
+		actualFile := File{}
+		DB.First(&actualFile, "file_id = ?", fileID)
+		actualMap := actualFile.GetCompletedIndexesAsMap()
+		if assert.Equal(t, expectedMap, actualMap) {
+			break
+		}
+		if tries >= maxTries {
+			t.Fatal("did not complete scale test in alloted number of tries")
+			break
+		}
+		tries++
+	}
+}
+
 func Test_Init_Files(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
@@ -207,25 +226,6 @@ func Test_PartsChannelUpdatesCompletedIndexes(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	waitForExpectedMap(expectedMap, file.FileID, t, 5)
-}
-
-func waitForExpectedMap(expectedMap IndexMap, fileID string, t *testing.T, maxTries int) {
-	tries := 0
-
-	for {
-		time.Sleep(300 * time.Millisecond)
-		actualFile := File{}
-		DB.First(&actualFile, "file_id = ?", fileID)
-		actualMap := actualFile.GetCompletedIndexesAsMap()
-		if assert.Equal(t, expectedMap, actualMap) {
-			break
-		}
-		if tries >= maxTries {
-			t.Fatal("did not complete scale test in alloted number of tries")
-			break
-		}
-		tries++
-	}
 }
 
 func Test_PartsChannel_at_Scale(t *testing.T) {
