@@ -5,7 +5,7 @@ type CompletedUploadIndex struct {
 	Index  int    `gorm:"primary_key" json:"index" binding:"required"`
 }
 
-func CompletedUploadIndex(fileID string, index int) error {
+func CreateCompletedUploadIndex(fileID string, index int) error {
 	c := CompletedUploadIndex{
 		FileID: fileID,
 		Index:  index,
