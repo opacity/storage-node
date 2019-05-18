@@ -29,6 +29,10 @@ func Test_DeleteCompletedUploadIndexes(t *testing.T) {
 
 	assert.Nil(t, DeleteCompletedUploadIndexes("test_bar2"))
 
+	c, err = GetCompletedUploadProgress("test_bar2")
+	assert.Nil(t, err)
+	assert.Equal(t, 0, c)
+
 	c, err := GetCompletedUploadProgress("test_bar3")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, c)
