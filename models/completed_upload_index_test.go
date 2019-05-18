@@ -3,6 +3,7 @@ package models
 import (
 	"testing"
 
+	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
 
