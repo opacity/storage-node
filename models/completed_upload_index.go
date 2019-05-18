@@ -1,14 +1,18 @@
 package models
 
+import (
+	"strconv"
+)
+
 type CompletedUploadIndex struct {
 	FileID string `gorm:"primary_key" json:"fileID" binding:"required"`
-	Index  int    `gorm:"primary_key" json:"index" binding:"required"`
+	Index  string `gorm:"primary_key" json:"index" binding:"required"`
 }
 
 func CreateCompletedUploadIndex(fileID string, index int) error {
 	c := CompletedUploadIndex{
 		FileID: fileID,
-		Index:  index,
+		Index:  strconv.Itoa(index),
 	}
 	return DB.Create(&c).Error
 }
