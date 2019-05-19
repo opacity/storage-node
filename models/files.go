@@ -119,9 +119,13 @@ func (file *File) UpdateKeyAndUploadID(key, uploadID *string) error {
 func (file *File) UpdateCompletedIndexes(completedPart *s3.CompletedPart) error {
 	completedIndexes := file.GetCompletedIndexesAsMap()
 	completedIndexes[*completedPart.PartNumber] = completedPart
-	err := file.SaveCompletedIndexesAsString(completedIndexes)
 
-	return err
+	if err := file.SaveCompletedIndexesAsString(completedIndexes); err != nil {
+		return err
+	}
+
+	completedIndex := int(*completedPart.PartNumber)
+	return CreateCompletedUploadIndex(file.FileID, completedIndex)
 }
 
 /*GetCompletedIndexesAsMap takes the file's CompletedIndexes, converts them to a map,
@@ -216,6 +220,11 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 	if err := DB.Save(&compeletedFile).Error; err != nil {
 		return CompletedFile{}, err
 	}
+
+	if err := DeleteCompletedUploadIndexes(file.FileID); err != nil {
+		return compeletedFile, err
+	}
+
 	return compeletedFile, DB.Delete(file).Error
 }
 
