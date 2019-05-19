@@ -24,6 +24,11 @@ func (f fileCleaner) Run() {
 	if len(files) == 0 {
 		return
 	}
+
+	for _, file := range files {
+		utils.LogIfError(models.DeleteCompletedUploadIndexes(file.FileID), nil)
+	}
+
 	var ids []string
 	for _, file := range files {
 		ids = append(ids, models.GetFileMetadataKey(file.FileID))
