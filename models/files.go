@@ -169,9 +169,11 @@ func (file *File) GetIncompleteIndexesAsArray() []int64 {
 and saves it to the file's CompletedIndexes.*/
 func (file *File) SaveCompletedIndexesAsString(completedIndexes IndexMap) error {
 	indexAsBytes, err := json.Marshal(completedIndexes)
-	utils.PanicOnError(err)
+	if err != nil {
+		return err
+	}
 	indexAsString := string(indexAsBytes)
-	if err = DB.Model(&file).Update("completed_indexes", &indexAsString).Error; err != nil {
+	if err = DB.Model(&file).UpdateColumn("completed_indexes", &indexAsString).Error; err != nil {
 		return err
 	}
 

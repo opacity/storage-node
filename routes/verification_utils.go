@@ -52,7 +52,7 @@ func (v verification) getAccount(c *gin.Context) (models.Account, error) {
 }
 
 type requestBody struct {
-	RequestBody string `json:"requestBody" form:"requestBody" binding:"required" example:"should produce routes.InitFileUploadObj as example"`
+	RequestBody string `json:"requestBody" form:"requestBody" binding:"required" example:"look at description for example"`
 }
 
 func (v requestBody) getObjectAsString() string {
