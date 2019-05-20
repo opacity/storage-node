@@ -29,3 +29,11 @@ func DeleteCompletedFilesForTest(t *testing.T) {
 		DB.Exec("DELETE from completed_files;")
 	}
 }
+
+func DeleteCompletedUploadIndexesForTest(t *testing.T) {
+	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
+		t.Fatalf("should only be calling DeleteCompletedUploadIndexesForTest method on test database")
+	} else {
+		DB.Exec("DELETE from completed_upload_indices;")
+	}
+}

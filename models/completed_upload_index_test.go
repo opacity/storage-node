@@ -13,6 +13,7 @@ func Test_Init_Completed_Upload_Index(t *testing.T) {
 }
 
 func Test_GetCompletedUploadProgress(t *testing.T) {
+	DeleteCompletedUploadIndexesForTest(t)
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar1", 1))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar1", 2))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar1", 3))
@@ -23,6 +24,7 @@ func Test_GetCompletedUploadProgress(t *testing.T) {
 }
 
 func Test_DeleteCompletedUploadIndexes(t *testing.T) {
+	DeleteCompletedUploadIndexesForTest(t)
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar2", 1))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar2", 2))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar3", 2))
