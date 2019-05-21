@@ -72,14 +72,6 @@ func downloadFile(c *gin.Context) error {
 		InternalErrorResponse(c, err)
 	}
 
-	if err := models.ExpireObject(models.GetFileDataKey(requestBodyParsed.FileID)); err != nil {
-		return InternalErrorResponse(c, err)
-	}
-
-	if err := models.ExpireObject(models.GetFileMetadataKey(requestBodyParsed.FileID)); err != nil {
-		return InternalErrorResponse(c, err)
-	}
-
 	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName,
 		requestBodyParsed.FileID)
 	return OkResponse(c, downloadFileRes{
