@@ -124,8 +124,9 @@ func (file *File) UpdateCompletedIndexes(completedPart *s3.CompletedPart) error 
 		return err
 	}
 
-	completedIndex := int(*completedPart.PartNumber)
-	return CreateCompletedUploadIndex(file.FileID, completedIndex)
+	completedIndex := int(aws.Int64Value(completedPart.PartNumber))
+	etag := aws.StringValue(completedPart.ETag)
+	return CreateCompletedUploadIndex(file.FileID, completedIndex, etag)
 }
 
 /*GetCompletedIndexesAsMap takes the file's CompletedIndexes, converts them to a map,
@@ -188,6 +189,15 @@ func (file *File) SaveCompletedIndexesAsString(completedIndexes IndexMap) error 
 that all expected chunk indexes have been added to the map.  If any are not found it returns false.
 If none are discovered missing it returns true.  */
 func (file *File) UploadCompleted() bool {
+	/*
+		// Use completed_upload_indexes table to see whether we finished or not
+		// Fallback to indexs map.
+		count, err := GetCompletedUploadProgress(file.FileID)
+		if err == nil {
+			return count == ((file.EndIndex - FirstChunkIndex) + 1)
+		}
+	*/
+
 	completedIndexMap := file.GetCompletedIndexesAsMap()
 
 	for index := FirstChunkIndex; index <= file.EndIndex; index++ {
