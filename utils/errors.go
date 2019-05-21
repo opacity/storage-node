@@ -55,7 +55,7 @@ func LogIfError(err error, extraInfo map[string]interface{}) {
 	if err == nil {
 		return
 	}
-
+	SlackLogError(err.Error())
 	fmt.Println(err)
 	fmt.Println(extraInfo)
 }
