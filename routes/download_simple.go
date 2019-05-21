@@ -41,11 +41,6 @@ func downloadSimpleFile(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("such data does not exist"))
 	}
 
-	if err := models.ExpireObject(models.GetFileDataKey(request.FileID)); err != nil {
-		err = fmt.Errorf("unable to ExpireObject:  %v", err)
-		return InternalErrorResponse(c, err)
-	}
-
 	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(request.FileID), utils.CannedAcl_PublicRead); err != nil {
 		return InternalErrorResponse(c, err)
 	}
