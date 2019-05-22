@@ -33,7 +33,7 @@ func GetCompletedUploadProgress(fileID string) (int, error) {
 func GetCompletedPartsAsArray(fileID string) ([]*s3.CompletedPart, error) {
 	var completedParts []*s3.CompletedPart
 	completedIndexes := []CompletedUploadIndex{}
-	if err := DB.Where("file_id = ?", fileID).Order("index ASC").Find(&completedIndexes).Error; err != nil {
+	if err := DB.Where("file_id = ?", fileID).Order("index asc").Find(&completedIndexes).Error; err != nil {
 		return completedParts, err
 	}
 
