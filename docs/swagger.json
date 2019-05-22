@@ -128,7 +128,7 @@
             }
         },
         "/api/v1/delete": {
-            "delete": {
+            "post": {
                 "description": "delete a file\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileID\": \"the handle of the file\",\n}",
                 "consumes": [
                     "application/json"

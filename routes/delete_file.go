@@ -33,7 +33,7 @@ type deleteFileRes struct {
 // @Success 200 {object} routes.deleteFileRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/delete [delete]
+// @Router /api/v1/delete [post]
 /*DeleteFileHandler is a handler for the user to upload files*/
 func DeleteFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(deleteFile)
