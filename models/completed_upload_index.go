@@ -46,7 +46,7 @@ func GetCompletedPartsAsArray(fileID string) ([]*s3.CompletedPart, error) {
 	return completedParts, nil
 }
 
-func GetIncompletedIndexAsArray(fileID string, endIndex int) ([]int64, error) {
+func GetIncompleteIndexesAsArray(fileID string, endIndex int) ([]int64, error) {
 	var incompletedIndex []int64
 	completedIndexes := []CompletedUploadIndex{}
 	if err := DB.Where("file_id = ?", fileID).Order("index").Find(&completedIndexes).Error; err != nil {

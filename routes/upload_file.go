@@ -98,7 +98,7 @@ func uploadFile(c *gin.Context) error {
 	if multipartErr != nil {
 		return InternalErrorResponse(c, multipartErr)
 	}
-	err = file.UpdateCompletedIndexes(completedPart)
+	err = models.CreateCompletedUploadIndex(file.FileID, int(*completedPart.PartNumber), *completedPart.ETag)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}

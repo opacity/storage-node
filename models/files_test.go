@@ -243,7 +243,7 @@ func Test_GetCompletedIndexesAsMap(t *testing.T) {
 	assert.Equal(t, expectedMap, actualMap)
 }
 
-func Test_GetIncompleteIndexesAsArray(t *testing.T) {
+func Test_Files_GetIncompleteIndexesAsArray(t *testing.T) {
 	file := returnValidFile()
 
 	// Add file to DB

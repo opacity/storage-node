@@ -189,14 +189,12 @@ func (file *File) SaveCompletedIndexesAsString(completedIndexes IndexMap) error 
 that all expected chunk indexes have been added to the map.  If any are not found it returns false.
 If none are discovered missing it returns true.  */
 func (file *File) UploadCompleted() bool {
-	/*
-		// Use completed_upload_indexes table to see whether we finished or not
-		// Fallback to indexs map.
-		count, err := GetCompletedUploadProgress(file.FileID)
-		if err == nil {
-			return count == ((file.EndIndex - FirstChunkIndex) + 1)
-		}
-	*/
+	// Use completed_upload_indexes table to see whether we finished or not
+	// Fallback to indexs map. If count is 0, then fall back to old way.
+	count, err := GetCompletedUploadProgress(file.FileID)
+	if err == nil && count > 0 {
+		return count == ((file.EndIndex - FirstChunkIndex) + 1)
+	}
 
 	completedIndexMap := file.GetCompletedIndexesAsMap()
 
@@ -216,7 +214,10 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 		return CompletedFile{}, IncompleteUploadErr
 	}
 
-	completedParts := file.GetCompletedPartsAsArray()
+	completedParts, err := GetCompletedPartsAsArray(file.FileID)
+	if err != nil {
+		return CompletedFile{}, err
+	}
 
 	objectKey := aws.StringValue(file.AwsObjectKey)
 	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
