@@ -337,7 +337,7 @@ func Test_UploadCompleted(t *testing.T) {
 	assert.True(t, allChunksUploaded)
 }
 
-func Test_GetCompletedPartsAsArray(t *testing.T) {
+func Test_FileGetCompletedPartsAsArray(t *testing.T) {
 	file := returnValidFile()
 
 	// Add file to DB
