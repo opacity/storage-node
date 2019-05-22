@@ -57,8 +57,8 @@ const (
 	/*UploadStatusPath is the path for checking upload status*/
 	UploadStatusPath = "/upload-status"
 
-	/*FilePath is the path for downloading and deleting files*/
-	FilePath = "/file"
+	/*DeletePath is the path for deleting files*/
+	DeletePath = "/delete"
 
 	/*DownloadPath is the path for downloading files*/
 	DownloadPath = "/download"
@@ -119,7 +119,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(UploadStatusPath, CheckUploadStatusHandler())
 
 	// File endpoint
-	v1Router.DELETE(FilePath, DeleteFileHandler())
+	v1Router.DELETE(DeletePath, DeleteFileHandler())
 	//v1Router.POST(DownloadPath, DownloadFileHandler())
 	v1Router.POST(DownloadPath, DownloadSimpleFileHandler())
 }

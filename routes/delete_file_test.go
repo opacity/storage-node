@@ -114,7 +114,7 @@ func deleteFileHelperForTest(t *testing.T, request deleteFileReq) *httptest.Resp
 
 	router := returnEngine()
 	v1 := returnV1Group(router)
-	v1.DELETE(FilePath, DeleteFileHandler())
+	v1.DELETE(DeletePath, DeleteFileHandler())
 
 	marshalledReq, _ := json.Marshal(request)
 	reqBody := bytes.NewBuffer(marshalledReq)
@@ -122,7 +122,7 @@ func deleteFileHelperForTest(t *testing.T, request deleteFileReq) *httptest.Resp
 	// Create the mock request you'd like to test. Make sure the second argument
 	// here is the same as one of the routes you defined in the router setup
 	// block!
-	req, err := http.NewRequest(http.MethodDelete, v1.BasePath()+FilePath, reqBody)
+	req, err := http.NewRequest(http.MethodDelete, v1.BasePath()+DeletePath, reqBody)
 	if err != nil {
 		t.Fatalf("Couldn't create request: %v\n", err)
 	}

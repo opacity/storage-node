@@ -7,10 +7,11 @@ import (
 )
 
 type CompletedFile struct {
-	FileID         string    `gorm:"primary_key" json:"fileID" binding:"required"`
+	FileID         string    `gorm:"primary_key" json:"fileID" binding:"required,len=64" minLength:"64" maxLength:"64"`
 	CreatedAt      time.Time `json:"createdAt"`
 	ExpiredAt      time.Time `json:"expiredAt"`
 	FileSizeInByte int64     `json:"fileSizeInByte"`
+	ModifierHash   string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
 }
 
 func GetAllExpiredCompletedFiles(expiredTime time.Time) ([]string, error) {

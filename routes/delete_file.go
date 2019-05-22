@@ -33,7 +33,7 @@ type deleteFileRes struct {
 // @Success 200 {object} routes.deleteFileRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/file [delete]
+// @Router /api/v1/delete [delete]
 /*DeleteFileHandler is a handler for the user to upload files*/
 func DeleteFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(deleteFile)
@@ -54,12 +54,20 @@ func deleteFile(c *gin.Context) error {
 		return err
 	}
 
-	if err := utils.DeleteDefaultBucketObject(requestBodyParsed.FileID); err != nil {
-		return InternalErrorResponse(c, err)
+	if err := verifyIfPaid(account, c); err != nil {
+		return err
 	}
 
 	var completedFile models.CompletedFile
 	if completedFile, err = models.GetCompletedFileByFileID(requestBodyParsed.FileID); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	if err := verifyModifyPermissions(request.PublicKey, requestBodyParsed.FileID, completedFile.ModifierHash, c); err != nil {
+		return err
+	}
+
+	if err := utils.DeleteDefaultBucketObjectKeys(requestBodyParsed.FileID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
