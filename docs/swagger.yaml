@@ -490,7 +490,7 @@ paths:
             type: string
       summary: create an account
   /api/v1/delete:
-    delete:
+    post:
       consumes:
       - application/json
       description: |-

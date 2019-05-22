@@ -119,7 +119,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(UploadStatusPath, CheckUploadStatusHandler())
 
 	// File endpoint
-	v1Router.DELETE(DeletePath, DeleteFileHandler())
+	v1Router.POST(DeletePath, DeleteFileHandler())
 	//v1Router.POST(DownloadPath, DownloadFileHandler())
 	v1Router.POST(DownloadPath, DownloadSimpleFileHandler())
 }
