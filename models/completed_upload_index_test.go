@@ -51,10 +51,10 @@ func Test_GetCompletedPartsAsArray(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, 3, len(l))
-	assert.Equal(t, 1, aws.Int64Value(l[0].PartNumber))
+	assert.Equal(t, 1, int(aws.Int64Value(l[0].PartNumber)))
 	assert.Equal(t, "a", aws.StringValue(l[0].ETag))
-	assert.Equal(t, 2, aws.Int64Value(l[1].PartNumber))
+	assert.Equal(t, 2, int(aws.Int64Value(l[1].PartNumber)))
 	assert.Equal(t, "b", aws.StringValue(l[1].ETag))
-	assert.Equal(t, 3, aws.Int64Value(l[2].PartNumber))
+	assert.Equal(t, 3, int(aws.Int64Value(l[2].PartNumber)))
 	assert.Equal(t, "c", aws.StringValue(l[2].ETag))
 }
