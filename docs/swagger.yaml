@@ -14,11 +14,34 @@ definitions:
     - cost
     - ethAddress
     type: object
+  routes.InitFileUploadObj:
+    properties:
+      endIndex:
+        example: 2
+        type: integer
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+      fileSizeInByte:
+        example: 200000000000006
+        type: integer
+    required:
+    - endIndex
+    - fileHandle
+    - fileSizeInByte
+    type: object
   routes.InitFileUploadReq:
     properties:
+      initFileUploadObj:
+        $ref: '#/definitions/routes.InitFileUploadObj'
+        type: object
       metadata:
         example: the metadata of the file you are about to upload, as an array of
           bytes
+        type: string
+      metadataAsFile:
         type: string
       publicKey:
         example: a 66-character public key
@@ -26,7 +49,7 @@ definitions:
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.InitFileUploadObj, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -466,41 +489,7 @@ paths:
           schema:
             type: string
       summary: create an account
-  /api/v1/download:
-    post:
-      consumes:
-      - application/json
-      description: download a file without cryptographic verification
-      parameters:
-      - description: download object for non-signed requests
-        in: body
-        name: downloadSimpleFileObj
-        required: true
-        schema:
-          $ref: '#/definitions/routes.downloadSimpleFileObj'
-          type: object
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.downloadFileRes'
-            type: object
-        "400":
-          description: 'bad request, unable to parse request body: (with the error)'
-          schema:
-            type: string
-        "404":
-          description: such data does not exist
-          schema:
-            type: string
-        "500":
-          description: some information about the internal error
-          schema:
-            type: string
-      summary: download a file without cryptographic verification
-  /api/v1/file:
+  /api/v1/delete:
     delete:
       consumes:
       - application/json
@@ -535,6 +524,40 @@ paths:
           schema:
             type: string
       summary: delete a file
+  /api/v1/download:
+    post:
+      consumes:
+      - application/json
+      description: download a file without cryptographic verification
+      parameters:
+      - description: download object for non-signed requests
+        in: body
+        name: downloadSimpleFileObj
+        required: true
+        schema:
+          $ref: '#/definitions/routes.downloadSimpleFileObj'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.downloadFileRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: such data does not exist
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: download a file without cryptographic verification
   /api/v1/init-upload:
     post:
       consumes:

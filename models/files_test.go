@@ -22,6 +22,7 @@ func returnValidFile() File {
 		EndIndex:         10,
 		CompletedIndexes: nil,
 		ExpiredAt:        time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
+		ModifierHash:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
 }
 

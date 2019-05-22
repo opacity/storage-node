@@ -16,7 +16,7 @@ import (
 type File struct {
 	/*FileID will either be the file handle, or a hash of the file handle.  We should add an appropriate length
 	restriction and can change the name to FileHandle if it is appropriate*/
-	FileID           string    `gorm:"primary_key" json:"fileID" binding:"required"`
+	FileID           string    `gorm:"primary_key" json:"fileID" binding:"required,len=64" minLength:"64" maxLength:"64"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
 	ExpiredAt        time.Time `json:"expiredAt"`
@@ -24,6 +24,7 @@ type File struct {
 	AwsObjectKey     *string   `json:"awsObjectKey"`
 	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
 	CompletedIndexes *string   `json:"completedIndexes" gorm:"type:mediumtext"`
+	ModifierHash     string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
 }
 
 type IndexMap map[int64]*s3.CompletedPart
@@ -229,6 +230,7 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 		FileID:         file.FileID,
 		ExpiredAt:      file.ExpiredAt,
 		FileSizeInByte: objectSize,
+		ModifierHash:   file.ModifierHash,
 	}
 	if err := DB.Save(&compeletedFile).Error; err != nil {
 		return CompletedFile{}, err

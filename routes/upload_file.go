@@ -94,6 +94,10 @@ func uploadFile(c *gin.Context) error {
 		return FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 	}
 
+	if err := verifyModifyPermissions(request.PublicKey, requestBodyParsed.FileHandle, file.ModifierHash, c); err != nil {
+		return err
+	}
+
 	completedPart, multipartErr := handleChunkData(file, requestBodyParsed.PartIndex, fileBytes.Bytes())
 	if multipartErr != nil {
 		return InternalErrorResponse(c, multipartErr)

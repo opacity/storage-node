@@ -252,3 +252,25 @@ func getAccountIdFromPublicKey(publicKey string, c *gin.Context) (string, error)
 	}
 	return accountID, err
 }
+
+func createModifierHash(publicKey, fileID string, c *gin.Context) (string, error) {
+	modifierHash, err := utils.HashString(publicKey + fileID)
+	if err != nil {
+		return "", InternalErrorResponse(c, err)
+	}
+	return modifierHash, nil
+}
+
+func verifyModifyPermissions(publicKey, fileID, expectedModifierHash string, c *gin.Context) error {
+	if expectedModifierHash == "" {
+		return ForbiddenResponse(c, errors.New("file is ineligible for modification"))
+	}
+	modifierHash, err := createModifierHash(publicKey, fileID, c)
+	if err != nil {
+		return err
+	}
+	if modifierHash != expectedModifierHash {
+		return ForbiddenResponse(c, errors.New("you are not authorized to modify this file"))
+	}
+	return nil
+}

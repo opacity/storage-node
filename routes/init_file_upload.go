@@ -79,13 +79,20 @@ func initFileUpload(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
+	modifierHash, err := createModifierHash(request.PublicKey, request.initFileUploadObj.FileHandle, c)
+	if err != nil {
+		return err
+	}
+
 	file := models.File{
 		FileID:       request.initFileUploadObj.FileHandle,
 		EndIndex:     request.initFileUploadObj.EndIndex,
 		AwsUploadID:  uploadID,
 		AwsObjectKey: objKey,
 		ExpiredAt:    account.ExpirationDate(),
+		ModifierHash: modifierHash,
 	}
+
 	if err := models.DB.Create(&file).Error; err != nil {
 		return InternalErrorResponse(c, err)
 	}

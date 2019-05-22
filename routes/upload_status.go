@@ -69,6 +69,10 @@ func checkUploadStatus(c *gin.Context) error {
 		return FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 	}
 
+	if err := verifyModifyPermissions(request.PublicKey, requestBodyParsed.FileHandle, file.ModifierHash, c); err != nil {
+		return err
+	}
+
 	completedFile, err = file.FinishUpload()
 	if err != nil {
 		if err == models.IncompleteUploadErr {
