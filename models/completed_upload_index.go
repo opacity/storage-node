@@ -45,3 +45,22 @@ func GetCompletedPartsAsArray(fileID string) ([]*s3.CompletedPart, error) {
 	}
 	return completedParts, nil
 }
+
+func GetIncompletedIndexAsArray(fileID string, endIndex int) ([]int64, error) {
+	var incompletedIndex []int64
+	completedIndexes := []CompletedUploadIndex{}
+	if err := DB.Where("file_id = ?", fileID).Order("index").Find(&completedIndexes).Error; err != nil {
+		return incompletedIndex, err
+	}
+
+	m := make(map[int]bool)
+	for _, idx := range completedIndexes {
+		m[idx.Index] = true
+	}
+	for index := FirstChunkIndex; index <= endIndex; index++ {
+		if _, ok := m[index]; !ok {
+			incompletedIndex = append(incompletedIndex, int64(index))
+		}
+	}
+	return incompletedIndex, nil
+}
