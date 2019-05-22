@@ -58,3 +58,18 @@ func Test_GetCompletedPartsAsArray(t *testing.T) {
 	assert.Equal(t, 3, int(aws.Int64Value(l[2].PartNumber)))
 	assert.Equal(t, "c", aws.StringValue(l[2].ETag))
 }
+
+func Test_GetIncompletedIndexAsArray(t *testing.T) {
+	DeleteCompletedUploadIndexesForTest(t)
+	assert.Nil(t, CreateCompletedUploadIndex("test_bar5", 5, "b"))
+	assert.Nil(t, CreateCompletedUploadIndex("test_bar5", 1, "a"))
+	assert.Nil(t, CreateCompletedUploadIndex("test_bar5", 3, "c"))
+
+	l, err := GetIncompletedIndexAsArray("test_bar5", 6)
+
+	assert.Nil(t, err)
+	assert.Equal(t, 3, len(l))
+	assert.Equal(t, int64(2), l[0])
+	assert.Equal(t, int64(4), l[1])
+	assert.Equal(t, int64(6), l[2])
+}
