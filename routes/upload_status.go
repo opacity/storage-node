@@ -72,7 +72,11 @@ func checkUploadStatus(c *gin.Context) error {
 	completedFile, err = file.FinishUpload()
 	if err != nil {
 		if err == models.IncompleteUploadErr {
-			incompleteIndexes := file.GetIncompleteIndexesAsArray()
+			incompleteIndexes, err := models.GetIncompleteIndexesAsArray(file.FileID, file.EndIndex)
+			if err != nil || len(incompleteIndexes) == 0 {
+				// fall back to the old way to get data
+				incompleteIndexes = file.GetIncompleteIndexesAsArray()
+			}
 			return OkResponse(c, missingChunksRes{
 				Status:         "chunks missing",
 				MissingIndexes: incompleteIndexes,
