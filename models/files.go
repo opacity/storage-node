@@ -214,7 +214,10 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 		return CompletedFile{}, IncompleteUploadErr
 	}
 
-	completedParts := file.GetCompletedPartsAsArray()
+	completedParts, err := GetCompletedPartsAsArray(file.FileID)
+	if err != nil {
+		return CompletedFile{}, err
+	}
 
 	objectKey := aws.StringValue(file.AwsObjectKey)
 	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
