@@ -10,7 +10,6 @@ import (
 type fileCleaner struct {
 }
 
-var newerThanOffset = -5 * time.Minute
 var olderThanOffset = -1 * 24 * time.Hour
 
 func (f fileCleaner) ScheduleInterval() string {

@@ -205,8 +205,10 @@ func CreateSpaceUsedReport() SpaceReport {
 
 /*PurgeOldUnpaidAccounts deletes accounts past a certain age which have not been paid for*/
 func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
-	err := DB.Where("created_at < ? AND payment_status = ?",
-		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainUnpaidAccounts)), InitialPaymentInProgress).Delete(&Account{}).Error
+	err := DB.Where("created_at < ? AND payment_status = ? AND storage_used = ?",
+		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainUnpaidAccounts)),
+		InitialPaymentInProgress,
+		float64(0)).Delete(&Account{}).Error
 	return err
 }
 
@@ -222,11 +224,14 @@ func GetAccountsByPaymentStatus(paymentStatus PaymentStatusType) []Account {
 /*SetAccountsToNextPaymentStatus transitions an account to the next payment status*/
 func SetAccountsToNextPaymentStatus(accounts []Account) {
 	for _, account := range accounts {
+		if account.PaymentStatus == PaymentRetrievalComplete {
+			continue
+		}
 		if err := utils.Validator.Struct(account); err != nil {
 			utils.LogIfError(err, nil)
 			continue
 		}
-		err := DB.Model(&account).Updates(Account{PaymentStatus: getNextPaymentStatus(account.PaymentStatus)}).Error
+		err := DB.Model(&account).Update("payment_status", getNextPaymentStatus(account.PaymentStatus)).Error
 		utils.LogIfError(err, nil)
 	}
 }
@@ -247,11 +252,10 @@ func HandleMetadataKeyForPaidAccount(account Account) (err error) {
 
 /*getNextPaymentStatus returns the next payment status in the sequence*/
 func getNextPaymentStatus(paymentStatus PaymentStatusType) PaymentStatusType {
-	nextStatus := paymentStatus + 1
-	if nextStatus > PaymentRetrievalComplete {
-		nextStatus = PaymentRetrievalComplete
+	if paymentStatus == PaymentRetrievalComplete {
+		return paymentStatus
 	}
-	return nextStatus
+	return paymentStatus + 1
 }
 
 /*handleAccountWithPaymentInProgress checks if the user has paid for their account, and if so

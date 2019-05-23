@@ -424,6 +424,7 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 	// before cutoff time, payment still in progress
 	// this one should get purged
 	accounts[3].CreatedAt = time.Now().Add(-1 * 8 * 24 * time.Hour)
+	accounts[3].StorageUsed = 0
 	accounts[3].PaymentStatus = InitialPaymentInProgress
 
 	accountToBeDeletedID := accounts[3].AccountID
