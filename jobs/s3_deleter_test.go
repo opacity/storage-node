@@ -19,11 +19,8 @@ func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 	s2FileID := "test/foo2"
 	s3FileID := "test/foo3"
 
-	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
-		t.Fatalf("should only be calling deleteAccounts method on test database")
-	} else {
-		models.DB.Exec("DELETE from completed_files;")
-	}
+	models.DeleteCompletedFilesForTest(t)
+
 	s := models.CompletedFile{
 		FileID:    s1FileID,
 		ExpiredAt: time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC), // past
