@@ -184,7 +184,8 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 	if err := utils.Validator.Struct(account); err != nil {
 		return err
 	}
-	return DB.Model(&account).Updates(Account{StorageUsed: account.StorageUsed}).Error
+
+	return DB.Model(&account).Update("storage_used", account.StorageUsed).Error
 }
 
 /*Return Account object(first one) if there is not any error. */
