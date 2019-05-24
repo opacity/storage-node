@@ -172,7 +172,7 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 // 	assert.Nil(t, err)
 // 	account := CreatePaidAccountForTest(accountID, t)
 
-// 	objectKey := InitUploadFileForTest(t, uploadBody.FileHandle, models.FirstChunkIndex + 1)
+// 	objectKey := InitUploadFileForTest(t, request.PublicKey, uploadBody.FileHandle, models.FirstChunkIndex + 1)
 // 	w := UploadFileHelperForTest(t, request)
 
 // 	if w.Code != http.StatusOK {

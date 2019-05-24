@@ -102,6 +102,31 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.UploadStatusReq:
+    properties:
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: should produce routes.UploadStatusObj, see description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.accountCreateReq:
     properties:
       publicKey:
@@ -356,31 +381,6 @@ definitions:
       status:
         example: Chunk is uploaded
         type: string
-    type: object
-  routes.uploadStatusReq:
-    properties:
-      publicKey:
-        example: a 66-character public key
-        maxLength: 66
-        minLength: 66
-        type: string
-      requestBody:
-        example: should produce routes.UploadStatusObj, see description for example
-        type: string
-      signature:
-        description: |-
-          signature without 0x prefix is broken into
-          R: sig[0:63]
-          S: sig[64:127]
-        example: a 128 character string created when you signed the request with your
-          private key or account handle
-        maxLength: 128
-        minLength: 128
-        type: string
-    required:
-    - publicKey
-    - requestBody
-    - signature
     type: object
   routes.userStatsRes:
     properties:
@@ -728,10 +728,10 @@ paths:
       parameters:
       - description: an object to poll upload status
         in: body
-        name: uploadStatusReq
+        name: UploadStatusReq
         required: true
         schema:
-          $ref: '#/definitions/routes.uploadStatusReq'
+          $ref: '#/definitions/routes.UploadStatusReq'
           type: object
       produces:
       - application/json

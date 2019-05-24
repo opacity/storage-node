@@ -26,8 +26,6 @@ func Test_Init_Delete_Files(t *testing.T) {
 }
 
 func Test_Successful_File_Deletion_Request(t *testing.T) {
-	// TODO: Update tests to work with multipart-form requests
-	t.Skip()
 	models.DeleteAccountsForTest(t)
 	models.DeleteCompletedFilesForTest(t)
 	models.DeleteFilesForTest(t)
@@ -59,7 +57,8 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 	// check that StorageUsed has been deducted after deletion
 	assert.True(t, updatedAccount.StorageUsed == defaultStorageUsedForTest)
 	// check that object is not on S3 anymore
-	assert.False(t, utils.DoesDefaultBucketObjectExist(fileID))
+	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID)))
+	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)))
 	// check that completed file row in SQL table is gone
 	completedFile, err := models.GetCompletedFileByFileID(fileID)
 	assert.NotNil(t, err)
@@ -70,12 +69,13 @@ func checkPrerequisites(t *testing.T, account models.Account, fileID string) {
 	// check that StorageUsed has increased after the upload
 	assert.True(t, account.StorageUsed > defaultStorageUsedForTest)
 	// check that object exists on S3
-	assert.True(t, utils.DoesDefaultBucketObjectExist(fileID))
+	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID)))
+	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)))
 	// check that a completed file entry exists
 	completedFile, err := models.GetCompletedFileByFileID(fileID)
 	assert.Nil(t, err)
-	// check that the FileSizeInBytes matches the size on S2
-	assert.True(t, utils.GetDefaultBucketObjectSize(fileID) == completedFile.FileSizeInByte)
+	// check that the FileSizeInBytes matches the size on S3
+	assert.True(t, utils.GetDefaultBucketObjectSize(models.GetFileDataKey(fileID)) == completedFile.FileSizeInByte)
 	filesInDB := []models.File{}
 	models.DB.Where("file_id = ?", fileID).Find(&filesInDB)
 	// check that there is no "files" row in SQL associated with this ID
@@ -83,12 +83,18 @@ func checkPrerequisites(t *testing.T, account models.Account, fileID string) {
 }
 
 func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.PrivateKey) {
-	uploadBody := ReturnValidUploadFileBodyForTest(t)
-	uploadBody.PartIndex = models.FirstChunkIndex
+	privateKey, err := utils.GenerateKey()
+
+	initBody := ReturnValidInitUploadFileBodyForTest(t)
+	initReq := ReturnValidInitUploadFileReqForTest(t, initBody, privateKey)
+
+	uploadBody := UploadFileObj{
+		FileHandle: initBody.FileHandle,
+		PartIndex:  initBody.EndIndex,
+	}
 
 	chunkData := ReturnChunkDataForTest(t)
 
-	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 	request.ChunkData = string(chunkData)
@@ -96,14 +102,32 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	assert.Nil(t, err)
 	account := CreatePaidAccountForTest(accountID, t)
 
-	InitUploadFileForTest(t, uploadBody.FileHandle, models.FirstChunkIndex)
-	w := UploadFileHelperForTest(t, request)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	initializeUpload(initReq, c)
+
+	c, _ = gin.CreateTestContext(httptest.NewRecorder())
+
+	var fileToUpload bytes.Buffer
+	fileToUpload.Write(chunkData)
+
+	err = uploadChunk(uploadBody, request, fileToUpload, c)
+	assert.Nil(t, err)
+
+	uploadStatusObj := UploadStatusObj{
+		FileHandle: initBody.FileHandle,
+	}
+
+	uploadStatusReq := ReturnValidUploadStatusReqForTest(t, uploadStatusObj, privateKey)
+
+	w := uploadStatusFileHelperForTest(t, uploadStatusReq)
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
+
 	assert.Nil(t, err)
 
 	return updatedAccount, uploadBody.FileHandle, privateKey

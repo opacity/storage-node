@@ -44,6 +44,50 @@ func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKe
 	}
 }
 
+func ReturnValidInitUploadFileBodyForTest(t *testing.T) InitFileUploadObj {
+	abortIfNotTesting(t)
+	return InitFileUploadObj{
+		FileHandle:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		EndIndex:       models.FirstChunkIndex,
+		FileSizeInByte: 26214400,
+	}
+}
+
+func ReturnValidInitUploadFileReqForTest(t *testing.T, body InitFileUploadObj, privateKey *ecdsa.PrivateKey) InitFileUploadReq {
+	abortIfNotTesting(t)
+
+	marshalledReq, _ := json.Marshal(body)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	verificationBody := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
+
+	rBody := requestBody{
+		RequestBody: reqBody.String(),
+	}
+
+	return InitFileUploadReq{
+		initFileUploadObj: body,
+		requestBody:       rBody,
+		verification:      verificationBody,
+		Metadata:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		MetadataAsFile:    utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+	}
+}
+
+func ReturnValidUploadStatusReqForTest(t *testing.T, body UploadStatusObj, privateKey *ecdsa.PrivateKey) UploadStatusReq {
+	abortIfNotTesting(t)
+
+	marshalledReq, _ := json.Marshal(body)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	verificationBody := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
+
+	return UploadStatusReq{
+		RequestBody:  reqBody.String(),
+		verification: verificationBody,
+	}
+}
+
 func CreateUnpaidAccountForTest(accountID string, t *testing.T) models.Account {
 	abortIfNotTesting(t)
 
@@ -168,8 +212,10 @@ func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
 	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
 }
 
-func InitUploadFileForTest(t *testing.T, fileID string, endIndx int) string {
+func InitUploadFileForTest(t *testing.T, publicKey, fileID string, endIndx int) string {
 	objectKey, uploadID, err := utils.CreateMultiPartUpload(fileID)
+	assert.Nil(t, err)
+	modifierHash, err := utils.HashString(publicKey + fileID)
 	assert.Nil(t, err)
 	err = models.DB.Create(&models.File{
 		FileID:       fileID,
@@ -177,6 +223,7 @@ func InitUploadFileForTest(t *testing.T, fileID string, endIndx int) string {
 		AwsObjectKey: objectKey,
 		EndIndex:     endIndx,
 		ExpiredAt:    time.Now().AddDate(1, 0, 0),
+		ModifierHash: modifierHash,
 	}).Error
 	assert.Nil(t, err)
 	return *objectKey
@@ -196,6 +243,33 @@ func UploadFileHelperForTest(t *testing.T, post UploadFileReq) *httptest.Respons
 	// here is the same as one of the routes you defined in the router setup
 	// block!
 	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+UploadPath, reqBody)
+	if err != nil {
+		t.Fatalf("Couldn't create request: %v\n", err)
+	}
+
+	// Create a response recorder so you can inspect the response
+	w := httptest.NewRecorder()
+
+	// Perform the request
+	router.ServeHTTP(w, req)
+
+	return w
+}
+
+func uploadStatusFileHelperForTest(t *testing.T, post UploadStatusReq) *httptest.ResponseRecorder {
+	abortIfNotTesting(t)
+
+	router := returnEngine()
+	v1 := returnV1Group(router)
+	v1.POST(UploadStatusPath, CheckUploadStatusHandler())
+
+	marshalledReq, _ := json.Marshal(post)
+	reqBody := bytes.NewBuffer(marshalledReq)
+
+	// Create the mock request you'd like to test. Make sure the second argument
+	// here is the same as one of the routes you defined in the router setup
+	// block!
+	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+UploadStatusPath, reqBody)
 	if err != nil {
 		t.Fatalf("Couldn't create request: %v\n", err)
 	}
