@@ -272,7 +272,8 @@ func transferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAd
 
 	// amount is greater than balance, return error
 	if amount.Uint64() > balance.Uint64() {
-		return types.Transactions{}, "", -1, errors.New("balance too low to proceed")
+		return types.Transactions{}, "", -1, fmt.Errorf("balance too low to proceed, send ETH to: %v",
+			fromAddress.Hex())
 	}
 
 	// create new transaction
