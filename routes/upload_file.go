@@ -64,6 +64,7 @@ func uploadFile(c *gin.Context) error {
 
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
 	err := c.Request.ParseMultipartForm(MaxRequestSize)
+
 	if err != nil {
 		return BadRequestResponse(c, err)
 	} else {
@@ -85,16 +86,24 @@ func uploadFile(c *gin.Context) error {
 
 	requestBodyParsed := UploadFileObj{}
 
-	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification,
+		c); err != nil {
 		return BadRequestResponse(c, err)
 	}
+
+	return uploadChunk(requestBodyParsed, request, fileBytes, c)
+}
+
+func uploadChunk(requestBodyParsed UploadFileObj, mainRequest UploadFileReq, fileBytes bytes.Buffer,
+	c *gin.Context) error {
 
 	file, err := models.GetFileById(requestBodyParsed.FileHandle)
 	if err != nil || len(file.FileID) == 0 {
 		return FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 	}
 
-	if err := verifyModifyPermissions(request.PublicKey, requestBodyParsed.FileHandle, file.ModifierHash, c); err != nil {
+	if err := verifyModifyPermissions(mainRequest.PublicKey, requestBodyParsed.FileHandle,
+		file.ModifierHash, c); err != nil {
 		return err
 	}
 
@@ -102,6 +111,7 @@ func uploadFile(c *gin.Context) error {
 	if multipartErr != nil {
 		return InternalErrorResponse(c, multipartErr)
 	}
+
 	err = models.CreateCompletedUploadIndex(file.FileID, int(*completedPart.PartNumber), *completedPart.ETag)
 	if err != nil {
 		return InternalErrorResponse(c, err)

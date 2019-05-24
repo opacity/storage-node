@@ -435,12 +435,12 @@
                 "parameters": [
                     {
                         "description": "an object to poll upload status",
-                        "name": "uploadStatusReq",
+                        "name": "UploadStatusReq",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.uploadStatusReq"
+                            "$ref": "#/definitions/routes.UploadStatusReq"
                         }
                     }
                 ],
@@ -594,6 +594,33 @@
                 "requestBody": {
                     "type": "string",
                     "example": "should produce routes.UploadFileObj, see description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.UploadStatusReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "should produce routes.UploadStatusObj, see description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -908,33 +935,6 @@
                 "status": {
                     "type": "string",
                     "example": "Chunk is uploaded"
-                }
-            }
-        },
-        "routes.uploadStatusReq": {
-            "type": "object",
-            "required": [
-                "publicKey",
-                "requestBody",
-                "signature"
-            ],
-            "properties": {
-                "publicKey": {
-                    "type": "string",
-                    "maxLength": 66,
-                    "minLength": 66,
-                    "example": "a 66-character public key"
-                },
-                "requestBody": {
-                    "type": "string",
-                    "example": "should produce routes.UploadStatusObj, see description for example"
-                },
-                "signature": {
-                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 128,
-                    "example": "a 128 character string created when you signed the request with your private key or account handle"
                 }
             }
         },

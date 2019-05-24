@@ -12,7 +12,7 @@ type UploadStatusObj struct {
 	FileHandle string `json:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
 }
 
-type uploadStatusReq struct {
+type UploadStatusReq struct {
 	verification
 	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.UploadStatusObj, see description for example"`
 }
@@ -28,7 +28,7 @@ type missingChunksRes struct {
 // @Description check status of an upload
 // @Accept  json
 // @Produce  json
-// @Param uploadStatusReq body routes.uploadStatusReq true "an object to poll upload status"
+// @Param UploadStatusReq body routes.UploadStatusReq true "an object to poll upload status"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
@@ -45,7 +45,7 @@ func CheckUploadStatusHandler() gin.HandlerFunc {
 }
 
 func checkUploadStatus(c *gin.Context) error {
-	request := uploadStatusReq{}
+	request := UploadStatusReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		return BadRequestResponse(c, fmt.Errorf("bad request, unable to parse request body:  %v", err))

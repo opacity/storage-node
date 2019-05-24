@@ -57,6 +57,11 @@ func initFileUpload(c *gin.Context) error {
 		return err
 	}
 
+	return initializeUpload(request, c)
+}
+
+func initializeUpload(request InitFileUploadReq, c *gin.Context) error {
+
 	account, err := request.getAccount(c)
 	if err != nil {
 		return err

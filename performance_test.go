@@ -118,7 +118,7 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			routes.CreatePaidAccountForTest(accountID, t)
 
 			// init upload
-			routes.InitUploadFileForTest(t, uploadBody.FileHandle, len(arrayOfChunkDataBuffers))
+			routes.InitUploadFileForTest(t, request.PublicKey, uploadBody.FileHandle, len(arrayOfChunkDataBuffers))
 
 			// perform the first request and verify the expected status
 			w := routes.UploadFileHelperForTest(t, request)
