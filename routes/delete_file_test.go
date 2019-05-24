@@ -57,7 +57,8 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 	// check that StorageUsed has been deducted after deletion
 	assert.True(t, updatedAccount.StorageUsed == defaultStorageUsedForTest)
 	// check that object is not on S3 anymore
-	assert.False(t, utils.DoesDefaultBucketObjectExist(fileID))
+	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID)))
+	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)))
 	// check that completed file row in SQL table is gone
 	completedFile, err := models.GetCompletedFileByFileID(fileID)
 	assert.NotNil(t, err)
