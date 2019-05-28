@@ -382,15 +382,6 @@ definitions:
         example: Chunk is uploaded
         type: string
     type: object
-  routes.userStatsRes:
-    properties:
-      uploadedFileSizeInMb:
-        type: number
-      uploadedFilesCount:
-        type: integer
-      userAccountsCount:
-        type: integer
-    type: object
 host: '{{.Host}}'
 info:
   contact:
@@ -403,20 +394,6 @@ info:
   title: Storage Node
   version: "1.0"
 paths:
-  /admin/user_stats:
-    get:
-      consumes:
-      - application/json
-      description: get statistics
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.userStatsRes'
-            type: object
-      summary: get statistics
   /api/v1/account-data:
     post:
       consumes:

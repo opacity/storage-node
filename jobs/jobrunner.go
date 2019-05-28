@@ -36,6 +36,9 @@ func StartupJobs() {
 		}
 	}
 
+	// Run metric collector immediately upon startup so we don't have to wait 24 hours everytime we deploy
+	// TODO:  change BackgroundRunnable job's Run() methods to also return an error, so that we can have jobs
+	// that we run both at startup and on a schedule
 	metricCollector{}.Run()
 }
 
