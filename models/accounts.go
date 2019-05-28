@@ -221,6 +221,15 @@ func GetAccountsByPaymentStatus(paymentStatus PaymentStatusType) []Account {
 	return accounts
 }
 
+/*CountAccountsByPaymentStatus counts accounts based on the payment status passed in*/
+func CountAccountsByPaymentStatus(paymentStatus PaymentStatusType) (int, error) {
+	count := 0
+	err := DB.Model(&Account{}).Where("payment_status = ?",
+		paymentStatus).Count(&count).Error
+	utils.LogIfError(err, nil)
+	return count, err
+}
+
 /*SetAccountsToNextPaymentStatus transitions an account to the next payment status*/
 func SetAccountsToNextPaymentStatus(accounts []Account) {
 	for _, account := range accounts {

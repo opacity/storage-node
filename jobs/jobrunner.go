@@ -35,6 +35,8 @@ func StartupJobs() {
 			utils.PanicOnError(errors.New(fmt.Sprintf("Abort!!!! Unable to startup process with error: %s", err)))
 		}
 	}
+
+	metricCollector{}.Run()
 }
 
 func ScheduleBackgroundJobs() {
@@ -43,7 +45,7 @@ func ScheduleBackgroundJobs() {
 		&pingStdOut{counter: 1},
 		s3Deleter{},
 		s3ExpireAccess{},
-		spaceUsageReporter{},
+		metricCollector{},
 		unpaidAccountDeleter{},
 		tokenCollector{},
 		fileCleaner{},

@@ -465,6 +465,25 @@ func Test_GetAccountsByPaymentStatus(t *testing.T) {
 	}
 }
 
+func Test_CountAccountsByPaymentStatus(t *testing.T) {
+	DeleteAccountsForTest(t)
+	// for each payment status, check that we can get the accounts of that status and that the account IDs
+	// of the accounts returned from GetAccountsByPaymentStatus match the accounts we created for the test
+	for paymentStatus := InitialPaymentInProgress; paymentStatus <= PaymentRetrievalComplete; paymentStatus++ {
+		if err := DB.Where("payment_status = ?", paymentStatus).Unscoped().Delete(&Account{}).Error; err != nil {
+			t.Fatalf("should have deleted accounts but didn't: " + err.Error())
+		}
+		account := returnValidAccount()
+		account.PaymentStatus = paymentStatus
+		if err := DB.Create(&account).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+		count, err := CountAccountsByPaymentStatus(paymentStatus)
+		assert.Nil(t, err)
+		assert.Equal(t, 1, count)
+	}
+}
+
 func Test_SetAccountsToNextPaymentStatus(t *testing.T) {
 
 	for paymentStatus := InitialPaymentInProgress; paymentStatus <= PaymentRetrievalComplete; paymentStatus++ {
