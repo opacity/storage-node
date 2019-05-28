@@ -16,27 +16,6 @@
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/admin/user_stats": {
-            "get": {
-                "description": "get statistics",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "get statistics",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "$ref": "#/definitions/routes.userStatsRes"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/account-data": {
             "post": {
                 "description": "check the payment status of an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"timestamp\": 1557346389\n}",
@@ -935,20 +914,6 @@
                 "status": {
                     "type": "string",
                     "example": "Chunk is uploaded"
-                }
-            }
-        },
-        "routes.userStatsRes": {
-            "type": "object",
-            "properties": {
-                "uploadedFileSizeInMb": {
-                    "type": "number"
-                },
-                "uploadedFilesCount": {
-                    "type": "integer"
-                },
-                "userAccountsCount": {
-                    "type": "integer"
                 }
             }
         }

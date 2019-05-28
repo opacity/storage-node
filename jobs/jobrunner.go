@@ -35,6 +35,11 @@ func StartupJobs() {
 			utils.PanicOnError(errors.New(fmt.Sprintf("Abort!!!! Unable to startup process with error: %s", err)))
 		}
 	}
+
+	// Run metric collector immediately upon startup so we don't have to wait 24 hours everytime we deploy
+	// TODO:  change BackgroundRunnable job's Run() methods to also return an error, so that we can have jobs
+	// that we run both at startup and on a schedule
+	metricCollector{}.Run()
 }
 
 func ScheduleBackgroundJobs() {
@@ -43,7 +48,7 @@ func ScheduleBackgroundJobs() {
 		&pingStdOut{counter: 1},
 		s3Deleter{},
 		s3ExpireAccess{},
-		spaceUsageReporter{},
+		metricCollector{},
 		unpaidAccountDeleter{},
 		tokenCollector{},
 		fileCleaner{},
