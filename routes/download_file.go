@@ -13,11 +13,6 @@ type downloadFileObj struct {
 	FileID string `json:"fileID" binding:"required" example:"the handle of the file"`
 }
 
-type downloadFileReq struct {
-	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.downloadFileObj, see description for example"`
-}
-
 type downloadFileRes struct {
 	// Url should point to S3, thus client does not need to download it from this node.
 	FileDownloadUrl string `json:"fileDownloadUrl" example:"a URL to use to download the file"`
@@ -25,55 +20,44 @@ type downloadFileRes struct {
 }
 
 // DownloadFileHandler godoc
-// @Summary download a file
-// @Description download a file
+// @Summary download a file without cryptographic verification
+// @Description download a file without cryptographic verification
 // @Accept  json
 // @Produce  json
-// @Param downloadFileReq body routes.downloadFileReq true "download object"
-// @description requestBody should be a stringified version of (values are just examples):
-// @description {
-// @description 	"fileID": "the handle of the file",
-// @description }
+// @Param downloadFileObj body routes.downloadFileObj true "download object for non-signed requests"
 // @Success 200 {object} routes.downloadFileRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "such data does not exist"
 // @Failure 500 {string} string "some information about the internal error"
 // @Router /api/v1/download [post]
-/*DownloadFileHandler handles the downloading of a file*/
+/*DownloadFileHandler handles the downloading of a file without cryptographic verification*/
 func DownloadFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(downloadFile)
 }
 
 func downloadFile(c *gin.Context) error {
-	request := downloadFileReq{}
+	request := downloadFileObj{}
 
-	if err := utils.Validator.Struct(request); err != nil {
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		return BadRequestResponse(c, err)
 	}
-
-	requestBodyParsed := downloadFileObj{}
-
-	if _, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
-		return err
-	}
-
 	// verify object existed in S3
-	if !utils.DoesDefaultBucketObjectExist(requestBodyParsed.FileID) {
+	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(request.FileID)) {
 		return NotFoundResponse(c, errors.New("such data does not exist"))
-
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(requestBodyParsed.FileID), utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(request.FileID), utils.CannedAcl_PublicRead); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(requestBodyParsed.FileID), utils.CannedAcl_PublicRead); err != nil {
-		InternalErrorResponse(c, err)
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(request.FileID), utils.CannedAcl_PublicRead); err != nil {
+		return InternalErrorResponse(c, err)
 	}
 
 	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName,
-		requestBodyParsed.FileID)
+		request.FileID)
+
 	return OkResponse(c, downloadFileRes{
 		// Redirect to a different URL that client would have authorization to download it.
 		FileDownloadUrl: url,

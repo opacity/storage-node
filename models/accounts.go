@@ -27,6 +27,7 @@ type Account struct {
 	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
 	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
 	MetadataKey          string            `json:"metadataKey" binding:"omitempty,len=64"`
+	ApiVersion           int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 }
 
 /*SpaceReport defines a model for capturing the space alloted compared to space used*/

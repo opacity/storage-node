@@ -164,12 +164,12 @@
                 "parameters": [
                     {
                         "description": "download object for non-signed requests",
-                        "name": "downloadSimpleFileObj",
+                        "name": "downloadFileObj",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.downloadSimpleFileObj"
+                            "$ref": "#/definitions/routes.downloadFileObj"
                         }
                     }
                 ],
@@ -655,6 +655,7 @@
         "routes.accountGetObj": {
             "type": "object",
             "required": [
+                "apiVersion",
                 "cost",
                 "ethAddress",
                 "expirationDate",
@@ -662,6 +663,9 @@
                 "storageLimit"
             ],
             "properties": {
+                "apiVersion": {
+                    "type": "integer"
+                },
                 "cost": {
                     "type": "number",
                     "example": 2
@@ -742,30 +746,15 @@
         "routes.deleteFileRes": {
             "type": "object"
         },
-        "routes.downloadFileReq": {
+        "routes.downloadFileObj": {
             "type": "object",
             "required": [
-                "publicKey",
-                "requestBody",
-                "signature"
+                "fileID"
             ],
             "properties": {
-                "publicKey": {
+                "fileID": {
                     "type": "string",
-                    "maxLength": 66,
-                    "minLength": 66,
-                    "example": "a 66-character public key"
-                },
-                "requestBody": {
-                    "type": "string",
-                    "example": "should produce routes.downloadFileObj, see description for example"
-                },
-                "signature": {
-                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 128,
-                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                    "example": "the handle of the file"
                 }
             }
         },
@@ -776,18 +765,6 @@
                     "description": "Url should point to S3, thus client does not need to download it from this node.",
                     "type": "string",
                     "example": "a URL to use to download the file"
-                }
-            }
-        },
-        "routes.downloadSimpleFileObj": {
-            "type": "object",
-            "required": [
-                "fileID"
-            ],
-            "properties": {
-                "fileID": {
-                    "type": "string",
-                    "example": "the handle of the file"
                 }
             }
         },

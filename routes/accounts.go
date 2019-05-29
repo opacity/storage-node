@@ -47,6 +47,7 @@ type accountGetObj struct {
 	StorageUsed          float64                 `json:"storageUsed" binding:"exists" example:"30"`                                                                         // how much storage they have used, in GB
 	EthAddress           string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	Cost                 float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
+	ApiVersion           int                     `json:"apiVersion" binding:"required,gte=1"`
 }
 
 type accountGetReqObj struct {
@@ -99,6 +100,7 @@ func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 }
 
 func createAccount(c *gin.Context) error {
+
 	request := accountCreateReq{}
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
@@ -218,6 +220,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 			StorageUsed:          account.StorageUsed,
 			EthAddress:           account.EthAddress,
 			Cost:                 cost,
+			ApiVersion:           account.ApiVersion,
 		},
 	})
 }

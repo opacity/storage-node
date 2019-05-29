@@ -120,8 +120,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 
 	// File endpoint
 	v1Router.POST(DeletePath, DeleteFileHandler())
-	//v1Router.POST(DownloadPath, DownloadFileHandler())
-	v1Router.POST(DownloadPath, DownloadSimpleFileHandler())
+	v1Router.POST(DownloadPath, DownloadFileHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {
