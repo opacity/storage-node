@@ -39,6 +39,9 @@ type StorageNodeEnv struct {
 	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
 
 	AccountRetentionDays int `env:"ACCOUNT_RETENTION_DAYS" envDefault:"7"`
+
+	AdminUser     string `env:"ADMIN_USER" envDefault:""`
+	AdminPassword string `env:"ADMIN_PASSWORD" envDefault:""`
 }
 
 /*Env is the environment for a particular node while the application is running*/
@@ -113,6 +116,8 @@ func tryLookUp() error {
 	awsSecretAccessKey := AppendLookupErrors("AWS_SECRET_ACCESS_KEY", &collectedErrors)
 	accountRetentionDaysStr := AppendLookupErrors("ACCOUNT_RETENTION_DAYS", &collectedErrors)
 	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
+	adminUser := AppendLookupErrors("ADMIN_USER", &collectedErrors)
+	adminPassword := AppendLookupErrors("ADMIN_PASSWORD", &collectedErrors)
 
 	if err != nil {
 		collectedErrors = append(collectedErrors, err)
@@ -134,6 +139,8 @@ func tryLookUp() error {
 		BucketName:           bucketName,
 		AwsAccessKeyID:       awsAccessKeyID,
 		AwsSecretAccessKey:   awsSecretAccessKey,
+		AdminUser:            adminUser,
+		AdminPassword:        adminPassword,
 	}
 
 	Env = serverEnv

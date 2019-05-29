@@ -125,7 +125,10 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 }
 
 func setupAdminPaths(router *gin.Engine) {
-	g := router.Group(AdminPath)
+	g := router.Group(AdminPath, gin.BasicAuth(gin.Accounts{
+		utils.Env.AdminUser: utils.Env.AdminPassword,
+	}))
+
 	g.GET("/jobrunner/json", jobs.JobJson)
 
 	g.GET("/metrics", gin.WrapH(promhttp.Handler()))
