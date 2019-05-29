@@ -67,7 +67,6 @@ const (
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
 
 func init() {
-
 }
 
 /*CreateRoutes creates our application's routes*/
