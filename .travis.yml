@@ -16,6 +16,8 @@ env:
   - ACCOUNT_RETENTION_DAYS=7
   - PROD_DATABASE_URL="root:secret@tcp(db:3306)/test?parseTime=true&multiStatements=true&readTimeout=1s"
   - TEST_DATABASE_URL="root:secret@tcp(db:3306)/test?parseTime=true&multiStatements=true&readTimeout=1s"
+  - ADMIN_USER="TRAVIS"
+  - ADMIN_PASSWORD="TRAVIS"
   # ETH_NODE_URL
   - secure: "VQRLwmHSbPVMvb1UTK2meogWFBTrQvEV3cJd3E5mfl/bKRJNw1WpvEIQLZ+0OweGiditmZBoEZri0scaxjWiR26cYMlKA3ToDewAfDlMk3MnJrr6s4uzIsAJAj1xJhX6vw2UjqFjsNukMn/nfLlxiSusVHwB6zBCg+zcQ0W+47Qp33ka5I4xWGkNN3ttRiIUFrfKp4EubGQLSUsFLfcp2zZRlGmvJ4Va4Ggxz6ZvED++3EsCQHBjGhoRBezDhE0vZbFmKCkdY8tt11U857tzWIvXVi+WqPazxfaVGSWZ5ChOfgK42dngk8O9m8bEC0BV92kOd5SGkxbg0923Rraw69VGs/qsZjQJRyAQHJuc6imUW2TbYqENKgnqa9+W9bh9YmHIXuss0dsPZsnStELyTUpWAC6JUXGDwSyJzHbzg6J36oY1lZmRaTWasw56PhPzqiCVmjvkat8McGZiE4k/C8KyAq50QqaFDc20tPCFRgLwB9mlQtDrffdpjky+CHPBlGf9zfmpQzLZlXx3GRXMrZquPlyIVVnUxC7JAyW/YLJk6kw4M5jcIgA5RD33AOrngA1z23ZqaoZ8eNO4n7KKuNRYyeGzH9zeOumEqYQCsU/nbvIkcfyHXggILs6dYlFRR0bkXHXle6YqrXaEsuaB1sfVtmdhxbcxuw/CWFHaFds="
   # TOKEN_CONTRACT_ADDRESS
