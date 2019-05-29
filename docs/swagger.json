@@ -153,23 +153,23 @@
         },
         "/api/v1/download": {
             "post": {
-                "description": "download a file\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileID\": \"the handle of the file\",\n}",
+                "description": "download a file without cryptographic verification",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "download a file",
+                "summary": "download a file without cryptographic verification",
                 "parameters": [
                     {
-                        "description": "download object",
-                        "name": "downloadFileReq",
+                        "description": "download object for non-signed requests",
+                        "name": "downloadSimpleFileObj",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.downloadFileReq"
+                            "$ref": "#/definitions/routes.downloadSimpleFileObj"
                         }
                     }
                 ],

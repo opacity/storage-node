@@ -517,19 +517,14 @@ paths:
     post:
       consumes:
       - application/json
-      description: |-
-        download a file
-        requestBody should be a stringified version of (values are just examples):
-        {
-        "fileID": "the handle of the file",
-        }
+      description: download a file without cryptographic verification
       parameters:
-      - description: download object
+      - description: download object for non-signed requests
         in: body
-        name: downloadFileReq
+        name: downloadSimpleFileObj
         required: true
         schema:
-          $ref: '#/definitions/routes.downloadFileReq'
+          $ref: '#/definitions/routes.downloadSimpleFileObj'
           type: object
       produces:
       - application/json
@@ -551,7 +546,7 @@ paths:
           description: some information about the internal error
           schema:
             type: string
-      summary: download a file
+      summary: download a file without cryptographic verification
   /api/v1/init-upload:
     post:
       consumes:
