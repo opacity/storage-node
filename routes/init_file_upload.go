@@ -122,6 +122,7 @@ func verifyIfPaid(account models.Account, c *gin.Context) error {
 		}
 		return AccountNotPaidResponse(c, response)
 	}
+
 	return nil
 }
 

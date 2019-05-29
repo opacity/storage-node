@@ -198,15 +198,9 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	pending := false
-	initialPaymentStatus := account.PaymentStatus
 	paid, err := account.CheckIfPaid()
 
-	if paid && err == nil && initialPaymentStatus == models.InitialPaymentInProgress {
-		err := models.HandleMetadataKeyForPaidAccount(account)
-		if err != nil {
-			return BadRequestResponse(c, err)
-		}
-	} else if !paid && err == nil {
+	if !paid && err == nil {
 		pending, err = account.CheckIfPending()
 	}
 

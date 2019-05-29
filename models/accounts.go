@@ -157,6 +157,10 @@ func (account *Account) CheckIfPaid() (bool, error) {
 	paid, err := BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress),
 		costInWei)
 	if paid {
+		err := HandleMetadataKeyForPaidAccount(*account)
+		if err != nil {
+			return false, err
+		}
 		SetAccountsToNextPaymentStatus([]Account{*(account)})
 	}
 	return paid, err
@@ -274,11 +278,11 @@ metadata key from the SQL DB.
 Not calling SetAccountsToNextPaymentStatus here because CheckIfPaid calls it
 */
 func handleAccountWithPaymentInProgress(account Account) error {
-	initialPaymentStatus := account.PaymentStatus
-	paid, err := account.CheckIfPaid()
-	if paid && err == nil && initialPaymentStatus == InitialPaymentInProgress {
-		return HandleMetadataKeyForPaidAccount(account)
+	_, err := account.CheckIfPaid()
+	if err != nil {
+		return err
 	}
+
 	return nil
 }
 
