@@ -191,7 +191,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) 
 	assert.Contains(t, w.Body.String(), "no account with that id")
 }
 
-func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExists(t *testing.T) {
+func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid(t *testing.T) {
 	account, privateKey := returnValidAccountAndPrivateKey()
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
@@ -213,6 +213,31 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExists(t *testi
 	}
 
 	assert.Contains(t, w.Body.String(), `"paymentStatus":"paid"`)
+}
+
+func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpaid(t *testing.T) {
+	account, privateKey := returnValidAccountAndPrivateKey()
+	validReq := returnValidGetAccountReq(t, accountGetReqObj{
+		Timestamp: time.Now().Unix(),
+	}, privateKey)
+	//	// Add account to DB
+	if err := models.DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
+	w := accountsTestHelperCheckAccountPaymentStatus(t, validReq)
+
+	// Check to see if the response was what you expected
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
+	}
+
+	assert.Contains(t, w.Body.String(), `"paymentStatus":"unpaid"`)
+	assert.Contains(t, w.Body.String(), `"invoice"`)
 }
 
 func accountsTestHelperCreateAccount(t *testing.T, post accountCreateReq) *httptest.ResponseRecorder {

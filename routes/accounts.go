@@ -32,10 +32,15 @@ type accountCreateRes struct {
 	Invoice        models.Invoice `json:"invoice"`
 }
 
-type accountPaidRes struct {
+type accountDataRes struct {
 	PaymentStatus string        `json:"paymentStatus" example:"paid"`
 	Error         error         `json:"error" example:"the error encountered while checking"`
 	Account       accountGetObj `json:"account" binding:"required"`
+}
+
+type accountUnpaidRes struct {
+	accountDataRes
+	Invoice models.Invoice `json:"invoice"`
 }
 
 type accountGetObj struct {
@@ -89,7 +94,8 @@ func CreateAccountHandler() gin.HandlerFunc {
 // @description {
 // @description 	"timestamp": 1557346389
 // @description }
-// @Success 200 {object} routes.accountPaidRes
+// @Success 200 {object} routes.accountDataRes
+// @Success 200 {object} routes.accountUnpaidRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
 // @Router /api/v1/account-data [post]
@@ -205,8 +211,8 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	cost, _ := account.Cost()
-
-	return OkResponse(c, accountPaidRes{
+	paymentStatus := createPaymentStatusResponse(paid, pending)
+	res := accountDataRes{
 		PaymentStatus: createPaymentStatusResponse(paid, pending),
 		Error:         err,
 		Account: accountGetObj{
@@ -218,6 +224,18 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 			StorageUsed:          account.StorageUsed,
 			EthAddress:           account.EthAddress,
 			Cost:                 cost,
+		},
+	}
+
+	if paymentStatus == Paid {
+		return OkResponse(c, res)
+	}
+
+	return OkResponse(c, accountUnpaidRes{
+		accountDataRes: res,
+		Invoice: models.Invoice{
+			Cost:       cost,
+			EthAddress: account.EthAddress,
 		},
 	})
 }

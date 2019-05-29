@@ -43,7 +43,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.accountPaidRes"
+                            "$ref": "#/definitions/routes.accountUnpaidRes"
                         }
                     },
                     "400": {
@@ -153,23 +153,23 @@
         },
         "/api/v1/download": {
             "post": {
-                "description": "download a file without cryptographic verification",
+                "description": "download a file\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileID\": \"the handle of the file\",\n}",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "download a file without cryptographic verification",
+                "summary": "download a file",
                 "parameters": [
                     {
-                        "description": "download object for non-signed requests",
-                        "name": "downloadSimpleFileObj",
+                        "description": "download object",
+                        "name": "downloadFileReq",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.downloadSimpleFileObj"
+                            "$ref": "#/definitions/routes.downloadFileReq"
                         }
                     }
                 ],
@@ -283,8 +283,14 @@
                             "$ref": "#/definitions/routes.getMetadataRes"
                         }
                     },
+                    "403": {
+                        "description": "subscription expired, or the invoice resonse",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "404": {
-                        "description": "no value found for that key",
+                        "description": "no value found for that key, or account not found",
                         "schema": {
                             "type": "string"
                         }
@@ -329,13 +335,13 @@
                         }
                     },
                     "403": {
-                        "description": "subscription expired",
+                        "description": "subscription expired, or the invoice resonse",
                         "schema": {
                             "type": "string"
                         }
                     },
                     "404": {
-                        "description": "no value found for that key",
+                        "description": "no value found for that key, or account not found",
                         "schema": {
                             "type": "string"
                         }
@@ -652,6 +658,19 @@
                 }
             }
         },
+        "routes.accountDataRes": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.accountGetObj"
+                },
+                "paymentStatus": {
+                    "type": "string",
+                    "example": "paid"
+                }
+            }
+        },
         "routes.accountGetObj": {
             "type": "object",
             "required": [
@@ -699,12 +718,16 @@
                 }
             }
         },
-        "routes.accountPaidRes": {
+        "routes.accountUnpaidRes": {
             "type": "object",
             "properties": {
                 "account": {
                     "type": "object",
                     "$ref": "#/definitions/routes.accountGetObj"
+                },
+                "invoice": {
+                    "type": "object",
+                    "$ref": "#/definitions/models.Invoice"
                 },
                 "paymentStatus": {
                     "type": "string",
