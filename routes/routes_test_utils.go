@@ -188,16 +188,8 @@ func returnValidVerificationAndRequestBody(t *testing.T, body interface{}, priva
 	}
 
 	verificationBody := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
-	
-	return verification, rBody, 
-}
 
-func returnSuccessVerificationForTest(t *testing.T, reqBody string) verification {
-	abortIfNotTesting(t)
-
-	privateKey, err := utils.GenerateKey()
-	assert.Nil(t, err)
-	return setupVerificationWithPrivateKeyForTest(t, reqBody, privateKey)
+	return verification, rBody
 }
 
 func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privateKey *ecdsa.PrivateKey) verification {
