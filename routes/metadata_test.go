@@ -122,7 +122,7 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, updateMetadataObj))
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, updateMetadataObj)
 
 	post := updateMetadataReq{
 		verification: v,
