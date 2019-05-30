@@ -41,14 +41,11 @@ func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCre
 }
 
 func returnFailedVerificationCreateAccountReq(t *testing.T, body accountCreateObj) accountCreateReq {
-	reqJSON, _ := json.Marshal(body)
-	reqBody := bytes.NewBuffer(reqJSON)
-
-	verificationObj := returnFailedVerificationForTest(t, reqBody.String())
+	v, b, _, _ := returnInvalidVerificationAndRequestBody(t, body)
 
 	return accountCreateReq{
-		RequestBody:  reqBody.String(),
-		verification: verificationObj,
+		verification: v,
+		RequestBody:  b.RequestBody,
 	}
 }
 
@@ -73,14 +70,11 @@ func returnValidAccountAndPrivateKey() (models.Account, *ecdsa.PrivateKey) {
 }
 
 func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToSignWith *ecdsa.PrivateKey) getAccountDataReq {
-	reqJSON, _ := json.Marshal(body)
-	reqBody := bytes.NewBuffer(reqJSON)
-
-	verificationObj := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKeyToSignWith)
+	v, b := returnValidVerificationAndRequestBody(t, body, privateKeyToSignWith)
 
 	return getAccountDataReq{
-		RequestBody:  reqBody.String(),
-		verification: verificationObj,
+		verification: v,
+		RequestBody:  b.RequestBody,
 	}
 }
 
