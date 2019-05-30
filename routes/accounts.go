@@ -17,9 +17,8 @@ const Pending = "pending"
 const Paid = "paid"
 
 type accountCreateObj struct {
-	StorageLimit     int    `json:"storageLimit" binding:"required,gte=100" minimum:"100" maximum:"100" example:"100"`
-	DurationInMonths int    `json:"durationInMonths" binding:"required,gte=1" minimum:"1" example:"12"`
-	MetadataKey      string `json:"metadataKey" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a 64-char hex string created deterministically from your account handle or private key"`
+	StorageLimit     int `json:"storageLimit" binding:"required,gte=100" minimum:"100" maximum:"100" example:"100"`
+	DurationInMonths int `json:"durationInMonths" binding:"required,gte=1" minimum:"1" example:"12"`
 }
 
 type accountCreateReq struct {
@@ -69,7 +68,6 @@ type getAccountDataReq struct {
 // @description {
 // @description 	"storageLimit": 100,
 // @description 	"durationInMonths": 12,
-// @description 	"metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
 // @description }
 // @Success 200 {object} routes.accountCreateRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -141,7 +139,6 @@ func createAccount(c *gin.Context) error {
 
 	account := models.Account{
 		AccountID:            accountID,
-		MetadataKey:          requestBodyParsed.MetadataKey,
 		StorageLimit:         storageLimit,
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
@@ -194,15 +191,9 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	pending := false
-	initialPaymentStatus := account.PaymentStatus
 	paid, err := account.CheckIfPaid()
 
-	if paid && err == nil && initialPaymentStatus == models.InitialPaymentInProgress {
-		err := models.HandleMetadataKeyForPaidAccount(account)
-		if err != nil {
-			return BadRequestResponse(c, err)
-		}
-	} else if !paid && err == nil {
+	if !paid && err == nil {
 		pending, err = account.CheckIfPending()
 	}
 

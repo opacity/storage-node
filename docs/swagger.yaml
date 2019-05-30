@@ -417,7 +417,6 @@ paths:
         {
         "storageLimit": 100,
         "durationInMonths": 12,
-        "metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
         }
       parameters:
       - description: account creation object

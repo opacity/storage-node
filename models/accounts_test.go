@@ -533,7 +533,6 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentInProgress
-	account.MetadataKey = utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -543,36 +542,15 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 	}
 
 	// grab the account from the DB
-	accountFromDB, _ := GetAccountById(account.AccountID)
-
-	// verify no badger pair exists with that metadata key
-	_, _, err := utils.GetValueFromKV(accountFromDB.MetadataKey)
-	assert.NotNil(t, err)
-
-	// verify that the account has a metadata key
-	assert.Equal(t, 64, len(accountFromDB.MetadataKey))
+	//accountFromDB, _ := GetAccountById(account.AccountID)
 
 	verifyPaymentStatusExpectations(t, account, InitialPaymentInProgress, InitialPaymentReceived, handleAccountWithPaymentInProgress)
-
-	// The user has paid so we expect changes after calling handleAccountWithPaymentInProgress
-
-	// grab the account from the DB
-	accountFromDB, _ = GetAccountById(account.AccountID)
-
-	// verify a badger pair exists with that metadata key
-	metadata, _, err := utils.GetValueFromKV(account.MetadataKey)
-	assert.Nil(t, err)
-	assert.Equal(t, "", metadata)
-
-	//verify account metadata key is deleted
-	assert.Equal(t, 0, len(accountFromDB.MetadataKey))
 }
 
 func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 	DeleteAccountsForTest(t)
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentInProgress
-	account.MetadataKey = utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -582,28 +560,9 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 	}
 
 	// grab the account from the DB
-	accountFromDB, _ := GetAccountById(account.AccountID)
-
-	// verify no badger pair exists with that metadata key
-	_, _, err := utils.GetValueFromKV(accountFromDB.MetadataKey)
-	assert.NotNil(t, err)
-
-	// verify that the account has a metadata key
-	assert.Equal(t, 64, len(accountFromDB.MetadataKey))
+	//accountFromDB, _ := GetAccountById(account.AccountID)
 
 	verifyPaymentStatusExpectations(t, account, InitialPaymentInProgress, InitialPaymentInProgress, handleAccountWithPaymentInProgress)
-
-	// The user has not paid so we expect everything to be the same
-
-	// grab the account from the DB
-	accountFromDB, _ = GetAccountById(account.AccountID)
-
-	// verify no badger pair exists with that metadata key
-	_, _, err = utils.GetValueFromKV(accountFromDB.MetadataKey)
-	assert.NotNil(t, err)
-
-	// verify that the account has a metadata key
-	assert.Equal(t, 64, len(accountFromDB.MetadataKey))
 }
 
 func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {

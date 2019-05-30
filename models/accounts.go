@@ -26,7 +26,6 @@ type Account struct {
 	EthAddress           string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
 	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
-	MetadataKey          string            `json:"metadataKey" binding:"omitempty,len=64"`
 	ApiVersion           int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 }
 
@@ -246,20 +245,6 @@ func SetAccountsToNextPaymentStatus(accounts []Account) {
 	}
 }
 
-/*HandleMetadataKeyForPaidAccount adds the metadata key to badger and removes from the sql table*/
-func HandleMetadataKeyForPaidAccount(account Account) (err error) {
-	// Create empty key:value data in badger DB
-	ttl := time.Until(account.ExpirationDate())
-	if err = utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
-		return err
-	}
-	// Delete the metadata key on the account model
-	if err = DB.Model(&account).Update("metadata_key", "").Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 /*getNextPaymentStatus returns the next payment status in the sequence*/
 func getNextPaymentStatus(paymentStatus PaymentStatusType) PaymentStatusType {
 	if paymentStatus == PaymentRetrievalComplete {
@@ -269,18 +254,13 @@ func getNextPaymentStatus(paymentStatus PaymentStatusType) PaymentStatusType {
 }
 
 /*handleAccountWithPaymentInProgress checks if the user has paid for their account, and if so
-sets the account to the next payment status, adds the metadata key to badger, and deletes the
-metadata key from the SQL DB.
+sets the account to the next payment status.
 
 Not calling SetAccountsToNextPaymentStatus here because CheckIfPaid calls it
 */
 func handleAccountWithPaymentInProgress(account Account) error {
-	initialPaymentStatus := account.PaymentStatus
-	paid, err := account.CheckIfPaid()
-	if paid && err == nil && initialPaymentStatus == InitialPaymentInProgress {
-		return HandleMetadataKeyForPaidAccount(account)
-	}
-	return nil
+	_, err := account.CheckIfPaid()
+	return err
 }
 
 /*handleAccountThatNeedsGas sends some ETH to an account that we will later need to collect tokens from and sets the

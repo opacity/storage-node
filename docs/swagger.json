@@ -63,7 +63,7 @@
         },
         "/api/v1/accounts": {
             "post": {
-                "description": "create an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKey\": \"a 64-char hex string created deterministically from your account handle or private key\",\n}",
+                "description": "create an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n}",
                 "consumes": [
                     "application/json"
                 ],

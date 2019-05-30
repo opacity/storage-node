@@ -88,7 +88,6 @@ func CreateUnpaidAccountForTest(accountID string, t *testing.T) models.Account {
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -112,7 +111,6 @@ func CreatePaidAccountForTest(accountID string, t *testing.T) models.Account {
 		PaymentStatus:        models.InitialPaymentReceived,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
