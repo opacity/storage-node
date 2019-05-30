@@ -50,6 +50,14 @@ func CollectErrors(arrayOfErrs []error) error {
 	return errors.New(errString)
 }
 
+/*AppendIfError adds a non-nil error to an array of errors*/
+func AppendIfError(err error, collectedErrors *[]error) {
+	if err != nil {
+		*collectedErrors = append(*(collectedErrors),
+			err)
+	}
+}
+
 /*LogIfError logs any error if it is not nil. Allow caller to provide additional freeform info.*/
 func LogIfError(err error, extraInfo map[string]interface{}) {
 	if err == nil {

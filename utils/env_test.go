@@ -22,3 +22,11 @@ func Test_AppendLookupErrors(t *testing.T) {
 	assert.True(t, strings.Contains(collectedErrors.Error(), property1))
 	assert.True(t, strings.Contains(collectedErrors.Error(), property2))
 }
+
+func Test_SetTesting(t *testing.T) {
+	SetTesting("../.env")
+
+	assert.True(t, Env.AccountRetentionDays > 0)
+	assert.True(t, Env.FileStoragePerMetadataInMB > 0)
+	assert.True(t, Env.MaxPerMetadataSizeInMB > 0)
+}
