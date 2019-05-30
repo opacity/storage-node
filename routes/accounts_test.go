@@ -32,14 +32,11 @@ func returnValidCreateAccountBody() accountCreateObj {
 }
 
 func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCreateReq {
-	reqJSON, _ := json.Marshal(body)
-	reqBody := bytes.NewBuffer(reqJSON)
-
-	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, body)
 
 	return accountCreateReq{
-		RequestBody:  reqBody.String(),
-		verification: verificationObj,
+		verification: v,
+		RequestBody:  b.RequestBody,
 	}
 }
 

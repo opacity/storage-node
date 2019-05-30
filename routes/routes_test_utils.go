@@ -155,12 +155,41 @@ func ReturnChunkDataForTest(t *testing.T) []byte {
 	return buffer
 }
 
-func returnSuccessVerificationForTest(t *testing.T, reqBody string) verification {
+func generateValidateAccountId(t *testing.T) (string, *ecdsa.PrivateKey, error) {
+	abortIfNotTesting(t)
+
+	privateKey, err := utils.GenerateKey()
+	if err != nil {
+		return "", privateKey, err
+	}
+
+	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
+	accountId, err := utils.HashString(publicKey)
+	return accountId, privateKey, err
+}
+
+func returnValidVerificationAndRequestBodyWithRandomPrivateKey(t *testing.T, body interface{}) (verification, requestBody, *ecdsa.PrivateKey) {
 	abortIfNotTesting(t)
 
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
-	return setupVerificationWithPrivateKeyForTest(t, reqBody, privateKey)
+
+	v, b := returnValidVerificationAndRequestBody(t, body, privateKey)
+	return v, b, privateKey
+}
+
+func returnValidVerificationAndRequestBody(t *testing.T, body interface{}, privateKey *ecdsa.PrivateKey) (verification, requestBody) {
+	abortIfNotTesting(t)
+
+	marshalledReq, _ := json.Marshal(body)
+	reqBody := bytes.NewBuffer(marshalledReq)
+	rBody := requestBody{
+		RequestBody: reqBody.String(),
+	}
+
+	v := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
+
+	return v, rBody
 }
 
 func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privateKey *ecdsa.PrivateKey) verification {
