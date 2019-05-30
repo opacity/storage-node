@@ -147,14 +147,11 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	marshalledReq, _ := json.Marshal(updateMetadataObj)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	verificationObj := returnFailedVerificationForTest(t, reqBody.String())
+	v, b, _, _ := returnInvalidVerificationAndRequestBody(t, updateMetadataObj)
 
 	post := updateMetadataReq{
-		verification: verificationObj,
-		RequestBody:  reqBody.String(),
+		verification: v,
+		RequestBody:  b.RequestBody,
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
