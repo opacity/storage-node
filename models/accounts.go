@@ -16,17 +16,19 @@ import (
 
 /*Account defines a model for managing a user subscription for uploads*/
 type Account struct {
-	AccountID            string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
-	CreatedAt            time.Time         `json:"createdAt"`
-	UpdatedAt            time.Time         `json:"updatedAt"`
-	MonthsInSubscription int               `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
-	StorageLocation      string            `json:"storageLocation" binding:"omitempty,url"`                                                                           // where their files live, on S3 or elsewhere
-	StorageLimit         StorageLimitType  `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
-	StorageUsed          float64           `json:"storageUsed" binding:"exists,gte=0" example:"30"`                                                                   // how much storage they have used, in GB
-	EthAddress           string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
-	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
-	ApiVersion           int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+	AccountID                string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
+	CreatedAt                time.Time         `json:"createdAt"`
+	UpdatedAt                time.Time         `json:"updatedAt"`
+	MonthsInSubscription     int               `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
+	StorageLocation          string            `json:"storageLocation" binding:"omitempty,url"`                                                                           // where their files live, on S3 or elsewhere
+	StorageLimit             StorageLimitType  `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
+	StorageUsed              float64           `json:"storageUsed" binding:"exists,gte=0" example:"30"`                                                                   // how much storage they have used, in GB
+	EthAddress               string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	EthPrivateKey            string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
+	PaymentStatus            PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
+	ApiVersion               int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+	TotalMetadatas           int               `json:"totalMetadatas" binding:"omitempty,gte=0" gorm:"default:0"`
+	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
 }
 
 /*SpaceReport defines a model for capturing the space alloted compared to space used*/
@@ -186,6 +188,47 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 	}
 
 	return DB.Model(&account).Update("storage_used", account.StorageUsed).Error
+}
+
+/*MaxAllowedMetadataSizeInBytes calculates the maximum possible metadata size for an account based on its plan*/
+func (account *Account) MaxAllowedMetadataSizeInBytes() float64 {
+	maxAllowedMetadataSizeInMB := account.MaxAllowedMetadatas() * float64(utils.Env.MaxPerMetadataSizeInMB)
+	return maxAllowedMetadataSizeInMB * 1e6
+}
+
+/*MaxAllowedMetadatas calculates the maximum possible number of metadatas for an account based on its plan*/
+func (account *Account) MaxAllowedMetadatas() float64 {
+	storageLimitInMB := float64(account.StorageLimit) * 1e3
+	maxAllowedMetadatas := storageLimitInMB / float64(utils.Env.FileStoragePerMetadataInMB)
+	return maxAllowedMetadatas
+}
+
+/*CurrentAllowedMetadataSizeInBytes calculates the currently possible metadata
+size for an account based on its storage used*/
+func (account *Account) CurrentAllowedMetadataSizeInBytes() float64 {
+	currentAllowedMetadataSizeInMB := account.CurrentAllowedMetadatas() * float64(utils.Env.MaxPerMetadataSizeInMB)
+	return currentAllowedMetadataSizeInMB * 1e6
+}
+
+/*CurrentAllowedMetadatas calculates the currently possible number of metadatas
+for an account based on its storage used*/
+func (account *Account) CurrentAllowedMetadatas() float64 {
+	storageUsedInMB := account.StorageUsed * 1e3
+	currentAllowedMetadatas := storageUsedInMB / float64(utils.Env.FileStoragePerMetadataInMB)
+	return currentAllowedMetadatas
+}
+
+/*CanAddNewMetadata checks if an account can have another metadata*/
+func (account *Account) CanAddNewMetadata() bool {
+	intendedNumberOfMetadatas := account.TotalMetadatas + 1
+	return float64(intendedNumberOfMetadatas) <= account.CurrentAllowedMetadatas()
+}
+
+/*CanUpdateMetadata deducts the old size of a metadata, adds the size of the new value the user has sent,
+and makes sure the intended total metadata size is below the amount the user is allowed to have*/
+func (account *Account) CanUpdateMetadata(oldMetadataSizeInBytes, newMetadataSizeInBytes int64) bool {
+	intendedMetadataSizeInBytes := account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes + newMetadataSizeInBytes
+	return float64(intendedMetadataSizeInBytes) <= account.CurrentAllowedMetadataSizeInBytes()
 }
 
 /*Return Account object(first one) if there is not any error. */

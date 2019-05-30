@@ -363,6 +363,30 @@ func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
 	assert.NotNil(t, account.UseStorageSpaceInByte(-11*1e9 /* Deduct 11 GB file but only 10 GB uploaded. */))
 }
 
+func Test_MaxAllowedMetadataSizeInBytes(t *testing.T) {
+
+}
+
+func Test_MaxAllowedMetadatas(t *testing.T) {
+
+}
+
+func Test_CurrentAllowedMetadataSizeInBytes(t *testing.T) {
+
+}
+
+func Test_CurrentAllowedMetadatas(t *testing.T) {
+
+}
+
+func Test_CanAddNewMetadata(t *testing.T) {
+
+}
+
+func Test_CanUpdateMetadata(t *testing.T) {
+
+}
+
 func Test_CreateSpaceUsedReport(t *testing.T) {
 	expectedSpaceAlloted := int(4 * BasicStorageLimit)
 	expectedSpaceUsed := 234.56

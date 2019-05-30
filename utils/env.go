@@ -13,6 +13,8 @@ import (
 )
 
 const defaultAccountRetentionDays = 7
+const TestFileStoragePerMetadataInMB = 100
+const TestMaxPerMetadataSizeInMB = 50
 
 /*StorageNodeEnv represents what our storage node environment should look like*/
 type StorageNodeEnv struct {
@@ -55,8 +57,11 @@ type StorageNodeEnv struct {
 	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
 
 	// Folder metadata restrictions
+
 	// FileStoragePerMetadataInMB is how many MBs worth of files they have to have stored
-	// to create one additional folder metadata.
+	// to create one additional folder metadata, i.e. if the value is 100, they need to have 101 MB
+	// of files stored before they're allowed 2 metadatas.
+
 	// MaxPerMetadataSizeInMB is the maximum size of each metadata.  We will use this
 	// in the accounts model to derive the max metadata storage for each plan size.
 	FileStoragePerMetadataInMB int `env:"FILE_STORAGE_PER_METADATA_IN_MB" envDefault:"100"`
@@ -111,6 +116,8 @@ func SetTesting(filenames ...string) {
 	initEnv(filenames...)
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
+	Env.FileStoragePerMetadataInMB = TestFileStoragePerMetadataInMB
+	Env.MaxPerMetadataSizeInMB = TestMaxPerMetadataSizeInMB
 	InitKvStore()
 	newS3Session()
 }

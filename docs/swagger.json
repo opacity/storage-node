@@ -698,6 +698,14 @@
                     "type": "number",
                     "example": 30
                 },
+                "totalMetadataSizeInBytes": {
+                    "type": "integer",
+                    "example": 245765432
+                },
+                "totalMetadatas": {
+                    "type": "integer",
+                    "example": 2
+                },
                 "updatedAt": {
                     "type": "string"
                 }

@@ -191,6 +191,12 @@ definitions:
         description: how much storage they have used, in GB
         example: 30
         type: number
+      totalMetadataSizeInBytes:
+        example: 245765432
+        type: integer
+      totalMetadatas:
+        example: 2
+        type: integer
       updatedAt:
         type: string
     required:
