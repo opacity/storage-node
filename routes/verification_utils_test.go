@@ -2,8 +2,6 @@ package routes
 
 import (
 	"bytes"
-	"encoding/json"
-	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"

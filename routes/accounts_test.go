@@ -36,7 +36,7 @@ func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCre
 
 	return accountCreateReq{
 		verification: v,
-		RequestBody:  b,
+		RequestBody:  b.RequestBody,
 	}
 }
 
