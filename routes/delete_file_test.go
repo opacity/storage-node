@@ -37,7 +37,7 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 		FileID: fileID,
 	}
 
-	v, b, := returnValidVerificationAndRequestBody(t, deleteFileObject, privateKey)
+	v, b := returnValidVerificationAndRequestBody(t, deleteFileObject, privateKey)
 	request := deleteFileReq{
 		verification: v,
 		RequestBody:  b.RequestBody,
