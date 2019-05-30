@@ -164,6 +164,8 @@ definitions:
     type: object
   routes.accountGetObj:
     properties:
+      apiVersion:
+        type: integer
       cost:
         example: 2
         type: number
@@ -192,6 +194,7 @@ definitions:
       updatedAt:
         type: string
     required:
+    - apiVersion
     - cost
     - ethAddress
     - expirationDate
@@ -234,30 +237,13 @@ definitions:
     type: object
   routes.deleteFileRes:
     type: object
-  routes.downloadFileReq:
+  routes.downloadFileObj:
     properties:
-      publicKey:
-        example: a 66-character public key
-        maxLength: 66
-        minLength: 66
-        type: string
-      requestBody:
-        example: should produce routes.downloadFileObj, see description for example
-        type: string
-      signature:
-        description: |-
-          signature without 0x prefix is broken into
-          R: sig[0:63]
-          S: sig[64:127]
-        example: a 128 character string created when you signed the request with your
-          private key or account handle
-        maxLength: 128
-        minLength: 128
+      fileID:
+        example: the handle of the file
         type: string
     required:
-    - publicKey
-    - requestBody
-    - signature
+    - fileID
     type: object
   routes.downloadFileRes:
     properties:
@@ -266,14 +252,6 @@ definitions:
           it from this node.
         example: a URL to use to download the file
         type: string
-    type: object
-  routes.downloadSimpleFileObj:
-    properties:
-      fileID:
-        example: the handle of the file
-        type: string
-    required:
-    - fileID
     type: object
   routes.getAccountDataReq:
     properties:
@@ -509,10 +487,10 @@ paths:
       parameters:
       - description: download object for non-signed requests
         in: body
-        name: downloadSimpleFileObj
+        name: downloadFileObj
         required: true
         schema:
-          $ref: '#/definitions/routes.downloadSimpleFileObj'
+          $ref: '#/definitions/routes.downloadFileObj'
           type: object
       produces:
       - application/json
