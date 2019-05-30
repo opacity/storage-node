@@ -48,6 +48,9 @@ const (
 	/*MetadataSetPath is the path for setting metadata*/
 	MetadataSetPath = "/metadata/set"
 
+	/*MetadataSetPath is the path for creating a new metadata*/
+	MetadataCreatePath = "/metadata/create"
+
 	/*InitUploadPath is the path for uploading files to paid accounts*/
 	InitUploadPath = "/init-upload"
 
@@ -113,6 +116,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 
 	v1Router.POST(MetadataSetPath, UpdateMetadataHandler())
 	v1Router.POST(MetadataGetPath, GetMetadataHandler())
+	v1Router.POST(MetadataCreatePath, CreateMetadataHandler())
 
 	v1Router.POST(InitUploadPath, InitFileUploadHandler())
 	v1Router.POST(UploadPath, UploadFileHandler())

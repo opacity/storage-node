@@ -253,9 +253,66 @@
                 }
             }
         },
+        "/api/v1/metadata/create": {
+            "post": {
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataKey\": \"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders\",\n\"timestamp\": 1557346389\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "create a new metadata",
+                "parameters": [
+                    {
+                        "description": "get or create metadata object",
+                        "name": "getOrCreateMetadataReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.getOrCreateMetadataReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.createMetadataRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "subscription expired, or the invoice resonse",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/metadata/get": {
             "post": {
-                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataKey\": \"a 64-char hex string created deterministically from your account handle or private key\",\n\"timestamp\": 1557346389\n}",
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataKey\": \"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders\",\n\"timestamp\": 1557346389\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -265,13 +322,13 @@
                 "summary": "Retrieve account metadata",
                 "parameters": [
                     {
-                        "description": "get metadata object",
-                        "name": "getMetadataReq",
+                        "description": "get or create metadata object",
+                        "name": "getOrCreateMetadataReq",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.getMetadataReq"
+                            "$ref": "#/definitions/routes.getOrCreateMetadataReq"
                         }
                     }
                 ],
@@ -294,7 +351,7 @@
         },
         "/api/v1/metadata/set": {
             "post": {
-                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataKey\": \"a 64-char hex string created deterministically from your account handle or private key\",\n\"metadata\": \"your (updated) account metadata\",\n\"timestamp\": 1557346389\n}",
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataKey\": \"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders\",\n\"metadata\": \"your (updated) account metadata\",\n\"timestamp\": 1557346389\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -724,6 +781,17 @@
                 }
             }
         },
+        "routes.createMetadataRes": {
+            "type": "object",
+            "required": [
+                "expirationDate"
+            ],
+            "properties": {
+                "expirationDate": {
+                    "type": "string"
+                }
+            }
+        },
         "routes.deleteFileReq": {
             "type": "object",
             "required": [
@@ -803,7 +871,22 @@
                 }
             }
         },
-        "routes.getMetadataReq": {
+        "routes.getMetadataRes": {
+            "type": "object",
+            "required": [
+                "expirationDate"
+            ],
+            "properties": {
+                "expirationDate": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "string",
+                    "example": "your account metadata"
+                }
+            }
+        },
+        "routes.getOrCreateMetadataReq": {
             "type": "object",
             "required": [
                 "publicKey",
@@ -819,7 +902,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.getMetadataObject, see description for example"
+                    "example": "should produce routes.getOrCreateMetadataObject, see description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -827,21 +910,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                }
-            }
-        },
-        "routes.getMetadataRes": {
-            "type": "object",
-            "required": [
-                "expirationDate"
-            ],
-            "properties": {
-                "expirationDate": {
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "string",
-                    "example": "your account metadata"
                 }
             }
         },
@@ -889,7 +957,7 @@
                 },
                 "metadataKey": {
                     "type": "string",
-                    "example": "a 64-char hex string created deterministically from your account handle or private key"
+                    "example": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"
                 }
             }
         },

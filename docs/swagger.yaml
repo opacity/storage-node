@@ -216,6 +216,13 @@ definitions:
         example: paid
         type: string
     type: object
+  routes.createMetadataRes:
+    properties:
+      expirationDate:
+        type: string
+    required:
+    - expirationDate
+    type: object
   routes.deleteFileReq:
     properties:
       publicKey:
@@ -284,7 +291,17 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.getMetadataReq:
+  routes.getMetadataRes:
+    properties:
+      expirationDate:
+        type: string
+      metadata:
+        example: your account metadata
+        type: string
+    required:
+    - expirationDate
+    type: object
+  routes.getOrCreateMetadataReq:
     properties:
       publicKey:
         example: a 66-character public key
@@ -292,7 +309,8 @@ definitions:
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.getMetadataObject, see description for example
+        example: should produce routes.getOrCreateMetadataObject, see description
+          for example
         type: string
       signature:
         description: |-
@@ -308,16 +326,6 @@ definitions:
     - publicKey
     - requestBody
     - signature
-    type: object
-  routes.getMetadataRes:
-    properties:
-      expirationDate:
-        type: string
-      metadata:
-        example: your account metadata
-        type: string
-    required:
-    - expirationDate
     type: object
   routes.updateMetadataReq:
     properties:
@@ -352,8 +360,8 @@ definitions:
         example: your (updated) account metadata
         type: string
       metadataKey:
-        example: a 64-char hex string created deterministically from your account
-          handle or private key
+        example: a 64-char hex string created deterministically, will be a key for
+          the metadata of one of your folders
         type: string
     required:
     - expirationDate
@@ -559,6 +567,49 @@ paths:
           schema:
             type: string
       summary: start an upload
+  /api/v1/metadata/create:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
+        "timestamp": 1557346389
+        }
+      parameters:
+      - description: get or create metadata object
+        in: body
+        name: getOrCreateMetadataReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.getOrCreateMetadataReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.createMetadataRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: subscription expired, or the invoice resonse
+          schema:
+            type: string
+        "404":
+          description: account not found
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: create a new metadata
   /api/v1/metadata/get:
     post:
       consumes:
@@ -566,16 +617,16 @@ paths:
       description: |-
         requestBody should be a stringified version of (values are just examples):
         {
-        "metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
+        "metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
         "timestamp": 1557346389
         }
       parameters:
-      - description: get metadata object
+      - description: get or create metadata object
         in: body
-        name: getMetadataReq
+        name: getOrCreateMetadataReq
         required: true
         schema:
-          $ref: '#/definitions/routes.getMetadataReq'
+          $ref: '#/definitions/routes.getOrCreateMetadataReq'
           type: object
       produces:
       - application/json
@@ -597,7 +648,7 @@ paths:
       description: |-
         requestBody should be a stringified version of (values are just examples):
         {
-        "metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
+        "metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
         "metadata": "your (updated) account metadata",
         "timestamp": 1557346389
         }

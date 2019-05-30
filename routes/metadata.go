@@ -13,7 +13,7 @@ import (
 // must be sorted alphabetically for JSON marshaling/stringifying
 type updateMetadataObject struct {
 	Metadata    string `json:"metadata" binding:"required" example:"your (updated) account metadata"`
-	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically from your account handle or private key"`
+	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
 	Timestamp   int64  `json:"timestamp" binding:"required"`
 }
 
@@ -23,19 +23,19 @@ type updateMetadataReq struct {
 }
 
 type updateMetadataRes struct {
-	MetadataKey    string    `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically from your account handle or private key"`
+	MetadataKey    string    `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
 	Metadata       string    `json:"metadata" binding:"required" example:"your (updated) account metadata"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
 }
 
-type getMetadataObject struct {
-	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically from your account handle or private key"`
+type getOrCreateMetadataObject struct {
+	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
 	Timestamp   int64  `json:"timestamp" binding:"required"`
 }
 
-type getMetadataReq struct {
+type getOrCreateMetadataReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.getMetadataObject, see description for example"`
+	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.getOrCreateMetadataObject, see description for example"`
 }
 
 type getMetadataRes struct {
@@ -43,14 +43,18 @@ type getMetadataRes struct {
 	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
 }
 
+type createMetadataRes struct {
+	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
+}
+
 // GetMetadataHandler godoc
 // @Summary Retrieve account metadata
 // @Accept  json
 // @Produce  json
-// @Param getMetadataReq body routes.getMetadataReq true "get metadata object"
+// @Param getOrCreateMetadataReq body routes.getOrCreateMetadataReq true "get or create metadata object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
+// @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
 // @description 	"timestamp": 1557346389
 // @description }
 // @Success 200 {object} routes.getMetadataRes
@@ -68,7 +72,7 @@ func GetMetadataHandler() gin.HandlerFunc {
 // @Param updateMetadataReq body routes.updateMetadataReq true "update metadata object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
+// @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
 // @description 	"metadata": "your (updated) account metadata",
 // @description 	"timestamp": 1557346389
 // @description }
@@ -83,15 +87,36 @@ func UpdateMetadataHandler() gin.HandlerFunc {
 	return ginHandlerFunc(setMetadata)
 }
 
+// CreateMetadataHandler godoc
+// @Summary create a new metadata
+// @Accept  json
+// @Produce  json
+// @Param getOrCreateMetadataReq body routes.getOrCreateMetadataReq true "get or create metadata object"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
+// @description 	"timestamp": 1557346389
+// @description }
+// @Success 200 {object} routes.createMetadataRes
+// @Failure 404 {string} string "account not found"
+// @Failure 403 {string} string "subscription expired, or the invoice resonse"
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v1/metadata/create [post]
+/*CreateMetadataHandler is a handler for creating a metadata*/
+func CreateMetadataHandler() gin.HandlerFunc {
+	return ginHandlerFunc(createMetadata)
+}
+
 func getMetadata(c *gin.Context) error {
-	request := getMetadataReq{}
+	request := getOrCreateMetadataReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
 		return BadRequestResponse(c, err)
 	}
 
-	requestBodyParsed := getMetadataObject{}
+	requestBodyParsed := getOrCreateMetadataObject{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return err
@@ -142,5 +167,40 @@ func setMetadata(c *gin.Context) error {
 		MetadataKey:    requestBodyParsed.MetadataKey,
 		Metadata:       requestBodyParsed.Metadata,
 		ExpirationDate: expirationTime,
+	})
+}
+
+func createMetadata(c *gin.Context) error {
+	request := getOrCreateMetadataReq{}
+
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyIfPaid(account, c); err != nil {
+		return err
+	}
+
+	requestBodyParsed := getOrCreateMetadataObject{}
+
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
+		return err
+	}
+
+	ttl := time.Until(account.ExpirationDate())
+
+	if err = utils.BatchSet(&utils.KVPairs{requestBodyParsed.MetadataKey: ""}, ttl); err != nil {
+		InternalErrorResponse(c, err)
+		return err
+	}
+
+	return OkResponse(c, createMetadataRes{
+		ExpirationDate: account.ExpirationDate(),
 	})
 }

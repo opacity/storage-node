@@ -30,14 +30,14 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	getMetadata := getMetadataObject{
+	getMetadata := getOrCreateMetadataObject{
 		MetadataKey: testMetadataKey,
 		Timestamp:   time.Now().Unix(),
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadata)
 
-	get := getMetadataReq{
+	get := getOrCreateMetadataReq{
 		verification: v,
 		RequestBody:  b.RequestBody,
 	}
@@ -55,14 +55,14 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 
-	getMetadata := getMetadataObject{
+	getMetadata := getOrCreateMetadataObject{
 		MetadataKey: testMetadataKey,
 		Timestamp:   time.Now().Unix(),
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadata)
 
-	get := getMetadataReq{
+	get := getOrCreateMetadataReq{
 		verification: v,
 		RequestBody:  b.RequestBody,
 	}
@@ -159,7 +159,7 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 	confirmVerifyFailedForTest(t, w)
 }
 
-func metadataTestHelperGetMetadata(t *testing.T, get getMetadataReq) *httptest.ResponseRecorder {
+func metadataTestHelperGetMetadata(t *testing.T, get getOrCreateMetadataReq) *httptest.ResponseRecorder {
 	router := returnEngine()
 	v1 := returnV1Group(router)
 	v1.GET(MetadataGetPath, GetMetadataHandler())
