@@ -35,14 +35,11 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	marshalledReq, _ := json.Marshal(getMetadata)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadata)
 
 	get := getMetadataReq{
-		verification: verificationObj,
-		RequestBody:  reqBody.String(),
+		verification: v,
+		RequestBody:  b,
 	}
 
 	w := metadataTestHelperGetMetadata(t, get)
@@ -63,14 +60,11 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	marshalledReq, _ := json.Marshal(getMetadata)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadata)
 
 	get := getMetadataReq{
-		verification: verificationObj,
-		RequestBody:  reqBody.String(),
+		verification: v,
+		RequestBody:  b,
 	}
 
 	w := metadataTestHelperGetMetadata(t, get)
@@ -98,14 +92,11 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	marshalledReq, _ := json.Marshal(updateMetadataObj)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, updateMetadataObj)
 
 	post := updateMetadataReq{
-		verification: verificationObj,
-		RequestBody:  reqBody.String(),
+		verification: v,
+		RequestBody:  b,
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)
@@ -131,14 +122,11 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	marshalledReq, _ := json.Marshal(updateMetadataObj)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	verificationObj := returnSuccessVerificationForTest(t, reqBody.String())
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, updateMetadataObj))
 
 	post := updateMetadataReq{
-		verification: verificationObj,
-		RequestBody:  reqBody.String(),
+		verification: v,
+		RequestBody:  b,
 	}
 
 	w := metadataTestHelperUpdateMetadata(t, post)

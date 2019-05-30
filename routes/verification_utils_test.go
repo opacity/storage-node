@@ -39,15 +39,12 @@ func Test_verifyAndParseFormRequestWithVerifyRequest(t *testing.T) {
 	obj := testRequestObject{
 		Data: "some body message",
 	}
-	reqJSON, _ := json.Marshal(obj)
-	reqBody := bytes.NewBuffer(reqJSON)
-	fmt.Printf("RequestBody-> %v\n", reqBody.String())
-	verification := returnSuccessVerificationForTest(t, reqBody.String())
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, obj)
 	body := new(bytes.Buffer)
 	mw := multipart.NewWriter(body)
-	mw.WriteField("signature", verification.Signature)
-	mw.WriteField("publicKey", verification.PublicKey)
-	mw.WriteField("requestBody", reqBody.String())
+	mw.WriteField("signature", v.Signature)
+	mw.WriteField("publicKey", v.PublicKey)
+	mw.WriteField("requestBody", b.RequestBody)
 	mw.WriteField("str", "strV")
 	w, _ := mw.CreateFormFile("file", "test")
 	w.Write([]byte("test"))

@@ -155,6 +155,43 @@ func ReturnChunkDataForTest(t *testing.T) []byte {
 	return buffer
 }
 
+func generateValidateAccountId(t *test.Testing) (string, *ecdsa.PrivateKey, error) {
+	abortIfNotTesting(t)
+
+	privateKey, err := utils.GenerateKey()
+	if err != nil {
+		return "", privateKey, err
+	}
+
+	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
+	accountId, err := utils.HashString(publicKey)
+	return accountId, privateKey, err
+}
+
+func returnValidVerificationAndRequestBodyWithRandomPrivateKey(t *testing.T, body interface{}) (verification, requestBody, *ecdsa.PrivateKey) {
+	abortIfNotTesting(t)
+
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+
+	v, b := returnValidateVerificationAndRequestBody(t, body, privateKey)
+	return v, b, privateKey
+}
+
+func returnValidVerificationAndRequestBody(t *testing.T, body interface{}, privateKey *ecdsa.PrivateKey) (verification, requestBody) {
+	abortIfNotTesting(t)
+
+	marshalledReq, _ := json.Marshal(body)
+	reqBody := bytes.NewBuffer(marshalledReq)
+	rBody := requestBody{
+		RequestBody: reqBody.String(),
+	}
+
+	verificationBody := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
+	
+	return verification, rBody, 
+}
+
 func returnSuccessVerificationForTest(t *testing.T, reqBody string) verification {
 	abortIfNotTesting(t)
 
