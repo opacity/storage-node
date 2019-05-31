@@ -43,7 +43,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.accountPaidRes"
+                            "$ref": "#/definitions/routes.accountUnpaidRes"
                         }
                     },
                     "400": {
@@ -283,8 +283,14 @@
                             "$ref": "#/definitions/routes.getMetadataRes"
                         }
                     },
+                    "403": {
+                        "description": "subscription expired, or the invoice resonse",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
                     "404": {
-                        "description": "no value found for that key",
+                        "description": "no value found for that key, or account not found",
                         "schema": {
                             "type": "string"
                         }
@@ -329,13 +335,13 @@
                         }
                     },
                     "403": {
-                        "description": "subscription expired",
+                        "description": "subscription expired, or the invoice resonse",
                         "schema": {
                             "type": "string"
                         }
                     },
                     "404": {
-                        "description": "no value found for that key",
+                        "description": "no value found for that key, or account not found",
                         "schema": {
                             "type": "string"
                         }
@@ -652,6 +658,19 @@
                 }
             }
         },
+        "routes.accountDataRes": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.accountGetObj"
+                },
+                "paymentStatus": {
+                    "type": "string",
+                    "example": "paid"
+                }
+            }
+        },
         "routes.accountGetObj": {
             "type": "object",
             "required": [
@@ -703,12 +722,16 @@
                 }
             }
         },
-        "routes.accountPaidRes": {
+        "routes.accountUnpaidRes": {
             "type": "object",
             "properties": {
                 "account": {
                     "type": "object",
                     "$ref": "#/definitions/routes.accountGetObj"
+                },
+                "invoice": {
+                    "type": "object",
+                    "$ref": "#/definitions/models.Invoice"
                 },
                 "paymentStatus": {
                     "type": "string",

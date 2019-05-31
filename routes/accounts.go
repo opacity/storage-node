@@ -32,10 +32,15 @@ type accountCreateRes struct {
 	Invoice        models.Invoice `json:"invoice"`
 }
 
-type accountPaidRes struct {
+type accountDataRes struct {
 	PaymentStatus string        `json:"paymentStatus" example:"paid"`
 	Error         error         `json:"error" example:"the error encountered while checking"`
 	Account       accountGetObj `json:"account" binding:"required"`
+}
+
+type accountUnpaidRes struct {
+	accountDataRes
+	Invoice models.Invoice `json:"invoice"`
 }
 
 type accountGetObj struct {
@@ -90,7 +95,8 @@ func CreateAccountHandler() gin.HandlerFunc {
 // @description {
 // @description 	"timestamp": 1557346389
 // @description }
-// @Success 200 {object} routes.accountPaidRes
+// @Success 200 {object} routes.accountDataRes
+// @Success 200 {object} routes.accountUnpaidRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
 // @Router /api/v1/account-data [post]
@@ -194,21 +200,15 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	pending := false
-	initialPaymentStatus := account.PaymentStatus
 	paid, err := account.CheckIfPaid()
 
-	if paid && err == nil && initialPaymentStatus == models.InitialPaymentInProgress {
-		err := models.HandleMetadataKeyForPaidAccount(account)
-		if err != nil {
-			return BadRequestResponse(c, err)
-		}
-	} else if !paid && err == nil {
+	if !paid && err == nil {
 		pending, err = account.CheckIfPending()
 	}
 
 	cost, _ := account.Cost()
-
-	return OkResponse(c, accountPaidRes{
+	paymentStatus := createPaymentStatusResponse(paid, pending)
+	res := accountDataRes{
 		PaymentStatus: createPaymentStatusResponse(paid, pending),
 		Error:         err,
 		Account: accountGetObj{
@@ -221,6 +221,18 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 			EthAddress:           account.EthAddress,
 			Cost:                 cost,
 			ApiVersion:           account.ApiVersion,
+		},
+	}
+
+	if paymentStatus == Paid {
+		return OkResponse(c, res)
+	}
+
+	return OkResponse(c, accountUnpaidRes{
+		accountDataRes: res,
+		Invoice: models.Invoice{
+			Cost:       cost,
+			EthAddress: account.EthAddress,
 		},
 	})
 }
