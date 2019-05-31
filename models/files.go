@@ -25,6 +25,7 @@ type File struct {
 	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
 	CompletedIndexes *string   `json:"completedIndexes" gorm:"type:mediumtext"`
 	ModifierHash     string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
+	ApiVersion       int       `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 }
 
 type IndexMap map[int64]*s3.CompletedPart

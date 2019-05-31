@@ -12,6 +12,7 @@ type CompletedFile struct {
 	ExpiredAt      time.Time `json:"expiredAt"`
 	FileSizeInByte int64     `json:"fileSizeInByte"`
 	ModifierHash   string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
+	ApiVersion     int       `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 }
 
 func GetAllExpiredCompletedFiles(expiredTime time.Time) ([]string, error) {

@@ -32,14 +32,11 @@ func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKey *ecdsa.PrivateKey) UploadFileReq {
 	abortIfNotTesting(t)
 
-	marshalledReq, _ := json.Marshal(body)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	verificationBody := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
+	v, b := returnValidVerificationAndRequestBody(t, body, privateKey)
 
 	return UploadFileReq{
-		RequestBody:  reqBody.String(),
-		verification: verificationBody,
+		verification: v,
+		RequestBody:  b.RequestBody,
 		ChunkData:    utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
 }
@@ -56,19 +53,12 @@ func ReturnValidInitUploadFileBodyForTest(t *testing.T) InitFileUploadObj {
 func ReturnValidInitUploadFileReqForTest(t *testing.T, body InitFileUploadObj, privateKey *ecdsa.PrivateKey) InitFileUploadReq {
 	abortIfNotTesting(t)
 
-	marshalledReq, _ := json.Marshal(body)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	verificationBody := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
-
-	rBody := requestBody{
-		RequestBody: reqBody.String(),
-	}
+	v, b := returnValidVerificationAndRequestBody(t, body, privateKey)
 
 	return InitFileUploadReq{
 		initFileUploadObj: body,
-		requestBody:       rBody,
-		verification:      verificationBody,
+		verification:      v,
+		requestBody:       b,
 		Metadata:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		MetadataAsFile:    utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}
@@ -77,14 +67,10 @@ func ReturnValidInitUploadFileReqForTest(t *testing.T, body InitFileUploadObj, p
 func ReturnValidUploadStatusReqForTest(t *testing.T, body UploadStatusObj, privateKey *ecdsa.PrivateKey) UploadStatusReq {
 	abortIfNotTesting(t)
 
-	marshalledReq, _ := json.Marshal(body)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	verificationBody := setupVerificationWithPrivateKeyForTest(t, reqBody.String(), privateKey)
-
+	v, b := returnValidVerificationAndRequestBody(t, body, privateKey)
 	return UploadStatusReq{
-		RequestBody:  reqBody.String(),
-		verification: verificationBody,
+		verification: v,
+		RequestBody:  b.RequestBody,
 	}
 }
 
@@ -155,12 +141,60 @@ func ReturnChunkDataForTest(t *testing.T) []byte {
 	return buffer
 }
 
-func returnSuccessVerificationForTest(t *testing.T, reqBody string) verification {
+func generateValidateAccountId(t *testing.T) (string, *ecdsa.PrivateKey, error) {
+	abortIfNotTesting(t)
+
+	privateKey, err := utils.GenerateKey()
+	if err != nil {
+		return "", privateKey, err
+	}
+
+	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
+	accountId, err := utils.HashString(publicKey)
+	return accountId, privateKey, err
+}
+
+func returnValidVerificationAndRequestBodyWithRandomPrivateKey(t *testing.T, body interface{}) (verification, requestBody, *ecdsa.PrivateKey) {
 	abortIfNotTesting(t)
 
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
-	return setupVerificationWithPrivateKeyForTest(t, reqBody, privateKey)
+
+	v, b := returnValidVerificationAndRequestBody(t, body, privateKey)
+	return v, b, privateKey
+}
+
+func returnInvalidVerificationAndRequestBody(t *testing.T, body interface{}) (verification, requestBody, *ecdsa.PrivateKey, *ecdsa.PrivateKey) {
+	abortIfNotTesting(t)
+
+	bodyJson, _ := json.Marshal(body)
+	bodyBuf := bytes.NewBuffer(bodyJson)
+	b := requestBody{
+		RequestBody: bodyBuf.String(),
+	}
+
+	privateKeyToSignWith, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	wrongPrivateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+
+	v := setupVerificationWithPrivateKeyForTest(t, bodyBuf.String(), privateKeyToSignWith)
+	v.PublicKey = utils.PubkeyCompressedToHex(wrongPrivateKey.PublicKey)
+	return v, b, privateKeyToSignWith, wrongPrivateKey
+}
+
+func returnValidVerificationAndRequestBody(t *testing.T, body interface{}, privateKey *ecdsa.PrivateKey) (verification, requestBody) {
+	abortIfNotTesting(t)
+
+	bodyJson, _ := json.Marshal(body)
+	bodyBuf := bytes.NewBuffer(bodyJson)
+	b := requestBody{
+		RequestBody: bodyBuf.String(),
+	}
+
+	v := setupVerificationWithPrivateKeyForTest(t, bodyBuf.String(), privateKey)
+
+	return v, b
 }
 
 func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privateKey *ecdsa.PrivateKey) verification {
@@ -175,27 +209,6 @@ func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privat
 	verification := verification{
 		Signature: hex.EncodeToString(signature),
 		PublicKey: utils.PubkeyCompressedToHex(privateKey.PublicKey),
-	}
-
-	return verification
-}
-
-func returnFailedVerificationForTest(t *testing.T, reqBody string) verification {
-	abortIfNotTesting(t)
-
-	hash := utils.Hash([]byte(reqBody))
-
-	privateKeyToSignWith, err := utils.GenerateKey()
-	assert.Nil(t, err)
-	wrongPrivateKey, err := utils.GenerateKey()
-	assert.Nil(t, err)
-	signature, err := utils.Sign(hash, privateKeyToSignWith)
-	signature = signature[:utils.SigLengthInBytes]
-	assert.Nil(t, err)
-
-	verification := verification{
-		Signature: hex.EncodeToString(signature),
-		PublicKey: utils.PubkeyCompressedToHex(wrongPrivateKey.PublicKey),
 	}
 
 	return verification
