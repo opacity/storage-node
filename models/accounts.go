@@ -9,6 +9,8 @@ import (
 
 	"encoding/hex"
 
+	"math"
+
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
@@ -85,6 +87,9 @@ const BasicSubscriptionDefaultCost = 2.0
 
 /*AccountIDLength is the expected length of an accountID for an account*/
 const AccountIDLength = 64
+
+/*minMetadataCount is to let every user have at least one metadata regardless of StorageUsed*/
+const minMetadataCount = 1
 
 /*PaymentStatusMap is for pretty printing the PaymentStatus*/
 var PaymentStatusMap = make(map[PaymentStatusType]string)
@@ -192,36 +197,40 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 
 /*MaxAllowedMetadataSizeInBytes calculates the maximum possible metadata size for an account based on its plan*/
 func (account *Account) MaxAllowedMetadataSizeInBytes() float64 {
-	maxAllowedMetadataSizeInMB := account.MaxAllowedMetadatas() * float64(utils.Env.MaxPerMetadataSizeInMB)
+	maxAllowedMetadataSizeInMB := float64(account.MaxAllowedMetadatas()) * float64(utils.Env.MaxPerMetadataSizeInMB)
 	return maxAllowedMetadataSizeInMB * 1e6
 }
 
 /*MaxAllowedMetadatas calculates the maximum possible number of metadatas for an account based on its plan*/
-func (account *Account) MaxAllowedMetadatas() float64 {
+func (account *Account) MaxAllowedMetadatas() int {
 	storageLimitInMB := float64(account.StorageLimit) * 1e3
 	maxAllowedMetadatas := storageLimitInMB / float64(utils.Env.FileStoragePerMetadataInMB)
-	return maxAllowedMetadatas
+	return int(math.Ceil(maxAllowedMetadatas))
 }
 
 /*CurrentAllowedMetadataSizeInBytes calculates the currently possible metadata
 size for an account based on its storage used*/
 func (account *Account) CurrentAllowedMetadataSizeInBytes() float64 {
-	currentAllowedMetadataSizeInMB := account.CurrentAllowedMetadatas() * float64(utils.Env.MaxPerMetadataSizeInMB)
+	currentAllowedMetadataSizeInMB := float64(account.CurrentAllowedMetadatas()) * float64(utils.Env.MaxPerMetadataSizeInMB)
 	return currentAllowedMetadataSizeInMB * 1e6
 }
 
 /*CurrentAllowedMetadatas calculates the currently possible number of metadatas
 for an account based on its storage used*/
-func (account *Account) CurrentAllowedMetadatas() float64 {
+func (account *Account) CurrentAllowedMetadatas() int {
 	storageUsedInMB := account.StorageUsed * 1e3
-	currentAllowedMetadatas := storageUsedInMB / float64(utils.Env.FileStoragePerMetadataInMB)
+	currentAllowedMetadatas := int(math.Ceil(storageUsedInMB / float64(utils.Env.FileStoragePerMetadataInMB)))
+	if currentAllowedMetadatas == 0 {
+		// always allow at least 1
+		return minMetadataCount
+	}
 	return currentAllowedMetadatas
 }
 
 /*CanAddNewMetadata checks if an account can have another metadata*/
 func (account *Account) CanAddNewMetadata() bool {
 	intendedNumberOfMetadatas := account.TotalMetadatas + 1
-	return float64(intendedNumberOfMetadatas) <= account.CurrentAllowedMetadatas()
+	return intendedNumberOfMetadatas <= account.CurrentAllowedMetadatas()
 }
 
 /*CanUpdateMetadata deducts the old size of a metadata, adds the size of the new value the user has sent,
@@ -229,6 +238,37 @@ and makes sure the intended total metadata size is below the amount the user is 
 func (account *Account) CanUpdateMetadata(oldMetadataSizeInBytes, newMetadataSizeInBytes int64) bool {
 	intendedMetadataSizeInBytes := account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes + newMetadataSizeInBytes
 	return float64(intendedMetadataSizeInBytes) <= account.CurrentAllowedMetadataSizeInBytes()
+}
+
+/*IncrementMetadataCount increments the account's metadata count*/
+func (account *Account) IncrementMetadataCount() error {
+	err := errors.New("cannot exceed allowed metadatas")
+	if account.CanAddNewMetadata() {
+		account.TotalMetadatas++
+		err = DB.Model(&account).Update("total_metadatas", account.TotalMetadatas).Error
+	}
+	return err
+}
+
+/*DecrementMetadataCount decrements the account's metadata count*/
+func (account *Account) DecrementMetadataCount() error {
+	err := errors.New("metadata count cannot go below 0")
+	account.TotalMetadatas--
+	if account.TotalMetadatas >= 0 {
+		err = DB.Model(&account).Update("total_metadatas", account.TotalMetadatas).Error
+	}
+	return err
+}
+
+/*UpdateMetadataSizeInBytes updates the account's TotalMetadataSizeInBytes or returns an error*/
+func (account *Account) UpdateMetadataSizeInBytes(oldMetadataSizeInBytes, newMetadataSizeInBytes int64) error {
+	err := errors.New("metadata size is too large for this account")
+	if account.CanUpdateMetadata(oldMetadataSizeInBytes, newMetadataSizeInBytes) {
+		account.TotalMetadataSizeInBytes = account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes + newMetadataSizeInBytes
+		err = DB.Model(&account).Update("total_metadata_size_in_bytes", account.TotalMetadataSizeInBytes).Error
+	}
+
+	return err
 }
 
 /*Return Account object(first one) if there is not any error. */

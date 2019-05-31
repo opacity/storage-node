@@ -364,27 +364,176 @@ func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
 }
 
 func Test_MaxAllowedMetadataSizeInBytes(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+	expectedMaxAllowedMetadataSizeInBytes := 6.4e10
 
+	account := returnValidAccount()
+	account.StorageLimit = BasicStorageLimit
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	actualMaxAllowedMetadataSizeInBytes := account.MaxAllowedMetadataSizeInBytes()
+
+	assert.Equal(t, expectedMaxAllowedMetadataSizeInBytes, actualMaxAllowedMetadataSizeInBytes)
 }
 
 func Test_MaxAllowedMetadatas(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+	expectedMaxAllowedMetadatas := 1280
 
+	account := returnValidAccount()
+	account.StorageLimit = BasicStorageLimit
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	actualMaxAllowedMetadatas := account.MaxAllowedMetadatas()
+
+	assert.Equal(t, expectedMaxAllowedMetadatas, actualMaxAllowedMetadatas)
 }
 
 func Test_CurrentAllowedMetadataSizeInBytes(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+	expectedCurrentAllowedMetadataSizeInBytes := 3.2e10
 
+	account := returnValidAccount()
+	account.StorageUsed = 64
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	actualCurrentAllowedMetadataSizeInBytes := account.CurrentAllowedMetadataSizeInBytes()
+
+	assert.Equal(t, expectedCurrentAllowedMetadataSizeInBytes, actualCurrentAllowedMetadataSizeInBytes)
 }
 
 func Test_CurrentAllowedMetadatas(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+	expectedCurrentAllowedMetadatas := 640
 
+	account := returnValidAccount()
+	account.StorageUsed = 64
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	actualCurrentAllowedMetadatas := account.CurrentAllowedMetadatas()
+
+	assert.Equal(t, expectedCurrentAllowedMetadatas, actualCurrentAllowedMetadatas)
 }
 
 func Test_CanAddNewMetadata(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+	account := returnValidAccount()
+	account.StorageUsed = 64
+	account.TotalMetadatas = 638
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
 
+	assert.True(t, account.CanAddNewMetadata())
+	account.TotalMetadatas++
+	assert.True(t, account.CanAddNewMetadata())
+	account.TotalMetadatas++
+	assert.False(t, account.CanAddNewMetadata())
 }
 
 func Test_CanUpdateMetadata(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
 
+	account := returnValidAccount()
+	account.StorageUsed = 64
+	account.TotalMetadataSizeInBytes = 100
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	assert.True(t, account.CanUpdateMetadata(100, 3.2e10))
+	account.TotalMetadataSizeInBytes = 3.2e10
+	assert.False(t, account.CanUpdateMetadata(3.2e10, 3.21e10))
+}
+
+func Test_IncrementMetadataCount(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.StorageUsed = 64
+	account.TotalMetadatas = 638
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	err := account.IncrementMetadataCount()
+	assert.Nil(t, err)
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.TotalMetadatas == 639)
+
+	err = account.IncrementMetadataCount()
+	assert.Nil(t, err)
+
+	accountFromDB, _ = GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.TotalMetadatas == 640)
+
+	err = account.IncrementMetadataCount()
+	assert.NotNil(t, err)
+
+	accountFromDB, _ = GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.TotalMetadatas == 640)
+}
+
+func Test_DecrementMetadataCount(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.StorageUsed = 64
+	account.TotalMetadatas = 1
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	err := account.DecrementMetadataCount()
+	assert.Nil(t, err)
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.TotalMetadatas == 0)
+
+	err = account.DecrementMetadataCount()
+	assert.NotNil(t, err)
+}
+
+func Test_UpdateMetadataSizeInBytes(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.StorageUsed = 64
+	account.TotalMetadataSizeInBytes = 100
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	assert.Nil(t, account.UpdateMetadataSizeInBytes(100, 3.2e10))
+	account.TotalMetadataSizeInBytes = 3.2e10
+	assert.NotNil(t, account.UpdateMetadataSizeInBytes(3.2e10, 3.21e10))
 }
 
 func Test_CreateSpaceUsedReport(t *testing.T) {
