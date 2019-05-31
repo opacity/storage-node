@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"bytes"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
@@ -74,7 +76,7 @@ func ReturnValidUploadStatusReqForTest(t *testing.T, body UploadStatusObj, priva
 	}
 }
 
-func CreateUnpaidAccountForTest(accountID string, t *testing.T) models.Account {
+func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 	abortIfNotTesting(t)
 
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
@@ -93,6 +95,10 @@ func CreateUnpaidAccountForTest(accountID string, t *testing.T) models.Account {
 
 	if err := models.DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
 	}
 
 	return account
