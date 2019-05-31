@@ -78,7 +78,7 @@ func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	CreateUnpaidAccountForTest(accountID, t)
+	CreateUnpaidAccountForTest(t, accountID)
 
 	w := metadataTestHelperGetMetadata(t, get)
 
@@ -181,7 +181,7 @@ func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	CreateUnpaidAccountForTest(accountID, t)
+	CreateUnpaidAccountForTest(t, accountID)
 
 	w := metadataTestHelperUpdateMetadata(t, post)
 
