@@ -100,7 +100,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
-	initializeUpload(initReq, c)
+	initFileUploadWithRequest(initReq, c)
 
 	c, _ = gin.CreateTestContext(httptest.NewRecorder())
 
