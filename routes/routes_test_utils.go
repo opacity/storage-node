@@ -74,7 +74,7 @@ func ReturnValidUploadStatusReqForTest(t *testing.T, body UploadStatusObj, priva
 	}
 }
 
-func CreateUnpaidAccountForTest(accountID string, t *testing.T) models.Account {
+func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 	abortIfNotTesting(t)
 
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
