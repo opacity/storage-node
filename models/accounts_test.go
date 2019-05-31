@@ -205,6 +205,7 @@ func Test_GetTotalCostInWei(t *testing.T) {
 
 func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 	account := returnValidAccount()
+	account.MetadataKey = utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890"))
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {

@@ -162,6 +162,15 @@ definitions:
     required:
     - expirationDate
     type: object
+  routes.accountDataRes:
+    properties:
+      account:
+        $ref: '#/definitions/routes.accountGetObj'
+        type: object
+      paymentStatus:
+        example: paid
+        type: string
+    type: object
   routes.accountGetObj:
     properties:
       apiVersion:
@@ -201,10 +210,13 @@ definitions:
     - monthsInSubscription
     - storageLimit
     type: object
-  routes.accountPaidRes:
+  routes.accountUnpaidRes:
     properties:
       account:
         $ref: '#/definitions/routes.accountGetObj'
+        type: object
+      invoice:
+        $ref: '#/definitions/models.Invoice'
         type: object
       paymentStatus:
         example: paid
@@ -396,7 +408,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.accountPaidRes'
+            $ref: '#/definitions/routes.accountUnpaidRes'
             type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
@@ -580,8 +592,12 @@ paths:
           schema:
             $ref: '#/definitions/routes.getMetadataRes'
             type: object
+        "403":
+          description: subscription expired, or the invoice resonse
+          schema:
+            type: string
         "404":
-          description: no value found for that key
+          description: no value found for that key, or account not found
           schema:
             type: string
       summary: Retrieve account metadata
@@ -617,11 +633,11 @@ paths:
           schema:
             type: string
         "403":
-          description: subscription expired
+          description: subscription expired, or the invoice resonse
           schema:
             type: string
         "404":
-          description: no value found for that key
+          description: no value found for that key, or account not found
           schema:
             type: string
         "500":
