@@ -233,11 +233,18 @@ func (account *Account) CanAddNewMetadata() bool {
 	return intendedNumberOfMetadatas <= account.CurrentAllowedMetadatas()
 }
 
+/*CanRemoveMetadata checks if an account can delete a metadata*/
+func (account *Account) CanRemoveMetadata() bool {
+	intendedNumberOfMetadatas := account.TotalMetadatas - 1
+	return intendedNumberOfMetadatas >= 0
+}
+
 /*CanUpdateMetadata deducts the old size of a metadata, adds the size of the new value the user has sent,
 and makes sure the intended total metadata size is below the amount the user is allowed to have*/
 func (account *Account) CanUpdateMetadata(oldMetadataSizeInBytes, newMetadataSizeInBytes int64) bool {
 	intendedMetadataSizeInBytes := account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes + newMetadataSizeInBytes
-	return float64(intendedMetadataSizeInBytes) <= account.CurrentAllowedMetadataSizeInBytes()
+	return float64(intendedMetadataSizeInBytes) <= account.CurrentAllowedMetadataSizeInBytes() &&
+		intendedMetadataSizeInBytes >= 0
 }
 
 /*IncrementMetadataCount increments the account's metadata count*/
@@ -268,6 +275,20 @@ func (account *Account) UpdateMetadataSizeInBytes(oldMetadataSizeInBytes, newMet
 		err = DB.Model(&account).Update("total_metadata_size_in_bytes", account.TotalMetadataSizeInBytes).Error
 	}
 
+	return err
+}
+
+/*RemoveMetadata removes a metadata and its size from TotalMetadataSizeInBytes*/
+func (account *Account) RemoveMetadata(oldMetadataSizeInBytes int64) error {
+	err := errors.New("cannot remove metadata or its size")
+	if account.CanUpdateMetadata(oldMetadataSizeInBytes, 0) && account.CanRemoveMetadata() {
+		account.TotalMetadataSizeInBytes = account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes
+		account.TotalMetadatas--
+		err = DB.Model(account).Updates(map[string]interface{}{
+			"total_metadatas":              account.TotalMetadatas,
+			"total_metadata_size_in_bytes": account.TotalMetadataSizeInBytes,
+		}).Error
+	}
 	return err
 }
 
@@ -461,4 +482,13 @@ func (account *Account) PrettyString() {
 
 	fmt.Print("EthPrivateKey:                  ")
 	fmt.Println(account.EthPrivateKey)
+
+	fmt.Print("ApiVersion:                     ")
+	fmt.Println(account.ApiVersion)
+
+	fmt.Print("TotalMetadatas:                 ")
+	fmt.Println(account.TotalMetadatas)
+
+	fmt.Print("TotalMetadataSizeInBytes:       ")
+	fmt.Println(account.TotalMetadataSizeInBytes)
 }

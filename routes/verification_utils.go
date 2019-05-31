@@ -19,9 +19,9 @@ const (
 	signatureDidNotMatchResponse = "signature did not match"
 	errVerifying                 = "error verifying signature"
 	marshalError                 = "bad request, unable to marshal request body: "
-
-	postFormTag     = "form"
-	postFormFileTag = "formFile"
+	notAuthorizedResponse        = "you are not authorized to access or modify this resource"
+	postFormTag                  = "form"
+	postFormFileTag              = "formFile"
 )
 
 type verificationInterface interface {
@@ -253,24 +253,28 @@ func getAccountIdFromPublicKey(publicKey string, c *gin.Context) (string, error)
 	return accountID, err
 }
 
-func createModifierHash(publicKey, fileID string, c *gin.Context) (string, error) {
-	modifierHash, err := utils.HashString(publicKey + fileID)
+func getPermissionHash(publicKey, key string, c *gin.Context) (string, error) {
+	permissionHash, err := utils.HashString(publicKey + key)
 	if err != nil {
 		return "", InternalErrorResponse(c, err)
 	}
-	return modifierHash, nil
+	return permissionHash, nil
 }
 
-func verifyModifyPermissions(publicKey, fileID, expectedModifierHash string, c *gin.Context) error {
-	if expectedModifierHash == "" {
-		return ForbiddenResponse(c, errors.New("file is ineligible for modification"))
+func getPermissionHashKeyForBadger(metadataKey string) string {
+	return metadataKey + "_permissionHash"
+}
+
+func verifyPermissions(publicKey, key, expectedPermissionHash string, c *gin.Context) error {
+	if expectedPermissionHash == "" {
+		return ForbiddenResponse(c, errors.New("resource is ineligible for modification"))
 	}
-	modifierHash, err := createModifierHash(publicKey, fileID, c)
+	permissionHash, err := getPermissionHash(publicKey, key, c)
 	if err != nil {
 		return err
 	}
-	if modifierHash != expectedModifierHash {
-		return ForbiddenResponse(c, errors.New("you are not authorized to modify this file"))
+	if permissionHash != expectedPermissionHash {
+		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))
 	}
 	return nil
 }

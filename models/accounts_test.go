@@ -449,6 +449,23 @@ func Test_CanAddNewMetadata(t *testing.T) {
 	assert.False(t, account.CanAddNewMetadata())
 }
 
+func Test_CanRemoveMetadata(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.StorageUsed = 64
+	account.TotalMetadatas = 1
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	assert.True(t, account.CanRemoveMetadata())
+	account.TotalMetadatas = 0
+	assert.False(t, account.CanRemoveMetadata())
+}
+
 func Test_CanUpdateMetadata(t *testing.T) {
 	// This test relies upon TestFileStoragePerMetadataInMB
 	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
@@ -536,8 +553,39 @@ func Test_UpdateMetadataSizeInBytes(t *testing.T) {
 	assert.NotNil(t, account.UpdateMetadataSizeInBytes(3.2e10, 3.21e10))
 }
 
+func Test_RemoveMetadata(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.StorageUsed = 64
+	account.TotalMetadataSizeInBytes = 100
+	account.TotalMetadatas = 1
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	assert.Nil(t, account.RemoveMetadata(100))
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.TotalMetadatas == 0)
+	assert.True(t, accountFromDB.TotalMetadataSizeInBytes == int64(0))
+
+	account.TotalMetadataSizeInBytes = 100
+	account.TotalMetadatas = 1
+	DB.Save(&account)
+
+	assert.NotNil(t, account.RemoveMetadata(101))
+	account.TotalMetadataSizeInBytes = 100
+	account.TotalMetadatas = 0
+	DB.Save(&account)
+
+	assert.NotNil(t, account.RemoveMetadata(100))
+}
+
 func Test_CreateSpaceUsedReport(t *testing.T) {
-	expectedSpaceAlloted := int(4 * BasicStorageLimit)
+	expectedSpaceAllotted := int(4 * BasicStorageLimit)
 	expectedSpaceUsed := 234.56
 
 	DeleteAccountsForTest(t)
@@ -561,7 +609,7 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 
 	spaceReport := CreateSpaceUsedReport()
 
-	assert.Equal(t, expectedSpaceAlloted, spaceReport.SpaceAllotedSum)
+	assert.Equal(t, expectedSpaceAllotted, spaceReport.SpaceAllotedSum)
 	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
 }
 

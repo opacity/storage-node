@@ -67,10 +67,10 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.InitFileUploadRes:
+  routes.StatusRes:
     properties:
       status:
-        example: Success
+        example: status of the request
         type: string
     type: object
   routes.UploadFileReq:
@@ -301,7 +301,7 @@ definitions:
     required:
     - expirationDate
     type: object
-  routes.getOrCreateMetadataReq:
+  routes.metadataKeyReq:
     properties:
       publicKey:
         example: a 66-character public key
@@ -309,8 +309,7 @@ definitions:
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.getOrCreateMetadataObject, see description
-          for example
+        example: should produce routes.metadataKeyObject, see description for example
         type: string
       signature:
         description: |-
@@ -367,12 +366,6 @@ definitions:
     - expirationDate
     - metadata
     - metadataKey
-    type: object
-  routes.uploadFileRes:
-    properties:
-      status:
-        example: Chunk is uploaded
-        type: string
     type: object
 host: '{{.Host}}'
 info:
@@ -552,7 +545,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.InitFileUploadRes'
+            $ref: '#/definitions/routes.StatusRes'
             type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
@@ -578,12 +571,12 @@ paths:
         "timestamp": 1557346389
         }
       parameters:
-      - description: get or create metadata object
+      - description: object for endpoints that only need metadataKey and timestamp
         in: body
-        name: getOrCreateMetadataReq
+        name: metadataKeyReq
         required: true
         schema:
-          $ref: '#/definitions/routes.getOrCreateMetadataReq'
+          $ref: '#/definitions/routes.metadataKeyReq'
           type: object
       produces:
       - application/json
@@ -610,6 +603,49 @@ paths:
           schema:
             type: string
       summary: create a new metadata
+  /api/v1/metadata/delete:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
+        "timestamp": 1557346389
+        }
+      parameters:
+      - description: object for endpoints that only need metadataKey and timestamp
+        in: body
+        name: metadataKeyReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.metadataKeyReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: subscription expired, or the invoice resonse
+          schema:
+            type: string
+        "404":
+          description: account not found
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: delete a metadata
   /api/v1/metadata/get:
     post:
       consumes:
@@ -621,12 +657,12 @@ paths:
         "timestamp": 1557346389
         }
       parameters:
-      - description: get or create metadata object
+      - description: object for endpoints that only need metadataKey and timestamp
         in: body
-        name: getOrCreateMetadataReq
+        name: metadataKeyReq
         required: true
         schema:
-          $ref: '#/definitions/routes.getOrCreateMetadataReq'
+          $ref: '#/definitions/routes.metadataKeyReq'
           type: object
       produces:
       - application/json
@@ -710,7 +746,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.uploadFileRes'
+            $ref: '#/definitions/routes.StatusRes'
             type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
@@ -750,7 +786,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.uploadFileRes'
+            $ref: '#/definitions/routes.StatusRes'
             type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'

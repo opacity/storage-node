@@ -229,7 +229,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.InitFileUploadRes"
+                            "$ref": "#/definitions/routes.StatusRes"
                         }
                     },
                     "400": {
@@ -265,13 +265,13 @@
                 "summary": "create a new metadata",
                 "parameters": [
                     {
-                        "description": "get or create metadata object",
-                        "name": "getOrCreateMetadataReq",
+                        "description": "object for endpoints that only need metadataKey and timestamp",
+                        "name": "metadataKeyReq",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.getOrCreateMetadataReq"
+                            "$ref": "#/definitions/routes.metadataKeyReq"
                         }
                     }
                 ],
@@ -281,6 +281,63 @@
                         "schema": {
                             "type": "object",
                             "$ref": "#/definitions/routes.createMetadataRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "subscription expired, or the invoice resonse",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/metadata/delete": {
+            "post": {
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataKey\": \"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders\",\n\"timestamp\": 1557346389\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "delete a metadata",
+                "parameters": [
+                    {
+                        "description": "object for endpoints that only need metadataKey and timestamp",
+                        "name": "metadataKeyReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.metadataKeyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.StatusRes"
                         }
                     },
                     "400": {
@@ -322,13 +379,13 @@
                 "summary": "Retrieve account metadata",
                 "parameters": [
                     {
-                        "description": "get or create metadata object",
-                        "name": "getOrCreateMetadataReq",
+                        "description": "object for endpoints that only need metadataKey and timestamp",
+                        "name": "metadataKeyReq",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.getOrCreateMetadataReq"
+                            "$ref": "#/definitions/routes.metadataKeyReq"
                         }
                     }
                 ],
@@ -433,7 +490,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.uploadFileRes"
+                            "$ref": "#/definitions/routes.StatusRes"
                         }
                     },
                     "400": {
@@ -485,7 +542,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.uploadFileRes"
+                            "$ref": "#/definitions/routes.StatusRes"
                         }
                     },
                     "400": {
@@ -599,12 +656,12 @@
                 }
             }
         },
-        "routes.InitFileUploadRes": {
+        "routes.StatusRes": {
             "type": "object",
             "properties": {
                 "status": {
                     "type": "string",
-                    "example": "Success"
+                    "example": "status of the request"
                 }
             }
         },
@@ -886,7 +943,7 @@
                 }
             }
         },
-        "routes.getOrCreateMetadataReq": {
+        "routes.metadataKeyReq": {
             "type": "object",
             "required": [
                 "publicKey",
@@ -902,7 +959,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.getOrCreateMetadataObject, see description for example"
+                    "example": "should produce routes.metadataKeyObject, see description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -958,15 +1015,6 @@
                 "metadataKey": {
                     "type": "string",
                     "example": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"
-                }
-            }
-        },
-        "routes.uploadFileRes": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "type": "string",
-                    "example": "Chunk is uploaded"
                 }
             }
         }

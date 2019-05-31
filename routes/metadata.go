@@ -28,14 +28,14 @@ type updateMetadataRes struct {
 	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
 }
 
-type getOrCreateMetadataObject struct {
+type metadataKeyObject struct {
 	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
 	Timestamp   int64  `json:"timestamp" binding:"required"`
 }
 
-type getOrCreateMetadataReq struct {
+type metadataKeyReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.getOrCreateMetadataObject, see description for example"`
+	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.metadataKeyObject, see description for example"`
 }
 
 type getMetadataRes struct {
@@ -47,11 +47,15 @@ type createMetadataRes struct {
 	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
 }
 
+var metadataDeletedRes = StatusRes{
+	Status: "metadata successfully deleted",
+}
+
 // GetMetadataHandler godoc
 // @Summary Retrieve account metadata
 // @Accept  json
 // @Produce  json
-// @Param getOrCreateMetadataReq body routes.getOrCreateMetadataReq true "get or create metadata object"
+// @Param metadataKeyReq body routes.metadataKeyReq true "object for endpoints that only need metadataKey and timestamp"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
@@ -91,7 +95,7 @@ func UpdateMetadataHandler() gin.HandlerFunc {
 // @Summary create a new metadata
 // @Accept  json
 // @Produce  json
-// @Param getOrCreateMetadataReq body routes.getOrCreateMetadataReq true "get or create metadata object"
+// @Param metadataKeyReq body routes.metadataKeyReq true "object for endpoints that only need metadataKey and timestamp"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
@@ -108,18 +112,60 @@ func CreateMetadataHandler() gin.HandlerFunc {
 	return ginHandlerFunc(createMetadata)
 }
 
+// DeleteMetadataHandler godoc
+// @Summary delete a metadata
+// @Accept  json
+// @Produce  json
+// @Param metadataKeyReq body routes.metadataKeyReq true "object for endpoints that only need metadataKey and timestamp"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
+// @description 	"timestamp": 1557346389
+// @description }
+// @Success 200 {object} routes.StatusRes
+// @Failure 404 {string} string "account not found"
+// @Failure 403 {string} string "subscription expired, or the invoice resonse"
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v1/metadata/delete [post]
+/*DeleteMetadataHandler is a handler for deleting a metadata*/
+func DeleteMetadataHandler() gin.HandlerFunc {
+	return ginHandlerFunc(deleteMetadata)
+}
+
 func getMetadata(c *gin.Context) error {
-	request := getOrCreateMetadataReq{}
+	request := metadataKeyReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
 		return BadRequestResponse(c, err)
 	}
 
-	requestBodyParsed := getOrCreateMetadataObject{}
+	requestBodyParsed := metadataKeyObject{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return err
+	}
+
+	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+
+	if err != nil {
+		// TODO: Enable this after beta is over.
+		// cannot enable it now since many users already created metadatas without permission hashes
+		// being stored
+		//
+		//return NotFoundResponse(c, err)
+	}
+
+	// TODO remove this if block wrapping the other if, after beta
+	// This is only in effect for beta because many users already created metadatas without
+	// permission hashes being stored
+	if permissionHashInBadger != "" {
+		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
+			permissionHashInBadger, c); err != nil {
+			return err
+		}
 	}
 
 	metadata, expirationTime, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
@@ -141,13 +187,18 @@ func setMetadata(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
 	requestBodyParsed := updateMetadataObject{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return err
 	}
 
-	_, expirationTime, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+	oldMetadata, expirationTime, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
 
 	if err != nil {
 		return NotFoundResponse(c, err)
@@ -157,9 +208,42 @@ func setMetadata(c *gin.Context) error {
 		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
-	ttl := time.Until(expirationTime)
+	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
-	if err := utils.BatchSet(&utils.KVPairs{requestBodyParsed.MetadataKey: requestBodyParsed.Metadata}, ttl); err != nil {
+	if err != nil {
+		// TODO: Enable this after beta is over.
+		// cannot enable it now since many users already created metadatas without permission hashes
+		// being stored
+		//
+		//return NotFoundResponse(c, err)
+	}
+
+	// TODO remove this if block wrapping the other if, after beta
+	// This is only in effect for beta because many users already created metadatas without
+	// permission hashes being stored
+	if permissionHashInBadger != "" {
+		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
+			permissionHashInBadger, c); err != nil {
+			return err
+		}
+	}
+
+	// TODO remove this if block wrapping the other if, after beta
+	// This is only in effect for beta because many users already created metadatas without
+	// permission hashes being stored
+	if permissionHashInBadger != "" {
+		if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadata)), int64(len(requestBodyParsed.Metadata))); err != nil {
+			return ForbiddenResponse(c, err)
+		}
+	}
+
+	ttl := time.Until(account.ExpirationDate())
+
+	if err := utils.BatchSet(&utils.KVPairs{
+		requestBodyParsed.MetadataKey: requestBodyParsed.Metadata,
+		permissionHashKey:             permissionHashInBadger,
+	}, ttl); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
@@ -171,7 +255,7 @@ func setMetadata(c *gin.Context) error {
 }
 
 func createMetadata(c *gin.Context) error {
-	request := getOrCreateMetadataReq{}
+	request := metadataKeyReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
@@ -187,7 +271,7 @@ func createMetadata(c *gin.Context) error {
 		return err
 	}
 
-	requestBodyParsed := getOrCreateMetadataObject{}
+	requestBodyParsed := metadataKeyObject{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return err
@@ -195,12 +279,91 @@ func createMetadata(c *gin.Context) error {
 
 	ttl := time.Until(account.ExpirationDate())
 
-	if err = utils.BatchSet(&utils.KVPairs{requestBodyParsed.MetadataKey: ""}, ttl); err != nil {
-		InternalErrorResponse(c, err)
+	permissionHash, err := getPermissionHash(request.PublicKey, requestBodyParsed.MetadataKey, c)
+	if err != nil {
 		return err
+	}
+
+	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+
+	if err = account.IncrementMetadataCount(); err != nil {
+		return ForbiddenResponse(c, err)
+	}
+
+	if err = utils.BatchSet(&utils.KVPairs{
+		requestBodyParsed.MetadataKey: "",
+		permissionHashKey:             permissionHash,
+	}, ttl); err != nil {
+		account.DecrementMetadataCount()
+		return InternalErrorResponse(c, err)
 	}
 
 	return OkResponse(c, createMetadataRes{
 		ExpirationDate: account.ExpirationDate(),
 	})
+}
+
+func deleteMetadata(c *gin.Context) error {
+	request := metadataKeyReq{}
+
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyIfPaid(account, c); err != nil {
+		return err
+	}
+
+	requestBodyParsed := metadataKeyObject{}
+
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
+		return err
+	}
+
+	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+
+	if err != nil {
+		// TODO: Enable this after beta is over.
+		// cannot enable it now since many users already created metadatas without permission hashes
+		// being stored
+		//
+		//return NotFoundResponse(c, err)
+	}
+
+	// TODO remove this if block wrapping the other if, after beta
+	// This is only in effect for beta because many users already created metadatas without
+	// permission hashes being stored
+	if permissionHashInBadger != "" {
+		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
+			permissionHashInBadger, c); err != nil {
+			return err
+		}
+	}
+
+	oldMetadata, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+
+	// TODO remove this if block wrapping the other if, after beta
+	// This is only in effect for beta because many users already created metadatas without
+	// permission hashes being stored
+	if permissionHashInBadger != "" {
+		if err := account.RemoveMetadata(int64(len(oldMetadata))); err != nil {
+			return InternalErrorResponse(c, err)
+		}
+	}
+
+	if err = utils.BatchDelete(&utils.KVKeys{
+		requestBodyParsed.MetadataKey,
+		permissionHashKey,
+	}); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	return OkResponse(c, metadataDeletedRes)
 }

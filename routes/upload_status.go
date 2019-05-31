@@ -33,7 +33,7 @@ type missingChunksRes struct {
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
 // @description }
-// @Success 200 {object} routes.uploadFileRes
+// @Success 200 {object} routes.StatusRes
 // @Failure 404 {string} string "file or account not found"
 // @Failure 403 {string} string "signature did not match"
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -69,7 +69,7 @@ func checkUploadStatus(c *gin.Context) error {
 		return FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 	}
 
-	if err := verifyModifyPermissions(request.PublicKey, requestBodyParsed.FileHandle, file.ModifierHash, c); err != nil {
+	if err := verifyPermissions(request.PublicKey, requestBodyParsed.FileHandle, file.ModifierHash, c); err != nil {
 		return err
 	}
 

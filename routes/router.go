@@ -48,8 +48,11 @@ const (
 	/*MetadataSetPath is the path for setting metadata*/
 	MetadataSetPath = "/metadata/set"
 
-	/*MetadataSetPath is the path for creating a new metadata*/
+	/*MetadataCreatePath is the path for creating a new metadata*/
 	MetadataCreatePath = "/metadata/create"
+
+	/*MetadataDeletePath is the path for deleting a metadata*/
+	MetadataDeletePath = "/metadata/delete"
 
 	/*InitUploadPath is the path for uploading files to paid accounts*/
 	InitUploadPath = "/init-upload"
@@ -68,6 +71,10 @@ const (
 )
 
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
+
+type StatusRes struct {
+	Status string `json:"status" example:"status of the request"`
+}
 
 func init() {
 }
@@ -117,6 +124,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(MetadataSetPath, UpdateMetadataHandler())
 	v1Router.POST(MetadataGetPath, GetMetadataHandler())
 	v1Router.POST(MetadataCreatePath, CreateMetadataHandler())
+	v1Router.POST(MetadataDeletePath, DeleteMetadataHandler())
 
 	v1Router.POST(InitUploadPath, InitFileUploadHandler())
 	v1Router.POST(UploadPath, UploadFileHandler())

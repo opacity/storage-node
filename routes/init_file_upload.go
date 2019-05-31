@@ -20,10 +20,6 @@ type InitFileUploadReq struct {
 	initFileUploadObj InitFileUploadObj
 }
 
-type InitFileUploadRes struct {
-	Status string `json:"status" example:"Success"`
-}
-
 func (v *InitFileUploadReq) getObjectRef() interface{} {
 	return &v.initFileUploadObj
 }
@@ -40,7 +36,7 @@ func (v *InitFileUploadReq) getObjectRef() interface{} {
 // @description 	"fileSizeInByte": "200000000000006",
 // @description 	"endIndex": 2
 // @description }
-// @Success 200 {object} routes.InitFileUploadRes
+// @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 500 {string} string "some information about the internal error"
 // @Failure 403 {string} string "signature did not match"
@@ -84,7 +80,7 @@ func initializeUpload(request InitFileUploadReq, c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	modifierHash, err := createModifierHash(request.PublicKey, request.initFileUploadObj.FileHandle, c)
+	modifierHash, err := getPermissionHash(request.PublicKey, request.initFileUploadObj.FileHandle, c)
 	if err != nil {
 		return err
 	}
@@ -102,7 +98,7 @@ func initializeUpload(request InitFileUploadReq, c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	return OkResponse(c, InitFileUploadRes{
+	return OkResponse(c, StatusRes{
 		Status: "File is init. Please continue to upload",
 	})
 }
