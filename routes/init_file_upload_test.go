@@ -36,5 +36,5 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	err := initFileUploadWithRequest(req, c)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 }
