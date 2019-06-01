@@ -79,28 +79,34 @@ func checkPrerequisites(t *testing.T, account models.Account, fileID string) {
 }
 
 func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.PrivateKey) {
-	privateKey, err := utils.GenerateKey()
+	accountId, privateKey := generateValidateAccountId(t)
+	account := CreatePaidAccountForTest(t, accountID)
 
-	initBody := ReturnValidInitUploadFileBodyForTest(t)
-	initReq := ReturnValidInitUploadFileReqForTest(t, initBody, privateKey)
+	initBody := InitFileUploadObj{
+		FileHandle:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		EndIndex:       models.FirstChunkIndex,
+		FileSizeInByte: 26214400,
+	}
+
+	v, b := returnValidVerificationAndRequestBody(t, initBody, privateKey)
+	initReq := InitFileUploadReq{
+		initFileUploadObj: initBody,
+		verification:      v,
+		requestBody:       b,
+		Metadata:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		MetadataAsFile:    utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+	}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	initFileUploadWithRequest(initReq, c)
 
 	uploadBody := UploadFileObj{
 		FileHandle: initBody.FileHandle,
 		PartIndex:  initBody.EndIndex,
 	}
-
 	chunkData := ReturnChunkDataForTest(t)
-
-	assert.Nil(t, err)
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 	request.ChunkData = string(chunkData)
-	accountID, err := utils.HashString(request.PublicKey)
-	assert.Nil(t, err)
-	account := CreatePaidAccountForTest(accountID, t)
-
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-
-	initFileUploadWithRequest(initReq, c)
 
 	c, _ = gin.CreateTestContext(httptest.NewRecorder())
 
@@ -114,7 +120,11 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 		FileHandle: initBody.FileHandle,
 	}
 
-	uploadStatusReq := ReturnValidUploadStatusReqForTest(t, uploadStatusObj, privateKey)
+	v, b = returnValidVerificationAndRequestBody(t, uploadStatusObj, privateKey)
+	uploadStatusReq := UploadStatusReq{
+		verification: v,
+		RequestBody:  b.RequestBody,
+	}
 
 	w := uploadStatusFileHelperForTest(t, uploadStatusReq)
 

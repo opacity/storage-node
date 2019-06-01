@@ -17,8 +17,7 @@ func Test_Init_File_Upload(t *testing.T) {
 }
 
 func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
-	accountId, privateKey, err := generateValidateAccountId(t)
-	assert.Nil(t, err)
+	accountId, privateKey := generateValidateAccountId(t)
 
 	CreateUnpaidAccountForTest(t, accountId)
 	uploadObj := InitFileUploadObj{
