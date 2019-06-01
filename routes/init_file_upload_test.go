@@ -17,8 +17,7 @@ func Test_Init_File_Upload(t *testing.T) {
 }
 
 func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
-	accountId, privateKey, err := generateValidateAccountId(t)
-	assert.Nil(t, err)
+	accountId, privateKey := generateValidateAccountId(t)
 
 	CreateUnpaidAccountForTest(t, accountId)
 	uploadObj := InitFileUploadObj{
@@ -36,6 +35,6 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
-	err = initFileUploadWithRequest(req, c)
+	err := initFileUploadWithRequest(req, c)
 	assert.NotNil(t, err)
 }

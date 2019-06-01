@@ -115,7 +115,7 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			// create a paid account
 			accountID, err := utils.HashString(request.PublicKey)
 			assert.Nil(t, err)
-			routes.CreatePaidAccountForTest(accountID, t)
+			routes.CreatePaidAccountForTest(t, accountID)
 
 			// init upload
 			routes.InitUploadFileForTest(t, request.PublicKey, uploadBody.FileHandle, len(arrayOfChunkDataBuffers))
