@@ -80,7 +80,7 @@ func checkPrerequisites(t *testing.T, account models.Account, fileID string) {
 
 func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.PrivateKey) {
 	accountId, privateKey := generateValidateAccountId(t)
-	account := CreatePaidAccountForTest(t, accountID)
+	account := CreatePaidAccountForTest(t, accountId)
 
 	initBody := InitFileUploadObj{
 		FileHandle:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
@@ -113,7 +113,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	var fileToUpload bytes.Buffer
 	fileToUpload.Write(chunkData)
 
-	err = uploadChunk(uploadBody, request, fileToUpload, c)
+	err := uploadChunk(uploadBody, request, fileToUpload, c)
 	assert.Nil(t, err)
 
 	uploadStatusObj := UploadStatusObj{
