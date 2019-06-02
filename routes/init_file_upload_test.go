@@ -48,9 +48,6 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	assert.NotNil(t, file.AwsUploadID)
 	assert.NotNil(t, file.AwsObjectKey)
 	assert.NotNil(t, file.ModifierHash)
-	fmt.Printf("file expired date: %v", file.ExpiredAt)
-	fmt.Printf("account expired date: %v", account.ExpirationDate())
-	assert.Equal(t, account.ExpirationDate(), file.ExpiredAt)
 }
 
 func createValidInitFileUploadRequest(t *testing.T, privateKey *ecdsa.PrivateKey) InitFileUploadReq {
