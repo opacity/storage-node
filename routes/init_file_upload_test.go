@@ -30,13 +30,23 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 
 func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
-	CreatePaidAccountForTest(t, accountId)
+	account := CreatePaidAccountForTest(t, accountId)
 
 	req, _ := createValidInitFileUploadRequest(t, privateKey)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	err := initFileUploadWithRequest(req, c)
 	assert.Nil(t, err)
+
+	fileID := req.initFileUploadObj.FileHandle
+
+	file, err := models.GetFileById(fileID)
+	assert.Nil(t, err)
+
+	assert.Equal(t, req.initFileUploadObj.EndIndex, file.EndIndex)
+	assert.NotNil(t, file.AwsUploadID)
+	assert.NotNil(t, file.AwsObjectKey)
+	assert.Equal(t, account.ExpirationDate(), file.ExpiredAt)
 }
 
 func createValidInitFileUploadRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (InitFileUploadReq, InitFileUploadObj) {
