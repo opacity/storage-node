@@ -62,7 +62,8 @@ type accountGetReqObj struct {
 
 type getAccountDataReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.accountGetReqObj, see description for example"`
+	requestBody
+	accountGetReqObj accountGetReqObj
 }
 
 // CreateAccountHandler godoc
@@ -180,15 +181,12 @@ func createAccount(c *gin.Context) error {
 
 func checkAccountPaymentStatus(c *gin.Context) error {
 	request := getAccountDataReq{}
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
-		return BadRequestResponse(c, err)
+
+	if err := verifyAndParseFormRequest(&request, c); err != nil {
+		return err
 	}
 
-	requestBodyParsed := accountGetReqObj{}
-
-	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed,
-		request.verification, c)
+	account, err := request.getAccount(c)
 	if err != nil {
 		return err
 	}
