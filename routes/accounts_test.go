@@ -36,7 +36,7 @@ func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCre
 
 	return accountCreateReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		RequestBody:  b,
 	}
 }
 
@@ -45,14 +45,12 @@ func returnFailedVerificationCreateAccountReq(t *testing.T, body accountCreateOb
 
 	return accountCreateReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 }
 
-func returnValidAccountAndPrivateKey() (models.Account, *ecdsa.PrivateKey) {
-	privateKeyToSignWith, _ := utils.GenerateKey()
-
-	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKeyToSignWith.PublicKey))
+func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.PrivateKey) {
+	accountId, privateKeyToSignWith := generateValidateAccountId(t)
 
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
@@ -74,7 +72,7 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 
 	return getAccountDataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 }
 
@@ -167,7 +165,7 @@ func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) {
-	_, privateKey := returnValidAccountAndPrivateKey()
+	_, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
 	}, privateKey)
@@ -183,7 +181,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) 
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid(t *testing.T) {
-	account, privateKey := returnValidAccountAndPrivateKey()
+	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
 	}, privateKey)
@@ -207,7 +205,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpaid(t *testing.T) {
-	account, privateKey := returnValidAccountAndPrivateKey()
+	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
 	}, privateKey)
