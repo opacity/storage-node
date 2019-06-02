@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"crypto/ecdsa"
 	"net/http/httptest"
 	"testing"
 
