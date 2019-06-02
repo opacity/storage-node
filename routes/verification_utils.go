@@ -47,8 +47,16 @@ func (v verification) getVerification() verification {
 	return v
 }
 
+func (v verification) getAccountId(c *gin.Context) (string, error) {
+	accountID, err := utils.HashString(v.PublicKey)
+	if err != nil {
+		return "", InternalErrorResponse(c, err)
+	}
+	return accountID, err
+}
+
 func (v verification) getAccount(c *gin.Context) (models.Account, error) {
-	return returnAccountIfVerified(v.PublicKey, c)
+	return returnAccountIfVerified(v, c)
 }
 
 type requestBody struct {
@@ -198,7 +206,7 @@ func returnAccountIfVerifiedFromParsedRequest(reqBody interface{}, verificationD
 		return models.Account{}, err
 	}
 
-	return returnAccountIfVerified(verificationData.PublicKey, c)
+	return returnAccountIfVerified(verificationData, c)
 }
 
 func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface{}, verificationData verification, c *gin.Context) (models.Account, error) {
@@ -206,11 +214,11 @@ func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface
 		return models.Account{}, err
 	}
 
-	return returnAccountIfVerified(verificationData.PublicKey, c)
+	return returnAccountIfVerified(verificationData, c)
 }
 
-func returnAccountIfVerified(publicKey string, c *gin.Context) (models.Account, error) {
-	accountID, err := getAccountIdFromPublicKey(publicKey, c)
+func returnAccountIfVerified(verificationData verification, c *gin.Context) (models.Account, error) {
+	accountID, err := verificationData.getAccountId(c)
 	if err != nil {
 		return models.Account{}, err
 	}
@@ -222,35 +230,6 @@ func returnAccountIfVerified(publicKey string, c *gin.Context) (models.Account, 
 	}
 
 	return account, err
-}
-
-func returnAccountIdWithParsedRequest(reqBody interface{}, verificationData verification, c *gin.Context) (string, error) {
-	hash, err := hashRequestBody(reqBody, c)
-	if err != nil {
-		return "", err
-	}
-
-	return returnAccountId(hash, verificationData, c)
-}
-
-func returnAccountIdWithStringRequest(reqAsString string, verificationData verification, c *gin.Context) (string, error) {
-	return returnAccountId(utils.Hash([]byte(reqAsString)), verificationData, c)
-}
-
-func returnAccountId(hash []byte, verificationData verification, c *gin.Context) (string, error) {
-	if err := verifyRequest(hash, verificationData.PublicKey, verificationData.Signature, c); err != nil {
-		return "", err
-	}
-
-	return getAccountIdFromPublicKey(verificationData.PublicKey, c)
-}
-
-func getAccountIdFromPublicKey(publicKey string, c *gin.Context) (string, error) {
-	accountID, err := utils.HashString(publicKey)
-	if err != nil {
-		return "", InternalErrorResponse(c, err)
-	}
-	return accountID, err
 }
 
 func createModifierHash(publicKey, fileID string, c *gin.Context) (string, error) {

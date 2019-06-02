@@ -24,7 +24,8 @@ type accountCreateObj struct {
 
 type accountCreateReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.accountCreateObj, see description for example"`
+	requestBody
+	accountCreateObj accountCreateObj
 }
 
 type accountCreateRes struct {
@@ -106,17 +107,10 @@ func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 }
 
 func createAccount(c *gin.Context) error {
-
 	request := accountCreateReq{}
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		return BadRequestResponse(c, err)
-	}
 
-	requestBodyParsed := accountCreateObj{}
-	if err := utils.ParseStringifiedRequest(request.RequestBody, &requestBodyParsed); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		return BadRequestResponse(c, err)
+	if err := verifyAndParseFormRequest(&request, c); err != nil {
+		return err
 	}
 
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
@@ -125,12 +119,12 @@ func createAccount(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	storageLimit, ok := models.StorageLimitMap[requestBodyParsed.StorageLimit]
+	storageLimit, ok := models.StorageLimitMap[request.accountCreateObj.StorageLimit]
 	if !ok {
 		return BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
 	}
 
-	accountID, err := returnAccountIdWithStringRequest(request.RequestBody, request.verification, c)
+	accountID, err := request.getAccountId(c)
 	if err != nil {
 		return err
 	}
@@ -147,12 +141,12 @@ func createAccount(c *gin.Context) error {
 
 	account := models.Account{
 		AccountID:            accountID,
-		MetadataKey:          requestBodyParsed.MetadataKey,
+		MetadataKey:          request.accountCreateObj.MetadataKey,
 		StorageLimit:         storageLimit,
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:        models.InitialPaymentInProgress,
-		MonthsInSubscription: requestBodyParsed.DurationInMonths,
+		MonthsInSubscription: request.accountCreateObj.DurationInMonths,
 	}
 
 	if err := utils.Validator.Struct(account); err != nil {
