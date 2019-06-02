@@ -21,7 +21,7 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 
 	CreateUnpaidAccountForTest(t, accountId)
-	req, _ := createValidInitFileUploadRequest(t, privateKey)
+	req := createValidInitFileUploadRequest(t, privateKey)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	err := initFileUploadWithRequest(req, c)
@@ -32,7 +32,7 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	account := CreatePaidAccountForTest(t, accountId)
 
-	req, _ := createValidInitFileUploadRequest(t, privateKey)
+	req := createValidInitFileUploadRequest(t, privateKey)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	err := initFileUploadWithRequest(req, c)
@@ -49,7 +49,7 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	assert.Equal(t, account.ExpirationDate(), file.ExpiredAt)
 }
 
-func createValidInitFileUploadRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (InitFileUploadReq, InitFileUploadObj) {
+func createValidInitFileUploadRequest(t *testing.T, privateKey *ecdsa.PrivateKey) InitFileUploadReq {
 	uploadObj := InitFileUploadObj{
 		FileHandle:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		FileSizeInByte: 123,
@@ -61,5 +61,5 @@ func createValidInitFileUploadRequest(t *testing.T, privateKey *ecdsa.PrivateKey
 		requestBody:       b,
 		initFileUploadObj: uploadObj,
 	}
-	return req, uploadObj
+	return req
 }
