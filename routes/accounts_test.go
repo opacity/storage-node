@@ -36,7 +36,7 @@ func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCre
 
 	return accountCreateReq{
 		verification: v,
-		RequestBody:  b,
+		requestBody:  b,
 	}
 }
 
@@ -55,14 +55,14 @@ func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.Priva
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
 	return models.Account{
-		AccountID:            accountID,
+		AccountID:            accountId,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
 		StorageLocation:      "https://createdInRoutesAccountsTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
 		StorageUsed:          10,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
-		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
+		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
 		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 	}, privateKeyToSignWith
 }
@@ -72,7 +72,7 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 
 	return getAccountDataReq{
 		verification: v,
-		requestBody:  b,
+		RequestBody:  b.RequestBody,
 	}
 }
 
