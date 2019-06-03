@@ -155,17 +155,13 @@ func createAccount(c *gin.Context) error {
 		MonthsInSubscription: requestBodyParsed.DurationInMonths,
 	}
 
-	if err := utils.Validator.Struct(account); err != nil {
+	// Add account to DB
+	if err := models.DB.Create(&account).Error; err != nil {
 		return BadRequestResponse(c, err)
 	}
 
 	cost, err := account.Cost()
 	if err != nil {
-		return BadRequestResponse(c, err)
-	}
-
-	// Add account to DB
-	if err := models.DB.Create(&account).Error; err != nil {
 		return BadRequestResponse(c, err)
 	}
 

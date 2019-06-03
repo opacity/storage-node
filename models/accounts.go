@@ -191,9 +191,6 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 		return errors.New("Unable to store more data")
 	}
 	account.StorageUsed = account.StorageUsed + inGb
-	if err := utils.Validator.Struct(account); err != nil {
-		return err
-	}
 
 	return DB.Model(&account).Update("storage_used", account.StorageUsed).Error
 }
@@ -244,10 +241,6 @@ func CountAccountsByPaymentStatus(paymentStatus PaymentStatusType) (int, error) 
 func SetAccountsToNextPaymentStatus(accounts []Account) {
 	for _, account := range accounts {
 		if account.PaymentStatus == PaymentRetrievalComplete {
-			continue
-		}
-		if err := utils.Validator.Struct(account); err != nil {
-			utils.LogIfError(err, nil)
 			continue
 		}
 		err := DB.Model(&account).Update("payment_status", getNextPaymentStatus(account.PaymentStatus)).Error
