@@ -534,7 +534,7 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentInProgress
-	account.MetadataKey = utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	account.MetadataKey = utils.RandHexString(64)
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -573,7 +573,7 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 	DeleteAccountsForTest(t)
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentInProgress
-	account.MetadataKey = utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	account.MetadataKey = utils.RandHexString(64)
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}

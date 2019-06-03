@@ -21,7 +21,7 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 
 	CreateUnpaidAccountForTest(t, accountId)
 	uploadObj := InitFileUploadObj{
-		FileHandle:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		FileHandle:     utils.RandHexString(64),
 		FileSizeInByte: 123,
 		EndIndex:       1,
 	}
