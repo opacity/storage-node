@@ -126,7 +126,12 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	if account.PaymentStatus < InitialPaymentInProgress {
 		account.PaymentStatus = InitialPaymentInProgress
 	}
-	return nil
+	return utils.Validator.Struct(account)
+}
+
+/*BeforeUpdate - callback called before the row is updated*/
+func (account *Account) BeforeUpdate(scope *gorm.Scope) error {
+	return utils.Validator.Struct(account)
 }
 
 /*ExpirationDate returns the date the account expires*/

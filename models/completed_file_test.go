@@ -17,45 +17,52 @@ func Test_Init_Completed_File(t *testing.T) {
 func Test_GetAllExpiredCompletedFiles(t *testing.T) {
 	DeleteCompletedFilesForTest(t)
 	s := CompletedFile{
-		FileID:    "foo1",
-		ExpiredAt: time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
+		FileID:       utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ModifierHash: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ExpiredAt:    time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
+	firstExpired := s.FileID
 	assert.Nil(t, DB.Create(&s).Error)
 	s = CompletedFile{
-		FileID:    "foo2",
-		ExpiredAt: time.Date(2010, 1, 1, 12, 0, 0, 0, time.UTC),
+		FileID:       utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ModifierHash: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ExpiredAt:    time.Date(2010, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
+	secondExpired := s.FileID
 	assert.Nil(t, DB.Create(&s).Error)
 	s = CompletedFile{
-		FileID:    "foo3",
-		ExpiredAt: time.Date(2012, 1, 1, 12, 0, 0, 0, time.UTC),
+		FileID:       utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ModifierHash: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ExpiredAt:    time.Date(2012, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 	assert.Nil(t, DB.Create(&s).Error)
 
 	f, err := GetAllExpiredCompletedFiles(time.Date(2011, 1, 1, 12, 0, 0, 0, time.UTC))
 	assert.Nil(t, err)
 
-	expected := []string{"foo1", "foo2"}
+	expected := []string{firstExpired, secondExpired}
 	assert.True(t, reflect.DeepEqual(f, expected))
 }
 
 func Test_DeleteAllCompletedFiles(t *testing.T) {
 	DeleteCompletedFilesForTest(t)
-	s := CompletedFile{
-		FileID:    "foo4",
-		ExpiredAt: time.Date(2001, 1, 1, 12, 0, 0, 0, time.UTC),
+	s1 := CompletedFile{
+		FileID:       utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ModifierHash: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ExpiredAt:    time.Date(2001, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
-	assert.Nil(t, DB.Create(&s).Error)
-	s = CompletedFile{
-		FileID:    "foo5",
-		ExpiredAt: time.Date(2002, 1, 1, 12, 0, 0, 0, time.UTC),
+	assert.Nil(t, DB.Create(&s1).Error)
+	s2 := CompletedFile{
+		FileID:       utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ModifierHash: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ExpiredAt:    time.Date(2002, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
-	assert.Nil(t, DB.Create(&s).Error)
+	assert.Nil(t, DB.Create(&s2).Error)
 
 	f, _ := GetAllExpiredCompletedFiles(time.Date(2003, 1, 1, 12, 0, 0, 0, time.UTC))
 	assert.True(t, len(f) == 2)
 
-	assert.Nil(t, DeleteAllCompletedFiles([]string{"foo4", "foo5"}))
+	assert.Nil(t, DeleteAllCompletedFiles([]string{s1.FileID, s2.FileID}))
 
 	f, _ = GetAllExpiredCompletedFiles(time.Date(2003, 1, 1, 12, 0, 0, 0, time.UTC))
 	assert.True(t, len(f) == 0)
@@ -64,12 +71,14 @@ func Test_DeleteAllCompletedFiles(t *testing.T) {
 func Test_GetTotalFileSizeInByte(t *testing.T) {
 	DeleteCompletedFilesForTest(t)
 	s := CompletedFile{
-		FileID:         "foo6",
+		FileID:         utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ModifierHash:   utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		FileSizeInByte: 150,
 	}
 	assert.Nil(t, DB.Create(&s).Error)
 	s = CompletedFile{
-		FileID:         "foo7",
+		FileID:         utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ModifierHash:   utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		FileSizeInByte: 210,
 	}
 	assert.Nil(t, DB.Create(&s).Error)
@@ -83,12 +92,14 @@ func Test_GetTotalFileSizeInByte(t *testing.T) {
 func Test_GetCompletedFileByFileID(t *testing.T) {
 	DeleteCompletedFilesForTest(t)
 	s := CompletedFile{
-		FileID:         "foo6",
+		FileID:         utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ModifierHash:   utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		FileSizeInByte: 150,
 	}
 	assert.Nil(t, DB.Create(&s).Error)
 	s = CompletedFile{
-		FileID:         "foo7",
+		FileID:         utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ModifierHash:   utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
 		FileSizeInByte: 210,
 	}
 	assert.Nil(t, DB.Create(&s).Error)
