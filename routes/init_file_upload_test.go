@@ -43,7 +43,6 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 
 	file, err := models.GetFileById(fileID)
 	assert.Nil(t, err)
-
 	assert.Equal(t, req.initFileUploadObj.EndIndex, file.EndIndex)
 	assert.NotNil(t, file.AwsUploadID)
 	assert.NotNil(t, file.AwsObjectKey)
