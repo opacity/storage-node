@@ -28,8 +28,8 @@ func Test_Init_Metadata(t *testing.T) {
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	testMetadataValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataKey := utils.RandHexString(64)
+	testMetadataValue := utils.RandHexString(64)
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -48,7 +48,7 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	CreatePaidAccountForTest(accountID, t)
+	CreatePaidAccountForTest(t, accountID)
 
 	w := metadataTestHelperGetMetadata(t, get)
 
@@ -60,8 +60,15 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	assert.Contains(t, w.Body.String(), testMetadataValue)
 }
 
-func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
+	ttl := utils.TestValueTimeToLive
+
+	testMetadataKey := utils.RandHexString(64)
+	testMetadataValue := utils.RandHexString(64)
+
+	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
+		t.Fatalf("there should not have been an error")
+	}
 
 	getMetadata := metadataKeyObject{
 		MetadataKey: testMetadataKey,
@@ -76,7 +83,35 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	CreatePaidAccountForTest(accountID, t)
+	CreateUnpaidAccountForTest(t, accountID)
+
+	w := metadataTestHelperGetMetadata(t, get)
+
+	// Check to see if the response was what you expected
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
+	}
+
+	assert.Contains(t, w.Body.String(), `"invoice"`)
+}
+
+func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
+	testMetadataKey := utils.RandHexString(64)
+
+	getMetadata := metadataKeyObject{
+		MetadataKey: testMetadataKey,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadata)
+
+	get := metadataKeyReq{
+		verification: v,
+		RequestBody:  b.RequestBody,
+	}
+
+	accountID, _ := utils.HashString(v.PublicKey)
+	CreatePaidAccountForTest(t, accountID)
 
 	w := metadataTestHelperGetMetadata(t, get)
 
@@ -89,9 +124,9 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	testMetadataValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataKey := utils.RandHexString(64)
+	testMetadataValue := utils.RandHexString(64)
+	newValue := utils.RandHexString(64)
 
 	updateMetadataObj := updateMetadataObject{
 		MetadataKey: testMetadataKey,
@@ -107,7 +142,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	account := CreatePaidAccountForTest(accountID, t)
+	account := CreatePaidAccountForTest(t, accountID)
 	err := account.IncrementMetadataCount()
 	assert.Nil(t, err)
 	err = account.UpdateMetadataSizeInBytes(0, int64(len(testMetadataValue)))
@@ -143,9 +178,16 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	assert.Equal(t, int64(len(newValue)), accountFromDB.TotalMetadataSizeInBytes)
 }
 
-func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
+	ttl := utils.TestValueTimeToLive
+
+	testMetadataKey := utils.RandHexString(64)
+	testMetadataValue := utils.RandHexString(64)
+	newValue := utils.RandHexString(64)
+
+	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
+		t.Fatalf("there should not have been an error")
+	}
 
 	updateMetadataObj := updateMetadataObject{
 		MetadataKey: testMetadataKey,
@@ -161,7 +203,37 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	CreatePaidAccountForTest(accountID, t)
+	CreateUnpaidAccountForTest(t, accountID)
+
+	w := metadataTestHelperUpdateMetadata(t, post)
+
+	// Check to see if the response was what you expected
+	if w.Code != http.StatusForbidden {
+		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
+	}
+
+	assert.Contains(t, w.Body.String(), `"invoice"`)
+}
+
+func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
+	testMetadataKey := utils.RandHexString(64)
+	newValue := utils.RandHexString(64)
+
+	updateMetadataObj := updateMetadataObject{
+		MetadataKey: testMetadataKey,
+		Metadata:    newValue,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, updateMetadataObj)
+
+	post := updateMetadataReq{
+		verification: v,
+		RequestBody:  b.RequestBody,
+	}
+
+	accountID, _ := utils.HashString(v.PublicKey)
+	CreatePaidAccountForTest(t, accountID)
 
 	w := metadataTestHelperUpdateMetadata(t, post)
 
@@ -172,8 +244,8 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 }
 
 func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataKey := utils.RandHexString(64)
+	newValue := utils.RandHexString(64)
 
 	updateMetadataObj := updateMetadataObject{
 		MetadataKey: testMetadataKey,
@@ -189,7 +261,7 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	CreatePaidAccountForTest(accountID, t)
+	CreatePaidAccountForTest(t, accountID)
 
 	w := metadataTestHelperUpdateMetadata(t, post)
 
@@ -212,7 +284,7 @@ func Test_Create_Metadata_Creates_Metadata(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	account := CreatePaidAccountForTest(accountID, t)
+	account := CreatePaidAccountForTest(t, accountID)
 	account.StorageUsed = 64
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
@@ -260,7 +332,7 @@ func Test_Create_Metadata_Error_If_Unpaid_Account(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	account := CreateUnpaidAccountForTest(accountID, t)
+	account := CreateUnpaidAccountForTest(t, accountID)
 	account.StorageUsed = 64
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
@@ -291,7 +363,7 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	account := CreatePaidAccountForTest(accountID, t)
+	account := CreatePaidAccountForTest(t, accountID)
 	account.StorageUsed = 64
 	account.TotalMetadatas = 1000
 	err := models.DB.Save(&account).Error
@@ -328,7 +400,7 @@ func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	account := CreateUnpaidAccountForTest(accountID, t)
+	account := CreateUnpaidAccountForTest(t, accountID)
 	account.TotalMetadatas = 1
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
@@ -360,7 +432,7 @@ func Test_Delete_Metadata_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T) 
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	account := CreatePaidAccountForTest(accountID, t)
+	account := CreatePaidAccountForTest(t, accountID)
 	account.TotalMetadatas = 1
 	account.TotalMetadataSizeInBytes = int64(len(testMetadataValue))
 	err := models.DB.Save(&account).Error
@@ -404,7 +476,7 @@ func Test_Delete_Metadata_Success(t *testing.T) {
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
-	account := CreatePaidAccountForTest(accountID, t)
+	account := CreatePaidAccountForTest(t, accountID)
 	account.TotalMetadatas = 1
 	account.TotalMetadataSizeInBytes = int64(len(testMetadataValue))
 	err := models.DB.Save(&account).Error

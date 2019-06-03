@@ -43,21 +43,20 @@ func (v *InitFileUploadReq) getObjectRef() interface{} {
 // @Router /api/v1/init-upload [post]
 /*InitFileUploadHandler is a handler for the user to start uploads*/
 func InitFileUploadHandler() gin.HandlerFunc {
-	return ginHandlerFunc(initFileUpload)
+	return ginHandlerFunc(initFileUploadWithContext)
 }
 
-func initFileUpload(c *gin.Context) error {
+func initFileUploadWithContext(c *gin.Context) error {
 	request := InitFileUploadReq{}
 
 	if err := verifyAndParseFormRequest(&request, c); err != nil {
 		return err
 	}
 
-	return initializeUpload(request, c)
+	return initFileUploadWithRequest(request, c)
 }
 
-func initializeUpload(request InitFileUploadReq, c *gin.Context) error {
-
+func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error {
 	account, err := request.getAccount(c)
 	if err != nil {
 		return err
@@ -118,6 +117,7 @@ func verifyIfPaid(account models.Account, c *gin.Context) error {
 		}
 		return AccountNotPaidResponse(c, response)
 	}
+
 	return nil
 }
 

@@ -86,7 +86,7 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 //	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 //	accountID, err := utils.HashString(request.PublicKey)
 //	assert.Nil(t, err)
-//	CreatePaidAccountForTest(accountID, t)
+//	CreatePaidAccountForTest(t, accountID)
 //
 //	filesInDB := []models.File{}
 //	models.DB.Where("file_id = ?", fileId).Find(&filesInDB)
@@ -121,7 +121,7 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 //	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 //	accountID, err := utils.HashString(request.PublicKey)
 //	assert.Nil(t, err)
-//	CreatePaidAccountForTest(accountID, t)
+//	CreatePaidAccountForTest(t, accountID)
 //
 //	w := UploadFileHelperForTest(t, request)
 //
@@ -170,7 +170,7 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 // 	request.ChunkData = string(chunkDataPart1)
 // 	accountID, err := utils.HashString(request.PublicKey)
 // 	assert.Nil(t, err)
-// 	account := CreatePaidAccountForTest(accountID, t)
+// 	account := CreatePaidAccountForTest(t, accountID)
 
 // 	objectKey := InitUploadFileForTest(t, request.PublicKey, uploadBody.FileHandle, models.FirstChunkIndex + 1)
 // 	w := UploadFileHelperForTest(t, request)

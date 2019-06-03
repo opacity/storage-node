@@ -9,6 +9,11 @@ func init() {
 	rand.Seed(time.Now().Unix())
 }
 
+/*RandHexString generates a random hex string of the length passed in*/
+func RandHexString(length int) string {
+	return RandSeqFromRunes(length, []rune("abcdef01234567890"))
+}
+
 /*RandSeqFromRunes generates a random sequence from some runes*/
 func RandSeqFromRunes(length int, sequence []rune) string {
 	b := make([]rune, length)

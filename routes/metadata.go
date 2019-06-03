@@ -62,7 +62,8 @@ var metadataDeletedRes = StatusRes{
 // @description 	"timestamp": 1557346389
 // @description }
 // @Success 200 {object} routes.getMetadataRes
-// @Failure 404 {string} string "no value found for that key"
+// @Failure 404 {string} string "no value found for that key, or account not found"
+// @Failure 403 {string} string "subscription expired, or the invoice resonse"
 // @Router /api/v1/metadata/get [post]
 /*GetMetadataHandler is a handler for getting the file metadata*/
 func GetMetadataHandler() gin.HandlerFunc {
@@ -82,8 +83,8 @@ func GetMetadataHandler() gin.HandlerFunc {
 // @description }
 // @Success 200 {object} routes.updateMetadataRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
-// @Failure 404 {string} string "no value found for that key"
-// @Failure 403 {string} string "subscription expired"
+// @Failure 404 {string} string "no value found for that key, or account not found"
+// @Failure 403 {string} string "subscription expired, or the invoice resonse"
 // @Failure 500 {string} string "some information about the internal error"
 // @Router /api/v1/metadata/set [post]
 /*UpdateMetadataHandler is a handler for updating the file metadata*/
@@ -141,6 +142,15 @@ func getMetadata(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyIfPaid(account, c); err != nil {
+		return err
+	}
+
 	requestBodyParsed := metadataKeyObject{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
@@ -192,19 +202,23 @@ func setMetadata(c *gin.Context) error {
 		return err
 	}
 
+	if err := verifyIfPaid(account, c); err != nil {
+		return err
+	}
+
 	requestBodyParsed := updateMetadataObject{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return err
 	}
 
-	oldMetadata, expirationTime, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+	oldMetadata, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
 
 	if err != nil {
 		return NotFoundResponse(c, err)
 	}
 
-	if expirationTime.Before(time.Now()) {
+	if account.ExpirationDate().Before(time.Now()) {
 		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
@@ -250,7 +264,7 @@ func setMetadata(c *gin.Context) error {
 	return OkResponse(c, updateMetadataRes{
 		MetadataKey:    requestBodyParsed.MetadataKey,
 		Metadata:       requestBodyParsed.Metadata,
-		ExpirationDate: expirationTime,
+		ExpirationDate: account.ExpirationDate(),
 	})
 }
 
