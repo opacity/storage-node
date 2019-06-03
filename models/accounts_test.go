@@ -157,10 +157,6 @@ func Test_Returns_Expiration_Date(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = 24
 
-	if err := utils.Validator.Struct(account); err != nil {
-		t.Fatalf("account should have passed validation")
-	}
-
 	// Add account to DB
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
@@ -177,10 +173,6 @@ func Test_Returns_Cost(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
-	if err := utils.Validator.Struct(account); err != nil {
-		t.Fatalf("account should have passed validation")
-	}
-
 	cost, err := account.Cost()
 
 	if err != nil {
@@ -193,10 +185,6 @@ func Test_Returns_Cost(t *testing.T) {
 func Test_GetTotalCostInWei(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
-
-	if err := utils.Validator.Struct(account); err != nil {
-		t.Fatalf("account should have passed validation")
-	}
 
 	costInWei := account.GetTotalCostInWei()
 
@@ -534,7 +522,7 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentInProgress
-	account.MetadataKey = utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	account.MetadataKey = utils.RandHexString(64)
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -573,7 +561,7 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 	DeleteAccountsForTest(t)
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentInProgress
-	account.MetadataKey = utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	account.MetadataKey = utils.RandHexString(64)
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}

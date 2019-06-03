@@ -26,7 +26,7 @@ const defaultStorageUsedForTest = 10
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
 	return UploadFileObj{
-		FileHandle: utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		FileHandle: utils.RandHexString(64),
 		PartIndex:  models.FirstChunkIndex,
 	}
 }
@@ -39,7 +39,7 @@ func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKe
 	return UploadFileReq{
 		verification: v,
 		RequestBody:  b.RequestBody,
-		ChunkData:    utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		ChunkData:    utils.RandHexString(64),
 	}
 }
 
@@ -57,7 +57,7 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		MetadataKey:          utils.RandHexString(64),
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -85,7 +85,7 @@ func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 		PaymentStatus:        models.InitialPaymentReceived,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		MetadataKey:          utils.RandHexString(64),
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {

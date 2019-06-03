@@ -65,7 +65,12 @@ func init() {
 
 /*BeforeCreate - callback called before the row is created*/
 func (file *File) BeforeCreate(scope *gorm.Scope) error {
-	return nil
+	return utils.Validator.Struct(file)
+}
+
+/*BeforeUpdate - callback called before the row is updated*/
+func (file *File) BeforeUpdate(scope *gorm.Scope) error {
+	return utils.Validator.Struct(file)
 }
 
 /*PrettyString - print the file in a friendly way.  Not used for external logging, just for watching in the

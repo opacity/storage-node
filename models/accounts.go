@@ -126,7 +126,12 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	if account.PaymentStatus < InitialPaymentInProgress {
 		account.PaymentStatus = InitialPaymentInProgress
 	}
-	return nil
+	return utils.Validator.Struct(account)
+}
+
+/*BeforeUpdate - callback called before the row is updated*/
+func (account *Account) BeforeUpdate(scope *gorm.Scope) error {
+	return utils.Validator.Struct(account)
 }
 
 /*ExpirationDate returns the date the account expires*/
@@ -186,9 +191,6 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 		return errors.New("Unable to store more data")
 	}
 	account.StorageUsed = account.StorageUsed + inGb
-	if err := utils.Validator.Struct(account); err != nil {
-		return err
-	}
 
 	return DB.Model(&account).Update("storage_used", account.StorageUsed).Error
 }
@@ -239,10 +241,6 @@ func CountAccountsByPaymentStatus(paymentStatus PaymentStatusType) (int, error) 
 func SetAccountsToNextPaymentStatus(accounts []Account) {
 	for _, account := range accounts {
 		if account.PaymentStatus == PaymentRetrievalComplete {
-			continue
-		}
-		if err := utils.Validator.Struct(account); err != nil {
-			utils.LogIfError(err, nil)
 			continue
 		}
 		err := DB.Model(&account).Update("payment_status", getNextPaymentStatus(account.PaymentStatus)).Error
