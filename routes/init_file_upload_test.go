@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jinzhu/gorm"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
@@ -49,8 +49,8 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	account := CreatePaidAccountForTest(t, accountId)
 
-	fileSizeInByte := (int64(account.StorageLimit) - int64(account.StorageUsed)) * 1e9 + 1
-	req := createValidInitFileUploadRequest(t, fileSizeInByte  , privateKey)
+	fileSizeInByte := (int64(account.StorageLimit)-(int64(account.StorageUsedInByte)/1e9))*1e9 + 1
+	req := createValidInitFileUploadRequest(t, fileSizeInByte, privateKey)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	err := initFileUploadWithRequest(req, c)

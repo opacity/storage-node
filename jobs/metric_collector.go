@@ -23,7 +23,8 @@ func (m metricCollector) Runnable() bool {
 
 func (m metricCollector) spaceUsageMetrics() {
 	spaceReport := models.CreateSpaceUsedReport()
-	spaceUsed := (spaceReport.SpaceUsedSum / float64(spaceReport.SpaceAllotedSum)) * float64(100)
+	spaceUsedInGB := float64(spaceReport.SpaceUsedSum) / 1e9
+	spaceUsed := (spaceUsedInGB / float64(spaceReport.SpaceAllotedSum)) * float64(100)
 
 	utils.Metrics_Percent_Of_Space_Used.Set(spaceUsed)
 }
