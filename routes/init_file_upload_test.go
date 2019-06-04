@@ -38,9 +38,7 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	err := initFileUploadWithRequest(req, c)
 	assert.Nil(t, err)
 
-	fileID := req.initFileUploadObj.FileHandle
-
-	file, err := models.GetFileById(fileID)
+	file, err := models.GetFileById(req.initFileUploadObj.FileHandle)
 	assert.Nil(t, err)
 	assert.Equal(t, req.initFileUploadObj.EndIndex, file.EndIndex)
 	assert.NotNil(t, file.AwsUploadID)
@@ -58,6 +56,10 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 
 	err := initFileUploadWithRequest(req, c)
 	assert.Nil(t, err)
+
+	file, err := models.GetFileById(req.initFileUploadObj.FileHandle)
+	assert.Nil(t, err)
+	assert.Equal(t, "", file.FileID)
 }
 
 func createValidInitFileUploadRequest(t *testing.T, fileSizeInByte int64, privateKey *ecdsa.PrivateKey) InitFileUploadReq {
