@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"fmt"
 	"crypto/ecdsa"
 	"net/http/httptest"
 	"testing"
