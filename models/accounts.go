@@ -220,9 +220,6 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 
 	plannedInGB := (float64(planToUsedInByte) + float64(accountFromDB.StorageUsedInByte)) / 1e9
 
-	fmt.Println("usedInByte")
-	fmt.Println(usedInByte)
-
 	fmt.Println("plannedInGB")
 	fmt.Println(plannedInGB)
 

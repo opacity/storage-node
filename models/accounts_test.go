@@ -101,7 +101,7 @@ func Test_StorageLimit_Less_Than_100_Fails(t *testing.T) {
 
 func Test_StorageUsedInByte_Less_Than_0_Fails(t *testing.T) {
 	account := returnValidAccount()
-	account.StorageUsedInByte = float64(-1)
+	account.StorageUsedInByte = int64(-1)
 
 	if err := utils.Validator.Struct(account); err == nil {
 		t.Fatalf("account should have failed validation")
@@ -356,7 +356,7 @@ func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
 
 func Test_CreateSpaceUsedReport(t *testing.T) {
 	expectedSpaceAlloted := int(4 * BasicStorageLimit)
-	expectedSpaceUsed := 234.56
+	expectedSpaceUsed := int64(234.56 * 1e9)
 
 	DeleteAccountsForTest(t)
 
