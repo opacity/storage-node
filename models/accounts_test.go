@@ -354,6 +354,8 @@ func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
 	}
 
 	assert.NotNil(t, account.UseStorageSpaceInByte(-11*1e9 /* Deduct 11 GB file but only 10 GB uploaded. */))
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.StorageUsedInByte == account.StorageUsedInByte)
 }
 
 func Test_Space_Updates_at_Scale(t *testing.T) {
@@ -364,13 +366,13 @@ func Test_Space_Updates_at_Scale(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	numIntendedUpdates := 50
+	numIntendedUpdates := 100
 	numAdds := 0
 	numDeletes := 0
 	byteValues := make(map[int]int64)
 
 	for i := 0; i < numIntendedUpdates; i++ {
-		byteValues[i] = rand.Int63n(1000)
+		byteValues[i] = rand.Int63n(10000)
 	}
 
 	for i := 0; i < numIntendedUpdates; i++ {

@@ -210,9 +210,8 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 		return errors.New("Unable to store more data")
 	}
 
-	account.StorageUsedInByte = account.StorageUsedInByte + planToUsedInByte
-
-	if err := tx.Model(&accountFromDB).Update("storage_used_in_byte", account.StorageUsedInByte).Error; err != nil {
+	if err := tx.Model(&accountFromDB).Update("storage_used_in_byte",
+		gorm.Expr("storage_used_in_byte + ?", planToUsedInByte)).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
