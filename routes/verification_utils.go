@@ -56,7 +56,18 @@ func (v verification) getAccountId(c *gin.Context) (string, error) {
 }
 
 func (v verification) getAccount(c *gin.Context) (models.Account, error) {
-	return returnAccountIfVerified(v, c)
+	accountID, err := v.getAccountId(c)
+	if err != nil {
+		return models.Account{}, err
+	}
+
+	// validate user
+	account, err := models.GetAccountById(accountID)
+	if err != nil || len(account.AccountID) == 0 {
+		return account, AccountNotFoundResponse(c, accountID)
+	}
+
+	return account, err
 }
 
 type requestBody struct {
@@ -220,7 +231,7 @@ func returnAccountIfVerifiedFromParsedRequest(reqBody interface{}, verificationD
 		return models.Account{}, err
 	}
 
-	return returnAccountIfVerified(verificationData, c)
+	return verificationData.getAccount(c)
 }
 
 func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface{}, verificationData verification, c *gin.Context) (models.Account, error) {
@@ -228,22 +239,7 @@ func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface
 		return models.Account{}, err
 	}
 
-	return returnAccountIfVerified(verificationData, c)
-}
-
-func returnAccountIfVerified(verificationData verification, c *gin.Context) (models.Account, error) {
-	accountID, err := verificationData.getAccountId(c)
-	if err != nil {
-		return models.Account{}, err
-	}
-
-	// validate user
-	account, err := models.GetAccountById(accountID)
-	if err != nil || len(account.AccountID) == 0 {
-		return account, AccountNotFoundResponse(c, accountID)
-	}
-
-	return account, err
+	return verificationData.getAccount(c)
 }
 
 func returnAccountIdWithParsedRequest(reqBody interface{}, verificationData verification, c *gin.Context) (string, error) {
