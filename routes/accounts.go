@@ -242,3 +242,4 @@ func createPaymentStatusResponse(paid bool, pending bool) string {
 	}
 	return Unpaid
 }
+
