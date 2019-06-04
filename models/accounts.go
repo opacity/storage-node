@@ -209,6 +209,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 		return errors.New("Unable to store more data")
 	}
 	updatedStorage := accountFromDB.StorageUsed + inGb
+	account.StorageUsed = updatedStorage
 
 	if err := tx.Model(&accountFromDB).Update("storage_used", updatedStorage).Error; err != nil {
 		tx.Rollback()
