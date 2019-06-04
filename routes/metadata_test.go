@@ -16,8 +16,7 @@ import (
 )
 
 func Test_Init_Metadata(t *testing.T) {
-	utils.SetTesting("../.env")
-	gin.SetMode(gin.TestMode)
+	setupTests(t)
 }
 
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {

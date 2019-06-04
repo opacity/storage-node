@@ -14,6 +14,7 @@ import (
 
 	"bytes"
 
+	"github.com/gin-gonic/gin"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
@@ -156,6 +157,12 @@ func UploadFileHelperForTest(t *testing.T, post UploadFileReq) *httptest.Respons
 	router.ServeHTTP(w, req)
 
 	return w
+}
+
+func setupTests(t *testing.T) {
+	utils.SetTesting("../.env")
+	models.Connect(utils.Env.DatabaseURL)
+	gin.SetMode(gin.TestMode)
 }
 
 func generateValidateAccountId(t *testing.T) (string, *ecdsa.PrivateKey) {

@@ -93,14 +93,9 @@ func returnValidAccount() models.Account {
 	}
 }
 
-func testSetupAccounts() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
-}
-
 func Test_Init_Accounts(t *testing.T) {
+	setupTests(t)
 	testSetupAccounts()
-	gin.SetMode(gin.TestMode)
 }
 
 func Test_NoErrorsWithValidPost(t *testing.T) {

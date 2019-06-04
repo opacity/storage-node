@@ -11,14 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testSetupUploadFiles() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
-}
-
 func Test_Init_Upload_Files(t *testing.T) {
-	testSetupUploadFiles()
-	gin.SetMode(gin.TestMode)
+	setupTests(t)
 }
 
 func Test_Upload_File_Bad_Request(t *testing.T) {
