@@ -21,7 +21,7 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 
 	CreateUnpaidAccountForTest(t, accountId)
-	req := createValidInitFileUploadRequest(t, privateKey)
+	req := createValidInitFileUploadRequest(t, 123, privateKey)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	err := initFileUploadWithRequest(req, c)
@@ -30,9 +30,9 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 
 func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
-	account := CreatePaidAccountForTest(t, accountId)
+	CreatePaidAccountForTest(t, accountId)
 
-	req := createValidInitFileUploadRequest(t, privateKey)
+	req := createValidInitFileUploadRequest(t, 123, privateKey)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	err := initFileUploadWithRequest(req, c)
@@ -48,10 +48,22 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	assert.NotNil(t, file.ModifierHash)
 }
 
-func createValidInitFileUploadRequest(t *testing.T, privateKey *ecdsa.PrivateKey) InitFileUploadReq {
+func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
+	accountId, privateKey := generateValidateAccountId(t)
+	account := CreatePaidAccountForTest(t, accountId)
+
+	fileSizeInByte := float64(account.StorageLimit - account.StorageUsed) * float64(1e9) + 1.0
+	req := createValidInitFileUploadRequest(t, fileSizeInByte  , privateKey)
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	err := initFileUploadWithRequest(req, c)
+	assert.Nil(t, err)
+}
+
+func createValidInitFileUploadRequest(t *testing.T, fileSizeInByte int64,  privateKey *ecdsa.PrivateKey) InitFileUploadReq {
 	uploadObj := InitFileUploadObj{
 		FileHandle:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
-		FileSizeInByte: 123,
+		FileSizeInByte: fileSizeInByte,
 		EndIndex:       1,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, uploadObj, privateKey)
