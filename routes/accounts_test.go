@@ -35,7 +35,7 @@ func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCre
 
 	return accountCreateReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 }
 
@@ -44,7 +44,7 @@ func returnFailedVerificationCreateAccountReq(t *testing.T, body accountCreateOb
 
 	return accountCreateReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 }
 
@@ -70,24 +70,24 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 
 	return getAccountDataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 }
 
 func returnValidAccount() models.Account {
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
-	accountID := utils.RandSeqFromRunes(models.AccountIDLength, []rune("abcdef01234567890"))
+	accountId := utils.RandSeqFromRunes(models.AccountIDLength, []rune("abcdef01234567890"))
 
 	return models.Account{
-		AccountID:            accountID,
+		AccountID:            accountId,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
 		StorageLocation:      "https://createdInRoutesAccountsTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
 		StorageUsed:          10,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
-		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
+		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
 		MetadataKey:          utils.RandHexString(64),
 	}
 }
