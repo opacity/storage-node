@@ -207,7 +207,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 	plannedInGB := (float64(planToUsedInByte) + float64(accountFromDB.StorageUsedInByte)) / 1e9
 
 	if plannedInGB > float64(accountFromDB.StorageLimit) {
-		return errors.New("Unable to store more data")
+		return errors.New("unable to store more data")
 	}
 
 	if err := tx.Model(&accountFromDB).Update("storage_used_in_byte",
@@ -222,6 +222,10 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 			if accountFromDB.StorageUsedInByte < int64(0) {
 				tx.Rollback()
 				return errors.New("storage_used_in_byte cannot go below 0")
+			}
+			if (accountFromDB.StorageUsedInByte / 1e9) > int64(accountFromDB.StorageLimit) {
+				tx.Rollback()
+				return errors.New("unable to store more data")
 			}
 		}
 	}
