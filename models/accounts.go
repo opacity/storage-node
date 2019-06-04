@@ -214,20 +214,19 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 		gorm.Expr("storage_used_in_byte + ?", planToUsedInByte)).Error; err != nil {
 		tx.Rollback()
 		return err
-	} else {
-		if err := tx.Where("account_id = ?", account.AccountID).First(&accountFromDB).Error; err != nil {
-			tx.Rollback()
-			return err
-		} else {
-			if accountFromDB.StorageUsedInByte < int64(0) {
-				tx.Rollback()
-				return errors.New("storage_used_in_byte cannot go below 0")
-			}
-			if (accountFromDB.StorageUsedInByte / 1e9) > int64(accountFromDB.StorageLimit) {
-				tx.Rollback()
-				return errors.New("unable to store more data")
-			}
-		}
+	}
+
+	if err := tx.Where("account_id = ?", account.AccountID).First(&accountFromDB).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+	if accountFromDB.StorageUsedInByte < int64(0) {
+		tx.Rollback()
+		return errors.New("storage_used_in_byte cannot go below 0")
+	}
+	if (accountFromDB.StorageUsedInByte / 1e9) > int64(accountFromDB.StorageLimit) {
+		tx.Rollback()
+		return errors.New("unable to store more data")
 	}
 
 	return tx.Commit().Error
