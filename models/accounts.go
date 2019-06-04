@@ -178,7 +178,7 @@ func (account *Account) CheckIfPending() (bool, error) {
 }
 
 /*UseStorageSpaceInByte updates the account's StorageUsed value*/
-func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
+func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 	paid, err := account.CheckIfPaid()
 	if err != nil {
 		return err

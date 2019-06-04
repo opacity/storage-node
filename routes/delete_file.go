@@ -67,7 +67,7 @@ func deleteFile(c *gin.Context) error {
 		return err
 	}
 
-	if err := account.UseStorageSpaceInByte(-1 * int(completedFile.FileSizeInByte)); err != nil {
+	if err := account.UseStorageSpaceInByte(int64(-1) * completedFile.FileSizeInByte); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
