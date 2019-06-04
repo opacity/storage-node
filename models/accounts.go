@@ -177,6 +177,7 @@ func (account *Account) CheckIfPending() (bool, error) {
 	return BackendManager.CheckIfPending(services.StringToAddress(account.EthAddress))
 }
 
+/*UseStorageSpaceInByte updates the account's StorageUsed value*/
 func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 	paid, err := account.CheckIfPaid()
 	if err != nil {
@@ -186,13 +187,35 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int) error {
 		return errors.New("No payment. Unable to update the storage")
 	}
 
+	tx := DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Error; err != nil {
+		return err
+	}
+
+	var accountFromDB Account
+	if err := tx.Where("account_id = ?", account.AccountID).First(&accountFromDB).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	inGb := float64(planToUsedInByte) / float64(1e9)
-	if inGb+account.StorageUsed > float64(account.StorageLimit) {
+	if inGb+accountFromDB.StorageUsed > float64(accountFromDB.StorageLimit) {
 		return errors.New("Unable to store more data")
 	}
-	account.StorageUsed = account.StorageUsed + inGb
+	updatedStorage := accountFromDB.StorageUsed + inGb
 
-	return DB.Model(&account).Update("storage_used", account.StorageUsed).Error
+	if err := tx.Model(&accountFromDB).Update("storage_used", updatedStorage).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 /*Return Account object(first one) if there is not any error. */
