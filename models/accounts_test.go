@@ -12,6 +12,8 @@ import (
 
 	"crypto/ecdsa"
 
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/opacity/storage-node/services"
@@ -352,6 +354,56 @@ func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
 	}
 
 	assert.NotNil(t, account.UseStorageSpaceInByte(-11*1e9 /* Deduct 11 GB file but only 10 GB uploaded. */))
+}
+
+func Test_Space_Updates_at_Scale(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageUsedInByte = 0
+	account.PaymentStatus = InitialPaymentReceived
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	numIntendedUpdates := 5
+	numAdds := 0
+	numDeletes := 0
+	byteValues := make(map[int]int64)
+
+	for i := 0; i < numIntendedUpdates; i++ {
+		byteValues[i] = rand.Int63n(1000)
+	}
+
+	for i := 0; i < numIntendedUpdates; i++ {
+		go func(byteValue int64, account Account) {
+			assert.Nil(t, account.UseStorageSpaceInByte(byteValue))
+			numAdds++
+		}(byteValues[i], account)
+	}
+
+	for {
+		if numAdds == numIntendedUpdates {
+			break
+		}
+	}
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.NotEqual(t, int64(0), accountFromDB.StorageUsedInByte)
+
+	for i := 0; i < numIntendedUpdates; i++ {
+		go func(byteValue int64, account Account) {
+			assert.Nil(t, account.UseStorageSpaceInByte(-1*byteValue))
+			numDeletes++
+		}(byteValues[i], account)
+	}
+
+	for {
+		if numDeletes == numIntendedUpdates {
+			break
+		}
+	}
+
+	accountFromDB, _ = GetAccountById(account.AccountID)
+	assert.Equal(t, int64(0), accountFromDB.StorageUsedInByte)
 }
 
 func Test_CreateSpaceUsedReport(t *testing.T) {
