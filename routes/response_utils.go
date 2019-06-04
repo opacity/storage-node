@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/opacity/storage-node/utils"
+	"github.com/opacity/storage-node/models"
 )
 
 const REQUEST_UUID = "request_uuid"
@@ -127,4 +128,23 @@ func setUpSession(c *gin.Context) {
 		v = uuid.New().String()
 	}
 	c.Writer.Header().Set(REQUEST_UUID, v)
+}
+
+func verifyIfPaid(account models.Account, c *gin.Context) error {
+	// Check if paid
+	paid, err := account.CheckIfPaid()
+
+	if err == nil && !paid {
+		cost, _ := account.Cost()
+		response := accountCreateRes{
+			Invoice: models.Invoice{
+				Cost:       cost,
+				EthAddress: account.EthAddress,
+			},
+			ExpirationDate: account.ExpirationDate(),
+		}
+		return AccountNotPaidResponse(c, response)
+	}
+
+	return nil
 }

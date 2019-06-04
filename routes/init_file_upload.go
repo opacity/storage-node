@@ -106,25 +106,6 @@ func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error 
 	})
 }
 
-func verifyIfPaid(account models.Account, c *gin.Context) error {
-	// Check if paid
-	paid, err := account.CheckIfPaid()
-
-	if err == nil && !paid {
-		cost, _ := account.Cost()
-		response := accountCreateRes{
-			Invoice: models.Invoice{
-				Cost:       cost,
-				EthAddress: account.EthAddress,
-			},
-			ExpirationDate: account.ExpirationDate(),
-		}
-		return AccountNotPaidResponse(c, response)
-	}
-
-	return nil
-}
-
 func checkHaveEnoughStorageSpace(account models.Account, fileSizeInByte int64, c *gin.Context) error {
 	inGb := float64(fileSizeInByte) / float64(1e9)
 	if inGb+account.StorageUsed > float64(account.StorageLimit) {
