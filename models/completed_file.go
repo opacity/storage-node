@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -13,6 +14,16 @@ type CompletedFile struct {
 	FileSizeInByte int64     `json:"fileSizeInByte"`
 	ModifierHash   string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
 	ApiVersion     int       `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+}
+
+/*BeforeCreate - callback called before the row is created*/
+func (completedFile *CompletedFile) BeforeCreate(scope *gorm.Scope) error {
+	return utils.Validator.Struct(completedFile)
+}
+
+/*BeforeUpdate - callback called before the row is updated*/
+func (completedFile *CompletedFile) BeforeUpdate(scope *gorm.Scope) error {
+	return utils.Validator.Struct(completedFile)
 }
 
 func GetAllExpiredCompletedFiles(expiredTime time.Time) ([]string, error) {

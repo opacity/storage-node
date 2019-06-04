@@ -3,12 +3,24 @@ package models
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/jinzhu/gorm"
+	"github.com/opacity/storage-node/utils"
 )
 
 type CompletedUploadIndex struct {
 	FileID string `gorm:"primary_key" json:"fileID" binding:"required"`
 	Index  int    `gorm:"primary_key;auto_increment:false" json:"index" binding:"required"`
 	Etag   string `json:"etag" binding:"required"`
+}
+
+/*BeforeCreate - callback called before the row is created*/
+func (completedUploadIndex *CompletedUploadIndex) BeforeCreate(scope *gorm.Scope) error {
+	return utils.Validator.Struct(completedUploadIndex)
+}
+
+/*BeforeUpdate - callback called before the row is updated*/
+func (completedUploadIndex *CompletedUploadIndex) BeforeUpdate(scope *gorm.Scope) error {
+	return utils.Validator.Struct(completedUploadIndex)
 }
 
 func CreateCompletedUploadIndex(fileID string, index int, etag string) error {

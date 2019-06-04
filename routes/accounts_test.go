@@ -27,7 +27,7 @@ func returnValidCreateAccountBody() accountCreateObj {
 	return accountCreateObj{
 		StorageLimit:     int(models.BasicStorageLimit),
 		DurationInMonths: 12,
-		MetadataKey:      utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		MetadataKey:      utils.RandHexString(64),
 	}
 }
 
@@ -65,7 +65,7 @@ func returnValidAccountAndPrivateKey() (models.Account, *ecdsa.PrivateKey) {
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		MetadataKey:          utils.RandHexString(64),
 	}, privateKeyToSignWith
 }
 
@@ -92,7 +92,7 @@ func returnValidAccount() models.Account {
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		MetadataKey:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		MetadataKey:          utils.RandHexString(64),
 	}
 }
 

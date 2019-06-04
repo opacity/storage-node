@@ -83,7 +83,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	account := CreatePaidAccountForTest(t, accountId)
 
 	initBody := InitFileUploadObj{
-		FileHandle:     utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		FileHandle:     utils.RandHexString(64),
 		EndIndex:       models.FirstChunkIndex,
 		FileSizeInByte: 26214400,
 	}
@@ -93,8 +93,8 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 		initFileUploadObj: initBody,
 		verification:      v,
 		requestBody:       b,
-		Metadata:          utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
-		MetadataAsFile:    utils.RandSeqFromRunes(64, []rune("abcdef01234567890")),
+		Metadata:          utils.RandHexString(64),
+		MetadataAsFile:    utils.RandHexString(64),
 	}
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())

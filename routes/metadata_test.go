@@ -23,8 +23,8 @@ func Test_Init_Metadata(t *testing.T) {
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	testMetadataValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataKey := utils.RandHexString(64)
+	testMetadataValue := utils.RandHexString(64)
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -58,8 +58,8 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	testMetadataValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataKey := utils.RandHexString(64)
+	testMetadataValue := utils.RandHexString(64)
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -91,7 +91,7 @@ func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataKey := utils.RandHexString(64)
 
 	getMetadata := getMetadataObject{
 		MetadataKey: testMetadataKey,
@@ -119,9 +119,9 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	testMetadataValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataKey := utils.RandHexString(64)
+	testMetadataValue := utils.RandHexString(64)
+	newValue := utils.RandHexString(64)
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -159,9 +159,9 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	testMetadataValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataKey := utils.RandHexString(64)
+	testMetadataValue := utils.RandHexString(64)
+	newValue := utils.RandHexString(64)
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -194,8 +194,8 @@ func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataKey := utils.RandHexString(64)
+	newValue := utils.RandHexString(64)
 
 	updateMetadataObj := updateMetadataObject{
 		MetadataKey: testMetadataKey,
@@ -222,8 +222,8 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 }
 
 func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
-	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	newValue := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	testMetadataKey := utils.RandHexString(64)
+	newValue := utils.RandHexString(64)
 
 	updateMetadataObj := updateMetadataObject{
 		MetadataKey: testMetadataKey,
