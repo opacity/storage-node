@@ -72,7 +72,7 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 	return getAccountDataReq{
 		verification: v,
 		requestBody:  b,
-		accountGetReqObj: accountGetReqObj,
+		accountGetReqObj: body,
 	}
 }
 
