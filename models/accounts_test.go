@@ -317,7 +317,8 @@ func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
 
 	startingSpaceUsed := account.StorageUsed
 	assert.Nil(t, account.UseStorageSpaceInByte(10*1e9 /* Upload 10GB. */))
-	assert.True(t, startingSpaceUsed == account.StorageUsed-10)
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, startingSpaceUsed == accountFromDB.StorageUsed-10)
 }
 
 func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
@@ -339,7 +340,8 @@ func Test_DeductSpaceUsed(t *testing.T) {
 
 	startingSpaceUsed := account.StorageUsed
 	assert.Nil(t, account.UseStorageSpaceInByte(-9*1e9 /* Deleted 9 GB file. */))
-	assert.True(t, startingSpaceUsed == account.StorageUsed+9)
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, startingSpaceUsed == accountFromDB.StorageUsed+9)
 }
 
 func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
