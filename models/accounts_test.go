@@ -356,13 +356,13 @@ func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
 
 func Test_CreateSpaceUsedReport(t *testing.T) {
 	expectedSpaceAlloted := int(4 * BasicStorageLimit)
-	expectedSpaceUsed := int64(234.56 * 1e9)
+	expectedSpaceUsed := 234.56 * 1e9
 
 	DeleteAccountsForTest(t)
 
 	for i := 0; i < 4; i++ {
 		accountPaid := returnValidAccount()
-		accountPaid.StorageUsedInByte = expectedSpaceUsed / 4
+		accountPaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
 		accountPaid.PaymentStatus = PaymentStatusType(utils.RandIndex(5) + 2)
 		if err := DB.Create(&accountPaid).Error; err != nil {
 			t.Fatalf("should have created account but didn't: " + err.Error())
@@ -371,7 +371,7 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 
 	for i := 0; i < 4; i++ {
 		accountUnpaid := returnValidAccount()
-		accountUnpaid.StorageUsedInByte = expectedSpaceUsed / 4
+		accountUnpaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
 		if err := DB.Create(&accountUnpaid).Error; err != nil {
 			t.Fatalf("should have created account but didn't: " + err.Error())
 		}

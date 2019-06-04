@@ -204,31 +204,14 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 		return err
 	}
 
-	fmt.Println("planToUsedInByte")
-	fmt.Println(planToUsedInByte)
-	fmt.Println("float64(planToUsedInByte)")
-	fmt.Println(float64(planToUsedInByte))
-	fmt.Println("1e9")
-	fmt.Println(1e9)
-	fmt.Println("float64(1e9)")
-	fmt.Println(float64(1e9))
-
-	//inGb := float64(planToUsedInByte) / float64(1e9)
-
-	//fmt.Println("inGb")
-	//fmt.Println(inGb)
-
 	plannedInGB := (float64(planToUsedInByte) + float64(accountFromDB.StorageUsedInByte)) / 1e9
-
-	fmt.Println("plannedInGB")
-	fmt.Println(plannedInGB)
 
 	if plannedInGB > float64(accountFromDB.StorageLimit) {
 		return errors.New("Unable to store more data")
 	}
 	account.StorageUsedInByte = account.StorageUsedInByte + planToUsedInByte
 
-	if err := tx.Model(&accountFromDB).Update("storage_used", account.StorageUsedInByte).Error; err != nil {
+	if err := tx.Model(&accountFromDB).Update("storage_used_in_byte", account.StorageUsedInByte).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -246,17 +229,17 @@ func GetAccountById(accountID string) (Account, error) {
 /*CreateSpaceUsedReport populates a model of the space alloted versus space used*/
 func CreateSpaceUsedReport() SpaceReport {
 	var result SpaceReport
-	DB.Raw("SELECT SUM(storage_limit) as space_alloted_sum, SUM(storage_used) as space_used_sum FROM accounts WHERE payment_status >= ?",
+	DB.Raw("SELECT SUM(storage_limit) as space_alloted_sum, SUM(storage_used_in_byte) as space_used_sum FROM accounts WHERE payment_status >= ?",
 		InitialPaymentReceived).Scan(&result)
 	return result
 }
 
 /*PurgeOldUnpaidAccounts deletes accounts past a certain age which have not been paid for*/
 func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
-	err := DB.Where("created_at < ? AND payment_status = ? AND storage_used = ?",
+	err := DB.Where("created_at < ? AND payment_status = ? AND storage_used_in_byte = ?",
 		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainUnpaidAccounts)),
 		InitialPaymentInProgress,
-		float64(0)).Delete(&Account{}).Error
+		int64(0)).Delete(&Account{}).Error
 	return err
 }
 
