@@ -67,6 +67,20 @@ func (v requestBody) getObjectAsString() string {
 	return v.RequestBody
 }
 
+func verifyAndParseBodyRequest(dest interface{}, c *gin.Context) error {
+	if err := utils.ParseRequestBody(c.Request, dest); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	if i, ok := dest.(verificationInterface); ok {
+		if ii, ok := dest.(parsableObjectInterface); ok {
+			return verifyAndParseStringRequest(ii.getObjectAsString(), ii.getObjectRef(), i.getVerification(), c)
+		}
+	}
+	return nil
+}
+
 func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 	defer c.Request.Body.Close()
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
