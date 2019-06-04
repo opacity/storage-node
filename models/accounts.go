@@ -214,6 +214,16 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 		gorm.Expr("storage_used_in_byte + ?", planToUsedInByte)).Error; err != nil {
 		tx.Rollback()
 		return err
+	} else {
+		if err := tx.Where("account_id = ?", account.AccountID).First(&accountFromDB).Error; err != nil {
+			tx.Rollback()
+			return err
+		} else {
+			if accountFromDB.StorageUsedInByte < int64(0) {
+				tx.Rollback()
+				return errors.New("storage_used_in_byte cannot go below 0")
+			}
+		}
 	}
 
 	return tx.Commit().Error
