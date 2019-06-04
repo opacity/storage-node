@@ -4,13 +4,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
 	"bytes"
 	"encoding/json"
-
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
