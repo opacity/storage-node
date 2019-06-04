@@ -213,7 +213,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 			ExpirationDate:       account.ExpirationDate(),
 			MonthsInSubscription: account.MonthsInSubscription,
 			StorageLimit:         account.StorageLimit,
-			StorageUsed:          account.StorageUsed,
+			StorageUsed:          float64(account.StorageUsedInByte) / 1e9,
 			EthAddress:           account.EthAddress,
 			Cost:                 cost,
 			ApiVersion:           account.ApiVersion,

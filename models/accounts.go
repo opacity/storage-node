@@ -22,7 +22,7 @@ type Account struct {
 	MonthsInSubscription int               `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
 	StorageLocation      string            `json:"storageLocation" binding:"omitempty,url"`                                                                           // where their files live, on S3 or elsewhere
 	StorageLimit         StorageLimitType  `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
-	StorageUsed          float64           `json:"storageUsed" binding:"exists,gte=0" example:"30"`                                                                   // how much storage they have used, in GB
+	StorageUsedInByte    int64             `json:"storageUsedInByte" binding:"exists,gte=0" example:"30"`                                                             // how much storage they have used, in B
 	EthAddress           string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
 	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
@@ -177,7 +177,7 @@ func (account *Account) CheckIfPending() (bool, error) {
 	return BackendManager.CheckIfPending(services.StringToAddress(account.EthAddress))
 }
 
-/*UseStorageSpaceInByte updates the account's StorageUsed value*/
+/*UseStorageSpaceInByte updates the account's StorageUsedInByte value*/
 func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 	paid, err := account.CheckIfPaid()
 	if err != nil {
@@ -204,14 +204,35 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 		return err
 	}
 
-	inGb := float64(planToUsedInByte) / float64(1e9)
-	if inGb+accountFromDB.StorageUsed > float64(accountFromDB.StorageLimit) {
+	fmt.Println("planToUsedInByte")
+	fmt.Println(planToUsedInByte)
+	fmt.Println("float64(planToUsedInByte)")
+	fmt.Println(float64(planToUsedInByte))
+	fmt.Println("1e9")
+	fmt.Println(1e9)
+	fmt.Println("float64(1e9)")
+	fmt.Println(float64(1e9))
+
+	//inGb := float64(planToUsedInByte) / float64(1e9)
+
+	//fmt.Println("inGb")
+	//fmt.Println(inGb)
+
+	usedInByte := accountFromDB.StorageUsedInByte
+	plannedInGB := (float64(planToUsedInByte) + float64(usedInByte)) / 1e9
+
+	fmt.Println("usedInByte")
+	fmt.Println(usedInByte)
+
+	fmt.Println("plannedInGB")
+	fmt.Println(plannedInGB)
+
+	if plannedInGB > float64(accountFromDB.StorageLimit) {
 		return errors.New("Unable to store more data")
 	}
-	updatedStorage := accountFromDB.StorageUsed + inGb
-	account.StorageUsed = updatedStorage
+	account.StorageUsedInByte = account.StorageUsedInByte + planToUsedInByte
 
-	if err := tx.Model(&accountFromDB).Update("storage_used", updatedStorage).Error; err != nil {
+	if err := tx.Model(&accountFromDB).Update("storage_used", account.StorageUsedInByte).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -410,8 +431,8 @@ func (account *Account) PrettyString() {
 	fmt.Print("StorageLimit:                   ")
 	fmt.Println(account.StorageLimit)
 
-	fmt.Print("StorageUsed:                    ")
-	fmt.Println(account.StorageUsed)
+	fmt.Print("StorageUsedInByte:                    ")
+	fmt.Println(account.StorageUsedInByte)
 
 	fmt.Print("StorageLocation:                ")
 	fmt.Println(account.StorageLocation)
