@@ -4,20 +4,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
 	"bytes"
 	"encoding/json"
-
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_Init_Metadata(t *testing.T) {
-	utils.SetTesting("../.env")
-	gin.SetMode(gin.TestMode)
+	setupTests(t)
 }
 
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {

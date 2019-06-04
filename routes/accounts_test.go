@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
@@ -93,14 +92,8 @@ func returnValidAccount() models.Account {
 	}
 }
 
-func testSetupAccounts() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
-}
-
 func Test_Init_Accounts(t *testing.T) {
-	testSetupAccounts()
-	gin.SetMode(gin.TestMode)
+	setupTests(t)
 }
 
 func Test_NoErrorsWithValidPost(t *testing.T) {
