@@ -15,14 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testSetupDeleteFiles() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
-}
-
 func Test_Init_Delete_Files(t *testing.T) {
-	testSetupDeleteFiles()
-	gin.SetMode(gin.TestMode)
+	setupTests(t)
 }
 
 func Test_Successful_File_Deletion_Request(t *testing.T) {
