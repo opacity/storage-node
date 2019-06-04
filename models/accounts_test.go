@@ -364,7 +364,7 @@ func Test_Space_Updates_at_Scale(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	numIntendedUpdates := 5
+	numIntendedUpdates := 50
 	numAdds := 0
 	numDeletes := 0
 	byteValues := make(map[int]int64)
