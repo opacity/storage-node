@@ -50,7 +50,7 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	account := CreatePaidAccountForTest(t, accountId)
 
-	fileSizeInByte := float64(account.StorageLimit - account.StorageUsed) * float64(1e9) + 1.0
+	fileSizeInByte := (float64(account.StorageLimit) - account.StorageUsed) * float64(1e9) + 1.0
 	req := createValidInitFileUploadRequest(t, fileSizeInByte  , privateKey)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
