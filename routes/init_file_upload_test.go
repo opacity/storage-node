@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/jinzhu/gorm"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -57,9 +58,8 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	err := initFileUploadWithRequest(req, c)
 	assert.Contains(t, err.Error(), "Account does not have enough space")
 
-	file, err := models.GetFileById(req.initFileUploadObj.FileHandle)
-	assert.Nil(t, err)
-	assert.Equal(t, "", file.FileID)
+	_, err = models.GetFileById(req.initFileUploadObj.FileHandle)
+	assert.True(t, gorm.IsRecordNotFoundError(err))
 }
 
 func createValidInitFileUploadRequest(t *testing.T, fileSizeInByte int64, privateKey *ecdsa.PrivateKey) InitFileUploadReq {
