@@ -90,6 +90,10 @@ func checkUploadStatus(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
+	if completedFile, err = models.GetCompletedFileByFileID(completedFile.FileID); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
 	if err := account.UseStorageSpaceInByte(int(completedFile.FileSizeInByte)); err != nil {
 		utils.DeleteDefaultBucketObjectKeys(completedFile.FileID)
 		models.DB.Delete(&completedFile)
