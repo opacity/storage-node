@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -74,7 +72,7 @@ func deleteFile(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := utils.DeleteDefaultBucketObjectKeys(requestBodyParsed.FileID); err != nil {
+	if err := utils.DeleteDefaultBucketObjectKeys(fileId); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
