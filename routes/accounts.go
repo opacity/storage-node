@@ -23,7 +23,8 @@ type accountCreateObj struct {
 
 type accountCreateReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.accountCreateObj, see description for example"`
+	requestBody
+	accountCreateObj accountCreateObj
 }
 
 type accountCreateRes struct {
@@ -62,7 +63,16 @@ type accountGetReqObj struct {
 
 type getAccountDataReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.accountGetReqObj, see description for example"`
+	requestBody
+	accountGetReqObj accountGetReqObj
+}
+
+func (v *accountCreateReq) getObjectRef() interface{} {
+	return &v.accountCreateObj
+}
+
+func (v *getAccountDataReq) getObjectRef() interface{} {
+	return &v.accountGetReqObj
 }
 
 // CreateAccountHandler godoc
@@ -105,17 +115,10 @@ func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 }
 
 func createAccount(c *gin.Context) error {
-
 	request := accountCreateReq{}
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		return BadRequestResponse(c, err)
-	}
 
-	requestBodyParsed := accountCreateObj{}
-	if err := utils.ParseStringifiedRequest(request.RequestBody, &requestBodyParsed); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		return BadRequestResponse(c, err)
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
 	}
 
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
@@ -124,12 +127,12 @@ func createAccount(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	storageLimit, ok := models.StorageLimitMap[requestBodyParsed.StorageLimit]
+	storageLimit, ok := models.StorageLimitMap[request.accountCreateObj.StorageLimit]
 	if !ok {
 		return BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
 	}
 
-	accountID, err := returnAccountIdWithStringRequest(request.RequestBody, request.verification, c)
+	accountId, err := request.getAccountId(c)
 	if err != nil {
 		return err
 	}
@@ -137,7 +140,7 @@ func createAccount(c *gin.Context) error {
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
 		privKey,
-		accountID,
+		accountId,
 	)
 
 	if encryptErr != nil {
@@ -145,12 +148,12 @@ func createAccount(c *gin.Context) error {
 	}
 
 	account := models.Account{
-		AccountID:            accountID,
+		AccountID:            accountId,
 		StorageLimit:         storageLimit,
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:        models.InitialPaymentInProgress,
-		MonthsInSubscription: requestBodyParsed.DurationInMonths,
+		MonthsInSubscription: request.accountCreateObj.DurationInMonths,
 	}
 
 	// Add account to DB
@@ -180,15 +183,11 @@ func createAccount(c *gin.Context) error {
 
 func checkAccountPaymentStatus(c *gin.Context) error {
 	request := getAccountDataReq{}
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
-		return BadRequestResponse(c, err)
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
 	}
 
-	requestBodyParsed := accountGetReqObj{}
-
-	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed,
-		request.verification, c)
+	account, err := request.getAccount(c)
 	if err != nil {
 		return err
 	}
@@ -211,7 +210,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 			ExpirationDate:           account.ExpirationDate(),
 			MonthsInSubscription:     account.MonthsInSubscription,
 			StorageLimit:             account.StorageLimit,
-			StorageUsed:              account.StorageUsed,
+			StorageUsed:              float64(account.StorageUsedInByte) / 1e9,
 			EthAddress:               account.EthAddress,
 			Cost:                     cost,
 			ApiVersion:               account.ApiVersion,

@@ -1,15 +1,13 @@
 package routes
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"bytes"
-	"encoding/json"
-
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -20,9 +18,8 @@ import (
 )
 
 func Test_Init_Metadata(t *testing.T) {
-	utils.SetTesting("../.env")
-	gin.SetMode(gin.TestMode)
-	models.Connect(utils.Env.DatabaseURL)
+
+	setupTests(t)
 }
 
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
@@ -285,7 +282,7 @@ func Test_Create_Metadata_Creates_Metadata(t *testing.T) {
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
@@ -333,7 +330,7 @@ func Test_Create_Metadata_Error_If_Unpaid_Account(t *testing.T) {
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreateUnpaidAccountForTest(t, accountID)
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
@@ -364,7 +361,7 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	account.TotalMetadatas = 1000
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)

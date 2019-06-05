@@ -14,6 +14,7 @@ import (
 
 	"bytes"
 
+	"github.com/gin-gonic/gin"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
@@ -21,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const defaultStorageUsedForTest = 10
+const defaultStorageUsedInByteForTest = 10 * 1e9
 
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
@@ -53,7 +54,7 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
 		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
-		StorageUsed:          defaultStorageUsedForTest,
+		StorageUsedInByte:    defaultStorageUsedInByteForTest,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
@@ -80,7 +81,7 @@ func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
 		StorageLocation:      "https://createdInRoutesUploadFileTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
-		StorageUsed:          defaultStorageUsedForTest,
+		StorageUsedInByte:    defaultStorageUsedInByteForTest,
 		PaymentStatus:        models.InitialPaymentReceived,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
@@ -154,6 +155,12 @@ func UploadFileHelperForTest(t *testing.T, post UploadFileReq) *httptest.Respons
 	router.ServeHTTP(w, req)
 
 	return w
+}
+
+func setupTests(t *testing.T) {
+	utils.SetTesting("../.env")
+	models.Connect(utils.Env.DatabaseURL)
+	gin.SetMode(gin.TestMode)
 }
 
 func generateValidateAccountId(t *testing.T) (string, *ecdsa.PrivateKey) {

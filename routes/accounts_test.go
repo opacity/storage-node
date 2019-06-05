@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
@@ -35,7 +34,7 @@ func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCre
 
 	return accountCreateReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 }
 
@@ -44,26 +43,23 @@ func returnFailedVerificationCreateAccountReq(t *testing.T, body accountCreateOb
 
 	return accountCreateReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 }
 
-func returnValidAccountAndPrivateKey() (models.Account, *ecdsa.PrivateKey) {
-	privateKeyToSignWith, _ := utils.GenerateKey()
-
-	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKeyToSignWith.PublicKey))
-
+func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.PrivateKey) {
+	accountId, privateKeyToSignWith := generateValidateAccountId(t)
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
 	return models.Account{
-		AccountID:            accountID,
+		AccountID:            accountId,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
 		StorageLocation:      "https://createdInRoutesAccountsTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
-		StorageUsed:          10,
+		StorageUsedInByte:    10 * 1e9,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
-		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
+		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
 	}, privateKeyToSignWith
 }
 
@@ -72,35 +68,29 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 
 	return getAccountDataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 }
 
 func returnValidAccount() models.Account {
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
-	accountID := utils.RandSeqFromRunes(models.AccountIDLength, []rune("abcdef01234567890"))
+	accountId := utils.RandSeqFromRunes(models.AccountIDLength, []rune("abcdef01234567890"))
 
 	return models.Account{
-		AccountID:            accountID,
+		AccountID:            accountId,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
 		StorageLocation:      "https://createdInRoutesAccountsTest.com/12345",
 		StorageLimit:         models.BasicStorageLimit,
-		StorageUsed:          10,
+		StorageUsedInByte:    10 * 1e9,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
-		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
+		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
 	}
 }
 
-func testSetupAccounts() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
-}
-
 func Test_Init_Accounts(t *testing.T) {
-	testSetupAccounts()
-	gin.SetMode(gin.TestMode)
+	setupTests(t)
 }
 
 func Test_NoErrorsWithValidPost(t *testing.T) {
@@ -164,7 +154,7 @@ func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) {
-	_, privateKey := returnValidAccountAndPrivateKey()
+	_, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
 	}, privateKey)
@@ -180,7 +170,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) 
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid(t *testing.T) {
-	account, privateKey := returnValidAccountAndPrivateKey()
+	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
 	}, privateKey)
@@ -204,7 +194,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpaid(t *testing.T) {
-	account, privateKey := returnValidAccountAndPrivateKey()
+	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
 	}, privateKey)

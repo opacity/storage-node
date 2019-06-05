@@ -15,14 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func testSetupDeleteFiles() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
-}
-
 func Test_Init_Delete_Files(t *testing.T) {
-	testSetupDeleteFiles()
-	gin.SetMode(gin.TestMode)
+	setupTests(t)
 }
 
 func Test_Successful_File_Deletion_Request(t *testing.T) {
@@ -40,7 +34,7 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 	v, b := returnValidVerificationAndRequestBody(t, deleteFileObject, privateKey)
 	request := deleteFileReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	w := deleteFileHelperForTest(t, request)
@@ -50,8 +44,8 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 	}
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
-	// check that StorageUsed has been deducted after deletion
-	assert.True(t, updatedAccount.StorageUsed == defaultStorageUsedForTest)
+	// check that StorageUsedInByte has been deducted after deletion
+	assert.True(t, updatedAccount.StorageUsedInByte == defaultStorageUsedInByteForTest)
 	// check that object is not on S3 anymore
 	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID)))
 	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)))
@@ -62,8 +56,8 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 }
 
 func checkPrerequisites(t *testing.T, account models.Account, fileID string) {
-	// check that StorageUsed has increased after the upload
-	assert.True(t, account.StorageUsed > defaultStorageUsedForTest)
+	// check that StorageUsedInByte has increased after the upload
+	assert.True(t, account.StorageUsedInByte > defaultStorageUsedInByteForTest)
 	// check that object exists on S3
 	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID)))
 	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)))

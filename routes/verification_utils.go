@@ -47,8 +47,27 @@ func (v verification) getVerification() verification {
 	return v
 }
 
+func (v verification) getAccountId(c *gin.Context) (string, error) {
+	accountId, err := utils.HashString(v.PublicKey)
+	if err != nil {
+		return "", InternalErrorResponse(c, err)
+	}
+	return accountId, err
+}
+
 func (v verification) getAccount(c *gin.Context) (models.Account, error) {
-	return returnAccountIfVerified(v.PublicKey, c)
+	accountID, err := v.getAccountId(c)
+	if err != nil {
+		return models.Account{}, err
+	}
+
+	// validate user
+	account, err := models.GetAccountById(accountID)
+	if err != nil || len(account.AccountID) == 0 {
+		return account, AccountNotFoundResponse(c, accountID)
+	}
+
+	return account, err
 }
 
 type requestBody struct {
@@ -57,6 +76,20 @@ type requestBody struct {
 
 func (v requestBody) getObjectAsString() string {
 	return v.RequestBody
+}
+
+func verifyAndParseBodyRequest(dest interface{}, c *gin.Context) error {
+	if err := utils.ParseRequestBody(c.Request, dest); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	if i, ok := dest.(verificationInterface); ok {
+		if ii, ok := dest.(parsableObjectInterface); ok {
+			return verifyAndParseStringRequest(ii.getObjectAsString(), ii.getObjectRef(), i.getVerification(), c)
+		}
+	}
+	return nil
 }
 
 func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
@@ -198,7 +231,7 @@ func returnAccountIfVerifiedFromParsedRequest(reqBody interface{}, verificationD
 		return models.Account{}, err
 	}
 
-	return returnAccountIfVerified(verificationData.PublicKey, c)
+	return verificationData.getAccount(c)
 }
 
 func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface{}, verificationData verification, c *gin.Context) (models.Account, error) {
@@ -206,22 +239,7 @@ func returnAccountIfVerifiedFromStringRequest(reqAsString string, dest interface
 		return models.Account{}, err
 	}
 
-	return returnAccountIfVerified(verificationData.PublicKey, c)
-}
-
-func returnAccountIfVerified(publicKey string, c *gin.Context) (models.Account, error) {
-	accountID, err := getAccountIdFromPublicKey(publicKey, c)
-	if err != nil {
-		return models.Account{}, err
-	}
-
-	// validate user
-	account, err := models.GetAccountById(accountID)
-	if err != nil || len(account.AccountID) == 0 {
-		return account, AccountNotFoundResponse(c, accountID)
-	}
-
-	return account, err
+	return verificationData.getAccount(c)
 }
 
 func returnAccountIdWithParsedRequest(reqBody interface{}, verificationData verification, c *gin.Context) (string, error) {

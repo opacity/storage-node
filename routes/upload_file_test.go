@@ -5,20 +5,12 @@ import (
 
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
 
-func testSetupUploadFiles() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
-}
-
 func Test_Init_Upload_Files(t *testing.T) {
-	testSetupUploadFiles()
-	gin.SetMode(gin.TestMode)
+	setupTests(t)
 }
 
 func Test_Upload_File_Bad_Request(t *testing.T) {
@@ -195,7 +187,7 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 // 	updatedAccount, err := models.GetAccountById(account.AccountID)
 // 	assert.Nil(t, err)
 
-// 	assert.True(t, updatedAccount.StorageUsed > account.StorageUsed)
+// 	assert.True(t, updatedAccount.StorageUsedInByte > account.StorageUsedInByte)
 
 // 	completedFile, _ := models.GetCompletedFileByFileID(uploadBody.FileHandle)
 // 	assert.Equal(t, completedFile.FileID, uploadBody.FileHandle)

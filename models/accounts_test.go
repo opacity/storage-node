@@ -12,6 +12,8 @@ import (
 
 	"crypto/ecdsa"
 
+	"math/rand"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/opacity/storage-node/services"
@@ -28,7 +30,7 @@ func returnValidAccount() Account {
 		MonthsInSubscription: DefaultMonthsPerSubscription,
 		StorageLocation:      "https://createdInModelsAccountsTest.com/12345",
 		StorageLimit:         BasicStorageLimit,
-		StorageUsed:          10,
+		StorageUsedInByte:    10 * 1e9,
 		PaymentStatus:        InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
@@ -99,9 +101,9 @@ func Test_StorageLimit_Less_Than_100_Fails(t *testing.T) {
 	}
 }
 
-func Test_StorageUsed_Less_Than_0_Fails(t *testing.T) {
+func Test_StorageUsedInByte_Less_Than_0_Fails(t *testing.T) {
 	account := returnValidAccount()
-	account.StorageUsed = float64(-1)
+	account.StorageUsedInByte = int64(-1)
 
 	if err := utils.Validator.Struct(account); err == nil {
 		t.Fatalf("account should have failed validation")
@@ -314,9 +316,10 @@ func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	startingSpaceUsed := account.StorageUsed
+	startingSpaceUsed := account.StorageUsedInByte
 	assert.Nil(t, account.UseStorageSpaceInByte(10*1e9 /* Upload 10GB. */))
-	assert.True(t, startingSpaceUsed == account.StorageUsed-10)
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, startingSpaceUsed == accountFromDB.StorageUsedInByte-10*1e9)
 }
 
 func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
@@ -336,9 +339,10 @@ func Test_DeductSpaceUsed(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	startingSpaceUsed := account.StorageUsed
+	startingSpaceUsed := account.StorageUsedInByte
 	assert.Nil(t, account.UseStorageSpaceInByte(-9*1e9 /* Deleted 9 GB file. */))
-	assert.True(t, startingSpaceUsed == account.StorageUsed+9)
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, startingSpaceUsed == accountFromDB.StorageUsedInByte+9*1e9)
 }
 
 func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
@@ -349,6 +353,58 @@ func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
 	}
 
 	assert.NotNil(t, account.UseStorageSpaceInByte(-11*1e9 /* Deduct 11 GB file but only 10 GB uploaded. */))
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.StorageUsedInByte == account.StorageUsedInByte)
+}
+
+func Test_Space_Updates_at_Scale(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageUsedInByte = 0
+	account.PaymentStatus = InitialPaymentReceived
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	numIntendedUpdates := 100
+	numAdds := 0
+	numDeletes := 0
+	byteValues := make(map[int]int64)
+
+	for i := 0; i < numIntendedUpdates; i++ {
+		byteValues[i] = rand.Int63n(10000)
+	}
+
+	for i := 0; i < numIntendedUpdates; i++ {
+		go func(byteValue int64, account Account) {
+			assert.Nil(t, account.UseStorageSpaceInByte(byteValue))
+			numAdds++
+		}(byteValues[i], account)
+	}
+
+	for {
+		if numAdds == numIntendedUpdates {
+			break
+		}
+	}
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.NotEqual(t, int64(0), accountFromDB.StorageUsedInByte)
+
+	for i := 0; i < numIntendedUpdates; i++ {
+		go func(byteValue int64, account Account) {
+			assert.Nil(t, account.UseStorageSpaceInByte(-1*byteValue))
+			numDeletes++
+		}(byteValues[i], account)
+	}
+
+	for {
+		if numDeletes == numIntendedUpdates {
+			break
+		}
+	}
+
+	accountFromDB, _ = GetAccountById(account.AccountID)
+	assert.Equal(t, int64(0), accountFromDB.StorageUsedInByte)
 }
 
 func Test_MaxAllowedMetadataSizeInBytes(t *testing.T) {
@@ -392,7 +448,7 @@ func Test_CurrentAllowedMetadataSizeInBytes(t *testing.T) {
 	expectedCurrentAllowedMetadataSizeInBytes := 3.2e10
 
 	account := returnValidAccount()
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -409,7 +465,7 @@ func Test_CurrentAllowedMetadatas(t *testing.T) {
 	expectedCurrentAllowedMetadatas := 640
 
 	account := returnValidAccount()
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -424,7 +480,7 @@ func Test_CanAddNewMetadata(t *testing.T) {
 	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
 	// If those values are changed this test will fail.
 	account := returnValidAccount()
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	account.TotalMetadatas = 638
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
@@ -443,7 +499,7 @@ func Test_CanRemoveMetadata(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	account.TotalMetadatas = 1
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
@@ -460,7 +516,7 @@ func Test_CanUpdateMetadata(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	account.TotalMetadataSizeInBytes = 100
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
@@ -477,7 +533,7 @@ func Test_IncrementMetadataCount(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	account.TotalMetadatas = 638
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
@@ -508,7 +564,7 @@ func Test_DecrementMetadataCount(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	account.TotalMetadatas = 1
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
@@ -530,7 +586,7 @@ func Test_UpdateMetadataSizeInBytes(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	account.TotalMetadataSizeInBytes = 100
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
@@ -547,7 +603,7 @@ func Test_RemoveMetadata(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsed = 64
+	account.StorageUsedInByte = 64 * 1e9
 	account.TotalMetadataSizeInBytes = 100
 	account.TotalMetadatas = 1
 	if err := DB.Create(&account).Error; err != nil {
@@ -574,13 +630,13 @@ func Test_RemoveMetadata(t *testing.T) {
 
 func Test_CreateSpaceUsedReport(t *testing.T) {
 	expectedSpaceAllotted := int(4 * BasicStorageLimit)
-	expectedSpaceUsed := 234.56
+	expectedSpaceUsed := 234.56 * 1e9
 
 	DeleteAccountsForTest(t)
 
 	for i := 0; i < 4; i++ {
 		accountPaid := returnValidAccount()
-		accountPaid.StorageUsed = expectedSpaceUsed / 4
+		accountPaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
 		accountPaid.PaymentStatus = PaymentStatusType(utils.RandIndex(5) + 2)
 		if err := DB.Create(&accountPaid).Error; err != nil {
 			t.Fatalf("should have created account but didn't: " + err.Error())
@@ -589,7 +645,7 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 
 	for i := 0; i < 4; i++ {
 		accountUnpaid := returnValidAccount()
-		accountUnpaid.StorageUsed = expectedSpaceUsed / 4
+		accountUnpaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
 		if err := DB.Create(&accountUnpaid).Error; err != nil {
 			t.Fatalf("should have created account but didn't: " + err.Error())
 		}
@@ -633,7 +689,7 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 	// before cutoff time, payment still in progress
 	// this one should get purged
 	accounts[3].CreatedAt = time.Now().Add(-1 * 8 * 24 * time.Hour)
-	accounts[3].StorageUsed = 0
+	accounts[3].StorageUsedInByte = 0
 	accounts[3].PaymentStatus = InitialPaymentInProgress
 
 	accountToBeDeletedID := accounts[3].AccountID
