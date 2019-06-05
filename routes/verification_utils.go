@@ -48,11 +48,11 @@ func (v verification) getVerification() verification {
 }
 
 func (v verification) getAccountId(c *gin.Context) (string, error) {
-	accountID, err := utils.HashString(v.PublicKey)
+	accountId, err := utils.HashString(v.PublicKey)
 	if err != nil {
 		return "", InternalErrorResponse(c, err)
 	}
-	return accountID, err
+	return accountId, err
 }
 
 func (v verification) getAccount(c *gin.Context) (models.Account, error) {
