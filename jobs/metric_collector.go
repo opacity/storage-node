@@ -8,7 +8,7 @@ import (
 type metricCollector struct{}
 
 func (m metricCollector) ScheduleInterval() string {
-	return "@every 24h"
+	return "@every 1h"
 }
 
 func (m metricCollector) Run() {
