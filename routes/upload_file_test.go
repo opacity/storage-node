@@ -187,7 +187,7 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 // 	updatedAccount, err := models.GetAccountById(account.AccountID)
 // 	assert.Nil(t, err)
 
-// 	assert.True(t, updatedAccount.StorageUsed > account.StorageUsed)
+// 	assert.True(t, updatedAccount.StorageUsedInByte > account.StorageUsedInByte)
 
 // 	completedFile, _ := models.GetCompletedFileByFileID(uploadBody.FileHandle)
 // 	assert.Equal(t, completedFile.FileID, uploadBody.FileHandle)

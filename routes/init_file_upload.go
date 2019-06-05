@@ -107,8 +107,8 @@ func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error 
 }
 
 func checkHaveEnoughStorageSpace(account models.Account, fileSizeInByte int64, c *gin.Context) error {
-	inGb := float64(fileSizeInByte) / float64(1e9)
-	if inGb+account.StorageUsed > float64(account.StorageLimit) {
+	plannedInGB := (float64(fileSizeInByte) + float64(account.StorageUsedInByte)) / 1e9
+	if plannedInGB > float64(account.StorageLimit) {
 		return AccountNotEnoughSpaceResponse(c)
 	}
 	return nil
