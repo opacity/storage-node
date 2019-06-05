@@ -76,6 +76,10 @@ type StatusRes struct {
 	Status string `json:"status" example:"status of the request"`
 }
 
+type PlanResponse struct {
+	Plans utils.PlanResponseType `json:"plans" example:"an object of the plans we offer"`
+}
+
 func init() {
 }
 
@@ -158,7 +162,7 @@ func setupAdminPaths(router *gin.Engine) {
 // @Description get the plans we sell
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} utils.Env.Plans
+// @Success 200 {object} routes.PlanResponse
 // @Router /plans [get]
 /*GetPlansHandler is a handler for getting the plans*/
 func GetPlansHandler() gin.HandlerFunc {
@@ -166,6 +170,7 @@ func GetPlansHandler() gin.HandlerFunc {
 }
 
 func getPlans(c *gin.Context) error {
-	c.JSON(http.StatusOK, utils.Env.Plans)
-	return nil
+	return OkResponse(c, PlanResponse{
+		Plans: utils.Env.Plans,
+	})
 }

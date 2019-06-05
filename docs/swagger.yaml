@@ -67,6 +67,8 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.PlanResponse:
+    type: object
   routes.StatusRes:
     properties:
       status:
@@ -411,6 +413,46 @@ definitions:
     - expirationDate
     - metadata
     - metadataKey
+    type: object
+  utils.PlanInfo:
+    properties:
+      cost:
+        type: number
+      maxFolders:
+        type: integer
+      maxMetadataSizeInMB:
+        type: integer
+      name:
+        type: string
+      storageInGB:
+        type: integer
+    required:
+    - cost
+    - maxFolders
+    - maxMetadataSizeInMB
+    - name
+    - storageInGB
+    type: object
+  utils.PlanResponseType:
+    additionalProperties:
+      properties:
+        cost:
+          type: number
+        maxFolders:
+          type: integer
+        maxMetadataSizeInMB:
+          type: integer
+        name:
+          type: string
+        storageInGB:
+          type: integer
+      required:
+      - cost
+      - maxFolders
+      - maxMetadataSizeInMB
+      - name
+      - storageInGB
+      type: object
     type: object
 host: '{{.Host}}'
 info:
@@ -861,7 +903,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/utils.Env.Plans'
+            $ref: '#/definitions/routes.PlanResponse'
             type: object
       summary: get the plans we sell
 swagger: "2.0"

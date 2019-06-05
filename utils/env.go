@@ -25,6 +25,8 @@ type PlanInfo struct {
 	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB" binding:"required,gt=0"`
 }
 
+type PlanResponseType map[int]PlanInfo
+
 /*StorageNodeEnv represents what our storage node environment should look like*/
 type StorageNodeEnv struct {
 	// Database information
@@ -66,7 +68,7 @@ type StorageNodeEnv struct {
 	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
 
 	PlansJson string `env:"PLANS_JSON"`
-	Plans     map[int]PlanInfo
+	Plans     PlanResponseType
 }
 
 /*Env is the environment for a particular node while the application is running*/
@@ -123,7 +125,7 @@ func runInitializations() {
 	InitKvStore()
 	newS3Session()
 
-	Env.Plans = make(map[int]PlanInfo)
+	Env.Plans = make(PlanResponseType)
 	err := json.Unmarshal([]byte(Env.PlansJson), &Env.Plans)
 	LogIfError(err, nil)
 }
