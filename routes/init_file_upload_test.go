@@ -43,6 +43,8 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	assert.NotNil(t, file.AwsUploadID)
 	assert.NotNil(t, file.AwsObjectKey)
 	assert.NotNil(t, file.ModifierHash)
+
+	assert.Nil(t, utils.DeleteDefaultBucketObjectKeys(file.FileID))
 }
 
 func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
