@@ -70,11 +70,11 @@ func deleteFile(c *gin.Context) error {
 		return err
 	}
 
-	if err := utils.DeleteDefaultBucketObjectKeys(fileId); err != nil {
+	if err := account.UseStorageSpaceInByte(int64(-1) * completedFile.FileSizeInByte); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := account.UseStorageSpaceInByte(-1 * int(completedFile.FileSizeInByte)); err != nil {
+	if err := utils.DeleteDefaultBucketObjectKeys(requestBodyParsed.FileID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
