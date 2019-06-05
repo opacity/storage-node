@@ -306,7 +306,7 @@ func Test_Create_Metadata_Creates_Metadata(t *testing.T) {
 	assert.Equal(t, permissionHashExpected, permissionHash)
 
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
-	assert.Equal(t, 1, accountFromDB.TotalMetadatas)
+	assert.Equal(t, 1, accountFromDB.TotalFolders)
 }
 
 func Test_Create_Metadata_Error_If_Unpaid_Account(t *testing.T) {
@@ -361,8 +361,7 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
-	account.StorageUsedInByte = 64 * 1e9
-	account.TotalMetadatas = 1000
+	account.TotalFolders = utils.Env.Plans[int(account.StorageLimit)].MaxFolders
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
@@ -374,7 +373,7 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 	}
 
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
-	assert.Equal(t, 1000, accountFromDB.TotalMetadatas)
+	assert.Equal(t, utils.Env.Plans[int(account.StorageLimit)].MaxFolders, accountFromDB.TotalFolders)
 }
 
 func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
@@ -398,7 +397,7 @@ func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreateUnpaidAccountForTest(t, accountID)
-	account.TotalMetadatas = 1
+	account.TotalFolders = 1
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
@@ -430,7 +429,7 @@ func Test_Delete_Metadata_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T) 
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
-	account.TotalMetadatas = 1
+	account.TotalFolders = 1
 	account.TotalMetadataSizeInBytes = int64(len(testMetadataValue))
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
@@ -474,14 +473,14 @@ func Test_Delete_Metadata_Success(t *testing.T) {
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
-	account.TotalMetadatas = 1
+	account.TotalFolders = 1
 	account.TotalMetadataSizeInBytes = int64(len(testMetadataValue))
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
 	assert.Equal(t, int64(len(testMetadataValue)), accountFromDB.TotalMetadataSizeInBytes)
-	assert.Equal(t, 1, accountFromDB.TotalMetadatas)
+	assert.Equal(t, 1, accountFromDB.TotalFolders)
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
@@ -507,7 +506,7 @@ func Test_Delete_Metadata_Success(t *testing.T) {
 	assert.Contains(t, w.Body.String(), metadataDeletedRes.Status)
 	accountFromDB, _ = models.GetAccountById(account.AccountID)
 	assert.Equal(t, int64(0), accountFromDB.TotalMetadataSizeInBytes)
-	assert.Equal(t, 0, accountFromDB.TotalMetadatas)
+	assert.Equal(t, 0, accountFromDB.TotalFolders)
 }
 
 func metadataTestHelperGetMetadata(t *testing.T, post metadataKeyReq) *httptest.ResponseRecorder {

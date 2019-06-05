@@ -9,8 +9,6 @@ import (
 
 	"encoding/hex"
 
-	"math"
-
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
@@ -29,7 +27,7 @@ type Account struct {
 	EthPrivateKey            string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
 	PaymentStatus            PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
 	ApiVersion               int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
-	TotalMetadatas           int               `json:"totalMetadatas" binding:"omitempty,gte=0" gorm:"default:0"`
+	TotalFolders             int               `json:"totalFolders" binding:"omitempty,gte=0" gorm:"default:0"`
 	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
 }
 
@@ -88,19 +86,8 @@ const BasicSubscriptionDefaultCost = 2.0
 /*AccountIDLength is the expected length of an accountID for an account*/
 const AccountIDLength = 64
 
-/*minMetadataCount is to let every user have at least one metadata regardless of StorageUsed*/
-const minMetadataCount = 1
-
 /*PaymentStatusMap is for pretty printing the PaymentStatus*/
 var PaymentStatusMap = make(map[PaymentStatusType]string)
-
-/*StorageLimitMap maps the amount of storage passed in by the client
-to storage limits set by us.  Used for checking that they have passed in an allowed
-amount.*/
-var StorageLimitMap = make(map[int]StorageLimitType)
-
-/*CostMap is for mapping subscription plans to their prices, for a default length subscription*/
-var CostMap = make(map[StorageLimitType]float64)
 
 /*PaymentCollectionFunctions maps a PaymentStatus to the method that should be run
 on an account of that status*/
@@ -108,16 +95,12 @@ var PaymentCollectionFunctions = make(map[PaymentStatusType]func(
 	account Account) error)
 
 func init() {
-	StorageLimitMap[int(BasicStorageLimit)] = BasicStorageLimit
-
 	PaymentStatusMap[InitialPaymentInProgress] = "InitialPaymentInProgress"
 	PaymentStatusMap[InitialPaymentReceived] = "InitialPaymentReceived"
 	PaymentStatusMap[GasTransferInProgress] = "GasTransferInProgress"
 	PaymentStatusMap[GasTransferComplete] = "GasTransferComplete"
 	PaymentStatusMap[PaymentRetrievalInProgress] = "PaymentRetrievalInProgress"
 	PaymentStatusMap[PaymentRetrievalComplete] = "PaymentRetrievalComplete"
-
-	CostMap[BasicStorageLimit] = BasicSubscriptionDefaultCost
 
 	PaymentCollectionFunctions[InitialPaymentInProgress] = handleAccountWithPaymentInProgress
 	PaymentCollectionFunctions[InitialPaymentReceived] = handleAccountThatNeedsGas
@@ -147,11 +130,8 @@ func (account *Account) ExpirationDate() time.Time {
 
 /*Cost returns the expected price of the subscription*/
 func (account *Account) Cost() (float64, error) {
-	costForDefaultSubscriptionTerm, ok := CostMap[account.StorageLimit]
-	if !ok {
-		return 0, errors.New("no price established for that amount of storage")
-	}
-	return costForDefaultSubscriptionTerm * float64(account.MonthsInSubscription/DefaultMonthsPerSubscription), nil
+	return utils.Env.Plans[int(account.StorageLimit)].Cost *
+		float64(account.MonthsInSubscription/DefaultMonthsPerSubscription), nil
 }
 
 /*GetTotalCostInWei gets the total cost in wei for a subscription*/
@@ -234,47 +214,26 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 	return tx.Commit().Error
 }
 
-/*MaxAllowedMetadataSizeInBytes calculates the maximum possible metadata size for an account based on its plan*/
-func (account *Account) MaxAllowedMetadataSizeInBytes() float64 {
-	maxAllowedMetadataSizeInMB := float64(account.MaxAllowedMetadatas()) * float64(utils.Env.MaxPerMetadataSizeInMB)
+/*MaxAllowedMetadataSizeInBytes returns the maximum possible metadata size for an account based on its plan*/
+func (account *Account) MaxAllowedMetadataSizeInBytes() int64 {
+	maxAllowedMetadataSizeInMB := utils.Env.Plans[int(account.StorageLimit)].MaxMetadataSizeInMB
 	return maxAllowedMetadataSizeInMB * 1e6
 }
 
-/*MaxAllowedMetadatas calculates the maximum possible number of metadatas for an account based on its plan*/
+/*MaxAllowedMetadatas returns the maximum possible number of metadatas for an account based on its plan*/
 func (account *Account) MaxAllowedMetadatas() int {
-	storageLimitInMB := float64(account.StorageLimit) * 1e3
-	maxAllowedMetadatas := storageLimitInMB / float64(utils.Env.FileStoragePerMetadataInMB)
-	return int(math.Ceil(maxAllowedMetadatas))
-}
-
-/*CurrentAllowedMetadataSizeInBytes calculates the currently possible metadata
-size for an account based on its storage used*/
-func (account *Account) CurrentAllowedMetadataSizeInBytes() float64 {
-	currentAllowedMetadataSizeInMB := float64(account.CurrentAllowedMetadatas()) * float64(utils.Env.MaxPerMetadataSizeInMB)
-	return currentAllowedMetadataSizeInMB * 1e6
-}
-
-/*CurrentAllowedMetadatas calculates the currently possible number of metadatas
-for an account based on its storage used*/
-func (account *Account) CurrentAllowedMetadatas() int {
-	storageUsedInMB := (float64(account.StorageUsedInByte) / 1e9) * 1e3
-	currentAllowedMetadatas := int(math.Ceil(storageUsedInMB / float64(utils.Env.FileStoragePerMetadataInMB)))
-	if currentAllowedMetadatas == 0 {
-		// always allow at least 1
-		return minMetadataCount
-	}
-	return currentAllowedMetadatas
+	return utils.Env.Plans[int(account.StorageLimit)].MaxFolders
 }
 
 /*CanAddNewMetadata checks if an account can have another metadata*/
 func (account *Account) CanAddNewMetadata() bool {
-	intendedNumberOfMetadatas := account.TotalMetadatas + 1
-	return intendedNumberOfMetadatas <= account.CurrentAllowedMetadatas()
+	intendedNumberOfMetadatas := account.TotalFolders + 1
+	return intendedNumberOfMetadatas <= account.MaxAllowedMetadatas()
 }
 
 /*CanRemoveMetadata checks if an account can delete a metadata*/
 func (account *Account) CanRemoveMetadata() bool {
-	intendedNumberOfMetadatas := account.TotalMetadatas - 1
+	intendedNumberOfMetadatas := account.TotalFolders - 1
 	return intendedNumberOfMetadatas >= 0
 }
 
@@ -282,7 +241,7 @@ func (account *Account) CanRemoveMetadata() bool {
 and makes sure the intended total metadata size is below the amount the user is allowed to have*/
 func (account *Account) CanUpdateMetadata(oldMetadataSizeInBytes, newMetadataSizeInBytes int64) bool {
 	intendedMetadataSizeInBytes := account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes + newMetadataSizeInBytes
-	return float64(intendedMetadataSizeInBytes) <= account.CurrentAllowedMetadataSizeInBytes() &&
+	return intendedMetadataSizeInBytes <= account.MaxAllowedMetadataSizeInBytes() &&
 		intendedMetadataSizeInBytes >= 0
 }
 
@@ -290,8 +249,8 @@ func (account *Account) CanUpdateMetadata(oldMetadataSizeInBytes, newMetadataSiz
 func (account *Account) IncrementMetadataCount() error {
 	err := errors.New("cannot exceed allowed metadatas")
 	if account.CanAddNewMetadata() {
-		account.TotalMetadatas++
-		err = DB.Model(&account).Update("total_metadatas", account.TotalMetadatas).Error
+		account.TotalFolders++
+		err = DB.Model(&account).Update("total_folders", account.TotalFolders).Error
 	}
 	return err
 }
@@ -299,9 +258,9 @@ func (account *Account) IncrementMetadataCount() error {
 /*DecrementMetadataCount decrements the account's metadata count*/
 func (account *Account) DecrementMetadataCount() error {
 	err := errors.New("metadata count cannot go below 0")
-	account.TotalMetadatas--
-	if account.TotalMetadatas >= 0 {
-		err = DB.Model(&account).Update("total_metadatas", account.TotalMetadatas).Error
+	account.TotalFolders--
+	if account.TotalFolders >= 0 {
+		err = DB.Model(&account).Update("total_folders", account.TotalFolders).Error
 	}
 	return err
 }
@@ -322,9 +281,9 @@ func (account *Account) RemoveMetadata(oldMetadataSizeInBytes int64) error {
 	err := errors.New("cannot remove metadata or its size")
 	if account.CanUpdateMetadata(oldMetadataSizeInBytes, 0) && account.CanRemoveMetadata() {
 		account.TotalMetadataSizeInBytes = account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes
-		account.TotalMetadatas--
+		account.TotalFolders--
 		err = DB.Model(account).Updates(map[string]interface{}{
-			"total_metadatas":              account.TotalMetadatas,
+			"total_folders":                account.TotalFolders,
 			"total_metadata_size_in_bytes": account.TotalMetadataSizeInBytes,
 		}).Error
 	}
@@ -521,8 +480,8 @@ func (account *Account) PrettyString() {
 	fmt.Print("ApiVersion:                     ")
 	fmt.Println(account.ApiVersion)
 
-	fmt.Print("TotalMetadatas:                 ")
-	fmt.Println(account.TotalMetadatas)
+	fmt.Print("TotalFolders:                 ")
+	fmt.Println(account.TotalFolders)
 
 	fmt.Print("TotalMetadataSizeInBytes:       ")
 	fmt.Println(account.TotalMetadataSizeInBytes)

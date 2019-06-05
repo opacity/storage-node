@@ -44,17 +44,19 @@ type accountUnpaidRes struct {
 }
 
 type accountGetObj struct {
-	CreatedAt                time.Time               `json:"createdAt"`
-	UpdatedAt                time.Time               `json:"updatedAt"`
-	ExpirationDate           time.Time               `json:"expirationDate" binding:"required"`
-	MonthsInSubscription     int                     `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
-	StorageLimit             models.StorageLimitType `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
-	StorageUsed              float64                 `json:"storageUsed" binding:"exists" example:"30"`                                                                         // how much storage they have used, in GB
-	EthAddress               string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	Cost                     float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
-	ApiVersion               int                     `json:"apiVersion" binding:"required,gte=1"`
-	TotalMetadatas           int                     `json:"totalMetadatas" binding:"exists" example:"2"`
-	TotalMetadataSizeInBytes int64                   `json:"totalMetadataSizeInBytes" binding:"exists" example:"245765432"`
+	CreatedAt             time.Time               `json:"createdAt"`
+	UpdatedAt             time.Time               `json:"updatedAt"`
+	ExpirationDate        time.Time               `json:"expirationDate" binding:"required"`
+	MonthsInSubscription  int                     `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
+	StorageLimit          models.StorageLimitType `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
+	StorageUsed           float64                 `json:"storageUsed" binding:"exists" example:"30"`                                                                         // how much storage they have used, in GB
+	EthAddress            string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	Cost                  float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
+	ApiVersion            int                     `json:"apiVersion" binding:"required,gte=1"`
+	TotalFolders          int                     `json:"totalFolders" binding:"exists" example:"2"`
+	TotalMetadataSizeInMB int64                   `json:"totalMetadataSizeInMB" binding:"exists" example:"245765432"`
+	MaxFolders            int                     `json:"maxFolders" binding:"exists" example:"2000"`
+	MaxMetadataSizeInMB   int64                   `json:"maxMetadataSizeInMB" binding:"exists" example:"200"`
 }
 
 type accountGetReqObj struct {
@@ -127,7 +129,7 @@ func createAccount(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	storageLimit, ok := models.StorageLimitMap[request.accountCreateObj.StorageLimit]
+	plan, ok := utils.Env.Plans[request.accountCreateObj.StorageLimit]
 	if !ok {
 		return BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
 	}
@@ -149,7 +151,7 @@ func createAccount(c *gin.Context) error {
 
 	account := models.Account{
 		AccountID:            accountId,
-		StorageLimit:         storageLimit,
+		StorageLimit:         models.StorageLimitType(plan.StorageInGB),
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:        models.InitialPaymentInProgress,
@@ -205,17 +207,19 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		PaymentStatus: createPaymentStatusResponse(paid, pending),
 		Error:         err,
 		Account: accountGetObj{
-			CreatedAt:                account.CreatedAt,
-			UpdatedAt:                account.UpdatedAt,
-			ExpirationDate:           account.ExpirationDate(),
-			MonthsInSubscription:     account.MonthsInSubscription,
-			StorageLimit:             account.StorageLimit,
-			StorageUsed:              float64(account.StorageUsedInByte) / 1e9,
-			EthAddress:               account.EthAddress,
-			Cost:                     cost,
-			ApiVersion:               account.ApiVersion,
-			TotalMetadatas:           account.TotalMetadatas,
-			TotalMetadataSizeInBytes: account.TotalMetadataSizeInBytes,
+			CreatedAt:             account.CreatedAt,
+			UpdatedAt:             account.UpdatedAt,
+			ExpirationDate:        account.ExpirationDate(),
+			MonthsInSubscription:  account.MonthsInSubscription,
+			StorageLimit:          account.StorageLimit,
+			StorageUsed:           float64(account.StorageUsedInByte) / 1e9,
+			EthAddress:            account.EthAddress,
+			Cost:                  cost,
+			ApiVersion:            account.ApiVersion,
+			TotalFolders:          account.TotalFolders,
+			TotalMetadataSizeInMB: account.TotalMetadataSizeInBytes / 1e6,
+			MaxFolders:            utils.Env.Plans[int(account.StorageLimit)].MaxFolders,
+			MaxMetadataSizeInMB:   utils.Env.Plans[int(account.StorageLimit)].MaxMetadataSizeInMB,
 		},
 	}
 

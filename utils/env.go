@@ -8,13 +8,22 @@ import (
 
 	"strconv"
 
+	"encoding/json"
+
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
 )
 
 const defaultAccountRetentionDays = 7
-const TestFileStoragePerMetadataInMB = 100
-const TestMaxPerMetadataSizeInMB = 50
+const defaultPlansJson = `{"128": {"name":"Basic","cost":2,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200}}`
+
+type PlanInfo struct {
+	Name                string  `json:"name" binding:"required"`
+	Cost                float64 `json:"cost" binding:"required,gt=0"`
+	StorageInGB         int     `json:"storageInGB" binding:"required,gt=0"`
+	MaxFolders          int     `json:"maxFolders" binding:"required,gt=0"`
+	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB" binding:"required,gt=0"`
+}
 
 /*StorageNodeEnv represents what our storage node environment should look like*/
 type StorageNodeEnv struct {
@@ -56,16 +65,8 @@ type StorageNodeEnv struct {
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
 	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
 
-	// Folder metadata restrictions
-
-	// FileStoragePerMetadataInMB is how many MBs worth of files they have to have stored
-	// to create one additional folder metadata, i.e. if the value is 100, they need to have 101 MB
-	// of files stored before they're allowed 2 metadatas.
-
-	// MaxPerMetadataSizeInMB is the maximum size of each metadata.  We will use this
-	// in the accounts model to derive the max metadata storage for each plan size.
-	FileStoragePerMetadataInMB int `env:"FILE_STORAGE_PER_METADATA_IN_MB" envDefault:"100"`
-	MaxPerMetadataSizeInMB     int `env:"MAX_PER_METADATA_SIZE_IN_MB" envDefault:"50"`
+	PlansJson string `env:"PLANS_JSON"`
+	Plans     map[int]PlanInfo
 }
 
 /*Env is the environment for a particular node while the application is running*/
@@ -97,8 +98,7 @@ func SetProduction() {
 	initEnv()
 	Env.GoEnv = "production"
 	Env.DatabaseURL = Env.ProdDatabaseURL
-	InitKvStore()
-	newS3Session()
+	runInitializations()
 }
 
 /*SetDevelopment sets the development environment*/
@@ -107,19 +107,25 @@ func SetDevelopment() {
 	Env.GoEnv = "development"
 	// TODO: should we have a separate development database?
 	Env.DatabaseURL = Env.ProdDatabaseURL
-	InitKvStore()
-	newS3Session()
+	runInitializations()
 }
 
 /*SetTesting sets the testing environment*/
 func SetTesting(filenames ...string) {
 	initEnv(filenames...)
+	Env.PlansJson = defaultPlansJson
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
-	Env.FileStoragePerMetadataInMB = TestFileStoragePerMetadataInMB
-	Env.MaxPerMetadataSizeInMB = TestMaxPerMetadataSizeInMB
+	runInitializations()
+}
+
+func runInitializations() {
 	InitKvStore()
 	newS3Session()
+
+	Env.Plans = make(map[int]PlanInfo)
+	err := json.Unmarshal([]byte(Env.PlansJson), &Env.Plans)
+	LogIfError(err, nil)
 }
 
 /*IsTestEnv returns whether we are in the test environment*/
@@ -147,35 +153,31 @@ func tryLookUp() error {
 	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
 	AppendIfError(err, &collectedErrors)
 
-	fileStoragePerMetadataInMBStr := AppendLookupErrors("FILE_STORAGE_PER_METADATA_IN_MB", &collectedErrors)
-	fileStoragePerMetadataInMB, err := strconv.Atoi(fileStoragePerMetadataInMBStr)
-	AppendIfError(err, &collectedErrors)
-
-	maxPerMetadataSizeInMBStr := AppendLookupErrors("MAX_PER_METADATA_SIZE_IN_MB", &collectedErrors)
-	maxPerMetadataSizeInMB, err := strconv.Atoi(maxPerMetadataSizeInMBStr)
-	AppendIfError(err, &collectedErrors)
-
 	if accountRetentionDays <= 0 {
 		accountRetentionDays = defaultAccountRetentionDays
 	}
 
+	plansJson, _ := os.LookupEnv("PLANS_JSON")
+	if plansJson == "" {
+		plansJson = defaultPlansJson
+	}
+
 	serverEnv := StorageNodeEnv{
-		ProdDatabaseURL:            prodDBUrl,
-		TestDatabaseURL:            testDBUrl,
-		EncryptionKey:              encryptionKey,
-		ContractAddress:            contractAddress,
-		EthNodeURL:                 ethNodeURL,
-		MainWalletAddress:          mainWalletAddress,
-		MainWalletPrivateKey:       mainWalletPrivateKey,
-		AccountRetentionDays:       accountRetentionDays,
-		AwsRegion:                  awsRegion,
-		BucketName:                 bucketName,
-		AwsAccessKeyID:             awsAccessKeyID,
-		AwsSecretAccessKey:         awsSecretAccessKey,
-		AdminUser:                  adminUser,
-		AdminPassword:              adminPassword,
-		FileStoragePerMetadataInMB: fileStoragePerMetadataInMB,
-		MaxPerMetadataSizeInMB:     maxPerMetadataSizeInMB,
+		ProdDatabaseURL:      prodDBUrl,
+		TestDatabaseURL:      testDBUrl,
+		EncryptionKey:        encryptionKey,
+		ContractAddress:      contractAddress,
+		EthNodeURL:           ethNodeURL,
+		MainWalletAddress:    mainWalletAddress,
+		MainWalletPrivateKey: mainWalletPrivateKey,
+		AccountRetentionDays: accountRetentionDays,
+		AwsRegion:            awsRegion,
+		BucketName:           bucketName,
+		AwsAccessKeyID:       awsAccessKeyID,
+		AwsSecretAccessKey:   awsSecretAccessKey,
+		AdminUser:            adminUser,
+		AdminPassword:        adminPassword,
+		PlansJson:            plansJson,
 	}
 
 	Env = serverEnv

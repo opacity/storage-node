@@ -27,6 +27,4 @@ func Test_SetTesting(t *testing.T) {
 	SetTesting("../.env")
 
 	assert.True(t, Env.AccountRetentionDays > 0)
-	assert.True(t, Env.FileStoragePerMetadataInMB > 0)
-	assert.True(t, Env.MaxPerMetadataSizeInMB > 0)
 }

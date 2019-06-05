@@ -127,15 +127,33 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.accountCreateObj:
+    properties:
+      durationInMonths:
+        example: 12
+        minimum: 1
+        type: integer
+      storageLimit:
+        example: 100
+        maximum: 100
+        minimum: 100
+        type: integer
+    required:
+    - durationInMonths
+    - storageLimit
+    type: object
   routes.accountCreateReq:
     properties:
+      accountCreateObj:
+        $ref: '#/definitions/routes.accountCreateObj'
+        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.accountCreateObj, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -188,6 +206,12 @@ definitions:
         type: string
       expirationDate:
         type: string
+      maxFolders:
+        example: 2000
+        type: integer
+      maxMetadataSizeInMB:
+        example: 200
+        type: integer
       monthsInSubscription:
         description: number of months in their subscription
         example: 12
@@ -200,11 +224,11 @@ definitions:
         description: how much storage they have used, in GB
         example: 30
         type: number
-      totalMetadataSizeInBytes:
-        example: 245765432
-        type: integer
-      totalMetadatas:
+      totalFolders:
         example: 2
+        type: integer
+      totalMetadataSizeInMB:
+        example: 245765432
         type: integer
       updatedAt:
         type: string
@@ -216,6 +240,13 @@ definitions:
     - monthsInSubscription
     - storageLimit
     type: object
+  routes.accountGetReqObj:
+    properties:
+      timestamp:
+        type: integer
+    required:
+    - timestamp
+    type: object
   routes.createMetadataRes:
     properties:
       expirationDate:
@@ -223,15 +254,26 @@ definitions:
     required:
     - expirationDate
     type: object
+  routes.deleteFileObj:
+    properties:
+      fileID:
+        example: the handle of the file
+        type: string
+    required:
+    - fileID
+    type: object
   routes.deleteFileReq:
     properties:
+      deleteFileObj:
+        $ref: '#/definitions/routes.deleteFileObj'
+        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.deleteFileObj, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -268,13 +310,16 @@ definitions:
     type: object
   routes.getAccountDataReq:
     properties:
+      accountGetReqObj:
+        $ref: '#/definitions/routes.accountGetReqObj'
+        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.accountGetReqObj, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -369,15 +414,11 @@ definitions:
     type: object
 host: '{{.Host}}'
 info:
-  contact:
-    name: Opacity Staff
-    url: https://telegram.me/opacitystorage
-  description: Opacity backend for file storage.
-  license:
-    name: OPACITY LIMITED CODE REVIEW LICENSE LICENSE.md
-  termsOfService: https://opacity.io/terms-of-service
-  title: Storage Node
-  version: "1.0"
+  contact: {}
+  description: '{{.Description}}'
+  license: {}
+  title: '{{.Title}}'
+  version: '{{.Version}}'
 paths:
   /api/v1/account-data:
     post:
@@ -809,4 +850,18 @@ paths:
           schema:
             type: string
       summary: check status of an upload
+  /plans:
+    get:
+      consumes:
+      - application/json
+      description: get the plans we sell
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.Env.Plans'
+            type: object
+      summary: get the plans we sell
 swagger: "2.0"

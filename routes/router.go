@@ -110,6 +110,9 @@ func returnEngine() *gin.Engine {
 			"uptime":  fmt.Sprintf("%v", time.Now().Sub(uptime)),
 		})
 	})
+
+	router.GET("/plans", GetPlansHandler())
+
 	return router
 }
 
@@ -148,4 +151,21 @@ func setupAdminPaths(router *gin.Engine) {
 	// Unable to find the file.
 	// g.GET("/jobrunner/html", jobs.JobHtml)
 	//router.LoadHTMLGlob("../../bamzi/jobrunner/views/Status.html")
+}
+
+// GetPlansHandler godoc
+// @Summary get the plans we sell
+// @Description get the plans we sell
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} utils.Env.Plans
+// @Router /plans [get]
+/*GetPlansHandler is a handler for getting the plans*/
+func GetPlansHandler() gin.HandlerFunc {
+	return ginHandlerFunc(getPlans)
+}
+
+func getPlans(c *gin.Context) error {
+	c.JSON(http.StatusOK, utils.Env.Plans)
+	return nil
 }

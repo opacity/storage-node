@@ -411,7 +411,7 @@ func Test_MaxAllowedMetadataSizeInBytes(t *testing.T) {
 	// This test relies upon TestFileStoragePerMetadataInMB
 	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
 	// If those values are changed this test will fail.
-	expectedMaxAllowedMetadataSizeInBytes := 6.4e10
+	expectedMaxAllowedMetadataSizeInBytes := int64(200 * 1e6)
 
 	account := returnValidAccount()
 	account.StorageLimit = BasicStorageLimit
@@ -428,7 +428,7 @@ func Test_MaxAllowedMetadatas(t *testing.T) {
 	// This test relies upon TestFileStoragePerMetadataInMB
 	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
 	// If those values are changed this test will fail.
-	expectedMaxAllowedMetadatas := 1280
+	expectedMaxAllowedMetadatas := utils.Env.Plans[int(BasicStorageLimit)].MaxFolders
 
 	account := returnValidAccount()
 	account.StorageLimit = BasicStorageLimit
@@ -441,55 +441,20 @@ func Test_MaxAllowedMetadatas(t *testing.T) {
 	assert.Equal(t, expectedMaxAllowedMetadatas, actualMaxAllowedMetadatas)
 }
 
-func Test_CurrentAllowedMetadataSizeInBytes(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
-	expectedCurrentAllowedMetadataSizeInBytes := 3.2e10
-
-	account := returnValidAccount()
-	account.StorageUsedInByte = 64 * 1e9
-	if err := DB.Create(&account).Error; err != nil {
-		t.Fatalf("should have created account but didn't: " + err.Error())
-	}
-
-	actualCurrentAllowedMetadataSizeInBytes := account.CurrentAllowedMetadataSizeInBytes()
-
-	assert.Equal(t, expectedCurrentAllowedMetadataSizeInBytes, actualCurrentAllowedMetadataSizeInBytes)
-}
-
-func Test_CurrentAllowedMetadatas(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
-	expectedCurrentAllowedMetadatas := 640
-
-	account := returnValidAccount()
-	account.StorageUsedInByte = 64 * 1e9
-	if err := DB.Create(&account).Error; err != nil {
-		t.Fatalf("should have created account but didn't: " + err.Error())
-	}
-
-	actualCurrentAllowedMetadatas := account.CurrentAllowedMetadatas()
-
-	assert.Equal(t, expectedCurrentAllowedMetadatas, actualCurrentAllowedMetadatas)
-}
-
 func Test_CanAddNewMetadata(t *testing.T) {
 	// This test relies upon TestFileStoragePerMetadataInMB
 	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
 	// If those values are changed this test will fail.
 	account := returnValidAccount()
-	account.StorageUsedInByte = 64 * 1e9
-	account.TotalMetadatas = 638
+	account.TotalFolders = 1998
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
 	assert.True(t, account.CanAddNewMetadata())
-	account.TotalMetadatas++
+	account.TotalFolders++
 	assert.True(t, account.CanAddNewMetadata())
-	account.TotalMetadatas++
+	account.TotalFolders++
 	assert.False(t, account.CanAddNewMetadata())
 }
 
@@ -499,14 +464,13 @@ func Test_CanRemoveMetadata(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsedInByte = 64 * 1e9
-	account.TotalMetadatas = 1
+	account.TotalFolders = 1
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
 	assert.True(t, account.CanRemoveMetadata())
-	account.TotalMetadatas = 0
+	account.TotalFolders = 0
 	assert.False(t, account.CanRemoveMetadata())
 }
 
@@ -516,15 +480,14 @@ func Test_CanUpdateMetadata(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsedInByte = 64 * 1e9
-	account.TotalMetadataSizeInBytes = 100
+	account.TotalMetadataSizeInBytes = int64(100 * 1e6)
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	assert.True(t, account.CanUpdateMetadata(100, 3.2e10))
-	account.TotalMetadataSizeInBytes = 3.2e10
-	assert.False(t, account.CanUpdateMetadata(3.2e10, 3.21e10))
+	assert.True(t, account.CanUpdateMetadata(100, 50e6))
+	account.TotalMetadataSizeInBytes = int64(200 * 1e6)
+	assert.False(t, account.CanUpdateMetadata(3.2e10, 50e6))
 }
 
 func Test_IncrementMetadataCount(t *testing.T) {
@@ -533,8 +496,7 @@ func Test_IncrementMetadataCount(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsedInByte = 64 * 1e9
-	account.TotalMetadatas = 638
+	account.TotalFolders = utils.Env.Plans[int(BasicStorageLimit)].MaxFolders - 2
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -543,19 +505,19 @@ func Test_IncrementMetadataCount(t *testing.T) {
 	assert.Nil(t, err)
 
 	accountFromDB, _ := GetAccountById(account.AccountID)
-	assert.True(t, accountFromDB.TotalMetadatas == 639)
+	assert.True(t, accountFromDB.TotalFolders == utils.Env.Plans[int(BasicStorageLimit)].MaxFolders-1)
 
 	err = account.IncrementMetadataCount()
 	assert.Nil(t, err)
 
 	accountFromDB, _ = GetAccountById(account.AccountID)
-	assert.True(t, accountFromDB.TotalMetadatas == 640)
+	assert.True(t, accountFromDB.TotalFolders == utils.Env.Plans[int(BasicStorageLimit)].MaxFolders)
 
 	err = account.IncrementMetadataCount()
 	assert.NotNil(t, err)
 
 	accountFromDB, _ = GetAccountById(account.AccountID)
-	assert.True(t, accountFromDB.TotalMetadatas == 640)
+	assert.True(t, accountFromDB.TotalFolders == utils.Env.Plans[int(BasicStorageLimit)].MaxFolders)
 }
 
 func Test_DecrementMetadataCount(t *testing.T) {
@@ -564,8 +526,7 @@ func Test_DecrementMetadataCount(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsedInByte = 64 * 1e9
-	account.TotalMetadatas = 1
+	account.TotalFolders = 1
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -574,7 +535,7 @@ func Test_DecrementMetadataCount(t *testing.T) {
 	assert.Nil(t, err)
 
 	accountFromDB, _ := GetAccountById(account.AccountID)
-	assert.True(t, accountFromDB.TotalMetadatas == 0)
+	assert.True(t, accountFromDB.TotalFolders == 0)
 
 	err = account.DecrementMetadataCount()
 	assert.NotNil(t, err)
@@ -586,15 +547,14 @@ func Test_UpdateMetadataSizeInBytes(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsedInByte = 64 * 1e9
 	account.TotalMetadataSizeInBytes = 100
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	assert.Nil(t, account.UpdateMetadataSizeInBytes(100, 3.2e10))
-	account.TotalMetadataSizeInBytes = 3.2e10
-	assert.NotNil(t, account.UpdateMetadataSizeInBytes(3.2e10, 3.21e10))
+	assert.Nil(t, account.UpdateMetadataSizeInBytes(100, 3.2e6))
+	account.TotalMetadataSizeInBytes = 200e6
+	assert.NotNil(t, account.UpdateMetadataSizeInBytes(200e6, 300e6))
 }
 
 func Test_RemoveMetadata(t *testing.T) {
@@ -603,9 +563,8 @@ func Test_RemoveMetadata(t *testing.T) {
 	// If those values are changed this test will fail.
 
 	account := returnValidAccount()
-	account.StorageUsedInByte = 64 * 1e9
 	account.TotalMetadataSizeInBytes = 100
-	account.TotalMetadatas = 1
+	account.TotalFolders = 1
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -613,16 +572,16 @@ func Test_RemoveMetadata(t *testing.T) {
 	assert.Nil(t, account.RemoveMetadata(100))
 
 	accountFromDB, _ := GetAccountById(account.AccountID)
-	assert.True(t, accountFromDB.TotalMetadatas == 0)
+	assert.True(t, accountFromDB.TotalFolders == 0)
 	assert.True(t, accountFromDB.TotalMetadataSizeInBytes == int64(0))
 
 	account.TotalMetadataSizeInBytes = 100
-	account.TotalMetadatas = 1
+	account.TotalFolders = 1
 	DB.Save(&account)
 
 	assert.NotNil(t, account.RemoveMetadata(101))
 	account.TotalMetadataSizeInBytes = 100
-	account.TotalMetadatas = 0
+	account.TotalFolders = 0
 	DB.Save(&account)
 
 	assert.NotNil(t, account.RemoveMetadata(100))

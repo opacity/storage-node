@@ -1,17 +1,11 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Opacity backend for file storage.",
-        "title": "Storage Node",
-        "termsOfService": "https://opacity.io/terms-of-service",
-        "contact": {
-            "name": "Opacity Staff",
-            "url": "https://telegram.me/opacitystorage"
-        },
-        "license": {
-            "name": "OPACITY LIMITED CODE REVIEW LICENSE LICENSE.md"
-        },
-        "version": "1.0"
+        "description": "{{.Description}}",
+        "title": "{{.Title}}",
+        "contact": {},
+        "license": {},
+        "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
@@ -577,6 +571,27 @@
                     }
                 }
             }
+        },
+        "/plans": {
+            "get": {
+                "description": "get the plans we sell",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get the plans we sell",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/utils.Env.Plans"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -730,6 +745,26 @@
                 }
             }
         },
+        "routes.accountCreateObj": {
+            "type": "object",
+            "required": [
+                "durationInMonths",
+                "storageLimit"
+            ],
+            "properties": {
+                "durationInMonths": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 12
+                },
+                "storageLimit": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 100,
+                    "example": 100
+                }
+            }
+        },
         "routes.accountCreateReq": {
             "type": "object",
             "required": [
@@ -738,6 +773,10 @@
                 "signature"
             ],
             "properties": {
+                "accountCreateObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.accountCreateObj"
+                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -746,7 +785,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.accountCreateObj, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -816,6 +855,14 @@
                 "expirationDate": {
                     "type": "string"
                 },
+                "maxFolders": {
+                    "type": "integer",
+                    "example": 2000
+                },
+                "maxMetadataSizeInMB": {
+                    "type": "integer",
+                    "example": 200
+                },
                 "monthsInSubscription": {
                     "description": "number of months in their subscription",
                     "type": "integer",
@@ -831,16 +878,27 @@
                     "type": "number",
                     "example": 30
                 },
-                "totalMetadataSizeInBytes": {
-                    "type": "integer",
-                    "example": 245765432
-                },
-                "totalMetadatas": {
+                "totalFolders": {
                     "type": "integer",
                     "example": 2
                 },
+                "totalMetadataSizeInMB": {
+                    "type": "integer",
+                    "example": 245765432
+                },
                 "updatedAt": {
                     "type": "string"
+                }
+            }
+        },
+        "routes.accountGetReqObj": {
+            "type": "object",
+            "required": [
+                "timestamp"
+            ],
+            "properties": {
+                "timestamp": {
+                    "type": "integer"
                 }
             }
         },
@@ -855,6 +913,18 @@
                 }
             }
         },
+        "routes.deleteFileObj": {
+            "type": "object",
+            "required": [
+                "fileID"
+            ],
+            "properties": {
+                "fileID": {
+                    "type": "string",
+                    "example": "the handle of the file"
+                }
+            }
+        },
         "routes.deleteFileReq": {
             "type": "object",
             "required": [
@@ -863,6 +933,10 @@
                 "signature"
             ],
             "properties": {
+                "deleteFileObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.deleteFileObj"
+                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -871,7 +945,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.deleteFileObj, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -915,6 +989,10 @@
                 "signature"
             ],
             "properties": {
+                "accountGetReqObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.accountGetReqObj"
+                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -923,7 +1001,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.accountGetReqObj, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
