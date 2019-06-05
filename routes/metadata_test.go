@@ -35,7 +35,7 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 
 	get := getMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -70,7 +70,7 @@ func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 
 	get := getMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -98,7 +98,7 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 
 	get := getMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -133,7 +133,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 
 	post := updateMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -173,7 +173,7 @@ func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 
 	post := updateMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -203,7 +203,7 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 
 	post := updateMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -231,7 +231,7 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 
 	post := updateMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)

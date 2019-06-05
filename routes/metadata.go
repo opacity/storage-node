@@ -19,7 +19,8 @@ type updateMetadataObject struct {
 
 type updateMetadataReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.updateMetadataObject, see description for example"`
+	requestBody
+	updateMetadataObject updateMetadataObject
 }
 
 type updateMetadataRes struct {
@@ -35,12 +36,21 @@ type getMetadataObject struct {
 
 type getMetadataReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.getMetadataObject, see description for example"`
+	requestBody
+	getMetadataObject getMetadataObject
 }
 
 type getMetadataRes struct {
 	Metadata       string    `json:"metadata" binding:"exists" example:"your account metadata"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
+}
+
+func (v *updateMetadataReq) getObjectRef() interface{} {
+	return &v.updateMetadataObject
+}
+
+func (v *getMetadataReq) getObjectRef() interface{} {
+	return &v.getMetadataObject
 }
 
 // GetMetadataHandler godoc
@@ -87,9 +97,8 @@ func UpdateMetadataHandler() gin.HandlerFunc {
 func getMetadata(c *gin.Context) error {
 	request := getMetadataReq{}
 
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
-		return BadRequestResponse(c, err)
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
 	}
 
 	account, err := request.getAccount(c)
@@ -101,13 +110,7 @@ func getMetadata(c *gin.Context) error {
 		return err
 	}
 
-	requestBodyParsed := getMetadataObject{}
-
-	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
-		return err
-	}
-
-	metadata, expirationTime, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+	metadata, expirationTime, err := utils.GetValueFromKV(request.getMetadataObject.MetadataKey)
 	if err != nil {
 		return NotFoundResponse(c, err)
 	}
@@ -121,9 +124,8 @@ func getMetadata(c *gin.Context) error {
 func setMetadata(c *gin.Context) error {
 	request := updateMetadataReq{}
 
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
-		return BadRequestResponse(c, err)
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
 	}
 
 	account, err := request.getAccount(c)
@@ -135,15 +137,8 @@ func setMetadata(c *gin.Context) error {
 		return err
 	}
 
-	requestBodyParsed := updateMetadataObject{}
-
-	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
-		return err
-	}
-
-	_, _, err = utils.GetValueFromKV(requestBodyParsed.MetadataKey)
-
-	if err != nil {
+	metadataKey := request.updateMetadataObject.MetadataKey
+	if _, _, err := utils.GetValueFromKV(metadataKey); err != nil {
 		return NotFoundResponse(c, err)
 	}
 
@@ -153,13 +148,13 @@ func setMetadata(c *gin.Context) error {
 
 	ttl := time.Until(account.ExpirationDate())
 
-	if err := utils.BatchSet(&utils.KVPairs{requestBodyParsed.MetadataKey: requestBodyParsed.Metadata}, ttl); err != nil {
+	if err := utils.BatchSet(&utils.KVPairs{metadataKey: request.updateMetadataObject.Metadata}, ttl); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
 	return OkResponse(c, updateMetadataRes{
-		MetadataKey:    requestBodyParsed.MetadataKey,
-		Metadata:       requestBodyParsed.Metadata,
+		MetadataKey:    metadataKey,
+		Metadata:       request.updateMetadataObject.Metadata,
 		ExpirationDate: account.ExpirationDate(),
 	})
 }
