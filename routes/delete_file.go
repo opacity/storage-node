@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -14,10 +12,15 @@ type deleteFileObj struct {
 
 type deleteFileReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.deleteFileObj, see description for example"`
+	requestBody
+	deleteFileObj deleteFileObj
 }
 
 type deleteFileRes struct {
+}
+
+func (v *deleteFileReq) getObjectRef() interface{} {
+	return &v.deleteFileObj
 }
 
 // DeleteFileHandler godoc
@@ -42,14 +45,11 @@ func DeleteFileHandler() gin.HandlerFunc {
 func deleteFile(c *gin.Context) error {
 	request := deleteFileReq{}
 
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
-		return BadRequestResponse(c, err)
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
 	}
 
-	requestBodyParsed := deleteFileObj{}
-
-	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
+	account, err := request.getAccount(c)
 	if err != nil {
 		return err
 	}
@@ -58,12 +58,13 @@ func deleteFile(c *gin.Context) error {
 		return err
 	}
 
+	fileId := request.deleteFileObj.FileID
 	var completedFile models.CompletedFile
-	if completedFile, err = models.GetCompletedFileByFileID(requestBodyParsed.FileID); err != nil {
+	if completedFile, err = models.GetCompletedFileByFileID(fileId); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := verifyModifyPermissions(request.PublicKey, requestBodyParsed.FileID, completedFile.ModifierHash, c); err != nil {
+	if err := verifyModifyPermissions(request.PublicKey, fileId, completedFile.ModifierHash, c); err != nil {
 		return err
 	}
 
@@ -71,7 +72,7 @@ func deleteFile(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := utils.DeleteDefaultBucketObjectKeys(requestBodyParsed.FileID); err != nil {
+	if err := utils.DeleteDefaultBucketObjectKeys(fileId); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
