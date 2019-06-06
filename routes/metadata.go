@@ -2,8 +2,6 @@ package routes
 
 import (
 	"errors"
-	"fmt"
-
 	"time"
 
 	"github.com/gin-gonic/gin"
