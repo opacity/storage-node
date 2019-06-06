@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -14,13 +12,18 @@ type UploadStatusObj struct {
 
 type UploadStatusReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.UploadStatusObj, see description for example"`
+	requestBody
+	uploadStatusObj UploadStatusObj
 }
 
 type missingChunksRes struct {
 	Status         string  `json:"status" example:"chunks missing"`
 	MissingIndexes []int64 `json:"missingIndexes" example:"[5, 7, 12]"`
 	EndIndex       int     `json:"endIndex" example:"2"`
+}
+
+func (v *UploadStatusReq) getObjectRef() interface{} {
+	return &v.uploadStatusObj
 }
 
 // CheckUploadStatusHandler godoc
@@ -47,29 +50,28 @@ func CheckUploadStatusHandler() gin.HandlerFunc {
 func checkUploadStatus(c *gin.Context) error {
 	request := UploadStatusReq{}
 
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		return BadRequestResponse(c, fmt.Errorf("bad request, unable to parse request body:  %v", err))
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
 	}
 
-	requestBodyParsed := UploadStatusObj{}
-
-	account, err := returnAccountIfVerifiedFromStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c)
+	account, err := request.getAccount(c)	
 	if err != nil {
 		return err
 	}
 
-	completedFile, completedErr := models.GetCompletedFileByFileID(requestBodyParsed.FileHandle)
+	fileId := request.uploadStatusObj.FileHandle
+	completedFile, completedErr := models.GetCompletedFileByFileID(fileId)
 	if completedErr == nil && len(completedFile.FileID) != 0 &&
-		utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(requestBodyParsed.FileHandle)) {
+		utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileId)) {
 		return OkResponse(c, fileUploadCompletedRes)
 	}
 
-	file, err := models.GetFileById(requestBodyParsed.FileHandle)
+	file, err := models.GetFileById(fileId)
 	if err != nil || len(file.FileID) == 0 {
 		return FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 	}
 
-	if err := verifyModifyPermissions(request.PublicKey, requestBodyParsed.FileHandle, file.ModifierHash, c); err != nil {
+	if err := verifyModifyPermissions(request.PublicKey, fileId, file.ModifierHash, c); err != nil {
 		return err
 	}
 
