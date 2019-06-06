@@ -117,7 +117,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	v, b = returnValidVerificationAndRequestBody(t, uploadStatusObj, privateKey)
 	uploadStatusReq := UploadStatusReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	w := uploadStatusFileHelperForTest(t, uploadStatusReq)
