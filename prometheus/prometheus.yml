@@ -20,6 +20,10 @@ scrape_configs:
   
   - job_name: 'storage-node'
     metrics_path: '/admin/metrics'
+    basic_auth:
+      username: @@ADMIN_USER@@
+      password: @@ADMIN_PASSWORD@@
+
     # scheme defaults to 'http'.
     static_configs:
     - targets: ['app:3000']

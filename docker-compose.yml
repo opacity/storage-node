@@ -2,11 +2,15 @@ version: "3"
 
 services:
   prometheus:
-    image: quay.io/prometheus/prometheus:latest
+    build:
+      context: ./prometheus
+      dockerfile: Dockerfile
+      args:
+        ADMIN_USER: ${ADMIN_USER}
+        ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     ports:
       - 9090:9090
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
