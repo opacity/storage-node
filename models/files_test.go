@@ -16,13 +16,13 @@ import (
 
 func returnValidFile() File {
 	return File{
-		FileID:           utils.RandHexString(64),
-		AwsUploadID:      aws.String(utils.RandHexString(64)),
-		AwsObjectKey:     aws.String(utils.RandHexString(64)),
+		FileID:           utils.GenerateFileHandle(),
+		AwsUploadID:      aws.String(utils.GenerateFileHandle()),
+		AwsObjectKey:     aws.String(utils.GenerateFileHandle()),
 		EndIndex:         10,
 		CompletedIndexes: nil,
 		ExpiredAt:        time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
-		ModifierHash:     utils.RandHexString(64),
+		ModifierHash:     utils.GenerateFileHandle(),
 	}
 }
 

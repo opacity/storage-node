@@ -27,7 +27,7 @@ const defaultStorageUsedInByteForTest = 10 * 1e9
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
 	return UploadFileObj{
-		FileHandle: utils.RandHexString(64),
+		FileHandle: utils.GenerateFileHandle(),
 		PartIndex:  models.FirstChunkIndex,
 	}
 }
@@ -40,7 +40,7 @@ func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKe
 	return UploadFileReq{
 		verification: v,
 		RequestBody:  b.RequestBody,
-		ChunkData:    utils.RandHexString(64),
+		ChunkData:    utils.GenerateFileHandle(),
 	}
 }
 
@@ -58,7 +58,7 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		MetadataKey:          utils.RandHexString(64),
+		MetadataKey:          utils.GenerateFileHandle(),
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -86,7 +86,7 @@ func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 		PaymentStatus:        models.InitialPaymentReceived,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		MetadataKey:          utils.RandHexString(64),
+		MetadataKey:          utils.GenerateFileHandle(),
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -224,11 +224,7 @@ func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privat
 func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
 	abortIfNotTesting(t)
 
-	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
-
+	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
 }
 

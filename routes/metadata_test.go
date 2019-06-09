@@ -16,8 +16,8 @@ func Test_Init_Metadata(t *testing.T) {
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandHexString(64)
-	testMetadataValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	testMetadataValue := utils.GenerateFileHandle()
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -40,18 +40,15 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, MetadataGetPath, get)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
-
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), testMetadataValue)
 }
 
 func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandHexString(64)
-	testMetadataValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	testMetadataValue := utils.GenerateFileHandle()
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -74,15 +71,12 @@ func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, MetadataGetPath, get)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
-
+	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
 }
 
 func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
-	testMetadataKey := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
 
 	getMetadata := getMetadataObject{
 		MetadataKey: testMetadataKey,
@@ -101,17 +95,15 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, MetadataGetPath, get)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusNotFound {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
-	}
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandHexString(64)
-	testMetadataValue := utils.RandHexString(64)
-	newValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	testMetadataValue := utils.GenerateFileHandle()
+	newValue := utils.GenerateFileHandle()
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -135,10 +127,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
-
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), newValue)
 
 	metadata, _, _ := utils.GetValueFromKV(testMetadataKey)
@@ -148,9 +137,9 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandHexString(64)
-	testMetadataValue := utils.RandHexString(64)
-	newValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	testMetadataValue := utils.GenerateFileHandle()
+	newValue := utils.GenerateFileHandle()
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -174,16 +163,13 @@ func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
-
+	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
 }
 
 func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
-	testMetadataKey := utils.RandHexString(64)
-	newValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	newValue := utils.GenerateFileHandle()
 
 	updateMetadataObj := updateMetadataObject{
 		MetadataKey: testMetadataKey,
@@ -203,14 +189,12 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusNotFound {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
-	}
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
-	testMetadataKey := utils.RandHexString(64)
-	newValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	newValue := utils.GenerateFileHandle()
 
 	updateMetadataObj := updateMetadataObject{
 		MetadataKey: testMetadataKey,

@@ -19,7 +19,7 @@ func returnValidCreateAccountBody() accountCreateObj {
 	return accountCreateObj{
 		StorageLimit:     int(models.BasicStorageLimit),
 		DurationInMonths: 12,
-		MetadataKey:      utils.RandHexString(64),
+		MetadataKey:      utils.GenerateFileHandle(),
 	}
 }
 
@@ -52,7 +52,7 @@ func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.Priva
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
-		MetadataKey:          utils.RandHexString(64),
+		MetadataKey:          utils.GenerateFileHandle(),
 	}, privateKeyToSignWith
 }
 
@@ -79,7 +79,7 @@ func returnValidAccount() models.Account {
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
-		MetadataKey:          utils.RandHexString(64),
+		MetadataKey:          utils.GenerateFileHandle(),
 	}
 }
 
@@ -92,9 +92,7 @@ func Test_NoErrorsWithValidPost(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, AccountsPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func Test_ExpectErrorWithInvalidSignature(t *testing.T) {
@@ -103,9 +101,7 @@ func Test_ExpectErrorWithInvalidSignature(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, AccountsPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
-	}
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func Test_ExpectErrorIfVerificationFails(t *testing.T) {
@@ -113,9 +109,7 @@ func Test_ExpectErrorIfVerificationFails(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, AccountsPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
+	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
 func Test_ExpectErrorWithInvalidStorageLimit(t *testing.T) {
@@ -125,9 +119,7 @@ func Test_ExpectErrorWithInvalidStorageLimit(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, AccountsPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
-	}
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
@@ -137,9 +129,7 @@ func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, AccountsPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
-	}
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) {
@@ -150,10 +140,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) 
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusNotFound {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
-	}
-
+	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.Contains(t, w.Body.String(), "no account with that id")
 }
 
@@ -173,10 +160,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
-
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"paymentStatus":"paid"`)
 }
 
@@ -196,10 +180,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
-
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"paymentStatus":"unpaid"`)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
 }

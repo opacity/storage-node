@@ -122,9 +122,7 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 
 			// perform the first request and verify the expected status
 			w := routes.UploadFileHelperForTest(t, request)
-			if w.Code != http.StatusOK {
-				t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-			}
+			assert.Equal(t, http.StatusOK, w.Code)
 
 			// perform the requests for subsequent chunks
 			for index, buffer := range arrayOfChunkDataBuffers {
@@ -134,9 +132,7 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 				request := routes.ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 				request.ChunkData = string(buffer)
 				w := routes.UploadFileHelperForTest(t, request)
-				if w.Code != http.StatusOK {
-					t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-				}
+				assert.Equal(t, http.StatusOK, w.Code)
 				//}()
 			}
 
