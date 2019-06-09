@@ -2,11 +2,6 @@ package routes
 
 import (
 	"testing"
-	"net/http/httptest"
-
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
-
 )
 
 func Test_Init_Upload_Status(t *testing.T) {

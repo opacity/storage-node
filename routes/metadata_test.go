@@ -2,7 +2,6 @@ package routes
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"bytes"
 	"encoding/json"
