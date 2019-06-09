@@ -1,18 +1,11 @@
 package routes
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
-
 	"encoding/hex"
-
 	"math/big"
-
 	"crypto/ecdsa"
-
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -32,7 +25,6 @@ func returnValidCreateAccountBody() accountCreateObj {
 
 func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCreateReq {
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, body)
-
 	return accountCreateReq{
 		verification: v,
 		requestBody:  b,
@@ -41,7 +33,6 @@ func returnValidCreateAccountReq(t *testing.T, body accountCreateObj) accountCre
 
 func returnFailedVerificationCreateAccountReq(t *testing.T, body accountCreateObj) accountCreateReq {
 	v, b, _, _ := returnInvalidVerificationAndRequestBody(t, body)
-
 	return accountCreateReq{
 		verification: v,
 		requestBody:  b,
@@ -99,8 +90,7 @@ func Test_Init_Accounts(t *testing.T) {
 func Test_NoErrorsWithValidPost(t *testing.T) {
 	post := returnValidCreateAccountReq(t, returnValidCreateAccountBody())
 
-	w := accountsTestHelperCreateAccount(t, post)
-
+	w := httpPostRequestHelperForTest(t, AccountsPath, post)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
@@ -111,8 +101,7 @@ func Test_ExpectErrorWithInvalidSignature(t *testing.T) {
 	post := returnValidCreateAccountReq(t, returnValidCreateAccountBody())
 	post.Signature = "abcdef"
 
-	w := accountsTestHelperCreateAccount(t, post)
-
+	w := httpPostRequestHelperForTest(t, AccountsPath, post)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
@@ -122,8 +111,7 @@ func Test_ExpectErrorWithInvalidSignature(t *testing.T) {
 func Test_ExpectErrorIfVerificationFails(t *testing.T) {
 	post := returnFailedVerificationCreateAccountReq(t, returnValidCreateAccountBody())
 
-	w := accountsTestHelperCreateAccount(t, post)
-
+	w := httpPostRequestHelperForTest(t, AccountsPath, post)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusForbidden {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
@@ -135,8 +123,7 @@ func Test_ExpectErrorWithInvalidStorageLimit(t *testing.T) {
 	body.StorageLimit = 99
 	post := returnValidCreateAccountReq(t, body)
 
-	w := accountsTestHelperCreateAccount(t, post)
-
+	w := httpPostRequestHelperForTest(t, AccountsPath, post)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
@@ -148,8 +135,7 @@ func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
 	body.DurationInMonths = 0
 	post := returnValidCreateAccountReq(t, body)
 
-	w := accountsTestHelperCreateAccount(t, post)
-
+	w := httpPostRequestHelperForTest(t, AccountsPath, post)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
@@ -162,8 +148,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) 
 		Timestamp: time.Now().Unix(),
 	}, privateKey)
 
-	w := accountsTestHelperCheckAccountPaymentStatus(t, validReq)
-
+	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
@@ -186,8 +171,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 		return true, nil
 	}
 
-	w := accountsTestHelperCheckAccountPaymentStatus(t, validReq)
-
+	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
@@ -210,8 +194,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 		return false, nil
 	}
 
-	w := accountsTestHelperCheckAccountPaymentStatus(t, validReq)
-
+	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
@@ -219,54 +202,4 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 
 	assert.Contains(t, w.Body.String(), `"paymentStatus":"unpaid"`)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
-}
-
-func accountsTestHelperCreateAccount(t *testing.T, post accountCreateReq) *httptest.ResponseRecorder {
-	router := returnEngine()
-	v1 := returnV1Group(router)
-	v1.POST(AccountsPath, CreateAccountHandler())
-
-	marshalledReq, _ := json.Marshal(post)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	// Create the mock request you'd like to test. Make sure the second argument
-	// here is the same as one of the routes you defined in the router setup
-	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+AccountsPath, reqBody)
-	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
-	}
-
-	// Create a response recorder so you can inspect the response
-	w := httptest.NewRecorder()
-
-	// Perform the request
-	router.ServeHTTP(w, req)
-
-	return w
-}
-
-func accountsTestHelperCheckAccountPaymentStatus(t *testing.T, get getAccountDataReq) *httptest.ResponseRecorder {
-	router := returnEngine()
-	v1 := returnV1Group(router)
-	v1.POST(AccountDataPath, CheckAccountPaymentStatusHandler())
-
-	marshalledReq, _ := json.Marshal(get)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	// Create the mock request you'd like to test. Make sure the second argument
-	// here is the same as one of the routes you defined in the router setup
-	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+AccountDataPath, reqBody)
-	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
-	}
-
-	// Create a response recorder so you can inspect the response
-	w := httptest.NewRecorder()
-
-	// Perform the request
-	router.ServeHTTP(w, req)
-
-	return w
 }
