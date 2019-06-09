@@ -20,9 +20,8 @@ func Test_Init_Delete_Files(t *testing.T) {
 }
 
 func Test_Successful_File_Deletion_Request(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteCompletedFilesForTest(t)
-	models.DeleteFilesForTest(t)
+	cleanUpBeforeTest(t)
+
 	account, fileID, privateKey := createAccountAndUploadFile(t)
 
 	checkPrerequisites(t, account, fileID)
@@ -37,8 +36,7 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 		requestBody:  b,
 	}
 
-	w := deleteFileHelperForTest(t, request)
-
+	w := httpPostRequestHelperForTest(t, DeletePath, request)
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
@@ -120,8 +118,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 		requestBody:  b,
 	}
 
-	w := uploadStatusFileHelperForTest(t, uploadStatusReq)
-
+	w := httpPostRequestHelperForTest(t, UploadStatusPath, uploadStatusReq)
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
 	}
@@ -131,31 +128,4 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	assert.Nil(t, err)
 
 	return updatedAccount, uploadBody.FileHandle, privateKey
-}
-
-func deleteFileHelperForTest(t *testing.T, request deleteFileReq) *httptest.ResponseRecorder {
-	abortIfNotTesting(t)
-
-	router := returnEngine()
-	v1 := returnV1Group(router)
-	v1.POST(DeletePath, DeleteFileHandler())
-
-	marshalledReq, _ := json.Marshal(request)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	// Create the mock request you'd like to test. Make sure the second argument
-	// here is the same as one of the routes you defined in the router setup
-	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+DeletePath, reqBody)
-	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
-	}
-
-	// Create a response recorder so you can inspect the response
-	w := httptest.NewRecorder()
-
-	// Perform the request
-	router.ServeHTTP(w, req)
-
-	return w
 }
