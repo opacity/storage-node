@@ -10,7 +10,7 @@ func init() {
 }
 
 func GenerateFileHandle() string {
-	return GenerateFileHandle()
+	return RandHexString(64)
 }
 
 /*RandHexString generates a random hex string of the length passed in*/
