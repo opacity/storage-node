@@ -2,7 +2,6 @@ package routes
 
 import (
 	"crypto/ecdsa"
-	"encoding/json"
 	"net/http"
 	"testing"
 

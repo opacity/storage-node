@@ -3,8 +3,6 @@ package routes
 import (
 	"net/http"
 	"testing"
-	"bytes"
-	"encoding/json"
 	"time"
 
 	"github.com/opacity/storage-node/utils"
@@ -135,7 +133,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataSetPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusOK {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
@@ -174,7 +172,7 @@ func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreateUnpaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataSetPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusForbidden {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
@@ -203,7 +201,7 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataSetPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 	// Check to see if the response was what you expected
 	if w.Code != http.StatusNotFound {
 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
@@ -230,7 +228,7 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataSetPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 
 	confirmVerifyFailedForTest(t, w)
 }
