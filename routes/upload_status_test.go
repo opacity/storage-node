@@ -88,7 +88,7 @@ func Test_IncorrectPermission(t *testing.T) {
 	file := File{
 		FileID: uploadObj.FileHandle,
 		EndIndex: 10,
-		ModifierHash: utils.RandHexString(64)
+		ModifierHash: utils.RandHexString(64),
 	}
 	assert.Nil(t, models.DB.Create(&file).Error)
 
