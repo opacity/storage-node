@@ -16,7 +16,7 @@ func Test_Init_Upload_Status(t *testing.T) {
 func Test_CheckWithAccountNoExist(t *testing.T) {
 	_, privateKey := generateValidateAccountId(t)
 
-	uploadStatusObj := UploadStatusReq{
+	uploadStatusObj := UploadStatusObj{
 		FileHandle: utils.GenerateFileHandle(),
 	} 
 	v, b := returnValidVerificationAndRequestBody(t, uploadStatusObj, privateKey)
