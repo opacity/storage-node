@@ -3,11 +3,8 @@ package utils
 import (
 	"os"
 	"testing"
-
-	"fmt"
 	"io"
 	"net/http"
-
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"

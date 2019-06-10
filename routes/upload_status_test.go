@@ -21,8 +21,8 @@ func Test_CheckWithAccountNoExist(t *testing.T) {
 	} 
 	v, b := returnValidVerificationAndRequestBody(t, uploadStatusObj, privateKey)
 	req := UploadStatusReq{
-		verification v,
-		requestBody b,
+		verification: v,
+		requestBody: b,
 	}
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
