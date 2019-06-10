@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/opacity/storage-node/utils"
+	"github.com/opacity/storage-node/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -42,7 +43,7 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 
 	req, uploadObj := generateRequest(privateKey)
 
-	compeletedFile := CompletedFile{
+	compeletedFile := models.CompletedFile{
 		FileID:         uploadObj.FileHandle,
 		FileSizeInByte: 100,
 		ModifierHash: utils.RandHexString(64),
@@ -64,16 +65,16 @@ func Test_MissingIndexes(t *testing.T) {
 	CreatePaidAccountForTest(t, accountId)
 
 	req, uploadObj := generateRequest(privateKey)
-	modifiedHash, _ := createModifierHash(privateKey.PublicKey, uploadObj.FileHandle, nil)
-	file := File{
+	modifiedHash, _ := createModifierHash(req.PublicKey, uploadObj.FileHandle, nil)
+	file := models.File{
 		FileID: uploadObj.FileHandle,
 		EndIndex: 5,
 		ModifierHash: modifiedHash,
 	}
 	assert.Nil(t, models.DB.Create(&file).Error)
-	assert.Nil(t, modles.CreateCompletedUploadIndex(uploadObj.FileHandle, 1, "a"))
-	assert.Nil(t, modles.CreateCompletedUploadIndex(uploadObj.FileHandle, 4, "a"))
-	assert.Nil(t, modles.CreateCompletedUploadIndex(uploadObj.FileHandle, 2, "a"))
+	assert.Nil(t, models.CreateCompletedUploadIndex(uploadObj.FileHandle, 1, "a"))
+	assert.Nil(t, models.CreateCompletedUploadIndex(uploadObj.FileHandle, 4, "a"))
+	assert.Nil(t, models.CreateCompletedUploadIndex(uploadObj.FileHandle, 2, "a"))
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -85,7 +86,7 @@ func Test_IncorrectPermission(t *testing.T) {
 	CreatePaidAccountForTest(t, accountId)
 
 	req, uploadObj := generateRequest(privateKey)
-	file := File{
+	file := models.File{
 		FileID: uploadObj.FileHandle,
 		EndIndex: 10,
 		ModifierHash: utils.RandHexString(64),
