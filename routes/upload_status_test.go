@@ -78,7 +78,7 @@ func Test_MissingIndexes(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "abc")
+	assert.Contains(t, w.Body.String(), "\"missingIndexes\":[3,5]")
 }
 
 func Test_IncorrectPermission(t *testing.T) {
