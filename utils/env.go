@@ -101,6 +101,20 @@ func IsTestEnv() bool {
 	return Env.GoEnv == "test"
 }
 
+/*FreeModeEnabled returns whether we are running in free mode.  Not storing this as
+part of the Env because we want it to re-check each time this method is called.*/
+func FreeModeEnabled() bool {
+	return os.Getenv("FREE_MODE") == "true" && !IsTestEnv()
+}
+
+/*WritesEnabled returns true unless the WRITES_DISABLED env variable is set to true.  Not
+storing as part of the Env because we want to re-check each time this method is called.  Not calling
+this method on every endpoint because we're only trying to reject new uploads, new accounts, etc.  We
+aren't trying to interrupt existing uploads or metadata sets. */
+func WritesEnabled() bool {
+	return !(os.Getenv("WRITES_DISABLED") == "true") && !IsTestEnv()
+}
+
 func tryLookUp() error {
 	var collectedErrors []error
 	prodDBUrl := AppendLookupErrors("PROD_DATABASE_URL", &collectedErrors)

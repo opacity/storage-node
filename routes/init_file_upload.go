@@ -51,6 +51,10 @@ func InitFileUploadHandler() gin.HandlerFunc {
 }
 
 func initFileUploadWithContext(c *gin.Context) error {
+	if !utils.WritesEnabled() {
+		return ServiceUnavailableResponse(c, maintenanceError)
+	}
+
 	request := InitFileUploadReq{}
 
 	if err := verifyAndParseFormRequest(&request, c); err != nil {
