@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/opacity/storage-node/utils"
+	"github.com/opacity/storage-node/models"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,7 @@ func Test_Init_Upload_Status(t *testing.T) {
 
 func Test_CheckWithAccountNoExist(t *testing.T) {
 	_, privateKey := generateValidateAccountId(t)
-	req, _ := generateRequest(privateKey)
+	req, _ := generateRequest(t, privateKey)
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 
@@ -28,7 +29,7 @@ func Test_CheckFileNotFound(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req, uploadObj := generateRequest(privateKey)
+	req, _ := generateRequest(t, privateKey)
 	
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 
@@ -40,15 +41,15 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req, uploadObj := generateRequest(privateKey)
+	req, uploadObj := generateRequest(t, privateKey)
 
-	compeletedFile := CompletedFile{
+	compeletedFile := models.CompletedFile{
 		FileID:         uploadObj.FileHandle,
 		FileSizeInByte: 100,
-		ModifierHash: utils.RandHexString(64)
+		ModifierHash: utils.RandHexString(64),
 	}
 	assert.Nil(t, models.DB.Create(&compeletedFile).Error)
-	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), "hello world!")
+	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), "hello world!"))
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 
@@ -63,32 +64,32 @@ func Test_MissingIndexes(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req, uploadObj := generateRequest(privateKey)
-	modifiedHash, _ := createModifierHash(privateKey.PublicKey, uploadObj.FileHandle, nil)
-	file := File{
+	req, uploadObj := generateRequest(t, privateKey)
+	modifiedHash, _ := createModifierHash(req.PublicKey, uploadObj.FileHandle, nil)
+	file := models.File{
 		FileID: uploadObj.FileHandle,
 		EndIndex: 5,
 		ModifierHash: modifiedHash,
 	}
 	assert.Nil(t, models.DB.Create(&file).Error)
-	assert.Nil(t, modles.CreateCompletedUploadIndex(uploadObj.FileHandle, 1, "a"))
-	assert.Nil(t, modles.CreateCompletedUploadIndex(uploadObj.FileHandle, 4, "a"))
-	assert.Nil(t, modles.CreateCompletedUploadIndex(uploadObj.FileHandle, 2, "a"))
+	assert.Nil(t, models.CreateCompletedUploadIndex(uploadObj.FileHandle, 1, "a"))
+	assert.Nil(t, models.CreateCompletedUploadIndex(uploadObj.FileHandle, 4, "a"))
+	assert.Nil(t, models.CreateCompletedUploadIndex(uploadObj.FileHandle, 2, "a"))
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "abc")
+	assert.Contains(t, w.Body.String(), "\"missingIndexes\":[3,5]")
 }
 
 func Test_IncorrectPermission(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req, uploadObj := generateRequest(privateKey)
-	file := File{
+	req, uploadObj := generateRequest(t, privateKey)
+	file := models.File{
 		FileID: uploadObj.FileHandle,
 		EndIndex: 10,
-		ModifierHash: utils.RandHexString(64)
+		ModifierHash: utils.RandHexString(64),
 	}
 	assert.Nil(t, models.DB.Create(&file).Error)
 
@@ -97,7 +98,7 @@ func Test_IncorrectPermission(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "you are not authorized to modify this file")
 }
 
-func generateRequest(privateKey *ecdsa.PrivateKey) (UploadStatusReq, UploadStatusObj) {
+func generateRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (UploadStatusReq, UploadStatusObj) {
 	uploadStatusObj := UploadStatusObj{
 		FileHandle: utils.GenerateFileHandle(),
 	} 
