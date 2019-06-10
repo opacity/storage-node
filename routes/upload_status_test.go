@@ -29,7 +29,7 @@ func Test_CheckFileNotFound(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req, uploadObj := generateRequest(t, privateKey)
+	req, _ := generateRequest(t, privateKey)
 	
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 
