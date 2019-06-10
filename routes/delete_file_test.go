@@ -36,9 +36,7 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 	}
 
 	w := httpPostRequestHelperForTest(t, DeletePath, request)
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
 	// check that StorageUsedInByte has been deducted after deletion
@@ -74,7 +72,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	account := CreatePaidAccountForTest(t, accountId)
 
 	initBody := InitFileUploadObj{
-		FileHandle:     utils.RandHexString(64),
+		FileHandle:     utils.GenerateFileHandle(),
 		EndIndex:       models.FirstChunkIndex,
 		FileSizeInByte: 26214400,
 	}
@@ -84,8 +82,8 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 		initFileUploadObj: initBody,
 		verification:      v,
 		requestBody:       b,
-		Metadata:          utils.RandHexString(64),
-		MetadataAsFile:    utils.RandHexString(64),
+		Metadata:          utils.GenerateFileHandle(),
+		MetadataAsFile:    utils.GenerateFileHandle(),
 	}
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
@@ -118,9 +116,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	}
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, uploadStatusReq)
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
 

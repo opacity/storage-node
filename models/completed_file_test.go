@@ -16,22 +16,22 @@ func Test_Init_Completed_File(t *testing.T) {
 func Test_GetAllExpiredCompletedFiles(t *testing.T) {
 	DeleteCompletedFilesForTest(t)
 	s := CompletedFile{
-		FileID:       utils.RandHexString(64),
-		ModifierHash: utils.RandHexString(64),
+		FileID:       utils.GenerateFileHandle(),
+		ModifierHash: utils.GenerateFileHandle(),
 		ExpiredAt:    time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 	firstExpired := s.FileID
 	assert.Nil(t, DB.Create(&s).Error)
 	s = CompletedFile{
-		FileID:       utils.RandHexString(64),
-		ModifierHash: utils.RandHexString(64),
+		FileID:       utils.GenerateFileHandle(),
+		ModifierHash: utils.GenerateFileHandle(),
 		ExpiredAt:    time.Date(2010, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 	secondExpired := s.FileID
 	assert.Nil(t, DB.Create(&s).Error)
 	s = CompletedFile{
-		FileID:       utils.RandHexString(64),
-		ModifierHash: utils.RandHexString(64),
+		FileID:       utils.GenerateFileHandle(),
+		ModifierHash: utils.GenerateFileHandle(),
 		ExpiredAt:    time.Date(2012, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 	assert.Nil(t, DB.Create(&s).Error)
@@ -47,14 +47,14 @@ func Test_GetAllExpiredCompletedFiles(t *testing.T) {
 func Test_DeleteAllCompletedFiles(t *testing.T) {
 	DeleteCompletedFilesForTest(t)
 	s1 := CompletedFile{
-		FileID:       utils.RandHexString(64),
-		ModifierHash: utils.RandHexString(64),
+		FileID:       utils.GenerateFileHandle(),
+		ModifierHash: utils.GenerateFileHandle(),
 		ExpiredAt:    time.Date(2001, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 	assert.Nil(t, DB.Create(&s1).Error)
 	s2 := CompletedFile{
-		FileID:       utils.RandHexString(64),
-		ModifierHash: utils.RandHexString(64),
+		FileID:       utils.GenerateFileHandle(),
+		ModifierHash: utils.GenerateFileHandle(),
 		ExpiredAt:    time.Date(2002, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 	assert.Nil(t, DB.Create(&s2).Error)
@@ -71,14 +71,14 @@ func Test_DeleteAllCompletedFiles(t *testing.T) {
 func Test_GetTotalFileSizeInByte(t *testing.T) {
 	DeleteCompletedFilesForTest(t)
 	s := CompletedFile{
-		FileID:         utils.RandHexString(64),
-		ModifierHash:   utils.RandHexString(64),
+		FileID:         utils.GenerateFileHandle(),
+		ModifierHash:   utils.GenerateFileHandle(),
 		FileSizeInByte: 150,
 	}
 	assert.Nil(t, DB.Create(&s).Error)
 	s = CompletedFile{
-		FileID:         utils.RandHexString(64),
-		ModifierHash:   utils.RandHexString(64),
+		FileID:         utils.GenerateFileHandle(),
+		ModifierHash:   utils.GenerateFileHandle(),
 		FileSizeInByte: 210,
 	}
 	assert.Nil(t, DB.Create(&s).Error)
@@ -92,14 +92,14 @@ func Test_GetTotalFileSizeInByte(t *testing.T) {
 func Test_GetCompletedFileByFileID(t *testing.T) {
 	DeleteCompletedFilesForTest(t)
 	s := CompletedFile{
-		FileID:         utils.RandHexString(64),
-		ModifierHash:   utils.RandHexString(64),
+		FileID:         utils.GenerateFileHandle(),
+		ModifierHash:   utils.GenerateFileHandle(),
 		FileSizeInByte: 150,
 	}
 	assert.Nil(t, DB.Create(&s).Error)
 	s = CompletedFile{
-		FileID:         utils.RandHexString(64),
-		ModifierHash:   utils.RandHexString(64),
+		FileID:         utils.GenerateFileHandle(),
+		ModifierHash:   utils.GenerateFileHandle(),
 		FileSizeInByte: 210,
 	}
 	assert.Nil(t, DB.Create(&s).Error)
