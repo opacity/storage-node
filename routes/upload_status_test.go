@@ -45,10 +45,10 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 	compeletedFile := CompletedFile{
 		FileID:         uploadObj.FileHandle,
 		FileSizeInByte: 100,
-		ModifierHash: utils.RandHexString(64)
+		ModifierHash: utils.RandHexString(64),
 	}
 	assert.Nil(t, models.DB.Create(&compeletedFile).Error)
-	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), "hello world!")
+	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle)), "hello world!")
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 
