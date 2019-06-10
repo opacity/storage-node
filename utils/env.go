@@ -112,7 +112,7 @@ storing as part of the Env because we want to re-check each time this method is 
 this method on every endpoint because we're only trying to reject new uploads, new accounts, etc.  We
 aren't trying to interrupt existing uploads or metadata sets. */
 func WritesEnabled() bool {
-	return !(os.Getenv("WRITES_DISABLED") == "true") && !IsTestEnv()
+	return IsTestEnv() || !(os.Getenv("WRITES_DISABLED") == "true")
 }
 
 func tryLookUp() error {
