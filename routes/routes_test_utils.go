@@ -27,6 +27,7 @@ const defaultStorageUsedInByteForTest = 10 * 1e9
 
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
+	
 	return UploadFileObj{
 		FileHandle: utils.GenerateFileHandle(),
 		PartIndex:  models.FirstChunkIndex,
