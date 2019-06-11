@@ -17,7 +17,7 @@ func Test_Init_Upload_Status(t *testing.T) {
 
 func Test_CheckWithAccountNoExist(t *testing.T) {
 	_, privateKey := generateValidateAccountId(t)
-	req, _ := generateRequest(t, privateKey)
+	req, _ := generateUploadStatusRequest(t, privateKey)
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 
@@ -29,7 +29,7 @@ func Test_CheckFileNotFound(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req, _ := generateRequest(t, privateKey)
+	req, _ := generateUploadStatusRequest(t, privateKey)
 	
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 
@@ -41,7 +41,7 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req, uploadObj := generateRequest(t, privateKey)
+	req, uploadObj := generateUploadStatusRequest(t, privateKey)
 
 	compeletedFile := models.CompletedFile{
 		FileID:         uploadObj.FileHandle,
@@ -64,7 +64,7 @@ func Test_MissingIndexes(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req, uploadObj := generateRequest(t, privateKey)
+	req, uploadObj := generateUploadStatusRequest(t, privateKey)
 	modifiedHash, _ := createModifierHash(req.PublicKey, uploadObj.FileHandle, nil)
 	file := models.File{
 		FileID: uploadObj.FileHandle,
@@ -85,7 +85,7 @@ func Test_IncorrectPermission(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req, uploadObj := generateRequest(t, privateKey)
+	req, uploadObj := generateUploadStatusRequest(t, privateKey)
 	file := models.File{
 		FileID: uploadObj.FileHandle,
 		EndIndex: 10,
@@ -98,7 +98,7 @@ func Test_IncorrectPermission(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "you are not authorized to modify this file")
 }
 
-func generateRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (UploadStatusReq, UploadStatusObj) {
+func generateUploadStatusRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (UploadStatusReq, UploadStatusObj) {
 	uploadStatusObj := UploadStatusObj{
 		FileHandle: utils.GenerateFileHandle(),
 	} 
