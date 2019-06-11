@@ -260,7 +260,7 @@ func returnAccountId(hash []byte, verificationData verification, c *gin.Context)
 		return "", err
 	}
 
-	return verification.getAccountId(c)
+	return verificationData.getAccountId(c)
 }
 
 func createModifierHash(publicKey, fileID string, c *gin.Context) (string, error) {
