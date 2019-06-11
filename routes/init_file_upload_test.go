@@ -2,7 +2,7 @@ package routes
 
 import (
 	"crypto/ecdsa"
-	"net/http/httptest"
+	"net/http"
 	"testing"
 
 	"github.com/jinzhu/gorm"
@@ -59,7 +59,7 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "Account does not have enough space")
 
-	_, err = models.GetFileById(uploadObj.FileHandle)
+	_, err := models.GetFileById(uploadObj.FileHandle)
 	assert.True(t, gorm.IsRecordNotFoundError(err))
 }
 
