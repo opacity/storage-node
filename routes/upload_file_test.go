@@ -4,11 +4,12 @@ import (
 	"crypto/ecdsa"
 	"testing"
 	"net/http"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/opacity/storage-node/models"
-	"github.com/jinzhu/gorm"
 )
 
 func Test_Init_Upload_Files(t *testing.T) {
@@ -153,8 +154,8 @@ func Test_Upload_File_Account_Not_Paid(t *testing.T) {
 // 	assert.Nil(t, err)
 // }
 
-func initFileUpload(t testing.T, privateKey *ecdsa.PrivateKey) string {
-	req := createValidInitFileUploadRequest(t, 123)
+func initFileUpload(t *testing.T, privateKey *ecdsa.PrivateKey) string {
+	req := createValidInitFileUploadRequest(t, 123, privateKey)
 	httpPostRequestHelperForTest(t, InitUploadPath, req)
 	return req.initFileUploadObj.FileHandle
 }
