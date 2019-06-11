@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 	"time"
-
+	"mime/multipart"
 	"bytes"
 
 	"github.com/gin-gonic/gin"
@@ -227,6 +227,51 @@ func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
+}
+
+func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{}, form map[string]string, formFile map[string]string) {
+	abortIfNotTesting(t)
+
+	body := new(bytes.Buffer)
+	mw := multipart.NewWriter(body)
+
+	if i, ok := post.(verificationInterface); ok {
+		mw.WriteField("signature", i.getVerification().Signature)
+		mw.WriteField("publicKey", i.getVerification().PublicKey)
+	}
+
+	if i, ok := post.(parsableObjectInterface); ok {
+		mw.WriteField("requestBody", i.getObjectAsString())
+	}
+
+	for k, v := range form {
+		mw.WriteField(k, v)
+	}
+
+	for k, v := range formFile {
+		w, _ := mw.CreateFormFile(k, k)
+		w.Write([]byte(v))
+	}
+	mw.Close()
+
+	router := returnEngine()
+	v1 := returnV1Group(router)
+	setupV1Paths(v1)
+
+	req, err := http.NewRequest("POST", "/", body)
+	if err != nil {
+		t.Fatalf("Couldn't create request: %v\n", err)
+	}
+
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+
+	// Create a response recorder so you can inspect the response
+	w := httptest.NewRecorder()
+
+	// Perform the request
+	router.ServeHTTP(w, req)
+	
+	return w
 }
 
 func httpPostRequestHelperForTest(t *testing.T, path string, post interface{}) *httptest.ResponseRecorder {
