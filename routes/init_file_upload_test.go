@@ -24,7 +24,10 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 	form := map[string]string{
 		"metadata": "abc",
 	}
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, req, form, make(map[string]string))
+	formFile := map[string]string{
+		"metadata": "abc_file",
+	}
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, req, form, formFile)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"paymentStatus":"unpaid"`)
@@ -40,8 +43,11 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	form := map[string]string{
 		"metadata": "abc",
 	}
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, req, form, make(map[string]string))
-
+	formFile := map[string]string{
+		"metadata": "abc_file",
+	}
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, req, form, formFile)
+	
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	file, err := models.GetFileById(uploadObj.FileHandle)
@@ -64,7 +70,10 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	form := map[string]string{
 		"metadata": "abc",
 	}
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, req, form, make(map[string]string))
+	formFile := map[string]string{
+		"metadata": "abc_file",
+	}
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, req, form, formFile)
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "Account does not have enough space")
