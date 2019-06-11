@@ -1,12 +1,14 @@
 package routes
 
 import (
+	"crypto/ecdsa"
 	"testing"
-
 	"net/http"
 
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/opacity/storage-node/models"
+	"github.com/jinzhu/gorm"
 )
 
 func Test_Init_Upload_Files(t *testing.T) {
@@ -24,82 +26,37 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 
 	w := UploadFileHelperForTest(t, request)
 
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
-	}
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-// func Test_Upload_File_No_Account_Found(t *testing.T) {
-// 	privateKey, err := utils.GenerateKey()
-// 	assert.Nil(t, err)
-// 	request := ReturnValidUploadFileReqForTest(t, ReturnValidUploadFileBodyForTest(t), privateKey)
+func Test_Upload_File_No_Account_Found(t *testing.T) {
+	_, privateKey := generateValidateAccountId(t)
+	request := ReturnValidUploadFileReqForTest(t, ReturnValidUploadFileBodyForTest(t), privateKey)
 
-// 	w := UploadFileHelperForTest(t, request)
+	w := UploadFileHelperForTest(t, request)
 
-// 	if w.Code != http.StatusNotFound {
-// 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
-// 	}
-// }
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Contains(t, w.Body.String(), "no account with that id")
+}
 
-//func Test_Upload_File_Account_Not_Paid(t *testing.T) {
-//	privateKey, err := utils.GenerateKey()
-//	assert.Nil(t, err)
-//	request := ReturnValidUploadFileReqForTest(t, ReturnValidUploadFileBodyForTest(t), privateKey)
-//	accountID, err := utils.HashString(request.PublicKey)
-//	assert.Nil(t, err)
-//	CreateUnpaidAccountForTest(accountID, t)
-//
-//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-//		return false, nil
-//	}
-//
-//	w := UploadFileHelperForTest(t, request)
-//
-//	if w.Code != http.StatusForbidden {
-//		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-//	}
-//
-//	assert.Contains(t, w.Body.String(), "invoice")
-//	assert.Contains(t, w.Body.String(), "cost")
-//	assert.Contains(t, w.Body.String(), "ethAddress")
-//	assert.Contains(t, w.Body.String(), "expirationDate")
-//}
+func Test_Upload_File_Account_Not_Paid(t *testing.T) {
+	accountId, privateKey := generateValidateAccountId(t)
+	CreateUnpaidAccountForTest(t, accountId)
 
-//func Test_Upload_File_Account_Paid_Upload_Starts(t *testing.T) {
-//	if err := models.DB.Unscoped().Delete(&models.Account{}).Error; err != nil {
-//		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-//	}
-//
-//	uploadBody := ReturnValidUploadFileBodyForTest(t)
-//	uploadBody.ChunkData = string(ReturnChunkDataForTest(t))
-//	fileId := uploadBody.FileHandle
-//	privateKey, err := utils.GenerateKey()
-//	assert.Nil(t, err)
-//	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-//	accountID, err := utils.HashString(request.PublicKey)
-//	assert.Nil(t, err)
-//	CreatePaidAccountForTest(t, accountID)
-//
-//	filesInDB := []models.File{}
-//	models.DB.Where("file_id = ?", fileId).Find(&filesInDB)
-//	assert.Equal(t, 0, len(filesInDB))
-//
-//	w := UploadFileHelperForTest(t, request)
-//
-//	if w.Code != http.StatusOK {
-//		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-//	}
-//
-//	filesInDB = []models.File{}
-//	models.DB.Where("file_id = ?", fileId).Find(&filesInDB)
-//	assert.Equal(t, 1, len(filesInDB))
-//
-//	assert.NotNil(t, filesInDB[0].AwsUploadID)
-//	assert.NotNil(t, filesInDB[0].AwsObjectKey)
-//
-//	utils.AbortMultiPartUpload(aws.StringValue(filesInDB[0].AwsObjectKey),
-//		aws.StringValue(filesInDB[0].AwsUploadID))
-//}
+	request := ReturnValidUploadFileReqForTest(t, ReturnValidUploadFileBodyForTest(t), privateKey)
+
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
+	w := UploadFileHelperForTest(t, request)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), "invoice")
+	assert.Contains(t, w.Body.String(), "cost")
+	assert.Contains(t, w.Body.String(), "ethAddress")
+	assert.Contains(t, w.Body.String(), "expirationDate")
+}
 
 //func Test_Upload_File_Account_Paid_Upload_Continues(t *testing.T) {
 //	if err := models.DB.Unscoped().Delete(&models.Account{}).Error; err != nil {
@@ -195,3 +152,9 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 // 	err = utils.DeleteDefaultBucketObject(objectKey)
 // 	assert.Nil(t, err)
 // }
+
+func initFileUpload(t testing.T, privateKey *ecdsa.PrivateKey) string {
+	req := createValidInitFileUploadRequest(t, 123)
+	httpPostRequestHelperForTest(t, InitUploadPath, req)
+	return req.initFileUploadObj.FileHandle
+}

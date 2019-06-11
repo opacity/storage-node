@@ -106,6 +106,13 @@ func GetFileDataKey(fileID string) string {
 	return fileID + "/file"
 }
 
+/*Return File object(first one) if there is not any error. If not found, return nil without error. */
+func GetFileById(fileID string) (File, error) {
+	file := File{}
+	err := DB.Where("file_id = ?", fileID).First(&file).Error
+	return file, err
+}
+
 /*GetOrCreateFile - Get or create the file. */
 func GetOrCreateFile(file File) (*File, error) {
 	var fileFromDB File
@@ -247,13 +254,6 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 	}
 
 	return compeletedFile, DB.Delete(file).Error
-}
-
-/*Return File object(first one) if there is not any error. If not found, return nil without error. */
-func GetFileById(fileID string) (File, error) {
-	file := File{}
-	err := DB.Where("file_id = ?", fileID).First(&file).Error
-	return file, err
 }
 
 /*DeleteUploadsOlderThan will delete files older than the time provided.  If a file still isn't complete by the
