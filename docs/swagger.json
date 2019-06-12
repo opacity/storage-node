@@ -1,17 +1,11 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Opacity backend for file storage.",
-        "title": "Storage Node",
-        "termsOfService": "https://opacity.io/terms-of-service",
-        "contact": {
-            "name": "Opacity Staff",
-            "url": "https://telegram.me/opacitystorage"
-        },
-        "license": {
-            "name": "OPACITY LIMITED CODE REVIEW LICENSE LICENSE.md"
-        },
-        "version": "1.0"
+        "description": "{{.Description}}",
+        "title": "{{.Title}}",
+        "contact": {},
+        "license": {},
+        "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
@@ -463,6 +457,27 @@
                     }
                 }
             }
+        },
+        "/plans": {
+            "get": {
+                "description": "get the plans we sell",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get the plans we sell",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.PlanResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -557,6 +572,9 @@
                 }
             }
         },
+        "routes.PlanResponse": {
+            "type": "object"
+        },
         "routes.UploadFileReq": {
             "type": "object",
             "required": [
@@ -589,6 +607,20 @@
                 }
             }
         },
+        "routes.UploadStatusObj": {
+            "type": "object",
+            "required": [
+                "fileHandle"
+            ],
+            "properties": {
+                "fileHandle": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "a deterministically created file handle"
+                }
+            }
+        },
         "routes.UploadStatusReq": {
             "type": "object",
             "required": [
@@ -605,7 +637,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.UploadStatusObj, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -613,6 +645,37 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                },
+                "uploadStatusObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.UploadStatusObj"
+                }
+            }
+        },
+        "routes.accountCreateObj": {
+            "type": "object",
+            "required": [
+                "durationInMonths",
+                "metadataKey",
+                "storageLimit"
+            ],
+            "properties": {
+                "durationInMonths": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 12
+                },
+                "metadataKey": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "a 64-char hex string created deterministically from your account handle or private key"
+                },
+                "storageLimit": {
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 100,
+                    "example": 100
                 }
             }
         },
@@ -624,6 +687,10 @@
                 "signature"
             ],
             "properties": {
+                "accountCreateObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.accountCreateObj"
+                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -632,7 +699,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.accountCreateObj, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -722,6 +789,17 @@
                 }
             }
         },
+        "routes.accountGetReqObj": {
+            "type": "object",
+            "required": [
+                "timestamp"
+            ],
+            "properties": {
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
         "routes.accountUnpaidRes": {
             "type": "object",
             "properties": {
@@ -739,6 +817,18 @@
                 }
             }
         },
+        "routes.deleteFileObj": {
+            "type": "object",
+            "required": [
+                "fileID"
+            ],
+            "properties": {
+                "fileID": {
+                    "type": "string",
+                    "example": "the handle of the file"
+                }
+            }
+        },
         "routes.deleteFileReq": {
             "type": "object",
             "required": [
@@ -747,6 +837,10 @@
                 "signature"
             ],
             "properties": {
+                "deleteFileObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.deleteFileObj"
+                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -755,7 +849,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.deleteFileObj, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -799,6 +893,10 @@
                 "signature"
             ],
             "properties": {
+                "accountGetReqObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.accountGetReqObj"
+                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -807,7 +905,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.accountGetReqObj, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -815,6 +913,22 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.getMetadataObject": {
+            "type": "object",
+            "required": [
+                "metadataKey",
+                "timestamp"
+            ],
+            "properties": {
+                "metadataKey": {
+                    "type": "string",
+                    "example": "a 64-char hex string created deterministically from your account handle or private key"
+                },
+                "timestamp": {
+                    "type": "integer"
                 }
             }
         },
@@ -826,6 +940,10 @@
                 "signature"
             ],
             "properties": {
+                "getMetadataObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.getMetadataObject"
+                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -834,7 +952,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.getMetadataObject, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -860,6 +978,27 @@
                 }
             }
         },
+        "routes.updateMetadataObject": {
+            "type": "object",
+            "required": [
+                "metadata",
+                "metadataKey",
+                "timestamp"
+            ],
+            "properties": {
+                "metadata": {
+                    "type": "string",
+                    "example": "your (updated) account metadata"
+                },
+                "metadataKey": {
+                    "type": "string",
+                    "example": "a 64-char hex string created deterministically from your account handle or private key"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
         "routes.updateMetadataReq": {
             "type": "object",
             "required": [
@@ -876,7 +1015,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.updateMetadataObject, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -884,6 +1023,10 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                },
+                "updateMetadataObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.updateMetadataObject"
                 }
             }
         },
@@ -914,6 +1057,63 @@
                 "status": {
                     "type": "string",
                     "example": "Chunk is uploaded"
+                }
+            }
+        },
+        "utils.PlanInfo": {
+            "type": "object",
+            "required": [
+                "cost",
+                "maxFolders",
+                "maxMetadataSizeInMB",
+                "name",
+                "storageInGB"
+            ],
+            "properties": {
+                "cost": {
+                    "type": "number"
+                },
+                "maxFolders": {
+                    "type": "integer"
+                },
+                "maxMetadataSizeInMB": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "storageInGB": {
+                    "type": "integer"
+                }
+            }
+        },
+        "utils.PlanResponseType": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "required": [
+                    "cost",
+                    "maxFolders",
+                    "maxMetadataSizeInMB",
+                    "name",
+                    "storageInGB"
+                ],
+                "properties": {
+                    "cost": {
+                        "type": "number"
+                    },
+                    "maxFolders": {
+                        "type": "integer"
+                    },
+                    "maxMetadataSizeInMB": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "storageInGB": {
+                        "type": "integer"
+                    }
                 }
             }
         }
