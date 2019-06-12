@@ -104,6 +104,16 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.UploadStatusObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+    required:
+    - fileHandle
+    type: object
   routes.UploadStatusReq:
     properties:
       publicKey:
@@ -112,7 +122,7 @@ definitions:
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.UploadStatusObj, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -124,6 +134,9 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
+      uploadStatusObj:
+        $ref: '#/definitions/routes.UploadStatusObj'
+        type: object
     required:
     - publicKey
     - requestBody
@@ -348,15 +361,30 @@ definitions:
     required:
     - expirationDate
     type: object
+  routes.metadataKeyObject:
+    properties:
+      metadataKey:
+        example: a 64-char hex string created deterministically, will be a key for
+          the metadata of one of your folders
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - metadataKey
+    - timestamp
+    type: object
   routes.metadataKeyReq:
     properties:
+      metadataKeyObject:
+        $ref: '#/definitions/routes.metadataKeyObject'
+        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.metadataKeyObject, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -373,6 +401,22 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.updateMetadataObject:
+    properties:
+      metadata:
+        example: your (updated) account metadata
+        type: string
+      metadataKey:
+        example: a 64-char hex string created deterministically, will be a key for
+          the metadata of one of your folders
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - metadata
+    - metadataKey
+    - timestamp
+    type: object
   routes.updateMetadataReq:
     properties:
       publicKey:
@@ -381,7 +425,7 @@ definitions:
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.updateMetadataObject, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -393,6 +437,9 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
+      updateMetadataObject:
+        $ref: '#/definitions/routes.updateMetadataObject'
+        type: object
     required:
     - publicKey
     - requestBody

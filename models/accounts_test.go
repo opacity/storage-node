@@ -612,7 +612,7 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 
 	spaceReport := CreateSpaceUsedReport()
 
-	assert.Equal(t, expectedSpaceAllotted, spaceReport.SpaceAllotedSum)
+	assert.Equal(t, expectedSpaceAllotted, spaceReport.SpaceAllottedSum)
 	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
 }
 

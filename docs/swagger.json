@@ -721,6 +721,20 @@
                 }
             }
         },
+        "routes.UploadStatusObj": {
+            "type": "object",
+            "required": [
+                "fileHandle"
+            ],
+            "properties": {
+                "fileHandle": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "a deterministically created file handle"
+                }
+            }
+        },
         "routes.UploadStatusReq": {
             "type": "object",
             "required": [
@@ -737,7 +751,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.UploadStatusObj, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -745,6 +759,10 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                },
+                "uploadStatusObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.UploadStatusObj"
                 }
             }
         },
@@ -1030,6 +1048,22 @@
                 }
             }
         },
+        "routes.metadataKeyObject": {
+            "type": "object",
+            "required": [
+                "metadataKey",
+                "timestamp"
+            ],
+            "properties": {
+                "metadataKey": {
+                    "type": "string",
+                    "example": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
         "routes.metadataKeyReq": {
             "type": "object",
             "required": [
@@ -1038,6 +1072,10 @@
                 "signature"
             ],
             "properties": {
+                "metadataKeyObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.metadataKeyObject"
+                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -1046,7 +1084,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.metadataKeyObject, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -1054,6 +1092,27 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.updateMetadataObject": {
+            "type": "object",
+            "required": [
+                "metadata",
+                "metadataKey",
+                "timestamp"
+            ],
+            "properties": {
+                "metadata": {
+                    "type": "string",
+                    "example": "your (updated) account metadata"
+                },
+                "metadataKey": {
+                    "type": "string",
+                    "example": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"
+                },
+                "timestamp": {
+                    "type": "integer"
                 }
             }
         },
@@ -1073,7 +1132,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.updateMetadataObject, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -1081,6 +1140,10 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                },
+                "updateMetadataObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.updateMetadataObject"
                 }
             }
         },

@@ -31,10 +31,10 @@ type Account struct {
 	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
 }
 
-/*SpaceReport defines a model for capturing the space alloted compared to space used*/
+/*SpaceReport defines a model for capturing the space allotted compared to space used*/
 type SpaceReport struct {
-	SpaceAllotedSum int
-	SpaceUsedSum    float64
+	SpaceAllottedSum int
+	SpaceUsedSum     float64
 }
 
 /*Invoice is the invoice object we will return to the client*/
@@ -297,10 +297,10 @@ func GetAccountById(accountID string) (Account, error) {
 	return account, err
 }
 
-/*CreateSpaceUsedReport populates a model of the space alloted versus space used*/
+/*CreateSpaceUsedReport populates a model of the space allotted versus space used*/
 func CreateSpaceUsedReport() SpaceReport {
 	var result SpaceReport
-	DB.Raw("SELECT SUM(storage_limit) as space_alloted_sum, SUM(storage_used_in_byte) as space_used_sum FROM accounts WHERE payment_status >= ?",
+	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM accounts WHERE payment_status >= ?",
 		InitialPaymentReceived).Scan(&result)
 	return result
 }
