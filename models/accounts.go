@@ -30,7 +30,7 @@ type Account struct {
 	ApiVersion           int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 }
 
-/*SpaceReport defines a model for capturing the space alloted compared to space used*/
+/*SpaceReport defines a model for capturing the space allotted compared to space used*/
 type SpaceReport struct {
 	SpaceAllottedSum int
 	SpaceUsedSum     float64
@@ -224,10 +224,10 @@ func GetAccountById(accountID string) (Account, error) {
 	return account, err
 }
 
-/*CreateSpaceUsedReport populates a model of the space alloted versus space used*/
+/*CreateSpaceUsedReport populates a model of the space allotted versus space used*/
 func CreateSpaceUsedReport() SpaceReport {
 	var result SpaceReport
-	DB.Raw("SELECT SUM(storage_limit) as space_alloted_sum, SUM(storage_used_in_byte) as space_used_sum FROM accounts WHERE payment_status >= ?",
+	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM accounts WHERE payment_status >= ?",
 		InitialPaymentReceived).Scan(&result)
 	return result
 }
