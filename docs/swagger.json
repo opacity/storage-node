@@ -223,7 +223,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.InitFileUploadRes"
+                            "$ref": "#/definitions/routes.StatusRes"
                         }
                     },
                     "400": {
@@ -260,12 +260,12 @@
                 "parameters": [
                     {
                         "description": "get metadata object",
-                        "name": "getMetadataReq",
+                        "name": "metadataKeyReq",
                         "in": "body",
                         "required": true,
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.getMetadataReq"
+                            "$ref": "#/definitions/routes.metadataKeyReq"
                         }
                     }
                 ],
@@ -376,7 +376,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.uploadFileRes"
+                            "$ref": "#/definitions/routes.StatusRes"
                         }
                     },
                     "400": {
@@ -428,7 +428,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.uploadFileRes"
+                            "$ref": "#/definitions/routes.StatusRes"
                         }
                     },
                     "400": {
@@ -563,17 +563,17 @@
                 }
             }
         },
-        "routes.InitFileUploadRes": {
+        "routes.PlanResponse": {
+            "type": "object"
+        },
+        "routes.StatusRes": {
             "type": "object",
             "properties": {
                 "status": {
                     "type": "string",
-                    "example": "Success"
+                    "example": "status of the request"
                 }
             }
-        },
-        "routes.PlanResponse": {
-            "type": "object"
         },
         "routes.UploadFileReq": {
             "type": "object",
@@ -916,7 +916,22 @@
                 }
             }
         },
-        "routes.getMetadataObject": {
+        "routes.getMetadataRes": {
+            "type": "object",
+            "required": [
+                "expirationDate"
+            ],
+            "properties": {
+                "expirationDate": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "string",
+                    "example": "your account metadata"
+                }
+            }
+        },
+        "routes.metadataKeyObject": {
             "type": "object",
             "required": [
                 "metadataKey",
@@ -932,7 +947,7 @@
                 }
             }
         },
-        "routes.getMetadataReq": {
+        "routes.metadataKeyReq": {
             "type": "object",
             "required": [
                 "publicKey",
@@ -940,9 +955,9 @@
                 "signature"
             ],
             "properties": {
-                "getMetadataObject": {
+                "metadataKeyObject": {
                     "type": "object",
-                    "$ref": "#/definitions/routes.getMetadataObject"
+                    "$ref": "#/definitions/routes.metadataKeyObject"
                 },
                 "publicKey": {
                     "type": "string",
@@ -960,21 +975,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                }
-            }
-        },
-        "routes.getMetadataRes": {
-            "type": "object",
-            "required": [
-                "expirationDate"
-            ],
-            "properties": {
-                "expirationDate": {
-                    "type": "string"
-                },
-                "metadata": {
-                    "type": "string",
-                    "example": "your account metadata"
                 }
             }
         },
@@ -1048,15 +1048,6 @@
                 "metadataKey": {
                     "type": "string",
                     "example": "a 64-char hex string created deterministically from your account handle or private key"
-                }
-            }
-        },
-        "routes.uploadFileRes": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "type": "string",
-                    "example": "Chunk is uploaded"
                 }
             }
         },

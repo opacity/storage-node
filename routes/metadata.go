@@ -27,15 +27,15 @@ type updateMetadataRes struct {
 	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
 }
 
-type getMetadataObject struct {
+type metadataKeyObject struct {
 	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically from your account handle or private key"`
 	Timestamp   int64  `json:"timestamp" binding:"required"`
 }
 
-type getMetadataReq struct {
+type metadataKeyReq struct {
 	verification
 	requestBody
-	getMetadataObject getMetadataObject
+	metadataKeyObject metadataKeyObject
 }
 
 type getMetadataRes struct {
@@ -47,15 +47,15 @@ func (v *updateMetadataReq) getObjectRef() interface{} {
 	return &v.updateMetadataObject
 }
 
-func (v *getMetadataReq) getObjectRef() interface{} {
-	return &v.getMetadataObject
+func (v *metadataKeyReq) getObjectRef() interface{} {
+	return &v.metadataKeyObject
 }
 
 // GetMetadataHandler godoc
 // @Summary Retrieve account metadata
 // @Accept  json
 // @Produce  json
-// @Param getMetadataReq body routes.getMetadataReq true "get metadata object"
+// @Param metadataKeyReq body routes.metadataKeyReq true "get metadata object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
@@ -93,7 +93,7 @@ func UpdateMetadataHandler() gin.HandlerFunc {
 }
 
 func getMetadata(c *gin.Context) error {
-	request := getMetadataReq{}
+	request := metadataKeyReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
@@ -108,7 +108,7 @@ func getMetadata(c *gin.Context) error {
 		return err
 	}
 
-	metadata, expirationTime, err := utils.GetValueFromKV(request.getMetadataObject.MetadataKey)
+	metadata, expirationTime, err := utils.GetValueFromKV(request.metadataKeyObject.MetadataKey)
 	if err != nil {
 		return NotFoundResponse(c, err)
 	}
