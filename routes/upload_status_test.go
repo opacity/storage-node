@@ -2,11 +2,11 @@ package routes
 
 import (
 	"crypto/ecdsa"
-	"testing"
 	"net/http"
+	"testing"
 
-	"github.com/opacity/storage-node/utils"
 	"github.com/opacity/storage-node/models"
+	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +30,7 @@ func Test_CheckFileNotFound(t *testing.T) {
 	CreatePaidAccountForTest(t, accountId)
 
 	req, _ := generateUploadStatusRequest(t, privateKey)
-	
+
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
@@ -46,7 +46,7 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 	compeletedFile := models.CompletedFile{
 		FileID:         uploadObj.FileHandle,
 		FileSizeInByte: 100,
-		ModifierHash: utils.RandHexString(64),
+		ModifierHash:   utils.RandHexString(64),
 	}
 	assert.Nil(t, models.DB.Create(&compeletedFile).Error)
 	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), "hello world!"))
@@ -65,10 +65,10 @@ func Test_MissingIndexes(t *testing.T) {
 	CreatePaidAccountForTest(t, accountId)
 
 	req, uploadObj := generateUploadStatusRequest(t, privateKey)
-	modifiedHash, _ := createModifierHash(req.PublicKey, uploadObj.FileHandle, nil)
+	modifiedHash, _ := getPermissionHash(req.PublicKey, uploadObj.FileHandle, nil)
 	file := models.File{
-		FileID: uploadObj.FileHandle,
-		EndIndex: 5,
+		FileID:       uploadObj.FileHandle,
+		EndIndex:     5,
 		ModifierHash: modifiedHash,
 	}
 	assert.Nil(t, models.DB.Create(&file).Error)
@@ -87,25 +87,25 @@ func Test_IncorrectPermission(t *testing.T) {
 
 	req, uploadObj := generateUploadStatusRequest(t, privateKey)
 	file := models.File{
-		FileID: uploadObj.FileHandle,
-		EndIndex: 10,
+		FileID:       uploadObj.FileHandle,
+		EndIndex:     10,
 		ModifierHash: utils.RandHexString(64),
 	}
 	assert.Nil(t, models.DB.Create(&file).Error)
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.Contains(t, w.Body.String(), "you are not authorized to modify this file")
+	assert.Contains(t, w.Body.String(), notAuthorizedResponse)
 }
 
 func generateUploadStatusRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (UploadStatusReq, UploadStatusObj) {
 	uploadStatusObj := UploadStatusObj{
 		FileHandle: utils.GenerateFileHandle(),
-	} 
+	}
 	v, b := returnValidVerificationAndRequestBody(t, uploadStatusObj, privateKey)
 	req := UploadStatusReq{
 		verification: v,
-		requestBody: b,
+		requestBody:  b,
 	}
 	return req, uploadStatusObj
 }

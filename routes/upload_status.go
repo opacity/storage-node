@@ -36,7 +36,7 @@ func (v *UploadStatusReq) getObjectRef() interface{} {
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
 // @description }
-// @Success 200 {object} routes.uploadFileRes
+// @Success 200 {object} routes.StatusRes
 // @Failure 404 {string} string "file or account not found"
 // @Failure 403 {string} string "signature did not match"
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -54,7 +54,7 @@ func checkUploadStatus(c *gin.Context) error {
 		return err
 	}
 
-	account, err := request.getAccount(c)	
+	account, err := request.getAccount(c)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func checkUploadStatus(c *gin.Context) error {
 		return FileNotFoundResponse(c, fileId)
 	}
 
-	if err := verifyModifyPermissions(request.PublicKey, fileId, file.ModifierHash, c); err != nil {
+	if err := verifyPermissions(request.PublicKey, fileId, file.ModifierHash, c); err != nil {
 		return err
 	}
 

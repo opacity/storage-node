@@ -69,6 +69,10 @@ const MaxRequestSize = utils.MaxMultiPartSize + 1000
 
 var maintenanceError = errors.New("maintenance in progress, currently rejecting writes")
 
+type StatusRes struct {
+	Status string `json:"status" example:"status of the request"`
+}
+
 type PlanResponse struct {
 	Plans utils.PlanResponseType `json:"plans" example:"an object of the plans we offer"`
 }

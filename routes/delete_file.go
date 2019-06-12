@@ -68,7 +68,7 @@ func deleteFile(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := verifyModifyPermissions(request.PublicKey, fileId, completedFile.ModifierHash, c); err != nil {
+	if err := verifyPermissions(request.PublicKey, fileId, completedFile.ModifierHash, c); err != nil {
 		return err
 	}
 
