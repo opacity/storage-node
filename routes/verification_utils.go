@@ -19,9 +19,9 @@ const (
 	signatureDidNotMatchResponse = "signature did not match"
 	errVerifying                 = "error verifying signature"
 	marshalError                 = "bad request, unable to marshal request body: "
-
-	postFormTag     = "form"
-	postFormFileTag = "formFile"
+	notAuthorizedResponse        = "you are not authorized to access or modify this resource"
+	postFormTag                  = "form"
+	postFormFileTag              = "formFile"
 )
 
 type verificationInterface interface {
@@ -280,7 +280,7 @@ func verifyPermissions(publicKey, fileID, expectedModifierHash string, c *gin.Co
 		return err
 	}
 	if modifierHash != expectedModifierHash {
-		return ForbiddenResponse(c, errors.New("you are not authorized to modify this file"))
+		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))
 	}
 	return nil
 }
