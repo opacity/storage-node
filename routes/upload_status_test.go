@@ -95,7 +95,7 @@ func Test_IncorrectPermission(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.Contains(t, w.Body.String(), "you are not authorized to modify this file")
+	assert.Contains(t, w.Body.String(), notAuthorizedResponse)
 }
 
 func generateUploadStatusRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (UploadStatusReq, UploadStatusObj) {
