@@ -116,12 +116,16 @@ func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 }
 
 func createAccount(c *gin.Context) error {
+	if !utils.WritesEnabled() {
+		return ServiceUnavailableResponse(c, maintenanceError)
+	}
+
 	request := accountCreateReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
 	}
-	
+
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
 	if err != nil {
 		err = fmt.Errorf("error generating account wallet:  %v", err)
@@ -241,4 +245,3 @@ func createPaymentStatusResponse(paid bool, pending bool) string {
 	}
 	return Unpaid
 }
-

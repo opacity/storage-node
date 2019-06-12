@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -65,6 +66,8 @@ const (
 )
 
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
+
+var maintenanceError = errors.New("maintenance in progress, currently rejecting writes")
 
 func init() {
 }

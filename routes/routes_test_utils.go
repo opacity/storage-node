@@ -27,7 +27,7 @@ const defaultStorageUsedInByteForTest = 10 * 1e9
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
 	return UploadFileObj{
-		FileHandle: utils.RandHexString(64),
+		FileHandle: utils.GenerateFileHandle(),
 		PartIndex:  models.FirstChunkIndex,
 	}
 }
@@ -40,7 +40,7 @@ func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKe
 	return UploadFileReq{
 		verification: v,
 		RequestBody:  b.RequestBody,
-		ChunkData:    utils.RandHexString(64),
+		ChunkData:    utils.GenerateFileHandle(),
 	}
 }
 
@@ -58,7 +58,7 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		MetadataKey:          utils.RandHexString(64),
+		MetadataKey:          utils.GenerateFileHandle(),
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -86,7 +86,7 @@ func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 		PaymentStatus:        models.InitialPaymentReceived,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		MetadataKey:          utils.RandHexString(64),
+		MetadataKey:          utils.GenerateFileHandle(),
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -133,36 +133,19 @@ func InitUploadFileForTest(t *testing.T, publicKey, fileID string, endIndx int) 
 }
 
 func UploadFileHelperForTest(t *testing.T, post UploadFileReq) *httptest.ResponseRecorder {
-	abortIfNotTesting(t)
-
-	router := returnEngine()
-	v1 := returnV1Group(router)
-	v1.POST(UploadPath, UploadFileHandler())
-
-	marshalledReq, _ := json.Marshal(post)
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	// Create the mock request you'd like to test. Make sure the second argument
-	// here is the same as one of the routes you defined in the router setup
-	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+UploadPath, reqBody)
-	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
-	}
-
-	// Create a response recorder so you can inspect the response
-	w := httptest.NewRecorder()
-
-	// Perform the request
-	router.ServeHTTP(w, req)
-
-	return w
+	return httpPostRequestHelperForTest(t, UploadPath, post)
 }
 
 func setupTests(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
 	gin.SetMode(gin.TestMode)
+}
+
+func cleanUpBeforeTest(t *testing.T) {
+	models.DeleteAccountsForTest(t)
+	models.DeleteCompletedFilesForTest(t)
+	models.DeleteFilesForTest(t)
 }
 
 func generateValidateAccountId(t *testing.T) (string, *ecdsa.PrivateKey) {
@@ -241,20 +224,16 @@ func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privat
 func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
 	abortIfNotTesting(t)
 
-	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
-
+	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
 }
 
-func uploadStatusFileHelperForTest(t *testing.T, post UploadStatusReq) *httptest.ResponseRecorder {
+func httpPostRequestHelperForTest(t *testing.T, path string, post interface{}) *httptest.ResponseRecorder {
 	abortIfNotTesting(t)
 
 	router := returnEngine()
 	v1 := returnV1Group(router)
-	v1.POST(UploadStatusPath, CheckUploadStatusHandler())
+	setupV1Paths(v1)
 
 	marshalledReq, _ := json.Marshal(post)
 	reqBody := bytes.NewBuffer(marshalledReq)
@@ -262,7 +241,8 @@ func uploadStatusFileHelperForTest(t *testing.T, post UploadStatusReq) *httptest
 	// Create the mock request you'd like to test. Make sure the second argument
 	// here is the same as one of the routes you defined in the router setup
 	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+UploadStatusPath, reqBody)
+	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+path, reqBody)
+
 	if err != nil {
 		t.Fatalf("Couldn't create request: %v\n", err)
 	}

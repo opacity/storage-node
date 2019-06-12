@@ -15,15 +15,15 @@ func Test_Init_S3_Deleter(t *testing.T) {
 }
 
 func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
-	s1FileID := utils.RandHexString(64)
-	s2FileID := utils.RandHexString(64)
-	s3FileID := utils.RandHexString(64)
+	s1FileID := utils.GenerateFileHandle()
+	s2FileID := utils.GenerateFileHandle()
+	s3FileID := utils.GenerateFileHandle()
 
 	models.DeleteCompletedFilesForTest(t)
 
 	s := models.CompletedFile{
 		FileID:       s1FileID,
-		ModifierHash: utils.RandHexString(64),
+		ModifierHash: utils.GenerateFileHandle(),
 		ExpiredAt:    time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC), // past
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
@@ -31,7 +31,7 @@ func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 
 	s = models.CompletedFile{
 		FileID:       s2FileID,
-		ModifierHash: utils.RandHexString(64),
+		ModifierHash: utils.GenerateFileHandle(),
 		ExpiredAt:    time.Date(2010, 1, 1, 12, 0, 0, 0, time.UTC), // past
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
@@ -39,7 +39,7 @@ func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 
 	s = models.CompletedFile{
 		FileID:       s3FileID,
-		ModifierHash: utils.RandHexString(64),
+		ModifierHash: utils.GenerateFileHandle(),
 		ExpiredAt:    time.Now().AddDate(0, 1, 0), // future
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)

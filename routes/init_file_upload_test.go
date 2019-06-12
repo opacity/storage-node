@@ -64,7 +64,7 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 
 func createValidInitFileUploadRequest(t *testing.T, fileSizeInByte int64, privateKey *ecdsa.PrivateKey) InitFileUploadReq {
 	uploadObj := InitFileUploadObj{
-		FileHandle:     utils.RandHexString(64),
+		FileHandle:     utils.GenerateFileHandle(),
 		FileSizeInByte: fileSizeInByte,
 		EndIndex:       1,
 	}
