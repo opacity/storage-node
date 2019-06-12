@@ -43,6 +43,10 @@ func DeleteFileHandler() gin.HandlerFunc {
 }
 
 func deleteFile(c *gin.Context) error {
+	if !utils.WritesEnabled() {
+		return ServiceUnavailableResponse(c, maintenanceError)
+	}
+
 	request := deleteFileReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {

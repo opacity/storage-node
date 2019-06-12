@@ -178,7 +178,7 @@ func readFileFromForm(fileTag string, c *gin.Context) (string, error) {
 func verifyAndParseStringRequest(reqAsString string, dest interface{}, verificationData verification, c *gin.Context) error {
 	hash := utils.Hash([]byte(reqAsString))
 
-	if err := verifyRequest(hash, verificationData.PublicKey, verificationData.Signature, c); err != nil {
+	if err := verifyRequest(hash, verificationData, c); err != nil {
 		return err
 	}
 
@@ -195,16 +195,16 @@ func verifyParsedRequest(reqBody interface{}, verificationData verification, c *
 		return err
 	}
 
-	if err := verifyRequest(hash, verificationData.PublicKey, verificationData.Signature, c); err != nil {
+	if err := verifyRequest(hash, verificationData, c); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func verifyRequest(hash []byte, publicKey string, signature string, c *gin.Context) error {
-	verified, err := utils.VerifyFromStrings(publicKey, hex.EncodeToString(hash),
-		signature)
+func verifyRequest(hash []byte, verificationData verification, c *gin.Context) error {
+	verified, err := utils.VerifyFromStrings(verificationData.PublicKey, hex.EncodeToString(hash),
+		verificationData.Signature)
 	if err != nil {
 		return BadRequestResponse(c, errors.New(errVerifying))
 	}
@@ -256,19 +256,11 @@ func returnAccountIdWithStringRequest(reqAsString string, verificationData verif
 }
 
 func returnAccountId(hash []byte, verificationData verification, c *gin.Context) (string, error) {
-	if err := verifyRequest(hash, verificationData.PublicKey, verificationData.Signature, c); err != nil {
+	if err := verifyRequest(hash, verificationData, c); err != nil {
 		return "", err
 	}
 
-	return getAccountIdFromPublicKey(verificationData.PublicKey, c)
-}
-
-func getAccountIdFromPublicKey(publicKey string, c *gin.Context) (string, error) {
-	accountID, err := utils.HashString(publicKey)
-	if err != nil {
-		return "", InternalErrorResponse(c, err)
-	}
-	return accountID, err
+	return verificationData.getAccountId(c)
 }
 
 func getPermissionHash(publicKey, key string, c *gin.Context) (string, error) {

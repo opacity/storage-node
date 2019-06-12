@@ -1,9 +1,6 @@
 package routes
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -25,8 +22,8 @@ func Test_Init_Metadata(t *testing.T) {
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandHexString(64)
-	testMetadataValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	testMetadataValue := utils.GenerateFileHandle()
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -41,27 +38,23 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 
 	get := metadataKeyReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := metadataTestHelperGetMetadata(t, get)
-
+	w := httpPostRequestHelperForTest(t, MetadataGetPath, get)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
-
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), testMetadataValue)
 }
 
 func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandHexString(64)
-	testMetadataValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	testMetadataValue := utils.GenerateFileHandle()
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -76,24 +69,20 @@ func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 
 	get := metadataKeyReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreateUnpaidAccountForTest(t, accountID)
 
-	w := metadataTestHelperGetMetadata(t, get)
-
+	w := httpPostRequestHelperForTest(t, MetadataGetPath, get)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
-
+	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
 }
 
 func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
-	testMetadataKey := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
 
 	getMetadata := metadataKeyObject{
 		MetadataKey: testMetadataKey,
@@ -104,26 +93,23 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 
 	get := metadataKeyReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := metadataTestHelperGetMetadata(t, get)
-
+	w := httpPostRequestHelperForTest(t, MetadataGetPath, get)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusNotFound {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
-	}
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandHexString(64)
-	testMetadataValue := utils.RandHexString(64)
-	newValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	testMetadataValue := utils.GenerateFileHandle()
+	newValue := utils.GenerateFileHandle()
 
 	updateMetadataObj := updateMetadataObject{
 		MetadataKey: testMetadataKey,
@@ -135,7 +121,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 
 	post := updateMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -159,13 +145,9 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := metadataTestHelperUpdateMetadata(t, post)
-
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
-
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), newValue)
 
 	metadata, _, _ := utils.GetValueFromKV(testMetadataKey)
@@ -178,9 +160,9 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataKey := utils.RandHexString(64)
-	testMetadataValue := utils.RandHexString(64)
-	newValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	testMetadataValue := utils.GenerateFileHandle()
+	newValue := utils.GenerateFileHandle()
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -196,25 +178,21 @@ func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 
 	post := updateMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreateUnpaidAccountForTest(t, accountID)
 
-	w := metadataTestHelperUpdateMetadata(t, post)
-
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
-
+	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
 }
 
 func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
-	testMetadataKey := utils.RandHexString(64)
-	newValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	newValue := utils.GenerateFileHandle()
 
 	updateMetadataObj := updateMetadataObject{
 		MetadataKey: testMetadataKey,
@@ -226,23 +204,20 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 
 	post := updateMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := metadataTestHelperUpdateMetadata(t, post)
-
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusNotFound {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
-	}
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
-	testMetadataKey := utils.RandHexString(64)
-	newValue := utils.RandHexString(64)
+	testMetadataKey := utils.GenerateFileHandle()
+	newValue := utils.GenerateFileHandle()
 
 	updateMetadataObj := updateMetadataObject{
 		MetadataKey: testMetadataKey,
@@ -254,13 +229,13 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 
 	post := updateMetadataReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := metadataTestHelperUpdateMetadata(t, post)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
 
 	confirmVerifyFailedForTest(t, w)
 }
@@ -277,7 +252,9 @@ func Test_Create_Metadata_Creates_Metadata(t *testing.T) {
 
 	post := metadataKeyReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody: requestBody{
+			RequestBody: b.RequestBody,
+		},
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -286,13 +263,10 @@ func Test_Create_Metadata_Creates_Metadata(t *testing.T) {
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	w := metadataTestHelperCreateMetadata(t, post)
+	w := httpPostRequestHelperForTest(t, MetadataCreatePath, post)
 
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusOK {
-		fmt.Println(w.Body.String())
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
@@ -321,7 +295,9 @@ func Test_Create_Metadata_Error_If_Unpaid_Account(t *testing.T) {
 
 	post := metadataKeyReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody: requestBody{
+			RequestBody: b.RequestBody,
+		},
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
@@ -334,13 +310,10 @@ func Test_Create_Metadata_Error_If_Unpaid_Account(t *testing.T) {
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	w := metadataTestHelperCreateMetadata(t, post)
+	w := httpPostRequestHelperForTest(t, MetadataCreatePath, post)
 
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
-
+	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), "invoice")
 }
 
@@ -356,7 +329,9 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 
 	post := metadataKeyReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody: requestBody{
+			RequestBody: b.RequestBody,
+		},
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -365,13 +340,10 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	w := metadataTestHelperCreateMetadata(t, post)
+	w := httpPostRequestHelperForTest(t, MetadataCreatePath, post)
 
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
-
+	assert.Equal(t, http.StatusForbidden, w.Code)
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
 	assert.Equal(t, utils.Env.Plans[int(account.StorageLimit)].MaxFolders, accountFromDB.TotalFolders)
 }
@@ -392,7 +364,9 @@ func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
 
 	post := metadataKeyReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody: requestBody{
+			RequestBody: b.RequestBody,
+		},
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -401,13 +375,10 @@ func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	w := metadataTestHelperDeleteMetadata(t, post)
+	w := httpPostRequestHelperForTest(t, MetadataDeletePath, post)
 
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
-
+	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), "invoice")
 }
 
@@ -424,7 +395,9 @@ func Test_Delete_Metadata_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T) 
 
 	post := metadataKeyReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody: requestBody{
+			RequestBody: b.RequestBody,
+		},
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -445,13 +418,10 @@ func Test_Delete_Metadata_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T) 
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := metadataTestHelperDeleteMetadata(t, post)
+	w := httpPostRequestHelperForTest(t, MetadataDeletePath, post)
 
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-	}
-
+	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), notAuthorizedResponse)
 }
 
@@ -468,7 +438,9 @@ func Test_Delete_Metadata_Success(t *testing.T) {
 
 	post := metadataKeyReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody: requestBody{
+			RequestBody: b.RequestBody,
+		},
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -496,119 +468,12 @@ func Test_Delete_Metadata_Success(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := metadataTestHelperDeleteMetadata(t, post)
+	w := httpPostRequestHelperForTest(t, MetadataDeletePath, post)
 
 	// Check to see if the response was what you expected
-	if w.Code != http.StatusOK {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-	}
-
+	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), metadataDeletedRes.Status)
 	accountFromDB, _ = models.GetAccountById(account.AccountID)
 	assert.Equal(t, int64(0), accountFromDB.TotalMetadataSizeInBytes)
 	assert.Equal(t, 0, accountFromDB.TotalFolders)
-}
-
-func metadataTestHelperGetMetadata(t *testing.T, post metadataKeyReq) *httptest.ResponseRecorder {
-	router := returnEngine()
-	v1 := returnV1Group(router)
-	v1.POST(MetadataGetPath, GetMetadataHandler())
-
-	marshalledReq, _ := json.Marshal(post)
-
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	// Create the mock request you'd like to test. Make sure the second argument
-	// here is the same as one of the routes you defined in the router setup
-	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+MetadataGetPath, reqBody)
-	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
-	}
-
-	// Create a response recorder so you can inspect the response
-	w := httptest.NewRecorder()
-
-	// Perform the request
-	router.ServeHTTP(w, req)
-
-	return w
-}
-
-func metadataTestHelperUpdateMetadata(t *testing.T, post updateMetadataReq) *httptest.ResponseRecorder {
-	router := returnEngine()
-	v1 := returnV1Group(router)
-	v1.POST(MetadataSetPath, UpdateMetadataHandler())
-
-	marshalledReq, _ := json.Marshal(post)
-
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	// Create the mock request you'd like to test. Make sure the second argument
-	// here is the same as one of the routes you defined in the router setup
-	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+MetadataSetPath, reqBody)
-	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
-	}
-
-	// Create a response recorder so you can inspect the response
-	w := httptest.NewRecorder()
-
-	// Perform the request
-	router.ServeHTTP(w, req)
-
-	return w
-}
-
-func metadataTestHelperCreateMetadata(t *testing.T, post metadataKeyReq) *httptest.ResponseRecorder {
-	router := returnEngine()
-	v1 := returnV1Group(router)
-	v1.POST(MetadataCreatePath, CreateMetadataHandler())
-
-	marshalledReq, _ := json.Marshal(post)
-
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	// Create the mock request you'd like to test. Make sure the second argument
-	// here is the same as one of the routes you defined in the router setup
-	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+MetadataCreatePath, reqBody)
-	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
-	}
-
-	// Create a response recorder so you can inspect the response
-	w := httptest.NewRecorder()
-
-	// Perform the request
-	router.ServeHTTP(w, req)
-
-	return w
-}
-
-func metadataTestHelperDeleteMetadata(t *testing.T, post metadataKeyReq) *httptest.ResponseRecorder {
-	router := returnEngine()
-	v1 := returnV1Group(router)
-	v1.POST(MetadataDeletePath, DeleteMetadataHandler())
-
-	marshalledReq, _ := json.Marshal(post)
-
-	reqBody := bytes.NewBuffer(marshalledReq)
-
-	// Create the mock request you'd like to test. Make sure the second argument
-	// here is the same as one of the routes you defined in the router setup
-	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+MetadataDeletePath, reqBody)
-	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
-	}
-
-	// Create a response recorder so you can inspect the response
-	w := httptest.NewRecorder()
-
-	// Perform the request
-	router.ServeHTTP(w, req)
-
-	return w
 }

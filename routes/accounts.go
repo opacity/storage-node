@@ -117,6 +117,10 @@ func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 }
 
 func createAccount(c *gin.Context) error {
+	if !utils.WritesEnabled() {
+		return ServiceUnavailableResponse(c, maintenanceError)
+	}
+
 	request := accountCreateReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {

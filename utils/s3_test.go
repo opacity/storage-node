@@ -3,11 +3,8 @@ package utils
 import (
 	"os"
 	"testing"
-
-	"fmt"
 	"io"
 	"net/http"
-
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -207,9 +204,7 @@ func downloadTestFile(localFilePath string, url string, t *testing.T) (err error
 	defer resp.Body.Close()
 
 	// Check server response
-	if resp.StatusCode != http.StatusOK {
-		assert.Fail(t, fmt.Sprintf("download failed due to bad status from server: %s", resp.Status))
-	}
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// Writer the body to file
 	_, err = io.Copy(out, resp.Body)

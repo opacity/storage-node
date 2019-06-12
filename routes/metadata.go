@@ -3,7 +3,6 @@ package routes
 import (
 	"errors"
 	"fmt"
-
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +18,8 @@ type updateMetadataObject struct {
 
 type updateMetadataReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.updateMetadataObject, see description for example"`
+	requestBody
+	updateMetadataObject updateMetadataObject
 }
 
 type updateMetadataRes struct {
@@ -35,7 +35,8 @@ type metadataKeyObject struct {
 
 type metadataKeyReq struct {
 	verification
-	RequestBody string `json:"requestBody" binding:"required" example:"should produce routes.metadataKeyObject, see description for example"`
+	requestBody
+	metadataKeyObject metadataKeyObject
 }
 
 type getMetadataRes struct {
@@ -49,6 +50,14 @@ type createMetadataRes struct {
 
 var metadataDeletedRes = StatusRes{
 	Status: "metadata successfully deleted",
+}
+
+func (v *updateMetadataReq) getObjectRef() interface{} {
+	return &v.updateMetadataObject
+}
+
+func (v *metadataKeyReq) getObjectRef() interface{} {
+	return &v.metadataKeyObject
 }
 
 // GetMetadataHandler godoc
@@ -137,9 +146,8 @@ func DeleteMetadataHandler() gin.HandlerFunc {
 func getMetadata(c *gin.Context) error {
 	request := metadataKeyReq{}
 
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
-		return BadRequestResponse(c, err)
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
 	}
 
 	account, err := request.getAccount(c)
@@ -178,7 +186,8 @@ func getMetadata(c *gin.Context) error {
 		}
 	}
 
-	metadata, expirationTime, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+	metadata, expirationTime, err := utils.GetValueFromKV(request.metadataKeyObject.MetadataKey)
+
 	if err != nil {
 		return NotFoundResponse(c, err)
 	}
@@ -192,9 +201,8 @@ func getMetadata(c *gin.Context) error {
 func setMetadata(c *gin.Context) error {
 	request := updateMetadataReq{}
 
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
-		return BadRequestResponse(c, err)
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
 	}
 
 	account, err := request.getAccount(c)
@@ -262,8 +270,8 @@ func setMetadata(c *gin.Context) error {
 	}
 
 	return OkResponse(c, updateMetadataRes{
-		MetadataKey:    requestBodyParsed.MetadataKey,
-		Metadata:       requestBodyParsed.Metadata,
+		MetadataKey:    request.updateMetadataObject.MetadataKey,
+		Metadata:       request.updateMetadataObject.Metadata,
 		ExpirationDate: account.ExpirationDate(),
 	})
 }

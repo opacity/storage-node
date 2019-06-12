@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/opacity/storage-node/utils"
 )
 
 /*AccountManagement defines what an account manager's methods look like.
@@ -35,6 +36,9 @@ func init() {
 }
 
 func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int) (bool, error) {
+	if utils.FreeModeEnabled() {
+		return true, nil
+	}
 	var tokenBalance *big.Int
 	if tokenBalance = EthWrapper.GetTokenBalance(address); tokenBalance == big.NewInt(-1) {
 		return false, errors.New("could not get balance")

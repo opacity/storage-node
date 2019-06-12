@@ -98,6 +98,36 @@ When you pull down changes for the app, check for new properties that have been 
 env.go to add them to your environment file.  Also note that the aws s3 libraries will check
 your .env file for env variables such as AWS_BUCKET_NAME, AWS_ACCESS_KEY_ID, AWS_BUCKET_REGION,
 and AWS_SECRET_ACCESS_KEY.  So these .env files must be present to do s3 uploads even if it
-is not immediately obvious from looking at the storage node code.
+is not immediately obvious from looking at the storage node code.  
+
+# Prometheus and basic auth
+- Protect the `:3000/admin/metrics` endpoint:  You must set `ADMIN_USER` and `ADMIN_PASSWORD` values in .env file.  
+- Prevent access on port 9090:  Make sure there is no rule in the AWS security group to allow access on 9090.  
+- Protect the `:12321/prometheus/*` endpoints:  
+    - `apt-get update`
+    - `apt-get install -y nginx`
+    - `nano /etc/nginx/sites-available/prometheus-proxy`
+    - paste in the following and save:
+    ```
+    server {
+            listen 12321;
+            location /prometheus {
+                auth_basic           "Prometheus";
+                auth_basic_user_file /etc/nginx/.htpasswd-prometheus;
+                proxy_pass           http://localhost:9090;
+            }
+    }
+    ```
+    - `ln -s /etc/nginx/sites-available/prometheus-proxy /etc/nginx/sites-enabled/`
+    - `apt-get install -y apache2-utils`
+    - `htpasswd -c /etc/nginx/.htpasswd-prometheus USERNAME_YOU_INTEND_TO_USE` (may be easiest to use same username as 
+    defined in .env file.  Htpasswd will ask you twice to type in the password you plan to use.  
+    - `systemctl restart nginx`
+    - confirm the following:  
+        - cannot access metrics on `:3000/admin/metrics` endpoint without providing creds
+        - cannot access metrics on `:9090/graph` or `:9090/prometheus/graph`
+        - cannot access metrics on `:12321/prometheus/graph` without providing creds
+
+        
 
 
