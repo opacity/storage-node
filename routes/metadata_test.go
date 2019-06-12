@@ -23,14 +23,14 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	getMetadata := getMetadataObject{
+	getMetadata := metadataKeyObject{
 		MetadataKey: testMetadataKey,
 		Timestamp:   time.Now().Unix(),
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadata)
 
-	get := getMetadataReq{
+	get := metadataKeyReq{
 		verification: v,
 		requestBody:  b,
 	}
@@ -54,14 +54,14 @@ func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	getMetadata := getMetadataObject{
+	getMetadata := metadataKeyObject{
 		MetadataKey: testMetadataKey,
 		Timestamp:   time.Now().Unix(),
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadata)
 
-	get := getMetadataReq{
+	get := metadataKeyReq{
 		verification: v,
 		requestBody:  b,
 	}
@@ -78,14 +78,14 @@ func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 	testMetadataKey := utils.GenerateFileHandle()
 
-	getMetadata := getMetadataObject{
+	getMetadata := metadataKeyObject{
 		MetadataKey: testMetadataKey,
 		Timestamp:   time.Now().Unix(),
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadata)
 
-	get := getMetadataReq{
+	get := metadataKeyReq{
 		verification: v,
 		requestBody:  b,
 	}

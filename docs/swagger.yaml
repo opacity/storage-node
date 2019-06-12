@@ -67,13 +67,13 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.InitFileUploadRes:
+  routes.PlanResponse:
+    type: object
+  routes.StatusRes:
     properties:
       status:
-        example: Success
+        example: status of the request
         type: string
-    type: object
-  routes.PlanResponse:
     type: object
   routes.UploadFileReq:
     properties:
@@ -351,7 +351,17 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.getMetadataObject:
+  routes.getMetadataRes:
+    properties:
+      expirationDate:
+        type: string
+      metadata:
+        example: your account metadata
+        type: string
+    required:
+    - expirationDate
+    type: object
+  routes.metadataKeyObject:
     properties:
       metadataKey:
         example: a 64-char hex string created deterministically from your account
@@ -363,10 +373,10 @@ definitions:
     - metadataKey
     - timestamp
     type: object
-  routes.getMetadataReq:
+  routes.metadataKeyReq:
     properties:
-      getMetadataObject:
-        $ref: '#/definitions/routes.getMetadataObject'
+      metadataKeyObject:
+        $ref: '#/definitions/routes.metadataKeyObject'
         type: object
       publicKey:
         example: a 66-character public key
@@ -390,16 +400,6 @@ definitions:
     - publicKey
     - requestBody
     - signature
-    type: object
-  routes.getMetadataRes:
-    properties:
-      expirationDate:
-        type: string
-      metadata:
-        example: your account metadata
-        type: string
-    required:
-    - expirationDate
     type: object
   routes.updateMetadataObject:
     properties:
@@ -460,12 +460,6 @@ definitions:
     - expirationDate
     - metadata
     - metadataKey
-    type: object
-  routes.uploadFileRes:
-    properties:
-      status:
-        example: Chunk is uploaded
-        type: string
     type: object
   utils.PlanInfo:
     properties:
@@ -682,7 +676,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.InitFileUploadRes'
+            $ref: '#/definitions/routes.StatusRes'
             type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
@@ -710,10 +704,10 @@ paths:
       parameters:
       - description: get metadata object
         in: body
-        name: getMetadataReq
+        name: metadataKeyReq
         required: true
         schema:
-          $ref: '#/definitions/routes.getMetadataReq'
+          $ref: '#/definitions/routes.metadataKeyReq'
           type: object
       produces:
       - application/json
@@ -801,7 +795,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.uploadFileRes'
+            $ref: '#/definitions/routes.StatusRes'
             type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
@@ -841,7 +835,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.uploadFileRes'
+            $ref: '#/definitions/routes.StatusRes'
             type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
