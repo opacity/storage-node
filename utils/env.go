@@ -88,6 +88,10 @@ func initEnv(filenames ...string) {
 	storageNodeEnv := StorageNodeEnv{}
 	env.Parse(&storageNodeEnv)
 
+	if storageNodeEnv.PlansJson == "" {
+		storageNodeEnv.PlansJson = defaultPlansJson
+	}
+
 	if storageNodeEnv.EncryptionKey == "" {
 		log.Fatal("must set an encryption key in the .env file")
 	}
@@ -173,8 +177,8 @@ func tryLookUp() error {
 		accountRetentionDays = defaultAccountRetentionDays
 	}
 
-	plansJson, _ := os.LookupEnv("PLANS_JSON")
-	if plansJson == "" {
+	plansJson, exists := os.LookupEnv("PLANS_JSON")
+	if exists == false {
 		plansJson = defaultPlansJson
 	}
 
