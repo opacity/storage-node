@@ -13,9 +13,8 @@ services:
     volumes:
       - prometheus_data:/prometheus
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--web.route-prefix="/"'
-      - '--web.external-url=http://localhost:12321/prometheus'
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.external-url=http://localhost:12321/prometheus
     networks:
       - promnet
 
