@@ -409,7 +409,7 @@ func Test_Space_Updates_at_Scale(t *testing.T) {
 }
 
 func Test_CreateSpaceUsedReport(t *testing.T) {
-	expectedSpaceAlloted := int(4 * BasicStorageLimit)
+	expectedSpaceAllotted := int(4 * BasicStorageLimit)
 	expectedSpaceUsed := 234.56 * 1e9
 
 	DeleteAccountsForTest(t)
@@ -433,7 +433,7 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 
 	spaceReport := CreateSpaceUsedReport()
 
-	assert.Equal(t, expectedSpaceAlloted, spaceReport.SpaceAllotedSum)
+	assert.Equal(t, expectedSpaceAllotted, spaceReport.SpaceAllottedSum)
 	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
 }
 

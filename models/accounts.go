@@ -32,8 +32,8 @@ type Account struct {
 
 /*SpaceReport defines a model for capturing the space alloted compared to space used*/
 type SpaceReport struct {
-	SpaceAllotedSum int
-	SpaceUsedSum    float64
+	SpaceAllottedSum int
+	SpaceUsedSum     float64
 }
 
 /*Invoice is the invoice object we will return to the client*/
@@ -88,30 +88,18 @@ const AccountIDLength = 64
 /*PaymentStatusMap is for pretty printing the PaymentStatus*/
 var PaymentStatusMap = make(map[PaymentStatusType]string)
 
-/*StorageLimitMap maps the amount of storage passed in by the client
-to storage limits set by us.  Used for checking that they have passed in an allowed
-amount.*/
-var StorageLimitMap = make(map[int]StorageLimitType)
-
-/*CostMap is for mapping subscription plans to their prices, for a default length subscription*/
-var CostMap = make(map[StorageLimitType]float64)
-
 /*PaymentCollectionFunctions maps a PaymentStatus to the method that should be run
 on an account of that status*/
 var PaymentCollectionFunctions = make(map[PaymentStatusType]func(
 	account Account) error)
 
 func init() {
-	StorageLimitMap[int(BasicStorageLimit)] = BasicStorageLimit
-
 	PaymentStatusMap[InitialPaymentInProgress] = "InitialPaymentInProgress"
 	PaymentStatusMap[InitialPaymentReceived] = "InitialPaymentReceived"
 	PaymentStatusMap[GasTransferInProgress] = "GasTransferInProgress"
 	PaymentStatusMap[GasTransferComplete] = "GasTransferComplete"
 	PaymentStatusMap[PaymentRetrievalInProgress] = "PaymentRetrievalInProgress"
 	PaymentStatusMap[PaymentRetrievalComplete] = "PaymentRetrievalComplete"
-
-	CostMap[BasicStorageLimit] = BasicSubscriptionDefaultCost
 
 	PaymentCollectionFunctions[InitialPaymentInProgress] = handleAccountWithPaymentInProgress
 	PaymentCollectionFunctions[InitialPaymentReceived] = handleAccountThatNeedsGas
@@ -141,11 +129,8 @@ func (account *Account) ExpirationDate() time.Time {
 
 /*Cost returns the expected price of the subscription*/
 func (account *Account) Cost() (float64, error) {
-	costForDefaultSubscriptionTerm, ok := CostMap[account.StorageLimit]
-	if !ok {
-		return 0, errors.New("no price established for that amount of storage")
-	}
-	return costForDefaultSubscriptionTerm * float64(account.MonthsInSubscription/DefaultMonthsPerSubscription), nil
+	return utils.Env.Plans[int(account.StorageLimit)].Cost *
+		float64(account.MonthsInSubscription/DefaultMonthsPerSubscription), nil
 }
 
 /*GetTotalCostInWei gets the total cost in wei for a subscription*/
