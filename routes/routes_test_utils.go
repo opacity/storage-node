@@ -258,7 +258,7 @@ func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{
 	v1 := returnV1Group(router)
 	setupV1Paths(v1)
 
-	req, err := http.NewRequest("POST", "/", body)
+	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+path, body)
 	if err != nil {
 		t.Fatalf("Couldn't create request: %v\n", err)
 	}
