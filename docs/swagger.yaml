@@ -73,6 +73,8 @@ definitions:
         example: Success
         type: string
     type: object
+  routes.PlanResponse:
+    type: object
   routes.UploadFileReq:
     properties:
       chunkData:
@@ -102,6 +104,16 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.UploadStatusObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+    required:
+    - fileHandle
+    type: object
   routes.UploadStatusReq:
     properties:
       publicKey:
@@ -110,7 +122,7 @@ definitions:
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.UploadStatusObj, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -122,20 +134,48 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
+      uploadStatusObj:
+        $ref: '#/definitions/routes.UploadStatusObj'
+        type: object
     required:
     - publicKey
     - requestBody
     - signature
     type: object
+  routes.accountCreateObj:
+    properties:
+      durationInMonths:
+        example: 12
+        minimum: 1
+        type: integer
+      metadataKey:
+        example: a 64-char hex string created deterministically from your account
+          handle or private key
+        maxLength: 64
+        minLength: 64
+        type: string
+      storageLimit:
+        example: 100
+        maximum: 100
+        minimum: 100
+        type: integer
+    required:
+    - durationInMonths
+    - metadataKey
+    - storageLimit
+    type: object
   routes.accountCreateReq:
     properties:
+      accountCreateObj:
+        $ref: '#/definitions/routes.accountCreateObj'
+        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.accountCreateObj, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -210,6 +250,13 @@ definitions:
     - monthsInSubscription
     - storageLimit
     type: object
+  routes.accountGetReqObj:
+    properties:
+      timestamp:
+        type: integer
+    required:
+    - timestamp
+    type: object
   routes.accountUnpaidRes:
     properties:
       account:
@@ -222,15 +269,26 @@ definitions:
         example: paid
         type: string
     type: object
+  routes.deleteFileObj:
+    properties:
+      fileID:
+        example: the handle of the file
+        type: string
+    required:
+    - fileID
+    type: object
   routes.deleteFileReq:
     properties:
+      deleteFileObj:
+        $ref: '#/definitions/routes.deleteFileObj'
+        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.deleteFileObj, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -267,13 +325,16 @@ definitions:
     type: object
   routes.getAccountDataReq:
     properties:
+      accountGetReqObj:
+        $ref: '#/definitions/routes.accountGetReqObj'
+        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.accountGetReqObj, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -290,15 +351,30 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.getMetadataObject:
+    properties:
+      metadataKey:
+        example: a 64-char hex string created deterministically from your account
+          handle or private key
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - metadataKey
+    - timestamp
+    type: object
   routes.getMetadataReq:
     properties:
+      getMetadataObject:
+        $ref: '#/definitions/routes.getMetadataObject'
+        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.getMetadataObject, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -325,6 +401,22 @@ definitions:
     required:
     - expirationDate
     type: object
+  routes.updateMetadataObject:
+    properties:
+      metadata:
+        example: your (updated) account metadata
+        type: string
+      metadataKey:
+        example: a 64-char hex string created deterministically from your account
+          handle or private key
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - metadata
+    - metadataKey
+    - timestamp
+    type: object
   routes.updateMetadataReq:
     properties:
       publicKey:
@@ -333,7 +425,7 @@ definitions:
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.updateMetadataObject, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -345,6 +437,9 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
+      updateMetadataObject:
+        $ref: '#/definitions/routes.updateMetadataObject'
+        type: object
     required:
     - publicKey
     - requestBody
@@ -372,17 +467,53 @@ definitions:
         example: Chunk is uploaded
         type: string
     type: object
+  utils.PlanInfo:
+    properties:
+      cost:
+        type: number
+      maxFolders:
+        type: integer
+      maxMetadataSizeInMB:
+        type: integer
+      name:
+        type: string
+      storageInGB:
+        type: integer
+    required:
+    - cost
+    - maxFolders
+    - maxMetadataSizeInMB
+    - name
+    - storageInGB
+    type: object
+  utils.PlanResponseType:
+    additionalProperties:
+      properties:
+        cost:
+          type: number
+        maxFolders:
+          type: integer
+        maxMetadataSizeInMB:
+          type: integer
+        name:
+          type: string
+        storageInGB:
+          type: integer
+      required:
+      - cost
+      - maxFolders
+      - maxMetadataSizeInMB
+      - name
+      - storageInGB
+      type: object
+    type: object
 host: '{{.Host}}'
 info:
-  contact:
-    name: Opacity Staff
-    url: https://telegram.me/opacitystorage
-  description: Opacity backend for file storage.
-  license:
-    name: OPACITY LIMITED CODE REVIEW LICENSE LICENSE.md
-  termsOfService: https://opacity.io/terms-of-service
-  title: Storage Node
-  version: "1.0"
+  contact: {}
+  description: '{{.Description}}'
+  license: {}
+  title: '{{.Title}}'
+  version: '{{.Version}}'
 paths:
   /api/v1/account-data:
     post:
@@ -729,4 +860,18 @@ paths:
           schema:
             type: string
       summary: check status of an upload
+  /plans:
+    get:
+      consumes:
+      - application/json
+      description: get the plans we sell
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.PlanResponse'
+            type: object
+      summary: get the plans we sell
 swagger: "2.0"

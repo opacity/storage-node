@@ -23,3 +23,14 @@ func Test_CollectErrors(t *testing.T) {
 	assert.Equal(t, true, strings.Contains(err.Error(), error1.Error()))
 	assert.Equal(t, true, strings.Contains(err.Error(), error2.Error()))
 }
+
+func Test_AppendIfError(t *testing.T) {
+	var collectedErrors []error
+	var nilError error
+	nonNilError := errors.New("error1")
+	AppendIfError(nilError, &collectedErrors)
+	AppendIfError(nonNilError, &collectedErrors)
+	AppendIfError(nilError, &collectedErrors)
+	AppendIfError(nonNilError, &collectedErrors)
+	assert.Equal(t, 2, len(collectedErrors))
+}

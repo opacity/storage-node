@@ -69,6 +69,10 @@ const MaxRequestSize = utils.MaxMultiPartSize + 1000
 
 var maintenanceError = errors.New("maintenance in progress, currently rejecting writes")
 
+type PlanResponse struct {
+	Plans utils.PlanResponseType `json:"plans" example:"an object of the plans we offer"`
+}
+
 func init() {
 }
 
@@ -103,6 +107,9 @@ func returnEngine() *gin.Engine {
 			"uptime":  fmt.Sprintf("%v", time.Now().Sub(uptime)),
 		})
 	})
+
+	router.GET("/plans", GetPlansHandler())
+
 	return router
 }
 
@@ -139,4 +146,22 @@ func setupAdminPaths(router *gin.Engine) {
 	// Unable to find the file.
 	// g.GET("/jobrunner/html", jobs.JobHtml)
 	//router.LoadHTMLGlob("../../bamzi/jobrunner/views/Status.html")
+}
+
+// GetPlansHandler godoc
+// @Summary get the plans we sell
+// @Description get the plans we sell
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} routes.PlanResponse
+// @Router /plans [get]
+/*GetPlansHandler is a handler for getting the plans*/
+func GetPlansHandler() gin.HandlerFunc {
+	return ginHandlerFunc(getPlans)
+}
+
+func getPlans(c *gin.Context) error {
+	return OkResponse(c, PlanResponse{
+		Plans: utils.Env.Plans,
+	})
 }

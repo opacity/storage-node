@@ -132,7 +132,7 @@ func createAccount(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	storageLimit, ok := models.StorageLimitMap[request.accountCreateObj.StorageLimit]
+	plan, ok := utils.Env.Plans[request.accountCreateObj.StorageLimit]
 	if !ok {
 		return BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
 	}
@@ -155,7 +155,7 @@ func createAccount(c *gin.Context) error {
 	account := models.Account{
 		AccountID:            accountId,
 		MetadataKey:          request.accountCreateObj.MetadataKey,
-		StorageLimit:         storageLimit,
+		StorageLimit:         models.StorageLimitType(plan.StorageInGB),
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:        models.InitialPaymentInProgress,
