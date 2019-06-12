@@ -767,9 +767,9 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 	}
 
 	// grab the account from the DB
-	//accountFromDB, _ := GetAccountById(account.AccountID)
+	accountFromDB, _ := GetAccountById(account.AccountID)
 
-	verifyPaymentStatusExpectations(t, account, InitialPaymentInProgress, InitialPaymentReceived, handleAccountWithPaymentInProgress)
+	verifyPaymentStatusExpectations(t, accountFromDB, InitialPaymentInProgress, InitialPaymentReceived, handleAccountWithPaymentInProgress)
 }
 
 func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
@@ -786,9 +786,9 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 	}
 
 	// grab the account from the DB
-	//accountFromDB, _ := GetAccountById(account.AccountID)
+	accountFromDB, _ := GetAccountById(account.AccountID)
 
-	verifyPaymentStatusExpectations(t, account, InitialPaymentInProgress, InitialPaymentInProgress, handleAccountWithPaymentInProgress)
+	verifyPaymentStatusExpectations(t, accountFromDB, InitialPaymentInProgress, InitialPaymentInProgress, handleAccountWithPaymentInProgress)
 }
 
 func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {
