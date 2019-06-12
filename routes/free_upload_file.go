@@ -33,7 +33,7 @@ func freeUploadFile(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	return OkResponse(c, uploadFileRes{
+	return OkResponse(c, StatusRes{
 		Status: "File is uploaded",
 	})
 }

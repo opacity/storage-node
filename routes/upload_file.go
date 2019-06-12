@@ -24,15 +24,11 @@ type UploadFileReq struct {
 	RequestBody string `form:"requestBody" binding:"required" example:"should produce routes.UploadFileObj, see description for example"`
 }
 
-type uploadFileRes struct {
-	Status string `json:"status" example:"Chunk is uploaded"`
-}
-
-var chunkUploadCompletedRes = uploadFileRes{
+var chunkUploadCompletedRes = StatusRes{
 	Status: "Chunk is uploaded",
 }
 
-var fileUploadCompletedRes = uploadFileRes{
+var fileUploadCompletedRes = StatusRes{
 	Status: "File is uploaded",
 }
 
@@ -47,7 +43,7 @@ var fileUploadCompletedRes = uploadFileRes{
 // @description 	"fileHandle": "a deterministically created file handle",
 // @description 	"partIndex": 1,
 // @description }
-// @Success 200 {object} routes.uploadFileRes
+// @Success 200 {object} routes.StatusRes
 // @Failure 403 {object} routes.accountCreateRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 500 {string} string "some information about the internal error"
@@ -102,7 +98,7 @@ func uploadChunk(requestBodyParsed UploadFileObj, mainRequest UploadFileReq, fil
 		return FileNotFoundResponse(c, requestBodyParsed.FileHandle)
 	}
 
-	if err := verifyModifyPermissions(mainRequest.PublicKey, requestBodyParsed.FileHandle,
+	if err := verifyPermissions(mainRequest.PublicKey, requestBodyParsed.FileHandle,
 		file.ModifierHash, c); err != nil {
 		return err
 	}
