@@ -230,12 +230,13 @@ func GetAccountById(accountID string) (Account, error) {
 /*CreateSpaceUsedReport populates a model of the space allotted versus space used*/
 func CreateSpaceUsedReport() SpaceReport {
 	var result SpaceReport
-	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM accounts WHERE payment_status >= ?",
-		InitialPaymentReceived).Scan(&result)
+	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM "+
+		"accounts WHERE payment_status >= ?", InitialPaymentReceived).Scan(&result)
 	return result
 }
 
-/*CreateSpaceUsedReportForPlanType populates a model of the space allotted versus space used for a particular type of plan*/
+/*CreateSpaceUsedReportForPlanType populates a model of the space allotted versus space used for a
+particular type of plan*/
 func CreateSpaceUsedReportForPlanType(storageLimit StorageLimitType) SpaceReport {
 	var result SpaceReport
 	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM "+
