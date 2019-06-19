@@ -245,6 +245,13 @@ func CreateSpaceUsedReportForPlanType(storageLimit StorageLimitType) SpaceReport
 	return result
 }
 
+/*CalculatePercentSpaceUsed accepts a space report and calculates the percent of space used vs.
+the space allotted*/
+func CalculatePercentSpaceUsed(spaceReport SpaceReport) float64 {
+	spaceUsedInGB := float64(spaceReport.SpaceUsedSum) / 1e9
+	return (spaceUsedInGB / float64(spaceReport.SpaceAllottedSum)) * float64(100)
+}
+
 /*PurgeOldUnpaidAccounts deletes accounts past a certain age which have not been paid for*/
 func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
 	err := DB.Where("created_at < ? AND payment_status = ? AND storage_used_in_byte = ?",

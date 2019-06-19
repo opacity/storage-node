@@ -489,6 +489,19 @@ func Test_CreateSpaceUsedReportForPlanType(t *testing.T) {
 	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
 }
 
+func Test_CalculatePercentSpaceUsed(t *testing.T) {
+	expectedPercent := 50.0
+
+	spaceReport := SpaceReport{
+		SpaceAllottedSum: 100,
+		SpaceUsedSum:     float64(expectedPercent * 1e9),
+	}
+
+	percentUsed := CalculatePercentSpaceUsed(spaceReport)
+
+	assert.Equal(t, expectedPercent, percentUsed)
+}
+
 func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 	DeleteAccountsForTest(t)
 

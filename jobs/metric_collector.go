@@ -23,18 +23,13 @@ func (m metricCollector) Runnable() bool {
 
 func (m metricCollector) spaceUsageMetrics() {
 	spaceReport := models.CreateSpaceUsedReport()
-	spaceUsedInGB := float64(spaceReport.SpaceUsedSum) / 1e9
-	spaceUsed := (spaceUsedInGB / float64(spaceReport.SpaceAllottedSum)) * float64(100)
 
-	utils.Metrics_Percent_Of_Space_Used_Map[utils.TotalLbl].Set(spaceUsed)
+	utils.Metrics_Percent_Of_Space_Used_Map[utils.TotalLbl].Set(models.CalculatePercentSpaceUsed(spaceReport))
 
 	for _, plan := range utils.Env.Plans {
 		spaceReport := models.CreateSpaceUsedReportForPlanType(models.StorageLimitType(plan.StorageInGB))
 
-		spaceUsedInGB := float64(spaceReport.SpaceUsedSum) / 1e9
-		spaceUsed := (spaceUsedInGB / float64(spaceReport.SpaceAllottedSum)) * float64(100)
-
-		utils.Metrics_Percent_Of_Space_Used_Map[plan.Name].Set(spaceUsed)
+		utils.Metrics_Percent_Of_Space_Used_Map[plan.Name].Set(models.CalculatePercentSpaceUsed(spaceReport))
 	}
 }
 
