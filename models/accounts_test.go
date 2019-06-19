@@ -437,6 +437,58 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
 }
 
+func Test_CreateSpaceUsedReportForPlanType(t *testing.T) {
+	expectedSpaceAllottedBasic := int(4 * BasicStorageLimit)
+	expectedSpaceAllottedProfessional := int(4 * 1024)
+	expectedSpaceUsed := 234.56 * 1e9
+
+	DeleteAccountsForTest(t)
+
+	for i := 0; i < 4; i++ {
+		accountPaid := returnValidAccount()
+		accountPaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
+		accountPaid.PaymentStatus = PaymentStatusType(utils.RandIndex(5) + 2)
+		if err := DB.Create(&accountPaid).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+	}
+	for i := 0; i < 4; i++ {
+		accountPaid := returnValidAccount()
+		accountPaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
+		accountPaid.StorageLimit = StorageLimitType(utils.Env.Plans[1024].StorageInGB)
+		accountPaid.PaymentStatus = PaymentStatusType(utils.RandIndex(5) + 2)
+		if err := DB.Create(&accountPaid).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+	}
+
+	for i := 0; i < 4; i++ {
+		accountUnpaid := returnValidAccount()
+		accountUnpaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
+		if err := DB.Create(&accountUnpaid).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+	}
+	for i := 0; i < 4; i++ {
+		accountUnpaid := returnValidAccount()
+		accountUnpaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
+		accountUnpaid.StorageLimit = StorageLimitType(utils.Env.Plans[1024].StorageInGB)
+		if err := DB.Create(&accountUnpaid).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+	}
+
+	spaceReport := CreateSpaceUsedReportForPlanType(BasicStorageLimit)
+
+	assert.Equal(t, expectedSpaceAllottedBasic, spaceReport.SpaceAllottedSum)
+	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
+
+	spaceReport = CreateSpaceUsedReportForPlanType(ProfessionalStorageLimit)
+
+	assert.Equal(t, expectedSpaceAllottedProfessional, spaceReport.SpaceAllottedSum)
+	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
+}
+
 func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 	DeleteAccountsForTest(t)
 
@@ -527,6 +579,35 @@ func Test_CountAccountsByPaymentStatus(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, count)
 	}
+}
+
+func Test_CountPaidAccountsByPlanType(t *testing.T) {
+	//PaymentStatusType(utils.RandIndex(5) + 2)
+	DeleteAccountsForTest(t)
+	// for each payment status, check that we can get the accounts of that status and that the account IDs
+	// of the accounts returned from GetAccountsByPaymentStatus match the accounts we created for the test
+	for i := 0; i < 4; i++ {
+		account := returnValidAccount()
+		account.PaymentStatus = PaymentStatusType(utils.RandIndex(5) + 2)
+		if err := DB.Create(&account).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+	}
+
+	for i := 0; i < 4; i++ {
+		account := returnValidAccount()
+		account.StorageLimit = ProfessionalStorageLimit
+		account.PaymentStatus = PaymentStatusType(utils.RandIndex(5) + 2)
+		if err := DB.Create(&account).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+	}
+
+	count, _ := CountPaidAccountsByPlanType(BasicStorageLimit)
+	assert.Equal(t, 4, count)
+
+	count, _ = CountPaidAccountsByPlanType(ProfessionalStorageLimit)
+	assert.Equal(t, 4, count)
 }
 
 func Test_SetAccountsToNextPaymentStatus(t *testing.T) {

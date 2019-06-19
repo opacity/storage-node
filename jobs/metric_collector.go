@@ -26,7 +26,16 @@ func (m metricCollector) spaceUsageMetrics() {
 	spaceUsedInGB := float64(spaceReport.SpaceUsedSum) / 1e9
 	spaceUsed := (spaceUsedInGB / float64(spaceReport.SpaceAllottedSum)) * float64(100)
 
-	utils.Metrics_Percent_Of_Space_Used.Set(spaceUsed)
+	utils.Metrics_Percent_Of_Space_Used_Map[utils.TotalLbl].Set(spaceUsed)
+
+	for _, plan := range utils.Env.Plans {
+		spaceReport := models.CreateSpaceUsedReportForPlanType(models.StorageLimitType(plan.StorageInGB))
+
+		spaceUsedInGB := float64(spaceReport.SpaceUsedSum) / 1e9
+		spaceUsed := (spaceUsedInGB / float64(spaceReport.SpaceAllottedSum)) * float64(100)
+
+		utils.Metrics_Percent_Of_Space_Used_Map[plan.Name].Set(spaceUsed)
+	}
 }
 
 func (m metricCollector) accountsMetrics() {
@@ -48,7 +57,7 @@ func (m metricCollector) accountsMetrics() {
 
 	if utils.ReturnFirstError([]error{totalAccountErr, unpaidCountErr, collectedAccountErr}) == nil {
 		paidAccountsCount := accountsCount - unpaidAccountsCount
-		utils.Metrics_Total_Paid_Accounts.Set(float64(paidAccountsCount))
+		utils.Metrics_Total_Paid_Accounts_Map[utils.TotalLbl].Set(float64(paidAccountsCount))
 
 		percentOfAccountsPaid := (float64(paidAccountsCount) / float64(accountsCount)) * float64(100)
 
@@ -61,6 +70,14 @@ func (m metricCollector) accountsMetrics() {
 		percentOfPaidAccountsCollected := (float64(collectedAccountsCount) / float64(paidAccountsCount)) * float64(100)
 
 		utils.Metrics_Percent_Of_Paid_Accounts_Collected.Set(float64(percentOfPaidAccountsCollected))
+	}
+
+	for _, plan := range utils.Env.Plans {
+		accountCount, err := models.CountPaidAccountsByPlanType(models.StorageLimitType(plan.StorageInGB))
+		if err == nil {
+			utils.Metrics_Total_Paid_Accounts_Map[plan.Name].Set(float64(accountCount))
+		}
+		utils.LogIfError(err, nil)
 	}
 }
 
