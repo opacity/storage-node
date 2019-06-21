@@ -78,10 +78,6 @@ func (v requestBody) getObjectAsString() string {
 	return v.RequestBody
 }
 
-func (v requestBody) getObjectRef() interface{} {
-	return nil
-}
-
 func verifyAndParseBodyRequest(dest interface{}, c *gin.Context) error {
 	if err := utils.ParseRequestBody(c.Request, dest); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
