@@ -210,7 +210,7 @@ func verifyRequest(hash []byte, verificationData verification, c *gin.Context) e
 	}
 
 	if verified != true {
-		return ForbiddenResponse(c, errors.New(signatureDidNotMatchResponse))
+		return ForbiddenResponse(c, fmt.Errorf("Public Key %s, Signature Key %s hash %v", verificationData.PublicKey, verificationData.Signature, hash))
 	}
 	return nil
 }
