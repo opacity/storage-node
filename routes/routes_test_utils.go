@@ -236,12 +236,20 @@ func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{
 	mw := multipart.NewWriter(body)
 
 	if i, ok := post.(verificationInterface); ok {
+		assert.NotEmpty(t, i.getVerification().Signature)
 		mw.WriteField("signature", i.getVerification().Signature)
+
+		assert.NotEmpty(t, i.getVerification().PublicKey)
 		mw.WriteField("publicKey", i.getVerification().PublicKey)
+	} else {
+		assert.Fail(t, "%v must conform to verificationInterface", post)
 	}
 
 	if i, ok := post.(parsableObjectInterface); ok {
+		assert.NotEmpty(t, i.getObjectAsString())
 		mw.WriteField("requestBody", i.getObjectAsString())
+	} else {
+		assert.Fail(t, "%v must conform to parsableObjectInterface", post)
 	}
 
 	for k, v := range form {
@@ -260,7 +268,7 @@ func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{
 
 	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+path, body)
 	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
+		assert.Fail(t, "Couldn't create request: %v\n", err)
 	}
 
 	req.Header.Set("Content-Type", mw.FormDataContentType())
@@ -290,7 +298,7 @@ func httpPostRequestHelperForTest(t *testing.T, path string, post interface{}) *
 	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+path, reqBody)
 
 	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
+		assert.Fail(t, "Couldn't create request: %v\n", err)
 	}
 
 	// Create a response recorder so you can inspect the response
@@ -304,6 +312,6 @@ func httpPostRequestHelperForTest(t *testing.T, path string, post interface{}) *
 
 func abortIfNotTesting(t *testing.T) {
 	if !utils.IsTestEnv() {
-		t.Fatalf("should only be calling this method while testing")
+		assert.Fail(t, "should only be calling this method while testing")
 	}
 }
