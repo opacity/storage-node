@@ -242,14 +242,14 @@ func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{
 		assert.NotEmpty(t, i.getVerification().PublicKey)
 		mw.WriteField("publicKey", i.getVerification().PublicKey)
 	} else {
-		assert.Failf(t, "%v must conform to verificationInterface", post)
+		assert.Fail(t, "post must conform to verificationInterface", post)
 	}
 
 	if i, ok := post.(parsableObjectInterface); ok {
 		assert.NotEmpty(t, i.getObjectAsString())
 		mw.WriteField("requestBody", i.getObjectAsString())
 	} else {
-		assert.Failf(t, "%v must conform to parsableObjectInterface", post)
+		assert.Fail(t, "post must conform to parsableObjectInterface", post)
 	}
 
 	for k, v := range form {
@@ -268,7 +268,7 @@ func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{
 
 	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+path, body)
 	if err != nil {
-		assert.Failf(t, "Couldn't create request: %v\n", err)
+		assert.Fail(t, "Couldn't create request: ", err)
 	}
 
 	req.Header.Set("Content-Type", mw.FormDataContentType())
