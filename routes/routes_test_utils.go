@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-	"mime/multipart"
 	"bytes"
 
 	"github.com/gin-gonic/gin"
