@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"mime/multipart"
 	"os"
 	"strings"
 	"testing"
@@ -228,6 +229,59 @@ func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
 	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
 }
 
+func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{}, form map[string]string, formFile map[string]string) *httptest.ResponseRecorder {
+	abortIfNotTesting(t)
+
+	body := new(bytes.Buffer)
+	mw := multipart.NewWriter(body)
+
+	if i, ok := post.(verificationInterface); ok {
+		assert.NotEmpty(t, i.getVerification().Signature)
+		mw.WriteField("signature", i.getVerification().Signature)
+
+		assert.NotEmpty(t, i.getVerification().PublicKey)
+		mw.WriteField("publicKey", i.getVerification().PublicKey)
+	} else {
+		assert.Fail(t, "post must conform to verificationInterface", post)
+	}
+
+	if i, ok := post.(parsableObjectInterface); ok {
+		assert.NotEmpty(t, i.getObjectAsString())
+		mw.WriteField("requestBody", i.getObjectAsString())
+	} else {
+		assert.Fail(t, "post must conform to parsableObjectInterface", post)
+	}
+
+	for k, v := range form {
+		mw.WriteField(k, v)
+	}
+
+	for k, v := range formFile {
+		w, _ := mw.CreateFormFile(k, k)
+		w.Write([]byte(v))
+	}
+	mw.Close()
+
+	router := returnEngine()
+	v1 := returnV1Group(router)
+	setupV1Paths(v1)
+
+	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+path, body)
+	if err != nil {
+		assert.Fail(t, "Couldn't create request: ", err)
+	}
+
+	req.Header.Set("Content-Type", mw.FormDataContentType())
+
+	// Create a response recorder so you can inspect the response
+	w := httptest.NewRecorder()
+
+	// Perform the request
+	router.ServeHTTP(w, req)
+	
+	return w
+}
+
 func httpPostRequestHelperForTest(t *testing.T, path string, post interface{}) *httptest.ResponseRecorder {
 	abortIfNotTesting(t)
 
@@ -244,7 +298,7 @@ func httpPostRequestHelperForTest(t *testing.T, path string, post interface{}) *
 	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+path, reqBody)
 
 	if err != nil {
-		t.Fatalf("Couldn't create request: %v\n", err)
+		assert.Fail(t, "Couldn't create request: %v\n", err)
 	}
 
 	// Create a response recorder so you can inspect the response
@@ -258,6 +312,6 @@ func httpPostRequestHelperForTest(t *testing.T, path string, post interface{}) *
 
 func abortIfNotTesting(t *testing.T) {
 	if !utils.IsTestEnv() {
-		t.Fatalf("should only be calling this method while testing")
+		assert.Fail(t, "should only be calling this method while testing")
 	}
 }
