@@ -155,7 +155,7 @@ func Test_Upload_File_Account_Not_Paid(t *testing.T) {
 // }
 
 func initFileUpload(t *testing.T, privateKey *ecdsa.PrivateKey) string {
-	req := createValidInitFileUploadRequest(t, 123, privateKey)
+	req, uploadObj := createValidInitFileUploadRequest(t, 123, privateKey)
 	httpPostRequestHelperForTest(t, InitUploadPath, req)
-	return req.initFileUploadObj.FileHandle
+	return uploadObj.FileHandle
 }
