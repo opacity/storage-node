@@ -30,8 +30,8 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.Contains(t, w.Body.String(), `"paymentStatus":"unpaid"`)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
+	assert.Contains(t, w.Body.String(), `"cost":2`)
 }
 
 func Test_initFileUploadWithPaidAccount(t *testing.T) {
