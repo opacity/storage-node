@@ -233,9 +233,7 @@ func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
 	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
 }
 
-func httpPostFormRequestHelperForTest(
-		t *testing.T, path string, post interface{}, form map[string]string, formFile map[string]string)
-		*httptest.ResponseRecorder {
+func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{}, form map[string]string, formFile map[string]string) *httptest.ResponseRecorder {
 	abortIfNotTesting(t)
 
 	body := new(bytes.Buffer)
