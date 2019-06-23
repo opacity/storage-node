@@ -83,7 +83,7 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 	count, _ := models.GetCompletedUploadProgress(fileId)
 	assert.Equal(t, 2, count)
 
-	checkStatusReq := createUploadStatusRequest(t, fileId, privateKey)
+	checkStatusReq, _ := createUploadStatusRequest(t, fileId, privateKey)
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, checkStatusReq)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "File is uploaded")
@@ -117,10 +117,10 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 		assert.Contains(t, w.Body.String(), "Chunk is uploaded")
 	}
 
-	count, _ := models.GetCompletedUploadProgress(fileId)
+	count, _ = models.GetCompletedUploadProgress(fileId)
 	assert.Equal(t, 3, count)
 
-	checkStatusReq := createUploadStatusRequest(t, fileId, privateKey)
+	checkStatusReq, _ := createUploadStatusRequest(t, fileId, privateKey)
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, checkStatusReq)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "File is uploaded")

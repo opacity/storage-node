@@ -99,7 +99,7 @@ func Test_IncorrectPermission(t *testing.T) {
 }
 
 func generateUploadStatusRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (UploadStatusReq, UploadStatusObj) {
-	return createUploadStatusRequest(t, tils.GenerateFileHandle(), privateKey)
+	return createUploadStatusRequest(t, utils.GenerateFileHandle(), privateKey)
 }
 
 func createUploadStatusRequest(t *testing.T, fileId string, privateKey *ecdsa.PrivateKey) (UploadStatusReq, UploadStatusObj) {
