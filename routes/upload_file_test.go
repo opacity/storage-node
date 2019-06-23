@@ -66,12 +66,16 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 	CreatePaidAccountForTest(t, accountId)
 	fileId := initFileUpload(t, 2, privateKey)
 
+	chunkData1 := utils.RandHexString(5*1024)
+	chunkData2 := utils.RandHexString(2*1024)
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
 	uploadObj.FileHandle = fileId
 	request1 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request1.ChunkData = chunkData1
 
 	uploadObj.PartIndex = 2
 	request2 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request2.ChunkData = chunkData2
 
 	requests := []UploadFileReq{request1, request2}
 	for _, r := range requests {
@@ -88,6 +92,11 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "File is uploaded")
 
+	// read data back:
+	data, _ := utils.GetDefaultBucketObject(models.GetFileDataKey(fileId), false)
+
+	assert.Equals(t, fmt.Sprintf("%s%s", chunkData1, chunkData2), data)
+	
 	// clean up
 	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId))
 }
@@ -198,3 +207,4 @@ func initFileUpload(t *testing.T, endIndex int, privateKey *ecdsa.PrivateKey) st
 
 	return uploadObj.FileHandle
 }
+
