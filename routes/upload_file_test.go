@@ -95,7 +95,7 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 	// read data back:
 	data, _ := utils.GetDefaultBucketObject(models.GetFileDataKey(fileId), false)
 
-	assert.Equals(t, fmt.Sprintf("%s%s", chunkData1, chunkData2), data)
+	assert.Equal(t, fmt.Sprintf("%s%s", chunkData1, chunkData2), data)
 	
 	// clean up
 	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId))
@@ -109,15 +109,23 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 	count, _ := models.GetCompletedUploadProgress(fileId)
 	assert.Equal(t, 0, count)
 
+	chunkData1 := utils.RandHexString(5*1024)
+	chunkData2 := utils.RandHexString(5*1024)
+	chunkData3 := utils.RandHexString(2*1024)
+
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
 	uploadObj.FileHandle = fileId
 	request1 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request1.ChunkData = chunkData1
 
 	uploadObj.PartIndex = 2
 	request2 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request2.ChunkData = chunkData2
+
 
 	uploadObj.PartIndex = 3
 	request3 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request3.ChunkData = chunkData3
 
 	requests := []UploadFileReq{request3, request1, request2}
 	for _, r := range requests {
@@ -134,6 +142,10 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "File is uploaded")
 
+	// read data back:
+	data, _ := utils.GetDefaultBucketObject(models.GetFileDataKey(fileId), false)
+
+	assert.Equal(t, fmt.Sprintf("%s%s%s", chunkData1, chunkData2, chunkData3), data)
 	// clean up
 	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId))
 }
