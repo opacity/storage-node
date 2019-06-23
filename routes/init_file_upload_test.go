@@ -19,7 +19,7 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 
 	CreateUnpaidAccountForTest(t, accountId)
-	req, _ := createValidInitFileUploadRequest(t, 123, privateKey)
+	req, _ := createValidInitFileUploadRequest(t, 123, 1, privateKey)
 
 	form := map[string]string{
 		"metadata": "abc",
@@ -38,7 +38,7 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req, uploadObj := createValidInitFileUploadRequest(t, 123, privateKey)
+	req, uploadObj := createValidInitFileUploadRequest(t, 123, 1, privateKey)
 
 	form := map[string]string{
 		"metadata": "abc",
@@ -65,7 +65,7 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	account := CreatePaidAccountForTest(t, accountId)
 
 	fileSizeInByte := (int64(account.StorageLimit)-(int64(account.StorageUsedInByte)/1e9))*1e9 + 1
-	req, uploadObj := createValidInitFileUploadRequest(t, fileSizeInByte, privateKey)
+	req, uploadObj := createValidInitFileUploadRequest(t, fileSizeInByte, 1, privateKey)
 
 	form := map[string]string{
 		"metadata": "abc",
@@ -82,11 +82,11 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	assert.True(t, gorm.IsRecordNotFoundError(err))
 }
 
-func createValidInitFileUploadRequest(t *testing.T, fileSizeInByte int64, privateKey *ecdsa.PrivateKey) (InitFileUploadReq, InitFileUploadObj) {
+func createValidInitFileUploadRequest(t *testing.T, fileSizeInByte int64, endIndex int, privateKey *ecdsa.PrivateKey) (InitFileUploadReq, InitFileUploadObj) {
 	uploadObj := InitFileUploadObj{
 		FileHandle:     utils.GenerateFileHandle(),
 		FileSizeInByte: fileSizeInByte,
-		EndIndex:       1,
+		EndIndex:       endIndex,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, uploadObj, privateKey)
 	req := InitFileUploadReq{
