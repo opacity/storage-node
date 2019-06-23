@@ -44,7 +44,7 @@ func Test_Upload_File_WithoutInit(t *testing.T) {
 func Test_Upload_Part_Of_File(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	account := CreatePaidAccountForTest(t, accountId)
-	fileId := initFileUpload(t, privateKey)
+	fileId := initFileUpload(t, 2, privateKey)
 
 	count, _ := models.GetCompletedUploadProgress(fileId)
 	assert.Equal(t, 0, count)
@@ -63,6 +63,9 @@ func Test_Upload_Part_Of_File(t *testing.T) {
 }
 
 func Test_Upload_Completed_Of_File(t *testing.T) {
+	// accountId, privateKey := generateValidateAccountId(t)
+	// account := CreatePaidAccountForTest(t, accountId)
+	// fileId := initFileUpload(t, 2, privateKey)
 
 }
 // func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
@@ -119,8 +122,8 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 // 	assert.Nil(t, err)
 // }
 
-func initFileUpload(t *testing.T, privateKey *ecdsa.PrivateKey) string {
-	req, uploadObj := createValidInitFileUploadRequest(t, 123, 1, privateKey)
+func initFileUpload(t *testing.T, endIndex int, privateKey *ecdsa.PrivateKey) string {
+	req, uploadObj := createValidInitFileUploadRequest(t, 123, endIndex, privateKey)
 	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, make(map[string]string), make(map[string]string))
 
 	assert.Equal(t, http.StatusOK, w.Code)
