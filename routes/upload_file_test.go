@@ -42,7 +42,7 @@ func Test_Upload_File_Without_Init(t *testing.T) {
 
 func Test_Upload_Part_Of_File(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
-	account := CreatePaidAccountForTest(t, accountId)
+	CreatePaidAccountForTest(t, accountId)
 	fileId := initFileUpload(t, 2, privateKey)
 
 	count, _ := models.GetCompletedUploadProgress(fileId)
@@ -63,7 +63,7 @@ func Test_Upload_Part_Of_File(t *testing.T) {
 
 func Test_Upload_Completed_Of_File(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
-	account := CreatePaidAccountForTest(t, accountId)
+	CreatePaidAccountForTest(t, accountId)
 	fileId := initFileUpload(t, 2, privateKey)
 
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
@@ -94,7 +94,7 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 
 func Test_Upload_Completed_No_In_Order(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
-	account := CreatePaidAccountForTest(t, accountId)
+	CreatePaidAccountForTest(t, accountId)
 	fileId := initFileUpload(t, 3, privateKey)
 
 	count, _ := models.GetCompletedUploadProgress(fileId)
