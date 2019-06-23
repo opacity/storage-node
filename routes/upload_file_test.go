@@ -185,7 +185,14 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 
 func initFileUpload(t *testing.T, endIndex int, privateKey *ecdsa.PrivateKey) string {
 	req, uploadObj := createValidInitFileUploadRequest(t, 123, endIndex, privateKey)
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, make(map[string]string), make(map[string]string))
+	form := map[string]string{
+		"metadata": "abc",
+	}
+	formFile := map[string]string{
+		"metadata": "abc_file",
+	}
+
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
