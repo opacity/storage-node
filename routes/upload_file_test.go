@@ -68,9 +68,9 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
 	uploadObj.FileHandle = fileId
-	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request1 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 
-	uploadObj.EndIndex = 2
+	uploadObj.PartIndex = 2
 	request2 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 
 	requests := []UploadFileReq{request1, request2}
@@ -82,6 +82,14 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 
 	count, _ := models.GetCompletedUploadProgress(fileId)
 	assert.Equal(t, 2, count)
+
+	checkStatusReq := createUploadStatusRequest(t, fileId, privateKey)
+	w := httpPostRequestHelperForTest(t, UploadStatusPath, checkStatusReq)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "File is uploaded")
+
+	// clean up
+	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId))
 }
 
 func Test_Upload_Completed_No_In_Order(t *testing.T) {
@@ -94,12 +102,12 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
 	uploadObj.FileHandle = fileId
-	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request1 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 
-	uploadObj.EndIndex = 2
+	uploadObj.PartIndex = 2
 	request2 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 
-	uploadObj.EndIndex = 3
+	uploadObj.PartIndex = 3
 	request3 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 
 	requests := []UploadFileReq{request3, request1, request2}
@@ -111,6 +119,14 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 
 	count, _ := models.GetCompletedUploadProgress(fileId)
 	assert.Equal(t, 3, count)
+
+	checkStatusReq := createUploadStatusRequest(t, fileId, privateKey)
+	w := httpPostRequestHelperForTest(t, UploadStatusPath, checkStatusReq)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "File is uploaded")
+
+	// clean up
+	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId))
 }
 
 // func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
