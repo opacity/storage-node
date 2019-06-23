@@ -20,8 +20,9 @@ type UploadFileObj struct {
 
 type UploadFileReq struct {
 	verification
+	requestBody
 	ChunkData   string `form:"chunkData" binding:"required" example:"a binary string of the chunk data"`
-	RequestBody string `form:"requestBody" binding:"required" example:"should produce routes.UploadFileObj, see description for example"`
+	uploadFileObj UploadFileObj
 }
 
 var chunkUploadCompletedRes = StatusRes{
@@ -30,6 +31,10 @@ var chunkUploadCompletedRes = StatusRes{
 
 var fileUploadCompletedRes = StatusRes{
 	Status: "File is uploaded",
+}
+
+func (v *UploadFileReq) getObjectRef() interface{} {
+	return &v.uploadFileObj
 }
 
 // UploadFileHandler godoc

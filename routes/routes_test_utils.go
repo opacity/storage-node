@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
 	"bytes"
 
 	"github.com/gin-gonic/gin"
@@ -27,6 +26,7 @@ const defaultStorageUsedInByteForTest = 10 * 1e9
 
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
+	
 	return UploadFileObj{
 		FileHandle: utils.GenerateFileHandle(),
 		PartIndex:  models.FirstChunkIndex,
@@ -40,7 +40,7 @@ func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKe
 
 	return UploadFileReq{
 		verification: v,
-		RequestBody:  b.RequestBody,
+		requestBody:  b,
 		ChunkData:    utils.GenerateFileHandle(),
 	}
 }
@@ -134,7 +134,11 @@ func InitUploadFileForTest(t *testing.T, publicKey, fileID string, endIndx int) 
 }
 
 func UploadFileHelperForTest(t *testing.T, post UploadFileReq) *httptest.ResponseRecorder {
-	return httpPostRequestHelperForTest(t, UploadPath, post)
+	form := map[string]string{}
+	formFile := map[string]string{
+		"chunkData": post.ChunkData,
+	}
+	return httpPostFormRequestHelperForTest(t, UploadPath, &post, form, formFile)
 }
 
 func setupTests(t *testing.T) {
