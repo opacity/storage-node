@@ -4,9 +4,8 @@ import (
 	"crypto/ecdsa"
 	"testing"
 	"net/http"
-	"math/big"
+	"fmt"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/opacity/storage-node/models"
@@ -30,7 +29,7 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-func Test_Upload_File_WithoutInit(t *testing.T) {
+func Test_Upload_File_Without_Init(t *testing.T) {
 	_, privateKey := generateValidateAccountId(t)
 	uploadObj :=  ReturnValidUploadFileBodyForTest(t)
 	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
@@ -63,11 +62,57 @@ func Test_Upload_Part_Of_File(t *testing.T) {
 }
 
 func Test_Upload_Completed_Of_File(t *testing.T) {
-	// accountId, privateKey := generateValidateAccountId(t)
-	// account := CreatePaidAccountForTest(t, accountId)
-	// fileId := initFileUpload(t, 2, privateKey)
+	accountId, privateKey := generateValidateAccountId(t)
+	account := CreatePaidAccountForTest(t, accountId)
+	fileId := initFileUpload(t, 2, privateKey)
 
+	uploadObj := ReturnValidUploadFileBodyForTest(t)
+	uploadObj.FileHandle = fileId
+	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+
+	uploadObj.EndIndex = 2
+	request2 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+
+	requests := []UploadFileReq{request1, request2}
+	for _, r := range requests {
+		w := UploadFileHelperForTest(t, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "Chunk is uploaded")
+	}
+
+	count, _ := models.GetCompletedUploadProgress(fileId)
+	assert.Equal(t, 2, count)
 }
+
+func Test_Upload_Completed_No_In_Order(t *testing.T) {
+	accountId, privateKey := generateValidateAccountId(t)
+	account := CreatePaidAccountForTest(t, accountId)
+	fileId := initFileUpload(t, 3, privateKey)
+
+	count, _ := models.GetCompletedUploadProgress(fileId)
+	assert.Equal(t, 0, count)
+
+	uploadObj := ReturnValidUploadFileBodyForTest(t)
+	uploadObj.FileHandle = fileId
+	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+
+	uploadObj.EndIndex = 2
+	request2 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+
+	uploadObj.EndIndex = 3
+	request3 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+
+	requests := []UploadFileReq{request3, request1, request2}
+	for _, r := range requests {
+		w := UploadFileHelperForTest(t, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "Chunk is uploaded")
+	}
+
+	count, _ := models.GetCompletedUploadProgress(fileId)
+	assert.Equal(t, 3, count)
+}
+
 // func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
 // 	// TODO: Update tests to work with multipart-form requests
 // 	t.Skip()
