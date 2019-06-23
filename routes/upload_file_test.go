@@ -66,7 +66,7 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 	CreatePaidAccountForTest(t, accountId)
 	fileId := initFileUpload(t, 2, privateKey)
 
-	chunkData1 := utils.RandHexString(utils.MaxMultiPartSizeForTest)
+	chunkData1 := utils.RandHexString(int(utils.MaxMultiPartSizeForTest))
 	chunkData2 := utils.RandHexString(2)
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
 	uploadObj.FileHandle = fileId
@@ -109,8 +109,8 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 	count, _ := models.GetCompletedUploadProgress(fileId)
 	assert.Equal(t, 0, count)
 
-	chunkData1 := utils.RandHexString(utils.MaxMultiPartSizeForTest)
-	chunkData2 := utils.RandHexString(utils.MaxMultiPartSizeForTest)
+	chunkData1 := utils.RandHexString(int(utils.MaxMultiPartSizeForTest))
+	chunkData2 := utils.RandHexString(int(utils.MaxMultiPartSizeForTest))
 	chunkData3 := utils.RandHexString(100)
 
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
