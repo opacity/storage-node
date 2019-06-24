@@ -9,6 +9,8 @@ import (
 
 // List of all Metrics throughout the application
 var (
+	TotalLbl = "total"
+
 	Metrics_PingStdOut_Counter = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "storagenode_pingstdout_counter",
 		Help: "The total number of ping std out",
@@ -26,20 +28,22 @@ var (
 	Metrics_500_Response_Counter = Metrics_Http_Response_Counter.With(prometheus.Labels{"response_code": "500"})
 	Metrics_503_Response_Counter = Metrics_Http_Response_Counter.With(prometheus.Labels{"response_code": "503"})
 
-	Metrics_Percent_Of_Space_Used = promauto.NewGauge(prometheus.GaugeOpts{
+	Metrics_Percent_Of_Space_Used = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "storagenode_percent_of_space_used_gauge",
 		Help: "Space used as a percentage of space purchased, for all paid accounts",
-	})
+	}, []string{"plan_type"})
+	Metrics_Percent_Of_Space_Used_Map = make(map[string]prometheus.Gauge)
 
 	Metrics_Total_Accounts = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "storagenode_total_accounts",
 		Help: "Total number of accounts",
 	})
 
-	Metrics_Total_Paid_Accounts = promauto.NewGauge(prometheus.GaugeOpts{
+	Metrics_Total_Paid_Accounts = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "storagenode_total_paid_accounts",
 		Help: "Total number of paid accounts",
-	})
+	}, []string{"plan_type"})
+	Metrics_Total_Paid_Accounts_Map = make(map[string]prometheus.Gauge)
 
 	Metrics_Total_Unpaid_Accounts = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "storagenode_total_unpaid_accounts",
@@ -88,6 +92,15 @@ var (
 	//	Help: "Total data uploaded to S3 bucket, as MB",
 	//})
 )
+
+func createPlanMetrics() {
+	Metrics_Percent_Of_Space_Used_Map[TotalLbl] = Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": TotalLbl})
+	Metrics_Total_Paid_Accounts_Map[TotalLbl] = Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": TotalLbl})
+	for _, plan := range Env.Plans {
+		Metrics_Percent_Of_Space_Used_Map[plan.Name] = Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": plan.Name})
+		Metrics_Total_Paid_Accounts_Map[plan.Name] = Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": plan.Name})
+	}
+}
 
 func GetMetricCounter(m prometheus.Counter) float64 {
 	pb := &dto.Metric{}

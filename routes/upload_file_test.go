@@ -1,12 +1,14 @@
 package routes
 
 import (
+	"crypto/ecdsa"
 	"testing"
-
 	"net/http"
+	"fmt"
 
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/opacity/storage-node/models"
 )
 
 func Test_Init_Upload_Files(t *testing.T) {
@@ -24,174 +26,143 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 
 	w := UploadFileHelperForTest(t, request)
 
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusBadRequest, w.Code)
-	}
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-// func Test_Upload_File_No_Account_Found(t *testing.T) {
-// 	privateKey, err := utils.GenerateKey()
-// 	assert.Nil(t, err)
-// 	request := ReturnValidUploadFileReqForTest(t, ReturnValidUploadFileBodyForTest(t), privateKey)
+func Test_Upload_File_Without_Init(t *testing.T) {
+	_, privateKey := generateValidateAccountId(t)
+	uploadObj :=  ReturnValidUploadFileBodyForTest(t)
+	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 
-// 	w := UploadFileHelperForTest(t, request)
+	w := UploadFileHelperForTest(t, request)
 
-// 	if w.Code != http.StatusNotFound {
-// 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusNotFound, w.Code)
-// 	}
-// }
+	assert.Equal(t, http.StatusNotFound, w.Code)
+	assert.Contains(t, w.Body.String(), fmt.Sprintf("no file with that id: %s", uploadObj.FileHandle))
+}
 
-//func Test_Upload_File_Account_Not_Paid(t *testing.T) {
-//	privateKey, err := utils.GenerateKey()
-//	assert.Nil(t, err)
-//	request := ReturnValidUploadFileReqForTest(t, ReturnValidUploadFileBodyForTest(t), privateKey)
-//	accountID, err := utils.HashString(request.PublicKey)
-//	assert.Nil(t, err)
-//	CreateUnpaidAccountForTest(accountID, t)
-//
-//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-//		return false, nil
-//	}
-//
-//	w := UploadFileHelperForTest(t, request)
-//
-//	if w.Code != http.StatusForbidden {
-//		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusForbidden, w.Code)
-//	}
-//
-//	assert.Contains(t, w.Body.String(), "invoice")
-//	assert.Contains(t, w.Body.String(), "cost")
-//	assert.Contains(t, w.Body.String(), "ethAddress")
-//	assert.Contains(t, w.Body.String(), "expirationDate")
-//}
+func Test_Upload_Part_Of_File(t *testing.T) {
+	accountId, privateKey := generateValidateAccountId(t)
+	CreatePaidAccountForTest(t, accountId)
+	fileId := initFileUpload(t, 2, privateKey)
 
-//func Test_Upload_File_Account_Paid_Upload_Starts(t *testing.T) {
-//	if err := models.DB.Unscoped().Delete(&models.Account{}).Error; err != nil {
-//		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-//	}
-//
-//	uploadBody := ReturnValidUploadFileBodyForTest(t)
-//	uploadBody.ChunkData = string(ReturnChunkDataForTest(t))
-//	fileId := uploadBody.FileHandle
-//	privateKey, err := utils.GenerateKey()
-//	assert.Nil(t, err)
-//	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-//	accountID, err := utils.HashString(request.PublicKey)
-//	assert.Nil(t, err)
-//	CreatePaidAccountForTest(t, accountID)
-//
-//	filesInDB := []models.File{}
-//	models.DB.Where("file_id = ?", fileId).Find(&filesInDB)
-//	assert.Equal(t, 0, len(filesInDB))
-//
-//	w := UploadFileHelperForTest(t, request)
-//
-//	if w.Code != http.StatusOK {
-//		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-//	}
-//
-//	filesInDB = []models.File{}
-//	models.DB.Where("file_id = ?", fileId).Find(&filesInDB)
-//	assert.Equal(t, 1, len(filesInDB))
-//
-//	assert.NotNil(t, filesInDB[0].AwsUploadID)
-//	assert.NotNil(t, filesInDB[0].AwsObjectKey)
-//
-//	utils.AbortMultiPartUpload(aws.StringValue(filesInDB[0].AwsObjectKey),
-//		aws.StringValue(filesInDB[0].AwsUploadID))
-//}
+	count, _ := models.GetCompletedUploadProgress(fileId)
+	assert.Equal(t, 0, count)
 
-//func Test_Upload_File_Account_Paid_Upload_Continues(t *testing.T) {
-//	if err := models.DB.Unscoped().Delete(&models.Account{}).Error; err != nil {
-//		t.Fatalf("should have deleted accounts but didn't: " + err.Error())
-//	}
-//
-//	uploadBody := ReturnValidUploadFileBodyForTest(t)
-//	uploadBody.ChunkData = string(ReturnChunkDataForTest(t))
-//	privateKey, err := utils.GenerateKey()
-//	assert.Nil(t, err)
-//	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-//	accountID, err := utils.HashString(request.PublicKey)
-//	assert.Nil(t, err)
-//	CreatePaidAccountForTest(t, accountID)
-//
-//	w := UploadFileHelperForTest(t, request)
-//
-//	if w.Code != http.StatusOK {
-//		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-//	}
-//
-//	nextBody := uploadBody
-//	nextBody.PartIndex = uploadBody.PartIndex + 1
-//	request = ReturnValidUploadFileReqForTest(t, nextBody, privateKey)
-//
-//	w = UploadFileHelperForTest(t, request)
-//
-//	if w.Code != http.StatusOK {
-//		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-//	}
-//
-//	filesInDB := []models.File{}
-//	models.DB.Where("file_id = ?", uploadBody.FileHandle).Find(&filesInDB)
-//	assert.Equal(t, 1, len(filesInDB))
-//
-//	completedPartsAsArray := filesInDB[0].GetCompletedPartsAsArray()
-//	assert.Equal(t, 2, len(completedPartsAsArray))
-//
-//	utils.AbortMultiPartUpload(aws.StringValue(filesInDB[0].AwsObjectKey),
-//		aws.StringValue(filesInDB[0].AwsUploadID))
-//}
+	uploadObj := ReturnValidUploadFileBodyForTest(t)
+	uploadObj.FileHandle = fileId
+	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 
-// func Test_Upload_File_Completed_File_Is_Deleted(t *testing.T) {
-// 	// TODO: Update tests to work with multipart-form requests
-// 	t.Skip()
-// 	models.DeleteAccountsForTest(t)
-// 	models.DeleteCompletedFilesForTest(t)
-// 	models.DeleteFilesForTest(t)
+	w := UploadFileHelperForTest(t, request)
 
-// 	uploadBody := ReturnValidUploadFileBodyForTest(t)
-// 	uploadBody.PartIndex = models.FirstChunkIndex
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "Chunk is uploaded")
+	
+	count, _ = models.GetCompletedUploadProgress(fileId)
+	assert.Equal(t, 1, count)
+}
 
-// 	chunkData := ReturnChunkDataForTest(t)
-// 	chunkDataPart1 := chunkData[0:utils.MaxMultiPartSizeForTest]
-// 	chunkDataPart2 := chunkData[utils.MaxMultiPartSizeForTest:]
+func Test_Upload_Completed_Of_File(t *testing.T) {
+	accountId, privateKey := generateValidateAccountId(t)
+	CreatePaidAccountForTest(t, accountId)
+	fileId := initFileUpload(t, 2, privateKey)
 
-// 	privateKey, err := utils.GenerateKey()
-// 	assert.Nil(t, err)
-// 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-// 	request.ChunkData = string(chunkDataPart1)
-// 	accountID, err := utils.HashString(request.PublicKey)
-// 	assert.Nil(t, err)
-// 	account := CreatePaidAccountForTest(t, accountID)
+	chunkData1 := utils.RandHexString(int(utils.MaxMultiPartSizeForTest))
+	chunkData2 := utils.RandHexString(2)
+	uploadObj := ReturnValidUploadFileBodyForTest(t)
+	uploadObj.FileHandle = fileId
+	request1 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request1.ChunkData = chunkData1
 
-// 	objectKey := InitUploadFileForTest(t, request.PublicKey, uploadBody.FileHandle, models.FirstChunkIndex + 1)
-// 	w := UploadFileHelperForTest(t, request)
+	uploadObj.PartIndex = 2
+	request2 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request2.ChunkData = chunkData2
 
-// 	if w.Code != http.StatusOK {
-// 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-// 	}
-// 	uploadBody.PartIndex++
+	requests := []UploadFileReq{request1, request2}
+	for _, r := range requests {
+		w := UploadFileHelperForTest(t, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "Chunk is uploaded")
+	}
 
-// 	request = ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
-// 	request.ChunkData = string(chunkDataPart2)
+	count, _ := models.GetCompletedUploadProgress(fileId)
+	assert.Equal(t, 2, count)
 
-// 	w = UploadFileHelperForTest(t, request)
+	checkStatusReq, _ := createUploadStatusRequest(t, fileId, privateKey)
+	w := httpPostRequestHelperForTest(t, UploadStatusPath, checkStatusReq)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "File is uploaded")
 
-// 	if w.Code != http.StatusOK {
-// 		t.Fatalf("Expected to get status %d but instead got %d\n", http.StatusOK, w.Code)
-// 	}
+	// read data back:
+	data, _ := utils.GetDefaultBucketObject(models.GetFileDataKey(fileId), false)
 
-// 	file, _ := models.GetFileById(uploadBody.FileHandle)
-// 	assert.True(t, len(file.FileID) == 0)
+	assert.Equal(t, fmt.Sprintf("%s%s", chunkData1, chunkData2), data)
+	
+	// clean up
+	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId))
+}
 
-// 	updatedAccount, err := models.GetAccountById(account.AccountID)
-// 	assert.Nil(t, err)
+func Test_Upload_Completed_No_In_Order(t *testing.T) {
+	accountId, privateKey := generateValidateAccountId(t)
+	CreatePaidAccountForTest(t, accountId)
+	fileId := initFileUpload(t, 3, privateKey)
 
-// 	assert.True(t, updatedAccount.StorageUsedInByte > account.StorageUsedInByte)
+	count, _ := models.GetCompletedUploadProgress(fileId)
+	assert.Equal(t, 0, count)
 
-// 	completedFile, _ := models.GetCompletedFileByFileID(uploadBody.FileHandle)
-// 	assert.Equal(t, completedFile.FileID, uploadBody.FileHandle)
+	chunkData1 := utils.RandHexString(int(utils.MaxMultiPartSizeForTest))
+	chunkData2 := utils.RandHexString(int(utils.MaxMultiPartSizeForTest))
+	chunkData3 := utils.RandHexString(100)
 
-// 	err = utils.DeleteDefaultBucketObject(objectKey)
-// 	assert.Nil(t, err)
-// }
+	uploadObj := ReturnValidUploadFileBodyForTest(t)
+	uploadObj.FileHandle = fileId
+	request1 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request1.ChunkData = chunkData1
+
+	uploadObj.PartIndex = 2
+	request2 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request2.ChunkData = chunkData2
+
+
+	uploadObj.PartIndex = 3
+	request3 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request3.ChunkData = chunkData3
+
+	requests := []UploadFileReq{request3, request1, request2}
+	for _, r := range requests {
+		w := UploadFileHelperForTest(t, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Contains(t, w.Body.String(), "Chunk is uploaded")
+	}
+
+	count, _ = models.GetCompletedUploadProgress(fileId)
+	assert.Equal(t, 3, count)
+
+	checkStatusReq, _ := createUploadStatusRequest(t, fileId, privateKey)
+	w := httpPostRequestHelperForTest(t, UploadStatusPath, checkStatusReq)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "File is uploaded")
+
+	// read data back:
+	data, _ := utils.GetDefaultBucketObject(models.GetFileDataKey(fileId), false)
+
+	assert.Equal(t, fmt.Sprintf("%s%s%s", chunkData1, chunkData2, chunkData3), data)
+	// clean up
+	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId))
+}
+
+func initFileUpload(t *testing.T, endIndex int, privateKey *ecdsa.PrivateKey) string {
+	req, uploadObj := createValidInitFileUploadRequest(t, 123, endIndex, privateKey)
+	form := map[string]string{
+		"metadata": "abc",
+	}
+	formFile := map[string]string{
+		"metadata": "abc_file",
+	}
+
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	return uploadObj.FileHandle
+}
+

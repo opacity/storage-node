@@ -2,10 +2,9 @@ package routes
 
 import (
 	"crypto/ecdsa"
-	"net/http/httptest"
+	"net/http"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -20,26 +19,40 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 
 	CreateUnpaidAccountForTest(t, accountId)
-	req := createValidInitFileUploadRequest(t, 123, privateKey)
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	req, _ := createValidInitFileUploadRequest(t, 123, 1, privateKey)
 
-	err := initFileUploadWithRequest(req, c)
-	assert.Contains(t, err.Error(), "Account not paid")
+	form := map[string]string{
+		"metadata": "abc",
+	}
+	formFile := map[string]string{
+		"metadata": "abc_file",
+	}
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), `"invoice"`)
+	assert.Contains(t, w.Body.String(), `"cost":2`)
 }
 
 func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
 
-	req := createValidInitFileUploadRequest(t, 123, privateKey)
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	req, uploadObj := createValidInitFileUploadRequest(t, 123, 1, privateKey)
 
-	err := initFileUploadWithRequest(req, c)
-	assert.Nil(t, err)
+	form := map[string]string{
+		"metadata": "abc",
+	}
+	formFile := map[string]string{
+		"metadata": "abc_file",
+	}
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
+	
+	assert.Equal(t, http.StatusOK, w.Code)
 
-	file, err := models.GetFileById(req.initFileUploadObj.FileHandle)
+	file, err := models.GetFileById(uploadObj.FileHandle)
 	assert.Nil(t, err)
-	assert.Equal(t, req.initFileUploadObj.EndIndex, file.EndIndex)
+	assert.Equal(t, uploadObj.EndIndex, file.EndIndex)
 	assert.NotNil(t, file.AwsUploadID)
 	assert.NotNil(t, file.AwsObjectKey)
 	assert.NotNil(t, file.ModifierHash)
@@ -52,27 +65,33 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	account := CreatePaidAccountForTest(t, accountId)
 
 	fileSizeInByte := (int64(account.StorageLimit)-(int64(account.StorageUsedInByte)/1e9))*1e9 + 1
-	req := createValidInitFileUploadRequest(t, fileSizeInByte, privateKey)
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	req, uploadObj := createValidInitFileUploadRequest(t, fileSizeInByte, 1, privateKey)
 
-	err := initFileUploadWithRequest(req, c)
-	assert.Contains(t, err.Error(), "Account does not have enough space")
+	form := map[string]string{
+		"metadata": "abc",
+	}
+	formFile := map[string]string{
+		"metadata": "abc_file",
+	}
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
 
-	_, err = models.GetFileById(req.initFileUploadObj.FileHandle)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "Account does not have enough space")
+
+	_, err := models.GetFileById(uploadObj.FileHandle)
 	assert.True(t, gorm.IsRecordNotFoundError(err))
 }
 
-func createValidInitFileUploadRequest(t *testing.T, fileSizeInByte int64, privateKey *ecdsa.PrivateKey) InitFileUploadReq {
+func createValidInitFileUploadRequest(t *testing.T, fileSizeInByte int64, endIndex int, privateKey *ecdsa.PrivateKey) (InitFileUploadReq, InitFileUploadObj) {
 	uploadObj := InitFileUploadObj{
 		FileHandle:     utils.GenerateFileHandle(),
 		FileSizeInByte: fileSizeInByte,
-		EndIndex:       1,
+		EndIndex:       endIndex,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, uploadObj, privateKey)
 	req := InitFileUploadReq{
 		verification:      v,
 		requestBody:       b,
-		initFileUploadObj: uploadObj,
 	}
-	return req
+	return req, uploadObj
 }

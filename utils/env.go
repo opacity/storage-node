@@ -15,7 +15,10 @@ import (
 )
 
 const defaultAccountRetentionDays = 7
-const defaultPlansJson = `{"128": {"name":"Basic","cost":2,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200}}`
+const defaultPlansJson = `
+{"128": {"name":"Basic","cost":2,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
+"1024": {"name":"Professional","cost":16,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600}}
+`
 
 type PlanInfo struct {
 	Name                string  `json:"name" binding:"required"`
@@ -132,6 +135,7 @@ func runInitializations() {
 	Env.Plans = make(PlanResponseType)
 	err := json.Unmarshal([]byte(Env.PlansJson), &Env.Plans)
 	LogIfError(err, nil)
+	createPlanMetrics()
 }
 
 /*IsTestEnv returns whether we are in the test environment*/

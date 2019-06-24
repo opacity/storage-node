@@ -44,7 +44,7 @@ func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int) (bo
 		return false, errors.New("could not get balance")
 	}
 
-	return tokenBalance.Int64() >= amount.Int64(), nil
+	return tokenBalance.Cmp(amount) >= 0, nil
 }
 
 func checkIfBackendSubscriptionPaymentPending(address common.Address) (bool, error) {

@@ -5,16 +5,11 @@ services:
     build:
       context: ./prometheus
       dockerfile: Dockerfile
-      args:
-        ADMIN_USER: ${ADMIN_USER}
-        ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     ports:
       - 9090:9090
     volumes:
       - prometheus_data:/prometheus
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-      - --web.external-url=http://localhost:12321/prometheus
+    entrypoint: ./prometheus/entrypoint.sh ${ADMIN_USER} ${ADMIN_PASSWORD}
       # nginx will be listening on port 12321
       # must create /etc/nginx/sites-available/prometheus-proxy, symbolically link it in /etc/nginx/sites-enabled,
       # and restart nginx.  More info in README.

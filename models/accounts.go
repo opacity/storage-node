@@ -52,6 +52,9 @@ type PaymentStatusType int
 const (
 	/*BasicStorageLimit allows 128 GB on the basic plan*/
 	BasicStorageLimit StorageLimitType = iota + 128
+
+	/*ProfessionalStorageLimit allows 1024 GB on the professional plan*/
+	ProfessionalStorageLimit StorageLimitType = iota + 1024
 )
 
 const (
@@ -300,9 +303,26 @@ func GetAccountById(accountID string) (Account, error) {
 /*CreateSpaceUsedReport populates a model of the space allotted versus space used*/
 func CreateSpaceUsedReport() SpaceReport {
 	var result SpaceReport
-	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM accounts WHERE payment_status >= ?",
-		InitialPaymentReceived).Scan(&result)
+	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM "+
+		"accounts WHERE payment_status >= ?", InitialPaymentReceived).Scan(&result)
 	return result
+}
+
+/*CreateSpaceUsedReportForPlanType populates a model of the space allotted versus space used for a
+particular type of plan*/
+func CreateSpaceUsedReportForPlanType(storageLimit StorageLimitType) SpaceReport {
+	var result SpaceReport
+	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM "+
+		"accounts WHERE payment_status >= ? AND storage_limit = ?",
+		InitialPaymentReceived, storageLimit).Scan(&result)
+	return result
+}
+
+/*CalculatePercentSpaceUsed accepts a space report and calculates the percent of space used vs.
+the space allotted*/
+func CalculatePercentSpaceUsed(spaceReport SpaceReport) float64 {
+	spaceUsedInGB := float64(spaceReport.SpaceUsedSum) / 1e9
+	return (spaceUsedInGB / float64(spaceReport.SpaceAllottedSum)) * float64(100)
 }
 
 /*PurgeOldUnpaidAccounts deletes accounts past a certain age which have not been paid for*/
@@ -328,6 +348,15 @@ func CountAccountsByPaymentStatus(paymentStatus PaymentStatusType) (int, error) 
 	count := 0
 	err := DB.Model(&Account{}).Where("payment_status = ?",
 		paymentStatus).Count(&count).Error
+	utils.LogIfError(err, nil)
+	return count, err
+}
+
+/*CountPaidAccountsByPlanType counts all paid accounts based on the plan type*/
+func CountPaidAccountsByPlanType(storageLimit StorageLimitType) (int, error) {
+	count := 0
+	err := DB.Model(&Account{}).Where("storage_limit = ? AND payment_status >= ?",
+		storageLimit, InitialPaymentReceived).Count(&count).Error
 	utils.LogIfError(err, nil)
 	return count, err
 }
