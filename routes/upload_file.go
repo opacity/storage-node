@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gin-gonic/gin"
@@ -66,6 +67,8 @@ func uploadFile(c *gin.Context) error {
 }
 
 func uploadChunk(request UploadFileReq, c *gin.Context) error {
+	fmt.Println("ChunkData??")
+	fmt.Printf("%s", request.ChunkData)
 	fileID := request.uploadFileObj.FileHandle
 	file, err := models.GetFileById(fileID)
 	if err != nil || len(file.FileID) == 0 {
