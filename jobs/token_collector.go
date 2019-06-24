@@ -3,6 +3,7 @@ package jobs
 import (
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
+	"github.com/opacity/storage-node/utils"
 )
 
 type tokenCollector struct{}
@@ -25,6 +26,11 @@ func (t tokenCollector) Runnable() bool {
 
 func runCollectionSequence(accounts []models.Account) {
 	for _, account := range accounts {
+		if utils.FreeModeEnabled() {
+			err := models.DB.Model(&account).Update("payment_status", models.PaymentRetrievalComplete).Error
+			utils.LogIfError(err, nil)
+			continue
+		}
 		models.PaymentCollectionFunctions[account.PaymentStatus](account)
 	}
 }
