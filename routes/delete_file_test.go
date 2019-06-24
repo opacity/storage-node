@@ -4,8 +4,6 @@ import (
 	"crypto/ecdsa"
 	"net/http"
 	"testing"
-
-	"bytes"
 	"net/http/httptest"
 
 	"github.com/gin-gonic/gin"
