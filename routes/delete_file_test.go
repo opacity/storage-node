@@ -96,14 +96,10 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	chunkData := ReturnChunkDataForTest(t)
 	request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 	request.ChunkData = string(chunkData)
+	request.uploadFileObj = uploadBody
 
-	c, _ = gin.CreateTestContext(httptest.NewRecorder())
-
-	var fileToUpload bytes.Buffer
-	fileToUpload.Write(chunkData)
-
-	err := uploadChunk(uploadBody, request, fileToUpload, c)
-	assert.Nil(t, err)
+	w := UploadFileHelperForTest(t, request)
+	assert.Equal(t, http.StatusOK, w.Code)
 
 	uploadStatusObj := UploadStatusObj{
 		FileHandle: initBody.FileHandle,
@@ -115,7 +111,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 		requestBody:  b,
 	}
 
-	w := httpPostRequestHelperForTest(t, UploadStatusPath, uploadStatusReq)
+	w = httpPostRequestHelperForTest(t, UploadStatusPath, uploadStatusReq)
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
