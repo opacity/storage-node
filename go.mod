@@ -56,6 +56,7 @@ require (
 	github.com/sirupsen/logrus v1.4.0
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.3.0
+	github.com/stripe/stripe-go v61.7.1+incompatible
 	github.com/swaggo/gin-swagger v1.1.0
 	github.com/swaggo/swag v1.5.0
 	github.com/syndtr/goleveldb v1.0.0 // indirect
