@@ -100,10 +100,10 @@ func successfulMultipartUploadForTest(t *testing.T) {
 	var completedParts []*s3.CompletedPart
 	partNumber := 1
 	for curr = 0; remaining != 0; curr += partLength {
-		if remaining < MaxMultiPartSizeForTest {
+		if remaining < MinMultiPartSize {
 			partLength = remaining
 		} else {
-			partLength = MaxMultiPartSizeForTest
+			partLength = MinMultiPartSize
 		}
 		completedPart, uploadPartErr := svc.UploadPartOfMultiPartUpload(key, uploadID, buffer[curr:curr+partLength], partNumber)
 		if uploadPartErr != nil {

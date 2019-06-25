@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gin-gonic/gin"
@@ -75,6 +77,12 @@ func uploadChunk(request UploadFileReq, c *gin.Context) error {
 	if err := verifyPermissions(request.PublicKey, fileID,
 		file.ModifierHash, c); err != nil {
 		return err
+	}
+
+	fileSize := len(request.ChunkData)
+	isLastChunk := request.uploadFileObj.PartIndex == file.EndIndex
+	if !isLastChunk && fileSize < int(utils.MinMultiPartSize) {
+		return BadRequestResponse(c, fmt.Errorf("Upload chunk is %v and does not meet min fileSize %v", fileSize, utils.MinMultiPartSize))
 	}
 
 	completedPart, multipartErr := handleChunkData(file, request.uploadFileObj.PartIndex, []byte(request.ChunkData))

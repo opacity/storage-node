@@ -48,10 +48,10 @@ func ReturnChunkDataForTestBigFile(t *testing.T) [][]byte {
 	var curr, partLength int64
 	var remaining = size
 	for curr = 0; remaining != 0; curr += partLength {
-		if remaining < utils.MaxMultiPartSizeForTest {
+		if remaining < utils.MinMultiPartSize {
 			partLength = remaining
 		} else {
-			partLength = utils.MaxMultiPartSizeForTest
+			partLength = utils.MinMultiPartSize
 		}
 		arrayOfBuffers = append(arrayOfBuffers, buffer[curr:curr+partLength])
 		remaining -= partLength
