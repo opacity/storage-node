@@ -161,11 +161,12 @@ func getValueFromPostForm(field reflect.StructField, c *gin.Context) (string, er
 	}
 
 	if fileTag != "" {
-		strV, err := readFileFromForm(fileTag, c)
+		v, err := readFileFromForm(fileTag, c)
 		if err != nil && required {
 			return "", err
 		}
 		// otherwise, just ignore the error
+		strV = v
 	}
 	return strV, nil
 }
@@ -178,7 +179,7 @@ func readFileFromForm(fileTag string, c *gin.Context) (string, error) {
 	}
 	var fileBytes bytes.Buffer
 	if _, err := io.Copy(&fileBytes, multiFile); err != nil {
-		return "", BadRequestResponse(c, err)
+		return "", InternalErrorResponse(c, err)
 	}
 	return fileBytes.String(), nil
 }
