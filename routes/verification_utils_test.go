@@ -24,10 +24,19 @@ type testVerifiedRequest struct {
 }
 
 type testSetRequest struct {
-	StrValue   string `form:"str"`
-	FileObject string `formFile:"file"`
-	emptyValue string
+	StrValue       string `form:"str"`
+	FileObject     string `formFile:"file"`
+	emptyValue 	   string
 }
+
+type testRequireForm struct {
+	Object string `formFile:"file"  binding:"required,len=123"`
+}
+
+type testNonRequireForm struct {
+	Object string `formFile:"file"`
+}
+
 
 func (v *testVerifiedRequest) getObjectRef() interface{} {
 	return &v.requestObject
@@ -80,4 +89,55 @@ func Test_verifyAndParseFormRequestWithNormalRequest(t *testing.T) {
 	assert.Equal(t, "strV", request.StrValue)
 	assert.Equal(t, "test", request.FileObject)
 	assert.Equal(t, "", request.emptyValue)
+}
+
+func Test_RequiredFileFormExist(t *testing.T) {
+	body := new(bytes.Buffer)
+	mw := multipart.NewWriter(body)
+	w, _ := mw.CreateFormFile("file", "test")
+	w.Write([]byte("test"))
+	mw.Close()
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request, _ = http.NewRequest("POST", "/", body)
+	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
+
+	request := testRequireForm{}
+	err := verifyAndParseFormRequest(&request, c)
+
+	assert.Nil(t, err)
+	assert.Equal(t, "test", request.Object)
+}
+
+func Test_RequiredFileFormNoExist(t *testing.T) {
+	body := new(bytes.Buffer)
+	mw := multipart.NewWriter(body)
+	mw.WriteField("str", "strV")
+	mw.Close()
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request, _ = http.NewRequest("POST", "/", body)
+	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
+
+	request := testRequireForm{}
+	err := verifyAndParseFormRequest(&request, c)
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), "abc")
+}
+
+func Test_NoRequiredFileFormNoExist(t *testing.T) {
+	body := new(bytes.Buffer)
+	mw := multipart.NewWriter(body)
+	mw.WriteField("str", "strV")
+	mw.Close()
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request, _ = http.NewRequest("POST", "/", body)
+	c.Request.Header.Set("Content-Type", mw.FormDataContentType())
+
+	request := testNonRequireForm{}
+	err := verifyAndParseFormRequest(&request, c)
+
+	assert.Nil(t, err)
 }
