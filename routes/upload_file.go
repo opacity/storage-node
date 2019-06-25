@@ -1,11 +1,6 @@
 package routes
 
 import (
-	"net/http"
-
-	"bytes"
-	"io"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gin-gonic/gin"
@@ -21,7 +16,7 @@ type UploadFileObj struct {
 type UploadFileReq struct {
 	verification
 	requestBody
-	ChunkData   string `form:"chunkData" binding:"required" example:"a binary string of the chunk data"`
+	ChunkData   string `formFile:"chunkData" binding:"required" example:"a binary string of the chunk data"`
 	uploadFileObj UploadFileObj
 }
 
@@ -63,52 +58,26 @@ func uploadFile(c *gin.Context) error {
 
 	request := UploadFileReq{}
 
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, MaxRequestSize)
-	err := c.Request.ParseMultipartForm(MaxRequestSize)
-
-	if err != nil {
-		return BadRequestResponse(c, err)
-	} else {
-		request.PublicKey = c.Request.FormValue("publicKey")
-		request.Signature = c.Request.FormValue("signature")
-		request.RequestBody = c.Request.FormValue("requestBody")
+	if err := verifyAndParseFormRequest(&request, c); err != nil {
+		return err
 	}
 
-	multiFile, _, err := c.Request.FormFile("chunkData")
-	defer multiFile.Close()
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
-	var fileBytes bytes.Buffer
-	_, err = io.Copy(&fileBytes, multiFile)
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
-
-	requestBodyParsed := UploadFileObj{}
-
-	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification,
-		c); err != nil {
-		return BadRequestResponse(c, err)
-	}
-
-	return uploadChunk(requestBodyParsed, request, fileBytes, c)
+	return uploadChunk(request, c)
 }
 
-func uploadChunk(requestBodyParsed UploadFileObj, mainRequest UploadFileReq, fileBytes bytes.Buffer,
-	c *gin.Context) error {
-
-	file, err := models.GetFileById(requestBodyParsed.FileHandle)
+func uploadChunk(request UploadFileReq, c *gin.Context) error {
+	fileID := request.uploadFileObj.FileHandle
+	file, err := models.GetFileById(fileID)
 	if err != nil || len(file.FileID) == 0 {
-		return FileNotFoundResponse(c, requestBodyParsed.FileHandle)
+		return FileNotFoundResponse(c, fileID)
 	}
 
-	if err := verifyPermissions(mainRequest.PublicKey, requestBodyParsed.FileHandle,
+	if err := verifyPermissions(request.PublicKey, fileID,
 		file.ModifierHash, c); err != nil {
 		return err
 	}
 
-	completedPart, multipartErr := handleChunkData(file, requestBodyParsed.PartIndex, fileBytes.Bytes())
+	completedPart, multipartErr := handleChunkData(file, request.uploadFileObj.PartIndex, []byte(request.ChunkData))
 	if multipartErr != nil {
 		return InternalErrorResponse(c, multipartErr)
 	}
