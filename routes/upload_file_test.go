@@ -40,6 +40,29 @@ func Test_Upload_File_Without_Init(t *testing.T) {
 	assert.Contains(t, w.Body.String(), fmt.Sprintf("no file with that id: %s", uploadObj.FileHandle))
 }
 
+
+func Test_UploadFileLessThanMinSize(t *testing.T) {
+	accountId, privateKey := generateValidateAccountId(t)
+	CreatePaidAccountForTest(t, accountId)
+	fileId := initFileUpload(t, 2, privateKey)
+
+	count, _ := models.GetCompletedUploadProgress(fileId)
+	assert.Equal(t, 0, count)
+
+	uploadObj := ReturnValidUploadFileBodyForTest(t)
+	uploadObj.FileHandle = fileId
+	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request.ChunkData = "Hello world!!"
+
+	w := UploadFileHelperForTest(t, request)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Contains(t, w.Body.String(), "does not meet min fileSize")
+
+	count, _ = models.GetCompletedUploadProgress(fileId)
+	assert.Equal(t, 0, count)
+}
+
 func Test_Upload_Part_Of_File(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountId)
@@ -51,6 +74,7 @@ func Test_Upload_Part_Of_File(t *testing.T) {
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
 	uploadObj.FileHandle = fileId
 	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
+	request.ChunkData = utils.RandHexString(int(utils.MinMultiPartSize))
 
 	w := UploadFileHelperForTest(t, request)
 
@@ -66,7 +90,7 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 	CreatePaidAccountForTest(t, accountId)
 	fileId := initFileUpload(t, 2, privateKey)
 
-	chunkData1 := utils.RandHexString(int(utils.MaxMultiPartSizeForTest))
+	chunkData1 := utils.RandHexString(int(utils.MinMultiPartSize))
 	chunkData2 := utils.RandHexString(2)
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
 	uploadObj.FileHandle = fileId
@@ -109,8 +133,8 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 	count, _ := models.GetCompletedUploadProgress(fileId)
 	assert.Equal(t, 0, count)
 
-	chunkData1 := utils.RandHexString(int(utils.MaxMultiPartSizeForTest))
-	chunkData2 := utils.RandHexString(int(utils.MaxMultiPartSizeForTest))
+	chunkData1 := utils.RandHexString(int(utils.MinMultiPartSize))
+	chunkData2 := utils.RandHexString(int(utils.MinMultiPartSize))
 	chunkData3 := utils.RandHexString(100)
 
 	uploadObj := ReturnValidUploadFileBodyForTest(t)

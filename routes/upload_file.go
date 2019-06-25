@@ -77,6 +77,12 @@ func uploadChunk(request UploadFileReq, c *gin.Context) error {
 		return err
 	}
 
+	fileSize := len(request.ChunkData)
+	isLastChunk := request.uploadFileObj.PartIndex == file.EndIndex
+	if !isLastChunk && fileSize < utils.MinMultiPartSize {
+		return BadRequestResponse(c, fmt.Errorf("Upload chunk is %v and does not meet min fileSize %v", fileSize, utils.MinMultiPartSize))
+	}
+
 	completedPart, multipartErr := handleChunkData(file, request.uploadFileObj.PartIndex, []byte(request.ChunkData))
 	if multipartErr != nil {
 		return InternalErrorResponse(c, multipartErr)
