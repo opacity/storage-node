@@ -178,9 +178,9 @@ func readFileFromForm(fileTag string, c *gin.Context) (string, error) {
 			multiFile.Close()
 		}
 	}()
-	
+
 	if err != nil {
-		return "", BadRequestResponse(c, err)
+		return "", BadRequestResponse(c, fmt.Errorf("Unable to get file %v from POST form", fileTag))
 	}
 	var fileBytes bytes.Buffer
 	if _, err := io.Copy(&fileBytes, multiFile); err != nil {

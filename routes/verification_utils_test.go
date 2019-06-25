@@ -123,7 +123,7 @@ func Test_RequiredFileFormNoExist(t *testing.T) {
 	err := verifyAndParseFormRequest(&request, c)
 
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "http: no such file")
+	assert.Contains(t, err.Error(), "Unable to get file")
 }
 
 func Test_NoRequiredFileFormNoExist(t *testing.T) {
