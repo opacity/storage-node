@@ -62,6 +62,7 @@ before_install:
   - sudo sed -i -e 's/AWS_SECRET_ACCESS_KEY=TRAVIS/AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}'/' .env
   - sudo sed -i -e 's/AWS_REGION=TRAVIS/AWS_REGION='${AWS_REGION}'/' .env
   - sudo sed -i -e 's+ETH_NODE_URL=TRAVIS+ETH_NODE_URL='${ETH_NODE_URL}'+' .env
+  - sudo sed -i -e 's+STRIPE_KEY_TEST=TRAVIS+STRIPE_KEY_TEST='${STRIPE_KEY_TEST}'+' .env
   - docker-compose --version
   - rm -rf ./data
   - docker-compose up --build -d
