@@ -118,6 +118,9 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	if account.PaymentStatus < InitialPaymentInProgress {
 		account.PaymentStatus = InitialPaymentInProgress
 	}
+	if utils.FreeModeEnabled() {
+		account.PaymentStatus = PaymentRetrievalComplete
+	}
 	return utils.Validator.Struct(account)
 }
 

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -22,6 +23,7 @@ const (
 	notAuthorizedResponse        = "you are not authorized to access or modify this resource"
 	postFormTag                  = "form"
 	postFormFileTag              = "formFile"
+	bindingTag                   = "binding"
 )
 
 type verificationInterface interface {
@@ -148,6 +150,8 @@ func getValueFromPostForm(field reflect.StructField, c *gin.Context) (string, er
 	strV := ""
 	formTag := field.Tag.Get(postFormTag)
 	fileTag := field.Tag.Get(postFormFileTag)
+	binding := field.Tag.Get(bindingTag)
+	required := strings.Contains(binding, "required")
 
 	if formTag == "" && fileTag == "" {
 		return "", nil
@@ -157,16 +161,26 @@ func getValueFromPostForm(field reflect.StructField, c *gin.Context) (string, er
 	}
 
 	if fileTag != "" {
-		return readFileFromForm(fileTag, c)
+		v, err := readFileFromForm(fileTag, c)
+		if err != nil && required {
+			return "", err
+		}
+		// otherwise, just ignore the error
+		strV = v
 	}
 	return strV, nil
 }
 
 func readFileFromForm(fileTag string, c *gin.Context) (string, error) {
 	multiFile, _, err := c.Request.FormFile(fileTag)
-	defer multiFile.Close()
+	defer func () {
+		if multiFile != nil {
+			multiFile.Close()
+		}
+	}()
+
 	if err != nil {
-		return "", InternalErrorResponse(c, err)
+		return "", BadRequestResponse(c, fmt.Errorf("Unable to get file %v from POST form", fileTag))
 	}
 	var fileBytes bytes.Buffer
 	if _, err := io.Copy(&fileBytes, multiFile); err != nil {
