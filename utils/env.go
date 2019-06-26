@@ -72,6 +72,11 @@ type StorageNodeEnv struct {
 
 	PlansJson string `env:"PLANS_JSON"`
 	Plans     PlanResponseType
+
+	// Stripe Keys
+	StripeKeyTest string `env:"STRIPE_KEY_TEST" envDefault:"Unknown"`
+	StripeKeyProd string `env:"STRIPE_KEY_PROD" envDefault:"Unknown"`
+	StripeKey     string `envDefault:"Unknown"`
 }
 
 /*Env is the environment for a particular node while the application is running*/
@@ -107,6 +112,7 @@ func SetProduction() {
 	initEnv()
 	Env.GoEnv = "production"
 	Env.DatabaseURL = Env.ProdDatabaseURL
+	Env.StripeKey = Env.StripeKeyProd
 	runInitializations()
 }
 
@@ -116,6 +122,7 @@ func SetDevelopment() {
 	Env.GoEnv = "development"
 	// TODO: should we have a separate development database?
 	Env.DatabaseURL = Env.ProdDatabaseURL
+	Env.StripeKey = Env.StripeKeyProd
 	runInitializations()
 }
 
@@ -125,6 +132,7 @@ func SetTesting(filenames ...string) {
 	Env.PlansJson = defaultPlansJson
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
+	Env.StripeKey = Env.StripeKeyTest
 	runInitializations()
 }
 
@@ -172,6 +180,8 @@ func tryLookUp() error {
 	awsSecretAccessKey := AppendLookupErrors("AWS_SECRET_ACCESS_KEY", &collectedErrors)
 	adminUser := AppendLookupErrors("ADMIN_USER", &collectedErrors)
 	adminPassword := AppendLookupErrors("ADMIN_PASSWORD", &collectedErrors)
+	stripeKeyTest := AppendLookupErrors("STRIPE_KEY_TEST", &collectedErrors)
+	stripeKeyProd := AppendLookupErrors("STRIPE_KEY_PROD", &collectedErrors)
 
 	accountRetentionDaysStr := AppendLookupErrors("ACCOUNT_RETENTION_DAYS", &collectedErrors)
 	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
@@ -202,6 +212,8 @@ func tryLookUp() error {
 		AdminUser:            adminUser,
 		AdminPassword:        adminPassword,
 		PlansJson:            plansJson,
+		StripeKeyTest:        stripeKeyTest,
+		StripeKeyProd:        stripeKeyProd,
 	}
 
 	Env = serverEnv
