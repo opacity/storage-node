@@ -5,6 +5,7 @@ import (
 
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stripe/stripe-go"
 )
 
 var testTokens = []string{
@@ -56,7 +57,7 @@ func Test_CheckChargeStatus(t *testing.T) {
 
 	status, err := CheckChargeStatus(c.ID)
 	assert.Nil(t, err)
-	assert.Equal(t, "paid", status)
+	assert.Equal(t, string(stripe.PaymentIntentStatusSucceeded), status)
 }
 
 func Test_CheckChargePaid(t *testing.T) {

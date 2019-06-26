@@ -18,7 +18,7 @@ func InitStripe() error {
 
 func CreateCharge(costInDollars int64, stripeToken string) (*stripe.Charge, error) {
 	params := &stripe.ChargeParams{
-		Amount:      stripe.Int64(costInDollars),
+		Amount:      stripe.Int64(costInDollars * 100),
 		Currency:    stripe.String(string(stripe.CurrencyUSD)),
 		Description: stripe.String("File Storage"),
 	}
