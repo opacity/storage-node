@@ -15,14 +15,18 @@ import (
 )
 
 const defaultAccountRetentionDays = 7
+
+// TODO research appropriate "costInUSD" prices and include them here
+// current values subject to change
 const defaultPlansJson = `
-{"128": {"name":"Basic","cost":2,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
-"1024": {"name":"Professional","cost":16,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600}}
+{"128": {"name":"Basic","cost":2,"costInUSD":39.99,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
+"1024": {"name":"Professional","cost":16,"costInUSD":99.99,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600}}
 `
 
 type PlanInfo struct {
 	Name                string  `json:"name" binding:"required"`
 	Cost                float64 `json:"cost" binding:"required,gt=0"`
+	CostInUSD           float64 `json:"costInUSD" binding:"required,gt=0"`
 	StorageInGB         int     `json:"storageInGB" binding:"required,gt=0"`
 	MaxFolders          int     `json:"maxFolders" binding:"required,gt=0"`
 	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB" binding:"required,gt=0"`

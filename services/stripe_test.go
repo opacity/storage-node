@@ -8,27 +8,10 @@ import (
 	"github.com/stripe/stripe-go"
 )
 
-var testTokens = []string{
-	"tok_visa",
-	"tok_visa_debit",
-	"tok_mastercard",
-	"tok_mastercard_debit",
-	"tok_mastercard_prepaid	",
-	"tok_amex",
-	"tok_discover",
-	"tok_diners",
-	"tok_jcb",
-	"tok_unionpay",
-}
-
 func Test_Stripe_Init(t *testing.T) {
 	utils.SetTesting("../.env")
 	err := InitStripe()
 	assert.Nil(t, err)
-}
-
-func randToken() string {
-	return testTokens[utils.RandIndex(len(testTokens))]
 }
 
 func Test_CreateCharge(t *testing.T) {
@@ -38,7 +21,7 @@ func Test_CreateCharge(t *testing.T) {
 	}
 
 	costInDollars := int64(15)
-	stripeToken := randToken()
+	stripeToken := RandTestStripeToken()
 
 	_, err := CreateCharge(costInDollars, stripeToken)
 	assert.Nil(t, err)
@@ -51,7 +34,7 @@ func Test_CheckChargeStatus(t *testing.T) {
 	}
 
 	costInDollars := int64(15)
-	stripeToken := randToken()
+	stripeToken := RandTestStripeToken()
 
 	c, _ := CreateCharge(costInDollars, stripeToken)
 
@@ -67,7 +50,7 @@ func Test_CheckChargePaid(t *testing.T) {
 	}
 
 	costInDollars := int64(15)
-	stripeToken := randToken()
+	stripeToken := RandTestStripeToken()
 
 	c, _ := CreateCharge(costInDollars, stripeToken)
 
