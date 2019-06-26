@@ -348,6 +348,65 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 	assert.Equal(t, utils.Env.Plans[int(account.StorageLimit)].MaxFolders, accountFromDB.TotalFolders)
 }
 
+func Test_Create_Metadata_Error_If_Duplicate_Metadata(t *testing.T) {
+	// First create a new metadata and confirm success
+	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+
+	createMetadataObj := metadataKeyObject{
+		MetadataKey: testMetadataKey,
+		Timestamp:   time.Now().Add(-1 * time.Second).Unix(),
+	}
+
+	privateKey, _ := utils.GenerateKey()
+
+	v, b := returnValidVerificationAndRequestBody(t, createMetadataObj, privateKey)
+
+	post := metadataKeyReq{
+		verification: v,
+		requestBody: requestBody{
+			RequestBody: b.RequestBody,
+		},
+	}
+
+	accountID, _ := utils.HashString(v.PublicKey)
+	account := CreatePaidAccountForTest(t, accountID)
+	account.StorageUsedInByte = 64 * 1e9
+	err := models.DB.Save(&account).Error
+	assert.Nil(t, err)
+
+	w := httpPostRequestHelperForTest(t, MetadataCreatePath, post)
+
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	accountFromDB, _ := models.GetAccountById(account.AccountID)
+	assert.Equal(t, 1, accountFromDB.TotalFolders)
+
+	// Next check that if we do another request with the same metadata key,
+	// it will fail
+	createMetadataObj = metadataKeyObject{
+		MetadataKey: testMetadataKey,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	v, b = returnValidVerificationAndRequestBody(t, createMetadataObj, privateKey)
+
+	post = metadataKeyReq{
+		verification: v,
+		requestBody: requestBody{
+			RequestBody: b.RequestBody,
+		},
+	}
+	
+	w = httpPostRequestHelperForTest(t, MetadataCreatePath, post)
+
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusForbidden, w.Code)
+
+	accountFromDB, _ = models.GetAccountById(account.AccountID)
+	assert.Equal(t, 1, accountFromDB.TotalFolders)
+}
+
 func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 

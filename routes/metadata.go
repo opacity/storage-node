@@ -308,6 +308,12 @@ func createMetadata(c *gin.Context) error {
 
 	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
 
+	_, _, err = utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+
+	if err == nil {
+		return ForbiddenResponse(c, errors.New("that metadata already exists"))
+	}
+
 	if err = account.IncrementMetadataCount(); err != nil {
 		return ForbiddenResponse(c, err)
 	}
