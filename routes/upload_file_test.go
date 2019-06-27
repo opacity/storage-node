@@ -2,13 +2,13 @@ package routes
 
 import (
 	"crypto/ecdsa"
-	"testing"
-	"net/http"
 	"fmt"
+	"net/http"
+	"testing"
 
+	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/opacity/storage-node/models"
 )
 
 func Test_Init_Upload_Files(t *testing.T) {
@@ -31,7 +31,7 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 
 func Test_Upload_File_Without_Init(t *testing.T) {
 	_, privateKey := generateValidateAccountId(t)
-	uploadObj :=  ReturnValidUploadFileBodyForTest(t)
+	uploadObj := ReturnValidUploadFileBodyForTest(t)
 	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 
 	w := UploadFileHelperForTest(t, request)
@@ -39,7 +39,6 @@ func Test_Upload_File_Without_Init(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.Contains(t, w.Body.String(), fmt.Sprintf("no file with that id: %s", uploadObj.FileHandle))
 }
-
 
 func Test_UploadFileLessThanMinSize(t *testing.T) {
 	accountId, privateKey := generateValidateAccountId(t)
@@ -80,7 +79,7 @@ func Test_Upload_Part_Of_File(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "Chunk is uploaded")
-	
+
 	count, _ = models.GetCompletedUploadProgress(fileId)
 	assert.Equal(t, 1, count)
 }
@@ -120,7 +119,7 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 	data, _ := utils.GetDefaultBucketObject(models.GetFileDataKey(fileId), false)
 
 	assert.Equal(t, fmt.Sprintf("%s%s", chunkData1, chunkData2), data)
-	
+
 	// clean up
 	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId))
 }
@@ -145,7 +144,6 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 	uploadObj.PartIndex = 2
 	request2 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 	request2.ChunkData = chunkData2
-
 
 	uploadObj.PartIndex = 3
 	request3 := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
@@ -189,4 +187,3 @@ func initFileUpload(t *testing.T, endIndex int, privateKey *ecdsa.PrivateKey) st
 
 	return uploadObj.FileHandle
 }
-

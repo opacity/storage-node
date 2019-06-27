@@ -24,9 +24,9 @@ type testVerifiedRequest struct {
 }
 
 type testSetRequest struct {
-	StrValue       string `form:"str"`
-	FileObject     string `formFile:"file"`
-	emptyValue 	   string
+	StrValue   string `form:"str"`
+	FileObject string `formFile:"file"`
+	emptyValue string
 }
 
 type testRequireForm struct {
@@ -36,7 +36,6 @@ type testRequireForm struct {
 type testNonRequireForm struct {
 	Object string `formFile:"file"`
 }
-
 
 func (v *testVerifiedRequest) getObjectRef() interface{} {
 	return &v.requestObject

@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"net/http"
-	"testing"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"math/big"
-	"crypto/ecdsa"
+	"net/http"
+	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"

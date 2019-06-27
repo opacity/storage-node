@@ -391,7 +391,8 @@ func handleAccountReadyForCollection(account Account) error {
 			services.StringToAddress(account.EthAddress),
 			privateKey,
 			services.MainWalletAddress,
-			*tokenBalance)
+			*tokenBalance,
+			services.SlowGasPrice)
 		if success {
 			SetAccountsToNextPaymentStatus([]Account{account})
 			return nil

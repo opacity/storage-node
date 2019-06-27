@@ -12,6 +12,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/jobs"
+	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -28,7 +29,12 @@ import (
 
 // @license.name OPACITY LIMITED CODE REVIEW LICENSE LICENSE.md
 
-var uptime time.Time
+var (
+	uptime time.Time
+
+	/*EthWrapper is a copy of services.EthWrapper*/
+	EthWrapper = services.EthWrapper
+)
 
 const (
 	/*V1Path is a router group for the v1 version of storage node*/
@@ -63,6 +69,9 @@ const (
 
 	/*DownloadPath is the path for downloading files*/
 	DownloadPath = "/download"
+
+	/*StripeCreatePath is the path for creating a stripe payment*/
+	StripeCreatePath = "/stripe/create"
 )
 
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
@@ -135,6 +144,9 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	// File endpoint
 	v1Router.POST(DeletePath, DeleteFileHandler())
 	v1Router.POST(DownloadPath, DownloadFileHandler())
+
+	// Stripe endpoints
+	v1Router.POST(StripeCreatePath, CreateStripePaymentHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {
