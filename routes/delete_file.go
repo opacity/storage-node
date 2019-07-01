@@ -72,7 +72,11 @@ func deleteFile(c *gin.Context) error {
 		return err
 	}
 
-	if err := account.UseStorageSpaceInByte(int64(-1) * completedFile.FileSizeInByte); err != nil {
+	err = account.UseStorageSpaceInByte(int64(-1) * completedFile.FileSizeInByte)
+	if err != nil && err.Error() == models.StorageUsedTooLow {
+		err = models.DB.Model(&account).Update("storage_used_in_byte", int64(0)).Error
+	}
+	if err != nil && err.Error() != models.StorageUsedTooLow {
 		return InternalErrorResponse(c, err)
 	}
 

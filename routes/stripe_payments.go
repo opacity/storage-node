@@ -47,6 +47,11 @@ func CreateStripePaymentHandler() gin.HandlerFunc {
 }
 
 func createStripePayment(c *gin.Context) error {
+
+	if !utils.Env.EnableCreditCards && !utils.IsTestEnv() {
+		return ForbiddenResponse(c, errors.New("not accepting credit cards yet"))
+	}
+
 	request := createStripePaymentReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
