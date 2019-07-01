@@ -44,7 +44,7 @@ type GetTokenBalance func(common.Address) /*In Wei Unit*/ *big.Int
 type GetETHBalance func(common.Address) /*In Wei Unit*/ *big.Int
 
 /*TransferToken - send Token from one account to another*/
-type TransferToken func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, opqAmount big.Int) (bool, string, int64)
+type TransferToken func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, opqAmount big.Int, gasPrice *big.Int) (bool, string, int64)
 
 /*TransferETH - send ETH to an ethereum address*/
 type TransferETH func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error)
@@ -86,6 +86,8 @@ var (
 	MainWalletPrivateKey           *ecdsa.PrivateKey
 	DefaultGasPrice                = utils.ConvertGweiToWei(big.NewInt(2))
 	DefaultGasForPaymentCollection = new(big.Int).Mul(DefaultGasPrice, big.NewInt(int64(GasLimitTokenSend)))
+	SlowGasPrice                   = utils.ConvertGweiToWei(big.NewInt(2))
+	FastGasPrice                   = utils.ConvertGweiToWei(big.NewInt(25))
 )
 
 func init() {
@@ -194,7 +196,7 @@ func getETHBalance(addr common.Address) *big.Int {
 	return balance
 }
 
-func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address, opqAmount big.Int) (bool, string, int64) {
+func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address, opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 	msg := TokenCallMsg{
 		From:       from,
 		To:         to,
@@ -218,9 +220,6 @@ func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.
 	}
 
 	log.Printf("authorized transactor : %v\n", auth.From.Hex())
-
-	// use this when in production:
-	gasPrice, err := getGasPrice()
 
 	opts := bind.TransactOpts{
 		From:     auth.From,

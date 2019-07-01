@@ -173,7 +173,7 @@ func getValueFromPostForm(field reflect.StructField, c *gin.Context) (string, er
 
 func readFileFromForm(fileTag string, c *gin.Context) (string, error) {
 	multiFile, _, err := c.Request.FormFile(fileTag)
-	defer func () {
+	defer func() {
 		if multiFile != nil {
 			multiFile.Close()
 		}

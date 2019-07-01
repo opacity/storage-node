@@ -20,7 +20,7 @@ func Test_CreateCharge(t *testing.T) {
 		return
 	}
 
-	costInDollars := int64(15)
+	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 
 	_, err := CreateCharge(costInDollars, stripeToken)
@@ -33,7 +33,7 @@ func Test_CheckChargeStatus(t *testing.T) {
 		return
 	}
 
-	costInDollars := int64(15)
+	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 
 	c, _ := CreateCharge(costInDollars, stripeToken)
@@ -49,7 +49,7 @@ func Test_CheckChargePaid(t *testing.T) {
 		return
 	}
 
-	costInDollars := int64(15)
+	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 
 	c, _ := CreateCharge(costInDollars, stripeToken)

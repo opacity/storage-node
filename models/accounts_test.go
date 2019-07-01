@@ -831,7 +831,7 @@ func Test_handleAccountReadyForCollection_transfer_success(t *testing.T) {
 		return big.NewInt(1)
 	}
 	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int) (bool, string, int64) {
+		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		// all that handleAccountReadyForCollection cares about is the first return value
 		return true, "", 1
 	}
@@ -854,7 +854,7 @@ func Test_handleAccountReadyForCollection_transfer_failed(t *testing.T) {
 		return big.NewInt(1)
 	}
 	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int) (bool, string, int64) {
+		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		// all that handleAccountReadyForCollection cares about is the first return value
 		return false, "", 1
 	}

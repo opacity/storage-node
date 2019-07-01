@@ -1,11 +1,11 @@
 package routes
 
 import (
-	"net/http"
-	"testing"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"math/big"
-	"crypto/ecdsa"
+	"net/http"
+	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -141,7 +141,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusNotFound, w.Code)
-	assert.Contains(t, w.Body.String(), "no account with that id")
+	assert.Contains(t, w.Body.String(), noAccountWithThatID)
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid(t *testing.T) {

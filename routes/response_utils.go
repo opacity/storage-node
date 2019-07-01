@@ -10,9 +10,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/opacity/storage-node/utils"
 	"github.com/opacity/storage-node/models"
+	"github.com/opacity/storage-node/utils"
 )
+
+const noAccountWithThatID = "no account with that id"
 
 const REQUEST_UUID = "request_uuid"
 
@@ -41,7 +43,7 @@ func ServiceUnavailableResponse(c *gin.Context, err error) error {
 }
 
 func AccountNotFoundResponse(c *gin.Context, id string) error {
-	return NotFoundResponse(c, fmt.Errorf("no account with that id: %s", id))
+	return NotFoundResponse(c, fmt.Errorf(noAccountWithThatID+": %s", id))
 }
 
 func FileNotFoundResponse(c *gin.Context, fileId string) error {

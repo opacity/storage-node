@@ -47,7 +47,7 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 		"metadata": "abc_file",
 	}
 	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
-	
+
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	file, err := models.GetFileById(uploadObj.FileHandle)
@@ -90,8 +90,8 @@ func createValidInitFileUploadRequest(t *testing.T, fileSizeInByte int64, endInd
 	}
 	v, b := returnValidVerificationAndRequestBody(t, uploadObj, privateKey)
 	req := InitFileUploadReq{
-		verification:      v,
-		requestBody:       b,
+		verification: v,
+		requestBody:  b,
 	}
 	return req, uploadObj
 }

@@ -349,6 +349,63 @@
                 }
             }
         },
+        "/api/v1/stripe/create": {
+            "post": {
+                "description": "create a stripe payment\nrequestBody should be a stringified version of (values are just examples):\n{\n\"stripeToken\": \"tok_KPte7942xySKBKyrBu11yEpf\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "create a stripe payment",
+                "parameters": [
+                    {
+                        "description": "stripe payment creation object",
+                        "name": "createStripePaymentReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.createStripePaymentReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "account is already paid for",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/upload": {
             "post": {
                 "description": "upload a chunk of a file. The first partIndex must be 1.\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"partIndex\": 1,\n}",
@@ -575,6 +632,25 @@
                 }
             }
         },
+        "routes.UploadFileObj": {
+            "type": "object",
+            "required": [
+                "fileHandle",
+                "partIndex"
+            ],
+            "properties": {
+                "fileHandle": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "a deterministically created file handle"
+                },
+                "partIndex": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
+        },
         "routes.UploadFileReq": {
             "type": "object",
             "required": [
@@ -596,7 +672,7 @@
                 },
                 "requestBody": {
                     "type": "string",
-                    "example": "should produce routes.UploadFileObj, see description for example"
+                    "example": "look at description for example"
                 },
                 "signature": {
                     "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
@@ -604,6 +680,10 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                },
+                "uploadFileObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.UploadFileObj"
                 }
             }
         },
@@ -814,6 +894,53 @@
                 "paymentStatus": {
                     "type": "string",
                     "example": "paid"
+                }
+            }
+        },
+        "routes.createStripePaymentObject": {
+            "type": "object",
+            "required": [
+                "stripeToken",
+                "timestamp"
+            ],
+            "properties": {
+                "stripeToken": {
+                    "type": "string",
+                    "example": "tok_KPte7942xySKBKyrBu11yEpf"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "routes.createStripePaymentReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "createStripePaymentObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.createStripePaymentObject"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
                 }
             }
         },
@@ -1055,6 +1182,7 @@
             "type": "object",
             "required": [
                 "cost",
+                "costInUSD",
                 "maxFolders",
                 "maxMetadataSizeInMB",
                 "name",
@@ -1062,6 +1190,9 @@
             ],
             "properties": {
                 "cost": {
+                    "type": "number"
+                },
+                "costInUSD": {
                     "type": "number"
                 },
                 "maxFolders": {
@@ -1084,6 +1215,7 @@
                 "type": "object",
                 "required": [
                     "cost",
+                    "costInUSD",
                     "maxFolders",
                     "maxMetadataSizeInMB",
                     "name",
@@ -1091,6 +1223,9 @@
                 ],
                 "properties": {
                     "cost": {
+                        "type": "number"
+                    },
+                    "costInUSD": {
                         "type": "number"
                     },
                     "maxFolders": {

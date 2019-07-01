@@ -3,8 +3,8 @@ package routes
 import (
 	"crypto/ecdsa"
 	"net/http"
-	"testing"
 	"net/http/httptest"
+	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"

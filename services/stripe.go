@@ -4,8 +4,8 @@ import (
 	"errors"
 
 	"github.com/opacity/storage-node/utils"
-	"github.com/stripe/stripe-go/charge"
 	"github.com/stripe/stripe-go"
+	"github.com/stripe/stripe-go/charge"
 )
 
 func InitStripe() error {
@@ -16,11 +16,14 @@ func InitStripe() error {
 	return nil
 }
 
-func CreateCharge(costInDollars int64, stripeToken string) (*stripe.Charge, error) {
+func CreateCharge(costInDollars float64, stripeToken string) (*stripe.Charge, error) {
+	cost := int64(costInDollars * 100)
+
 	params := &stripe.ChargeParams{
-		Amount:      stripe.Int64(costInDollars * 100),
-		Currency:    stripe.String(string(stripe.CurrencyUSD)),
-		Description: stripe.String("File Storage"),
+		Amount:              stripe.Int64(cost),
+		Currency:            stripe.String(string(stripe.CurrencyUSD)),
+		Description:         stripe.String("File Storage"),
+		StatementDescriptor: stripe.String("File Storage"),
 	}
 	params.SetSource(stripeToken)
 	return charge.New(params)
