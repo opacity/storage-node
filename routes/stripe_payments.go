@@ -30,13 +30,16 @@ func (v *createStripePaymentReq) getObjectRef() interface{} {
 // @Description create a stripe payment
 // @Accept  json
 // @Produce  json
-// @Param stripePaymentCreateReq body routes.stripePaymentCreateReq true "stripe payment creation object"
+// @Param createStripePaymentReq body routes.createStripePaymentReq true "stripe payment creation object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"stripeToken": "tok_KPte7942xySKBKyrBu11yEpf",
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 404 {string} string "no account with that id: (with your accountID)"
+// @Failure 403 {string} string "account is already paid for"
+// @Failure 500 {string} string "some information about the internal error"
 // @Router /api/v1/stripe/create [post]
 /*CreateStripePaymentHandler is a handler for post requests to create stripe payments*/
 func CreateStripePaymentHandler() gin.HandlerFunc {
