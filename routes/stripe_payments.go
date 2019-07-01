@@ -50,11 +50,13 @@ func createStripePayment(c *gin.Context) error {
 		return err
 	}
 
-	// TODO:  in tests, request.createStripePaymentObject is not getting populated.  Find out why.
-
 	account, err := request.getAccount(c)
 	if err != nil {
 		return err
+	}
+
+	if account.PaymentStatus > models.InitialPaymentInProgress && !utils.FreeModeEnabled() {
+		return ForbiddenResponse(c, errors.New("account is already paid for"))
 	}
 
 	costInDollars := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
@@ -83,6 +85,7 @@ func createStripePayment(c *gin.Context) error {
 		account.EthPrivateKey,
 		account.AccountID,
 	)
+
 	privateKey, keyErr := services.StringToPrivateKey(hex.EncodeToString(keyInBytes))
 
 	costInWei := account.GetTotalCostInWei()
@@ -106,6 +109,9 @@ func createStripePayment(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
+	retries := 0
+	maxRetries := 200
+
 	for {
 		paid, _ := account.CheckIfPaid()
 
@@ -114,6 +120,11 @@ func createStripePayment(c *gin.Context) error {
 				return BadRequestResponse(c, err)
 			}
 			break
+		}
+		retries++
+		if retries >= maxRetries {
+			return InternalErrorResponse(c, errors.New("reached max number of retries, "+
+				"but opq transfer still in progress"))
 		}
 		time.Sleep(2 * time.Second)
 	}
