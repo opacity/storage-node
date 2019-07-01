@@ -17,8 +17,12 @@ type createStripePaymentObject struct {
 
 type createStripePaymentReq struct {
 	verification
-	createStripePaymentObject createStripePaymentObject
 	requestBody
+	createStripePaymentObject createStripePaymentObject
+}
+
+func (v *createStripePaymentReq) getObjectRef() interface{} {
+	return &v.createStripePaymentObject
 }
 
 // CreateStripePaymentHandler godoc

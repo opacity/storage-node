@@ -29,7 +29,6 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 		StripeToken: services.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
 	}
-
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
 	post := createStripePaymentReq{
