@@ -31,6 +31,15 @@ const (
 	OpqTxSuccess
 )
 
+/*OpqTxStatus is for pretty printing the OpqTxStatus*/
+var OpqTxStatusMap = make(map[OpqTxStatusType]string)
+
+func init() {
+	OpqTxStatusMap[OpqTxNotStarted] = "OpqTxNotStarted"
+	OpqTxStatusMap[OpqTxInProgress] = "OpqTxInProgress"
+	OpqTxStatusMap[OpqTxSuccess] = "OpqTxSuccess"
+}
+
 /*BeforeCreate - callback called before the row is created*/
 func (stripePayment *StripePayment) BeforeCreate(scope *gorm.Scope) error {
 	if stripePayment.OpqTxStatus < OpqTxNotStarted {

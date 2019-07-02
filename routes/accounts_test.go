@@ -162,6 +162,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"paymentStatus":"paid"`)
+	assert.Contains(t, w.Body.String(), `"stripePaymentExists":false`)
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpaid(t *testing.T) {
@@ -182,5 +183,36 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"paymentStatus":"unpaid"`)
+	assert.Contains(t, w.Body.String(), `"stripePaymentExists":false`)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
+}
+
+func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExists(t *testing.T) {
+	account, privateKey := returnValidAccountAndPrivateKey(t)
+	validReq := returnValidGetAccountReq(t, accountGetReqObj{
+		Timestamp: time.Now().Unix(),
+	}, privateKey)
+	//	// Add account to DB
+	if err := models.DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	stripePayment := models.StripePayment{
+		StripeToken: services.RandTestStripeToken(),
+		AccountID:   account.AccountID,
+		ChargeID:    "testChargeID",
+	}
+
+	// Add stripe payment to DB
+	models.DB.Create(&stripePayment)
+
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
+	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `"stripePaymentExists":true`)
+	assert.Contains(t, w.Body.String(), stripePayment.StripeToken)
 }

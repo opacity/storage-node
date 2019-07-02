@@ -58,8 +58,9 @@ type accountGetObj struct {
 }
 
 type stripeGetObj struct {
-	StripeToken string `json:"stripeToken" binding:"required"`
-	OpqTxStatus string `json:"opqTxStatus" binding:"required"`
+	StripePaymentExists bool   `json:"stripePaymentExists"`
+	StripeToken         string `json:"stripeToken"`
+	OpqTxStatus         string `json:"opqTxStatus"`
 }
 
 type accountGetReqObj struct {
@@ -227,6 +228,15 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 			Cost:                 cost,
 			ApiVersion:           account.ApiVersion,
 		},
+	}
+
+	stripePayment, err := models.GetStripePaymentByAccountId(account.AccountID)
+	if err == nil && len(account.AccountID) != 0 {
+		res.StripeData = stripeGetObj{
+			StripeToken:         stripePayment.StripeToken,
+			OpqTxStatus:         models.OpqTxStatusMap[stripePayment.OpqTxStatus],
+			StripePaymentExists: true,
+		}
 	}
 
 	if paymentStatus == Paid {
