@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/hex"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -83,24 +82,12 @@ func createStripePayment(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	keyInBytes, decryptErr := utils.DecryptWithErrorReturn(
-		utils.Env.EncryptionKey,
-		account.EthPrivateKey,
-		account.AccountID,
-	)
-
-	privateKey, keyErr := services.StringToPrivateKey(hex.EncodeToString(keyInBytes))
-
 	costInWei := account.GetTotalCostInWei()
 
-	if decryptErr != nil || keyErr != nil {
-		return InternalErrorResponse(c, utils.CollectErrors([]error{decryptErr, keyErr}))
-	}
-
 	success, _, _ := EthWrapper.TransferToken(
-		services.StringToAddress(account.EthAddress),
-		privateKey,
 		services.MainWalletAddress,
+		services.MainWalletPrivateKey,
+		services.StringToAddress(account.EthAddress),
 		*costInWei,
 		services.FastGasPrice)
 
