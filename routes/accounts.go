@@ -37,6 +37,7 @@ type accountDataRes struct {
 	PaymentStatus string        `json:"paymentStatus" example:"paid"`
 	Error         error         `json:"error" example:"the error encountered while checking"`
 	Account       accountGetObj `json:"account" binding:"required"`
+	StripeData    stripeGetObj  `json:"stripeData"`
 }
 
 type accountUnpaidRes struct {
@@ -54,6 +55,11 @@ type accountGetObj struct {
 	EthAddress           string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	Cost                 float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
 	ApiVersion           int                     `json:"apiVersion" binding:"required,gte=1"`
+}
+
+type stripeGetObj struct {
+	StripeToken string `json:"stripeToken" binding:"required"`
+	OpqTxStatus string `json:"opqTxStatus" binding:"required"`
 }
 
 type accountGetReqObj struct {

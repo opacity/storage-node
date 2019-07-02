@@ -44,3 +44,10 @@ func (stripePayment *StripePayment) BeforeCreate(scope *gorm.Scope) error {
 
 	return utils.Validator.Struct(stripePayment)
 }
+
+/*Return Stripe Payment object(first one) if there is not any error. */
+func GetStripePaymentByAccountId(accountID string) (StripePayment, error) {
+	stripePayment := StripePayment{}
+	err := DB.Where("account_id = ?", accountID).First(&stripePayment).Error
+	return stripePayment, err
+}

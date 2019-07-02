@@ -239,21 +239,21 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 	}
 
 	objectSize := utils.GetDefaultBucketObjectSize(objectKey)
-	compeletedFile := CompletedFile{
+	completedFile := CompletedFile{
 		FileID:         file.FileID,
 		ExpiredAt:      file.ExpiredAt,
 		FileSizeInByte: objectSize,
 		ModifierHash:   file.ModifierHash,
 	}
-	if err := DB.Save(&compeletedFile).Error; err != nil {
+	if err := DB.Save(&completedFile).Error; err != nil {
 		return CompletedFile{}, err
 	}
 
 	if err := DeleteCompletedUploadIndexes(file.FileID); err != nil {
-		return compeletedFile, err
+		return completedFile, err
 	}
 
-	return compeletedFile, DB.Delete(file).Error
+	return completedFile, DB.Delete(file).Error
 }
 
 /*DeleteUploadsOlderThan will delete files older than the time provided.  If a file still isn't complete by the
