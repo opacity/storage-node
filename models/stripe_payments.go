@@ -31,6 +31,15 @@ const (
 	OpqTxSuccess
 )
 
+/*OpqTxStatus is for pretty printing the OpqTxStatus*/
+var OpqTxStatusMap = make(map[OpqTxStatusType]string)
+
+func init() {
+	OpqTxStatusMap[OpqTxNotStarted] = "OpqTxNotStarted"
+	OpqTxStatusMap[OpqTxInProgress] = "OpqTxInProgress"
+	OpqTxStatusMap[OpqTxSuccess] = "OpqTxSuccess"
+}
+
 /*BeforeCreate - callback called before the row is created*/
 func (stripePayment *StripePayment) BeforeCreate(scope *gorm.Scope) error {
 	if stripePayment.OpqTxStatus < OpqTxNotStarted {
@@ -43,4 +52,11 @@ func (stripePayment *StripePayment) BeforeCreate(scope *gorm.Scope) error {
 	}
 
 	return utils.Validator.Struct(stripePayment)
+}
+
+/*Return Stripe Payment object(first one) if there is not any error. */
+func GetStripePaymentByAccountId(accountID string) (StripePayment, error) {
+	stripePayment := StripePayment{}
+	err := DB.Where("account_id = ?", accountID).First(&stripePayment).Error
+	return stripePayment, err
 }

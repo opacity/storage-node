@@ -408,6 +408,23 @@ func Test_Space_Updates_at_Scale(t *testing.T) {
 	assert.Equal(t, int64(0), accountFromDB.StorageUsedInByte)
 }
 
+func Test_GetAccountById(t *testing.T) {
+	account := returnValidAccount()
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.Equal(t, accountFromDB.AccountID, accountFromDB.AccountID)
+	assert.NotEqual(t, "", accountFromDB.AccountID)
+
+	account = returnValidAccount()
+
+	accountFromDB, err := GetAccountById(account.AccountID)
+	assert.NotNil(t, err)
+	assert.Equal(t, "", accountFromDB.AccountID)
+}
+
 func Test_CreateSpaceUsedReport(t *testing.T) {
 	expectedSpaceAllotted := int(4 * BasicStorageLimit)
 	expectedSpaceUsed := 234.56 * 1e9
