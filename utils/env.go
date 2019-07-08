@@ -81,6 +81,9 @@ type StorageNodeEnv struct {
 	StripeKeyTest string `env:"STRIPE_KEY_TEST" envDefault:"Unknown"`
 	StripeKeyProd string `env:"STRIPE_KEY_PROD" envDefault:"Unknown"`
 	StripeKey     string `envDefault:"Unknown"`
+
+	// Whether accepting credit cards is enabled
+	EnableCreditCards bool `env:"ENABLE_CREDIT_CARDS" envDefault:"false"`
 }
 
 /*Env is the environment for a particular node while the application is running*/
@@ -200,6 +203,9 @@ func tryLookUp() error {
 		plansJson = defaultPlansJson
 	}
 
+	enableCreditCardsStr, _ := os.LookupEnv("ENABLE_CREDIT_CARDS")
+	enableCreditCards := enableCreditCardsStr == "true"
+
 	serverEnv := StorageNodeEnv{
 		ProdDatabaseURL:      prodDBUrl,
 		TestDatabaseURL:      testDBUrl,
@@ -218,6 +224,7 @@ func tryLookUp() error {
 		PlansJson:            plansJson,
 		StripeKeyTest:        stripeKeyTest,
 		StripeKeyProd:        stripeKeyProd,
+		EnableCreditCards:    enableCreditCards,
 	}
 
 	Env = serverEnv

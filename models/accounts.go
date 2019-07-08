@@ -78,6 +78,8 @@ const (
 	// TODO: error states?  Not sure if we need them.
 )
 
+const StorageUsedTooLow = "storage_used_in_byte cannot go below 0"
+
 /*DefaultMonthsPerSubscription is the number of months per year since our
 default subscription is a year*/
 const DefaultMonthsPerSubscription = 12
@@ -215,7 +217,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 	}
 	if accountFromDB.StorageUsedInByte < int64(0) {
 		tx.Rollback()
-		return errors.New("storage_used_in_byte cannot go below 0")
+		return errors.New(StorageUsedTooLow)
 	}
 	if (accountFromDB.StorageUsedInByte / 1e9) > int64(accountFromDB.StorageLimit) {
 		tx.Rollback()
