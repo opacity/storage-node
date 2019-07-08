@@ -3,13 +3,18 @@ package models
 import (
 	"testing"
 
+	"crypto/ecdsa"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
+	"math/big"
+	"time"
 )
 
 func returnValidStripePaymentForTest() StripePayment {
 	account := returnValidAccount()
+	account.MetadataKey = utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890"))
 
 	// Add account to DB
 	DB.Create(&account)
@@ -66,4 +71,109 @@ func Test_GetStripePaymentByAccountId(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.NotEqual(t, stripeRowFromDB.AccountID, stripePayment.AccountID)
 	assert.Equal(t, "", stripeRowFromDB.AccountID)
+}
+
+func Test_SendAccountOPQ(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment := returnValidStripePaymentForTest()
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		return true, "", 1
+	}
+
+	assert.Equal(t, OpqTxNotStarted, stripePayment.OpqTxStatus)
+	err := stripePayment.SendAccountOPQ()
+	assert.Nil(t, err)
+	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+}
+
+func Test_CheckOPQTransaction_transaction_complete(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment := returnValidStripePaymentForTest()
+	stripePayment.OpqTxStatus = OpqTxInProgress
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return true, nil
+	}
+
+	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+	txSuccess, err := stripePayment.CheckOPQTransaction()
+	assert.Nil(t, err)
+	assert.True(t, txSuccess)
+	assert.Equal(t, OpqTxSuccess, stripePayment.OpqTxStatus)
+}
+
+func Test_CheckOPQTransaction_transaction_incomplete(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment := returnValidStripePaymentForTest()
+	stripePayment.OpqTxStatus = OpqTxInProgress
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
+	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+	success, err := stripePayment.CheckOPQTransaction()
+	assert.Nil(t, err)
+	assert.False(t, success)
+	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+}
+
+func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment := returnValidStripePaymentForTest()
+	stripePayment.OpqTxStatus = OpqTxInProgress
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	retryOccurred := false
+
+	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		retryOccurred = true
+		return true, "", 1
+	}
+
+	stripePayment.RetryIfTimedOut()
+
+	assert.False(t, retryOccurred)
+}
+
+func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment := returnValidStripePaymentForTest()
+	stripePayment.OpqTxStatus = OpqTxInProgress
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	DB.Model(&stripePayment).UpdateColumn("updated_at", time.Now().Add(-1*(MinutesBeforeRetry+1)*time.Minute))
+
+	retryOccurred := false
+
+	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		retryOccurred = true
+		return true, "", 1
+	}
+
+	stripePayment.RetryIfTimedOut()
+
+	assert.True(t, retryOccurred)
 }

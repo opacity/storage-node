@@ -65,26 +65,10 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 	}
 }
 
-func returnValidAccount() models.Account {
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
-
-	accountId := utils.RandSeqFromRunes(models.AccountIDLength, []rune("abcdef01234567890"))
-
-	return models.Account{
-		AccountID:            accountId,
-		MonthsInSubscription: models.DefaultMonthsPerSubscription,
-		StorageLocation:      "https://createdInRoutesAccountsTest.com/12345",
-		StorageLimit:         models.BasicStorageLimit,
-		StorageUsedInByte:    10 * 1e9,
-		PaymentStatus:        models.InitialPaymentInProgress,
-		EthAddress:           ethAddress.String(),
-		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
-		MetadataKey:          utils.GenerateFileHandle(),
-	}
-}
-
 func Test_Init_Accounts(t *testing.T) {
 	setupTests(t)
+	err := services.InitStripe()
+	assert.Nil(t, err)
 }
 
 func Test_NoErrorsWithValidPost(t *testing.T) {
@@ -188,6 +172,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 }
 
 func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExists(t *testing.T) {
+	models.DeleteStripePaymentsForTest(t)
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
@@ -197,18 +182,20 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	stripePayment := models.StripePayment{
-		StripeToken: services.RandTestStripeToken(),
-		AccountID:   account.AccountID,
-		ChargeID:    "testChargeID",
-	}
-
-	// Add stripe payment to DB
-	models.DB.Create(&stripePayment)
-
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return false, nil
 	}
+
+	stripeToken := services.RandTestStripeToken()
+	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken)
+
+	stripePayment := models.StripePayment{
+		StripeToken: stripeToken,
+		AccountID:   account.AccountID,
+		ChargeID:    charge.ID,
+	}
+
+	models.DB.Create(&stripePayment)
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
 	// Check to see if the response was what you expected
