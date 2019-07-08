@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -30,6 +31,8 @@ const (
 	/*OpqTxSuccess - the opq transaction has finished*/
 	OpqTxSuccess
 )
+
+const MinutesBeforeRetry = 3
 
 /*OpqTxStatus is for pretty printing the OpqTxStatus*/
 var OpqTxStatusMap = make(map[OpqTxStatusType]string)
@@ -59,4 +62,65 @@ func GetStripePaymentByAccountId(accountID string) (StripePayment, error) {
 	stripePayment := StripePayment{}
 	err := DB.Where("account_id = ?", accountID).First(&stripePayment).Error
 	return stripePayment, err
+}
+
+/*SendAccountOPQ sends OPQ to the account associated with a stripe payment. */
+func (stripePayment *StripePayment) SendAccountOPQ() error {
+	account, err := GetAccountById(stripePayment.AccountID)
+	if err != nil {
+		return err
+	}
+
+	costInWei := account.GetTotalCostInWei()
+
+	success, _, _ := EthWrapper.TransferToken(
+		services.MainWalletAddress,
+		services.MainWalletPrivateKey,
+		services.StringToAddress(account.EthAddress),
+		*costInWei,
+		services.FastGasPrice)
+
+	if !success {
+		return errors.New("OPQ transaction failed")
+	}
+
+	if err := DB.Model(&stripePayment).Update("opq_tx_status", OpqTxInProgress).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/*CheckOPQTransaction checks the status of an OPQ payment to an account. */
+func (stripePayment *StripePayment) CheckOPQTransaction() (bool, error) {
+	account, err := GetAccountById(stripePayment.AccountID)
+	if err != nil {
+		return false, err
+	}
+
+	paid, err := account.CheckIfPaid()
+	if err != nil {
+		return false, err
+	}
+
+	if paid {
+		if err := DB.Model(&stripePayment).Update("opq_tx_status", OpqTxSuccess).Error; err != nil {
+			return false, err
+		}
+		return true, err
+	}
+
+	err = stripePayment.RetryIfTimedOut()
+
+	return false, err
+}
+
+/*RetryIfTimedOut retries an OPQ payment to an account if the transaction is timed out. */
+func (stripePayment *StripePayment) RetryIfTimedOut() error {
+	targetTime := time.Now().Add(-1 * MinutesBeforeRetry * time.Minute)
+
+	if targetTime.After(stripePayment.UpdatedAt) {
+		return stripePayment.SendAccountOPQ()
+	}
+	return nil
 }

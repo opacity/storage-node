@@ -40,7 +40,7 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return true, nil
 	}
-	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return true, "", 1
 	}
@@ -117,7 +117,7 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return true, nil
 	}
-	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return false, "", 1
 	}

@@ -160,6 +160,8 @@ func (account *Account) CheckIfPaid() (bool, error) {
 		}
 		SetAccountsToNextPaymentStatus([]Account{*(account)})
 	}
+	// TODO:  Does it make sense to add a final check here to call services.CheckChargePaid(chargeID)
+	// if the account has a stripe payment?
 	return paid, err
 }
 
@@ -175,7 +177,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 		return err
 	}
 	if !paid {
-		return errors.New("No payment. Unable to update the storage")
+		return errors.New("no payment. Unable to update the storage")
 	}
 
 	tx := DB.Begin()

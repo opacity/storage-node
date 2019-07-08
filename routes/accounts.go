@@ -59,6 +59,7 @@ type accountGetObj struct {
 
 type stripeGetObj struct {
 	StripePaymentExists bool   `json:"stripePaymentExists"`
+	ChargePaid          bool   `json:"chargePaid"`
 	StripeToken         string `json:"stripeToken"`
 	OpqTxStatus         string `json:"opqTxStatus"`
 }
@@ -231,11 +232,20 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	stripePayment, err := models.GetStripePaymentByAccountId(account.AccountID)
-	if err == nil && len(account.AccountID) != 0 {
+	if err == nil && len(stripePayment.AccountID) != 0 {
+		chargePaid, err := checkChargePaid(c, stripePayment.ChargeID)
+		if err != nil {
+			return err
+		}
+		_, err = stripePayment.CheckOPQTransaction()
+		if err != nil {
+			return InternalErrorResponse(c, err)
+		}
 		res.StripeData = stripeGetObj{
 			StripeToken:         stripePayment.StripeToken,
 			OpqTxStatus:         models.OpqTxStatusMap[stripePayment.OpqTxStatus],
 			StripePaymentExists: true,
+			ChargePaid:          chargePaid,
 		}
 	}
 

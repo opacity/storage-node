@@ -6,7 +6,6 @@ import (
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"time"
 )
 
 type createStripePaymentObject struct {
@@ -66,9 +65,8 @@ func createStripePayment(c *gin.Context) error {
 	charge, err := services.CreateCharge(costInDollars, request.createStripePaymentObject.StripeToken)
 
 	if err != nil {
-		// TODO: more granularity with errors
-		// https://stripe.com/docs/api/errors/handling
-		return ForbiddenResponse(c, err)
+		err = handleStripeError(err, c)
+		return err
 	}
 
 	stripePayment := models.StripePayment{
@@ -82,44 +80,31 @@ func createStripePayment(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	costInWei := account.GetTotalCostInWei()
+	err = stripePayment.SendAccountOPQ()
 
-	success, _, _ := EthWrapper.TransferToken(
-		services.MainWalletAddress,
-		services.MainWalletPrivateKey,
-		services.StringToAddress(account.EthAddress),
-		*costInWei,
-		services.FastGasPrice)
-
-	if !success {
-		return InternalErrorResponse(c, errors.New("OPQ transaction failed, but will try again"))
-	}
-
-	if err := models.DB.Model(&stripePayment).Update("opq_tx_status", models.OpqTxInProgress).Error; err != nil {
-		return BadRequestResponse(c, err)
-	}
-
-	retries := 0
-	maxRetries := 200
-
-	for {
-		paid, _ := account.CheckIfPaid()
-
-		if paid {
-			if err := models.DB.Model(&stripePayment).Update("opq_tx_status", models.OpqTxSuccess).Error; err != nil {
-				return BadRequestResponse(c, err)
-			}
-			break
-		}
-		retries++
-		if retries >= maxRetries {
-			return InternalErrorResponse(c, errors.New("reached max number of retries, "+
-				"but opq transfer still in progress"))
-		}
-		time.Sleep(2 * time.Second)
+	if err != nil {
+		return InternalErrorResponse(c, err)
 	}
 
 	return OkResponse(c, StatusRes{
-		Status: "successfully charged card and sent OPQ to payment address",
+		Status: "successfully charged card, now sending OPQ to payment address",
 	})
+}
+
+func checkChargePaid(c *gin.Context, chargeID string) (bool, error) {
+	if len(chargeID) == 0 {
+		return false, InternalErrorResponse(c, errors.New("no charge ID"))
+	}
+	paid, err := services.CheckChargePaid(chargeID)
+	err = handleStripeError(err, c)
+	return paid, err
+}
+
+func handleStripeError(err error, c *gin.Context) error {
+	if err != nil {
+		// TODO: more granularity with errors
+		// https://stripe.com/docs/api/errors/handling
+		err = InternalErrorResponse(c, err)
+	}
+	return err
 }
