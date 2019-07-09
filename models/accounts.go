@@ -121,6 +121,12 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	}
 	if utils.FreeModeEnabled() {
 		account.PaymentStatus = PaymentRetrievalComplete
+		ttl := time.Until(account.ExpirationDate())
+		if err := utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
+			return err
+		}
+		// Clear out the metadata key on the account model
+		account.MetadataKey = ""
 	}
 	return utils.Validator.Struct(account)
 }
@@ -308,6 +314,10 @@ func SetAccountsToNextPaymentStatus(accounts []Account) {
 
 /*HandleMetadataKeyForPaidAccount adds the metadata key to badger and removes from the sql table*/
 func HandleMetadataKeyForPaidAccount(account Account) (err error) {
+	if account.MetadataKey == "" {
+		// metadata has already been init
+		return nil
+	}
 	// Create empty key:value data in badger DB
 	ttl := time.Until(account.ExpirationDate())
 	if err = utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
