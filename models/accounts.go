@@ -79,6 +79,8 @@ const (
 	// TODO: error states?  Not sure if we need them.
 )
 
+const StorageUsedTooLow = "storage_used_in_byte cannot go below 0"
+
 /*DefaultMonthsPerSubscription is the number of months per year since our
 default subscription is a year*/
 const DefaultMonthsPerSubscription = 12
@@ -157,6 +159,8 @@ func (account *Account) CheckIfPaid() (bool, error) {
 	if paid {
 		SetAccountsToNextPaymentStatus([]Account{*(account)})
 	}
+	// TODO:  Does it make sense to add a final check here to call services.CheckChargePaid(chargeID)
+	// if the account has a stripe payment?
 	return paid, err
 }
 
@@ -172,7 +176,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 		return err
 	}
 	if !paid {
-		return errors.New("No payment. Unable to update the storage")
+		return errors.New("no payment. Unable to update the storage")
 	}
 
 	tx := DB.Begin()
@@ -210,7 +214,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 	}
 	if accountFromDB.StorageUsedInByte < int64(0) {
 		tx.Rollback()
-		return errors.New("storage_used_in_byte cannot go below 0")
+		return errors.New(StorageUsedTooLow)
 	}
 	if (accountFromDB.StorageUsedInByte / 1e9) > int64(accountFromDB.StorageLimit) {
 		tx.Rollback()
@@ -445,7 +449,8 @@ func handleAccountReadyForCollection(account Account) error {
 			services.StringToAddress(account.EthAddress),
 			privateKey,
 			services.MainWalletAddress,
-			*tokenBalance)
+			*tokenBalance,
+			services.SlowGasPrice)
 		if success {
 			SetAccountsToNextPaymentStatus([]Account{account})
 			return nil

@@ -75,6 +75,20 @@ definitions:
         example: status of the request
         type: string
     type: object
+  routes.UploadFileObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+      partIndex:
+        example: 1
+        type: integer
+    required:
+    - fileHandle
+    - partIndex
+    type: object
   routes.UploadFileReq:
     properties:
       chunkData:
@@ -86,7 +100,7 @@ definitions:
         minLength: 66
         type: string
       requestBody:
-        example: should produce routes.UploadFileObj, see description for example
+        example: look at description for example
         type: string
       signature:
         description: |-
@@ -98,6 +112,9 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
+      uploadFileObj:
+        $ref: '#/definitions/routes.UploadFileObj'
+        type: object
     required:
     - chunkData
     - publicKey
@@ -268,6 +285,45 @@ definitions:
         type: string
     required:
     - expirationDate
+    type: object
+  routes.createStripePaymentObject:
+    properties:
+      stripeToken:
+        example: tok_KPte7942xySKBKyrBu11yEpf
+        type: string
+      timestamp:
+        type: integer
+    required:
+    - stripeToken
+    - timestamp
+    type: object
+  routes.createStripePaymentReq:
+    properties:
+      createStripePaymentObject:
+        $ref: '#/definitions/routes.createStripePaymentObject'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
     type: object
   routes.deleteFileObj:
     properties:
@@ -465,6 +521,8 @@ definitions:
     properties:
       cost:
         type: number
+      costInUSD:
+        type: number
       maxFolders:
         type: integer
       maxMetadataSizeInMB:
@@ -475,6 +533,7 @@ definitions:
         type: integer
     required:
     - cost
+    - costInUSD
     - maxFolders
     - maxMetadataSizeInMB
     - name
@@ -484,6 +543,8 @@ definitions:
     additionalProperties:
       properties:
         cost:
+          type: number
+        costInUSD:
           type: number
         maxFolders:
           type: integer
@@ -495,6 +556,7 @@ definitions:
           type: integer
       required:
       - cost
+      - costInUSD
       - maxFolders
       - maxMetadataSizeInMB
       - name
@@ -855,6 +917,49 @@ paths:
           schema:
             type: string
       summary: Update metadata
+  /api/v1/stripe/create:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        create a stripe payment
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "stripeToken": "tok_KPte7942xySKBKyrBu11yEpf",
+        }
+      parameters:
+      - description: stripe payment creation object
+        in: body
+        name: createStripePaymentReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.createStripePaymentReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: account is already paid for
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: create a stripe payment
   /api/v1/upload:
     post:
       consumes:

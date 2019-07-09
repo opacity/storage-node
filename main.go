@@ -20,6 +20,8 @@ func main() {
 	//utils.SetProduction()
 	utils.SetDevelopment()
 	services.SetWallet()
+	err := services.InitStripe()
+	utils.PanicOnError(err)
 
 	utils.SlackLog("Begin to restart service!")
 

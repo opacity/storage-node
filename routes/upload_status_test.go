@@ -22,7 +22,7 @@ func Test_CheckWithAccountNoExist(t *testing.T) {
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, req)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
-	assert.Contains(t, w.Body.String(), "no account with that id")
+	assert.Contains(t, w.Body.String(), noAccountWithThatID)
 }
 
 func Test_CheckFileNotFound(t *testing.T) {

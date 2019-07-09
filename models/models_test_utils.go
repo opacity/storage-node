@@ -37,3 +37,11 @@ func DeleteCompletedUploadIndexesForTest(t *testing.T) {
 		DB.Exec("DELETE from completed_upload_indices;")
 	}
 }
+
+func DeleteStripePaymentsForTest(t *testing.T) {
+	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
+		t.Fatalf("should only be calling DeleteStripePaymentsForTest method on test database")
+	} else {
+		DB.Exec("DELETE from stripe_payments;")
+	}
+}

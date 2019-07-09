@@ -587,6 +587,23 @@ func Test_RemoveMetadata(t *testing.T) {
 	assert.NotNil(t, account.RemoveMetadata(100))
 }
 
+func Test_GetAccountById(t *testing.T) {
+	account := returnValidAccount()
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.Equal(t, accountFromDB.AccountID, accountFromDB.AccountID)
+	assert.NotEqual(t, "", accountFromDB.AccountID)
+
+	account = returnValidAccount()
+
+	accountFromDB, err := GetAccountById(account.AccountID)
+	assert.NotNil(t, err)
+	assert.Equal(t, "", accountFromDB.AccountID)
+}
+
 func Test_CreateSpaceUsedReport(t *testing.T) {
 	expectedSpaceAllotted := int(4 * BasicStorageLimit)
 	expectedSpaceUsed := 234.56 * 1e9
@@ -971,7 +988,7 @@ func Test_handleAccountReadyForCollection_transfer_success(t *testing.T) {
 		return big.NewInt(1)
 	}
 	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int) (bool, string, int64) {
+		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		// all that handleAccountReadyForCollection cares about is the first return value
 		return true, "", 1
 	}
@@ -994,7 +1011,7 @@ func Test_handleAccountReadyForCollection_transfer_failed(t *testing.T) {
 		return big.NewInt(1)
 	}
 	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int) (bool, string, int64) {
+		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		// all that handleAccountReadyForCollection cares about is the first return value
 		return false, "", 1
 	}

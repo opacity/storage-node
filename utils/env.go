@@ -15,14 +15,18 @@ import (
 )
 
 const defaultAccountRetentionDays = 7
+
+// TODO research appropriate "costInUSD" prices and include them here
+// current values subject to change
 const defaultPlansJson = `
-{"128": {"name":"Basic","cost":2,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
-"1024": {"name":"Professional","cost":16,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600}}
+{"128": {"name":"Basic","cost":2,"costInUSD":39.99,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
+"1024": {"name":"Professional","cost":16,"costInUSD":99.99,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600}}
 `
 
 type PlanInfo struct {
 	Name                string  `json:"name" binding:"required"`
 	Cost                float64 `json:"cost" binding:"required,gt=0"`
+	CostInUSD           float64 `json:"costInUSD" binding:"required,gt=0"`
 	StorageInGB         int     `json:"storageInGB" binding:"required,gt=0"`
 	MaxFolders          int     `json:"maxFolders" binding:"required,gt=0"`
 	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB" binding:"required,gt=0"`
@@ -72,6 +76,14 @@ type StorageNodeEnv struct {
 
 	PlansJson string `env:"PLANS_JSON"`
 	Plans     PlanResponseType
+
+	// Stripe Keys
+	StripeKeyTest string `env:"STRIPE_KEY_TEST" envDefault:"Unknown"`
+	StripeKeyProd string `env:"STRIPE_KEY_PROD" envDefault:"Unknown"`
+	StripeKey     string `envDefault:"Unknown"`
+
+	// Whether accepting credit cards is enabled
+	EnableCreditCards bool `env:"ENABLE_CREDIT_CARDS" envDefault:"false"`
 }
 
 /*Env is the environment for a particular node while the application is running*/
@@ -107,6 +119,7 @@ func SetProduction() {
 	initEnv()
 	Env.GoEnv = "production"
 	Env.DatabaseURL = Env.ProdDatabaseURL
+	Env.StripeKey = Env.StripeKeyProd
 	runInitializations()
 }
 
@@ -116,6 +129,7 @@ func SetDevelopment() {
 	Env.GoEnv = "development"
 	// TODO: should we have a separate development database?
 	Env.DatabaseURL = Env.ProdDatabaseURL
+	Env.StripeKey = Env.StripeKeyProd
 	runInitializations()
 }
 
@@ -125,6 +139,7 @@ func SetTesting(filenames ...string) {
 	Env.PlansJson = defaultPlansJson
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
+	Env.StripeKey = Env.StripeKeyTest
 	runInitializations()
 }
 
@@ -172,6 +187,8 @@ func tryLookUp() error {
 	awsSecretAccessKey := AppendLookupErrors("AWS_SECRET_ACCESS_KEY", &collectedErrors)
 	adminUser := AppendLookupErrors("ADMIN_USER", &collectedErrors)
 	adminPassword := AppendLookupErrors("ADMIN_PASSWORD", &collectedErrors)
+	stripeKeyTest := AppendLookupErrors("STRIPE_KEY_TEST", &collectedErrors)
+	stripeKeyProd := AppendLookupErrors("STRIPE_KEY_PROD", &collectedErrors)
 
 	accountRetentionDaysStr := AppendLookupErrors("ACCOUNT_RETENTION_DAYS", &collectedErrors)
 	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
@@ -185,6 +202,9 @@ func tryLookUp() error {
 	if exists == false {
 		plansJson = defaultPlansJson
 	}
+
+	enableCreditCardsStr, _ := os.LookupEnv("ENABLE_CREDIT_CARDS")
+	enableCreditCards := enableCreditCardsStr == "true"
 
 	serverEnv := StorageNodeEnv{
 		ProdDatabaseURL:      prodDBUrl,
@@ -202,6 +222,9 @@ func tryLookUp() error {
 		AdminUser:            adminUser,
 		AdminPassword:        adminPassword,
 		PlansJson:            plansJson,
+		StripeKeyTest:        stripeKeyTest,
+		StripeKeyProd:        stripeKeyProd,
+		EnableCreditCards:    enableCreditCards,
 	}
 
 	Env = serverEnv

@@ -97,9 +97,9 @@ func checkUploadStatus(c *gin.Context) error {
 	}
 
 	if err := account.UseStorageSpaceInByte(completedFile.FileSizeInByte); err != nil {
-		utils.DeleteDefaultBucketObjectKeys(completedFile.FileID)
-		models.DB.Delete(&completedFile)
-		return InternalErrorResponse(c, err)
+		errS3 := utils.DeleteDefaultBucketObjectKeys(completedFile.FileID)
+		errSql := models.DB.Delete(&completedFile).Error
+		return InternalErrorResponse(c, utils.CollectErrors([]error{err, errS3, errSql}))
 	}
 
 	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
