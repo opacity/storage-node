@@ -220,6 +220,9 @@ definitions:
       paymentStatus:
         example: paid
         type: string
+      stripeData:
+        $ref: '#/definitions/routes.stripeGetObj'
+        type: object
     type: object
   routes.accountGetObj:
     properties:
@@ -456,6 +459,17 @@ definitions:
     - publicKey
     - requestBody
     - signature
+    type: object
+  routes.stripeGetObj:
+    properties:
+      chargePaid:
+        type: boolean
+      opqTxStatus:
+        type: string
+      stripePaymentExists:
+        type: boolean
+      stripeToken:
+        type: string
     type: object
   routes.updateMetadataObject:
     properties:

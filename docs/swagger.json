@@ -922,6 +922,10 @@
                 "paymentStatus": {
                     "type": "string",
                     "example": "paid"
+                },
+                "stripeData": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.stripeGetObj"
                 }
             }
         },
@@ -1219,6 +1223,23 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.stripeGetObj": {
+            "type": "object",
+            "properties": {
+                "chargePaid": {
+                    "type": "boolean"
+                },
+                "opqTxStatus": {
+                    "type": "string"
+                },
+                "stripePaymentExists": {
+                    "type": "boolean"
+                },
+                "stripeToken": {
+                    "type": "string"
                 }
             }
         },
