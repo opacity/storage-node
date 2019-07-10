@@ -37,7 +37,7 @@ type accountDataRes struct {
 	PaymentStatus string        `json:"paymentStatus" example:"paid"`
 	Error         error         `json:"error" example:"the error encountered while checking"`
 	Account       accountGetObj `json:"account" binding:"required"`
-	StripeData    stripeGetObj  `json:"stripeData"`
+	StripeData    stripeDataObj `json:"stripeData"`
 }
 
 type accountUnpaidRes struct {
@@ -55,13 +55,6 @@ type accountGetObj struct {
 	EthAddress           string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	Cost                 float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
 	ApiVersion           int                     `json:"apiVersion" binding:"required,gte=1"`
-}
-
-type stripeGetObj struct {
-	StripePaymentExists bool   `json:"stripePaymentExists"`
-	ChargePaid          bool   `json:"chargePaid"`
-	StripeToken         string `json:"stripeToken"`
-	OpqTxStatus         string `json:"opqTxStatus"`
 }
 
 type accountGetReqObj struct {
@@ -214,26 +207,13 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	cost, _ := account.Cost()
-	paymentStatus := createPaymentStatusResponse(paid, pending)
-	res := accountDataRes{
-		PaymentStatus: createPaymentStatusResponse(paid, pending),
-		Error:         err,
-		Account: accountGetObj{
-			CreatedAt:            account.CreatedAt,
-			UpdatedAt:            account.UpdatedAt,
-			ExpirationDate:       account.ExpirationDate(),
-			MonthsInSubscription: account.MonthsInSubscription,
-			StorageLimit:         account.StorageLimit,
-			StorageUsed:          float64(account.StorageUsedInByte) / 1e9,
-			EthAddress:           account.EthAddress,
-			Cost:                 cost,
-			ApiVersion:           account.ApiVersion,
-		},
-	}
 
-	stripePayment, err := models.GetStripePaymentByAccountId(account.AccountID)
-	if err == nil && len(stripePayment.AccountID) != 0 {
-		chargePaid, err := checkChargePaid(c, stripePayment.ChargeID)
+	var res accountDataRes
+	chargePaid := false
+
+	stripePayment, _ := models.GetStripePaymentByAccountId(account.AccountID)
+	if len(stripePayment.AccountID) != 0 {
+		chargePaid, err = checkChargePaid(c, stripePayment.ChargeID)
 		if err != nil {
 			return err
 		}
@@ -241,15 +221,35 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		if err != nil {
 			return InternalErrorResponse(c, err)
 		}
-		res.StripeData = stripeGetObj{
+		amount, err := checkChargeAmount(c, stripePayment.ChargeID)
+		if err != nil {
+			return err
+		}
+		res.StripeData = stripeDataObj{
 			StripeToken:         stripePayment.StripeToken,
 			OpqTxStatus:         models.OpqTxStatusMap[stripePayment.OpqTxStatus],
 			StripePaymentExists: true,
 			ChargePaid:          chargePaid,
+			ChargeID:            stripePayment.ChargeID,
+			Amount:              amount,
 		}
 	}
 
-	if paymentStatus == Paid {
+	res.PaymentStatus = createPaymentStatusResponse(paid, pending, chargePaid)
+	res.Error = err
+	res.Account = accountGetObj{
+		CreatedAt:            account.CreatedAt,
+		UpdatedAt:            account.UpdatedAt,
+		ExpirationDate:       account.ExpirationDate(),
+		MonthsInSubscription: account.MonthsInSubscription,
+		StorageLimit:         account.StorageLimit,
+		StorageUsed:          float64(account.StorageUsedInByte) / 1e9,
+		EthAddress:           account.EthAddress,
+		Cost:                 cost,
+		ApiVersion:           account.ApiVersion,
+	}
+
+	if res.PaymentStatus == Paid {
 		return OkResponse(c, res)
 	}
 
@@ -262,8 +262,8 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	})
 }
 
-func createPaymentStatusResponse(paid bool, pending bool) string {
-	if paid {
+func createPaymentStatusResponse(paid bool, pending bool, chargePaid bool) string {
+	if paid || chargePaid {
 		return Paid
 	}
 	if pending {

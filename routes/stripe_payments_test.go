@@ -15,8 +15,6 @@ import (
 
 func Test_Init_Stripe_Payments(t *testing.T) {
 	setupTests(t)
-	err := services.InitStripe()
-	assert.Nil(t, err)
 }
 
 func Test_Successful_Stripe_Payment(t *testing.T) {

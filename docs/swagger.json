@@ -376,7 +376,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.StatusRes"
+                            "$ref": "#/definitions/routes.stripeDataRes"
                         }
                     },
                     "400": {
@@ -815,6 +815,10 @@
                 "paymentStatus": {
                     "type": "string",
                     "example": "paid"
+                },
+                "stripeData": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.stripeDataObj"
                 }
             }
         },
@@ -894,6 +898,10 @@
                 "paymentStatus": {
                     "type": "string",
                     "example": "paid"
+                },
+                "stripeData": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.stripeDataObj"
                 }
             }
         },
@@ -1102,6 +1110,56 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.stripeDataObj": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "chargeID": {
+                    "type": "string"
+                },
+                "chargePaid": {
+                    "type": "boolean"
+                },
+                "opqTxStatus": {
+                    "type": "string"
+                },
+                "stripePaymentExists": {
+                    "type": "boolean"
+                },
+                "stripeToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "routes.stripeDataRes": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "chargeID": {
+                    "type": "string"
+                },
+                "chargePaid": {
+                    "type": "boolean"
+                },
+                "opqTxStatus": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "status of the request"
+                },
+                "stripePaymentExists": {
+                    "type": "boolean"
+                },
+                "stripeToken": {
+                    "type": "string"
                 }
             }
         },
