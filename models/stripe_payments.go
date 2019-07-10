@@ -136,3 +136,12 @@ func (stripePayment *StripePayment) RetryIfTimedOut() error {
 	}
 	return nil
 }
+
+/*DeleteStripePaymentIfExists deletes a stripe payment if it exists. */
+func DeleteStripePaymentIfExists(accountID string) error {
+	stripePayment, _ := GetStripePaymentByAccountId(accountID)
+	if len(stripePayment.AccountID) != 0 {
+		return DB.Delete(&stripePayment).Error
+	}
+	return nil
+}
