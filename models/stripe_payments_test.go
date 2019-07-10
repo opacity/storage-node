@@ -202,3 +202,19 @@ func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
 
 	assert.True(t, retryOccurred)
 }
+
+func Test_DeleteStripePaymentIfExists(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment := returnValidStripePaymentForTest()
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	accountID := stripePayment.AccountID
+	err := DeleteStripePaymentIfExists(accountID)
+	assert.Nil(t, err)
+	stripeRow, err := GetStripePaymentByAccountId(accountID)
+	assert.NotNil(t, err)
+	assert.Equal(t, "", stripeRow.StripeToken)
+}

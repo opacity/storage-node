@@ -136,6 +136,12 @@ func (account *Account) BeforeUpdate(scope *gorm.Scope) error {
 	return utils.Validator.Struct(account)
 }
 
+/*BeforeDelete - callback called before the row is deleted*/
+func (account *Account) BeforeDelete(scope *gorm.Scope) error {
+	DeleteStripePaymentIfExists(account.AccountID)
+	return nil
+}
+
 /*ExpirationDate returns the date the account expires*/
 func (account *Account) ExpirationDate() time.Time {
 	return account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
@@ -167,9 +173,8 @@ func (account *Account) CheckIfPaid() (bool, error) {
 			return false, err
 		}
 		SetAccountsToNextPaymentStatus([]Account{*(account)})
+		DeleteStripePaymentIfExists(account.AccountID)
 	}
-	// TODO:  Does it make sense to add a final check here to call services.CheckChargePaid(chargeID)
-	// if the account has a stripe payment?
 	return paid, err
 }
 
@@ -274,6 +279,7 @@ func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
 		int64(0)).Find(&accounts).Error
 	for _, account := range accounts {
 		if paid, _ := CheckForPaidStripePayment(account.AccountID); !paid {
+			DeleteStripePaymentIfExists(account.AccountID)
 			err = DB.Delete(&account).Error
 		}
 	}
