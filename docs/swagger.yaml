@@ -227,6 +227,9 @@ definitions:
       paymentStatus:
         example: paid
         type: string
+      stripeData:
+        $ref: '#/definitions/routes.stripeDataObj'
+        type: object
     type: object
   routes.accountGetObj:
     properties:
@@ -285,6 +288,9 @@ definitions:
       paymentStatus:
         example: paid
         type: string
+      stripeData:
+        $ref: '#/definitions/routes.stripeDataObj'
+        type: object
     type: object
   routes.createStripePaymentObject:
     properties:
@@ -456,6 +462,39 @@ definitions:
     - publicKey
     - requestBody
     - signature
+    type: object
+  routes.stripeDataObj:
+    properties:
+      amount:
+        type: number
+      chargeID:
+        type: string
+      chargePaid:
+        type: boolean
+      opqTxStatus:
+        type: string
+      stripePaymentExists:
+        type: boolean
+      stripeToken:
+        type: string
+    type: object
+  routes.stripeDataRes:
+    properties:
+      amount:
+        type: number
+      chargeID:
+        type: string
+      chargePaid:
+        type: boolean
+      opqTxStatus:
+        type: string
+      status:
+        example: status of the request
+        type: string
+      stripePaymentExists:
+        type: boolean
+      stripeToken:
+        type: string
     type: object
   routes.updateMetadataObject:
     properties:
@@ -856,7 +895,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.StatusRes'
+            $ref: '#/definitions/routes.stripeDataRes'
             type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'

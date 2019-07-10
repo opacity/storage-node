@@ -1,21 +1,21 @@
 package routes
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"math/big"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
-	"mime/multipart"
 	"os"
 	"strings"
 	"testing"
 	"time"
-	"bytes"
 
-	"github.com/gin-gonic/gin"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
@@ -26,7 +26,7 @@ const defaultStorageUsedInByteForTest = 10 * 1e9
 
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
-	
+
 	return UploadFileObj{
 		FileHandle: utils.GenerateFileHandle(),
 		PartIndex:  models.FirstChunkIndex,
@@ -145,6 +145,8 @@ func setupTests(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
 	gin.SetMode(gin.TestMode)
+	err := services.InitStripe()
+	assert.Nil(t, err)
 }
 
 func cleanUpBeforeTest(t *testing.T) {
@@ -282,7 +284,7 @@ func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{
 
 	// Perform the request
 	router.ServeHTTP(w, req)
-	
+
 	return w
 }
 

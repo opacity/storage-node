@@ -184,7 +184,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 	if err != nil {
 		return err
 	}
-	if !paid {
+	if paidWithCreditCard, _ := CheckForPaidStripePayment(account.AccountID); !paidWithCreditCard && !paid {
 		return errors.New("no payment. Unable to update the storage")
 	}
 
@@ -267,10 +267,16 @@ func CalculatePercentSpaceUsed(spaceReport SpaceReport) float64 {
 
 /*PurgeOldUnpaidAccounts deletes accounts past a certain age which have not been paid for*/
 func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
+	accounts := []Account{}
 	err := DB.Where("created_at < ? AND payment_status = ? AND storage_used_in_byte = ?",
 		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainUnpaidAccounts)),
 		InitialPaymentInProgress,
-		int64(0)).Delete(&Account{}).Error
+		int64(0)).Find(&accounts).Error
+	for _, account := range accounts {
+		if paid, _ := CheckForPaidStripePayment(account.AccountID); !paid {
+			err = DB.Delete(&account).Error
+		}
+	}
 	return err
 }
 
