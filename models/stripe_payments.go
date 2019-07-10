@@ -32,7 +32,7 @@ const (
 	OpqTxSuccess
 )
 
-const MinutesBeforeRetry = 30
+const MinutesBeforeRetry = 360
 
 /*OpqTxStatus is for pretty printing the OpqTxStatus*/
 var OpqTxStatusMap = make(map[OpqTxStatusType]string)
@@ -92,7 +92,7 @@ func (stripePayment *StripePayment) SendAccountOPQ() error {
 		services.MainWalletPrivateKey,
 		services.StringToAddress(account.EthAddress),
 		*costInWei,
-		services.FastGasPrice)
+		services.SlowGasPrice)
 
 	if !success {
 		return errors.New("OPQ transaction failed")
