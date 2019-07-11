@@ -15,9 +15,8 @@ import (
 )
 
 const defaultAccountRetentionDays = 7
+const defaultStripeRetentionDays = 30
 
-// TODO research appropriate "costInUSD" prices and include them here
-// current values subject to change
 const defaultPlansJson = `
 {"128": {"name":"Basic","cost":2,"costInUSD":39.99,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
 "1024": {"name":"Professional","cost":16,"costInUSD":99.99,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600}}
@@ -64,6 +63,9 @@ type StorageNodeEnv struct {
 
 	// How long the user has to pay for their account before we delete it
 	AccountRetentionDays int `env:"ACCOUNT_RETENTION_DAYS" envDefault:"7"`
+
+	// How long to retain a stripe payment before we delete it
+	StripeRetentionDays int `env:"STRIPE_RETENTION_DAYS" envDefault:"30"`
 
 	// Basic auth creds
 	AdminUser     string `env:"ADMIN_USER" envDefault:""`
@@ -114,20 +116,10 @@ func initEnv(filenames ...string) {
 	Env = storageNodeEnv
 }
 
-/*SetProduction sets the production environment*/
-func SetProduction() {
+/*SetLive sets the live environment*/
+func SetLive() {
 	initEnv()
-	Env.GoEnv = "production"
-	Env.DatabaseURL = Env.ProdDatabaseURL
-	Env.StripeKey = Env.StripeKeyProd
-	runInitializations()
-}
-
-/*SetDevelopment sets the development environment*/
-func SetDevelopment() {
-	initEnv()
-	Env.GoEnv = "development"
-	// TODO: should we have a separate development database?
+	Env.GoEnv = "live"
 	Env.DatabaseURL = Env.ProdDatabaseURL
 	Env.StripeKey = Env.StripeKeyProd
 	runInitializations()
@@ -198,6 +190,14 @@ func tryLookUp() error {
 		accountRetentionDays = defaultAccountRetentionDays
 	}
 
+	stripeRetentionDaysStr := AppendLookupErrors("STRIPE_RETENTION_DAYS", &collectedErrors)
+	stripeRetentionDays, err := strconv.Atoi(stripeRetentionDaysStr)
+	AppendIfError(err, &collectedErrors)
+
+	if stripeRetentionDays <= 0 {
+		stripeRetentionDays = defaultStripeRetentionDays
+	}
+
 	plansJson, exists := os.LookupEnv("PLANS_JSON")
 	if exists == false {
 		plansJson = defaultPlansJson
@@ -215,6 +215,7 @@ func tryLookUp() error {
 		MainWalletAddress:    mainWalletAddress,
 		MainWalletPrivateKey: mainWalletPrivateKey,
 		AccountRetentionDays: accountRetentionDays,
+		StripeRetentionDays:  stripeRetentionDays,
 		AwsRegion:            awsRegion,
 		BucketName:           bucketName,
 		AwsAccessKeyID:       awsAccessKeyID,

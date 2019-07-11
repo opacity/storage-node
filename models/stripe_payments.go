@@ -145,3 +145,10 @@ func DeleteStripePaymentIfExists(accountID string) error {
 	}
 	return nil
 }
+
+/*PurgeOldStripePayments deletes stripe payments past a certain age*/
+func PurgeOldStripePayments(daysToRetainStripePayment int) error {
+	err := DB.Where("updated_at < ?",
+		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainStripePayment))).Delete(&StripePayment{}).Error
+	return err
+}

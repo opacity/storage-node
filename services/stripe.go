@@ -18,7 +18,7 @@ func InitStripe() error {
 }
 
 /*CreateCharge creates a charge with stripe and returns the charge*/
-func CreateCharge(costInDollars float64, stripeToken string) (*stripe.Charge, error) {
+func CreateCharge(costInDollars float64, stripeToken string, accountID string) (*stripe.Charge, error) {
 	cost := int64(costInDollars * 100)
 
 	params := &stripe.ChargeParams{
@@ -28,6 +28,7 @@ func CreateCharge(costInDollars float64, stripeToken string) (*stripe.Charge, er
 		StatementDescriptor: stripe.String("File Storage"),
 	}
 	params.SetSource(stripeToken)
+	params.AddMetadata("accountID", accountID)
 	return charge.New(params)
 }
 
