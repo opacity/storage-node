@@ -1,0 +1,89 @@
+package routes
+
+import (
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/models"
+	"github.com/opacity/storage-node/services"
+	"github.com/opacity/storage-node/utils"
+	"github.com/stretchr/testify/assert"
+	"math/big"
+	"net/http/httptest"
+	"testing"
+)
+
+func Test_verifyIfPaid_account_status_already_paid(t *testing.T) {
+	models.DeleteAccountsForTest(t)
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
+	account := CreatePaidAccountForTest(t, accountID)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	err = verifyIfPaid(account, c)
+
+	assert.Nil(t, err)
+}
+
+func Test_verifyIfPaid_account_opq_balance_has_arrived(t *testing.T) {
+	models.DeleteAccountsForTest(t)
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
+	account := CreateUnpaidAccountForTest(t, accountID)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return true, nil
+	}
+
+	err = verifyIfPaid(account, c)
+
+	assert.Nil(t, err)
+}
+
+func Test_verifyIfPaid_stripe_payment_has_been_paid(t *testing.T) {
+	models.DeleteAccountsForTest(t)
+	models.DeleteStripePaymentsForTest(t)
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
+	account := CreateUnpaidAccountForTest(t, accountID)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
+	stripeToken := services.RandTestStripeToken()
+	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken, account.AccountID)
+
+	stripePayment := models.StripePayment{
+		StripeToken: stripeToken,
+		AccountID:   account.AccountID,
+		ChargeID:    charge.ID,
+	}
+
+	models.DB.Create(&stripePayment)
+
+	err = verifyIfPaid(account, c)
+
+	assert.Nil(t, err)
+}
+
+func Test_verifyIfPaid_account_not_paid_and_no_stripe_payment(t *testing.T) {
+	models.DeleteAccountsForTest(t)
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
+	account := CreateUnpaidAccountForTest(t, accountID)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	err = verifyIfPaid(account, c)
+
+	assert.NotNil(t, err)
+}
