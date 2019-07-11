@@ -16,6 +16,7 @@ type StripePayment struct {
 	ChargeID    string          `json:"chargeID" binding:"omitempty"`
 	ApiVersion  int             `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 	OpqTxStatus OpqTxStatusType `json:"opqTxStatus" binding:"required" gorm:"default:1"`
+	ChargePaid  bool            `json:"chargePaid"`
 	CreatedAt   time.Time       `json:"createdAt"`
 	UpdatedAt   time.Time       `json:"updatedAt"`
 }
@@ -70,12 +71,26 @@ func CheckForPaidStripePayment(accountID string) (bool, error) {
 	var err error
 	stripePayment, err := GetStripePaymentByAccountId(accountID)
 	if len(stripePayment.AccountID) != 0 && err == nil {
-		paid, err = services.CheckChargePaid(stripePayment.ChargeID)
-	}
-	if account, _ := GetAccountById(accountID); len(account.AccountID) != 0 && paid && len(account.MetadataKey) != 0 {
-		err = HandleMetadataKeyForPaidAccount(account)
+		paid, err = stripePayment.CheckChargePaid()
 	}
 	return paid, err
+}
+
+/*CheckChargePaid checks if the charge has been paid. */
+func (stripePayment *StripePayment) CheckChargePaid() (bool, error) {
+	if stripePayment.ChargePaid == true {
+		return true, nil
+	}
+	paid, errStripe := services.CheckChargePaid(stripePayment.ChargeID)
+	if !paid {
+		return false, errStripe
+	}
+	errDB := DB.Model(&stripePayment).Update("charge_paid", true).Error
+	var errMeta error
+	if account, _ := GetAccountById(stripePayment.AccountID); len(account.AccountID) != 0 && paid && len(account.MetadataKey) != 0 {
+		errMeta = HandleMetadataKeyForPaidAccount(account)
+	}
+	return paid, utils.ReturnFirstError([]error{errStripe, errDB, errMeta})
 }
 
 /*SendAccountOPQ sends OPQ to the account associated with a stripe payment. */
@@ -118,7 +133,9 @@ func (stripePayment *StripePayment) CheckOPQTransaction() (bool, error) {
 	}
 
 	if paid {
-		DB.Delete(stripePayment)
+		if err := DB.Model(&stripePayment).Update("opq_tx_status", OpqTxSuccess).Error; err != nil {
+			return false, err
+		}
 		return true, err
 	}
 
