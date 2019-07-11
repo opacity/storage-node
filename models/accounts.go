@@ -173,7 +173,6 @@ func (account *Account) CheckIfPaid() (bool, error) {
 			return false, err
 		}
 		SetAccountsToNextPaymentStatus([]Account{*(account)})
-		DeleteStripePaymentIfExists(account.AccountID)
 	}
 	return paid, err
 }
@@ -279,7 +278,6 @@ func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
 		int64(0)).Find(&accounts).Error
 	for _, account := range accounts {
 		if paid, _ := CheckForPaidStripePayment(account.AccountID); !paid {
-			DeleteStripePaymentIfExists(account.AccountID)
 			err = DB.Delete(&account).Error
 		}
 	}

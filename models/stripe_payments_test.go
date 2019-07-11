@@ -87,7 +87,7 @@ func Test_CheckForPaidStripePayment(t *testing.T) {
 	assert.False(t, paidWithCreditCard)
 	assert.NotNil(t, err)
 
-	charge, _ := services.CreateCharge(10, stripePayment.StripeToken)
+	charge, _ := services.CreateCharge(10, stripePayment.StripeToken, utils.RandHexString(64))
 	stripePayment.ChargeID = charge.ID
 	DB.Save(&stripePayment)
 
@@ -217,4 +217,25 @@ func Test_DeleteStripePaymentIfExists(t *testing.T) {
 	stripeRow, err := GetStripePaymentByAccountId(accountID)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", stripeRow.StripeToken)
+}
+
+func Test_PurgeOldStripePayments(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePaymentNew := returnValidStripePaymentForTest()
+	DB.Create(&stripePaymentNew)
+
+	stripePaymentOld := returnValidStripePaymentForTest()
+	DB.Create(&stripePaymentOld)
+
+	stripePayments := []StripePayment{}
+	DB.Find(&stripePayments)
+	assert.Equal(t, 2, len(stripePayments))
+
+	DB.Model(&stripePaymentOld).UpdateColumn("updated_at", time.Now().Add(time.Hour*time.Duration(utils.Env.StripeRetentionDays+1)*-24))
+
+	PurgeOldStripePayments(utils.Env.StripeRetentionDays)
+
+	stripePayments = []StripePayment{}
+	DB.Find(&stripePayments)
+	assert.Equal(t, 1, len(stripePayments))
 }

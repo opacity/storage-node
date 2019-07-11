@@ -185,7 +185,7 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 	}
 
 	stripeToken := services.RandTestStripeToken()
-	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken)
+	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken, account.AccountID)
 
 	stripePayment := models.StripePayment{
 		StripeToken: stripeToken,

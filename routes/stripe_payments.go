@@ -81,7 +81,7 @@ func createStripePayment(c *gin.Context) error {
 
 	costInDollars := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 
-	charge, err := services.CreateCharge(costInDollars, request.createStripePaymentObject.StripeToken)
+	charge, err := services.CreateCharge(costInDollars, request.createStripePaymentObject.StripeToken, account.AccountID)
 
 	if err != nil {
 		err = handleStripeError(err, c)
