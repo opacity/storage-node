@@ -27,6 +27,8 @@ func returnValidStripePaymentForTest() StripePayment {
 func Test_Init_Stripe_Payments(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
+	err := services.InitStripe()
+	assert.Nil(t, err)
 }
 
 func Test_Valid_Stripe_Payment_Passes(t *testing.T) {
@@ -72,6 +74,27 @@ func Test_GetStripePaymentByAccountId(t *testing.T) {
 	assert.Equal(t, "", stripeRowFromDB.AccountID)
 }
 
+func Test_CheckForPaidStripePayment(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment := returnValidStripePaymentForTest()
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	paidWithCreditCard, err := CheckForPaidStripePayment(stripePayment.AccountID)
+	assert.False(t, paidWithCreditCard)
+	assert.NotNil(t, err)
+
+	charge, _ := services.CreateCharge(10, stripePayment.StripeToken)
+	stripePayment.ChargeID = charge.ID
+	DB.Save(&stripePayment)
+
+	paidWithCreditCard, err = CheckForPaidStripePayment(stripePayment.AccountID)
+	assert.True(t, paidWithCreditCard)
+	assert.Nil(t, err)
+}
+
 func Test_SendAccountOPQ(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment := returnValidStripePaymentForTest()
@@ -106,9 +129,11 @@ func Test_CheckOPQTransaction_transaction_complete(t *testing.T) {
 
 	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
 	txSuccess, err := stripePayment.CheckOPQTransaction()
-	assert.Nil(t, err)
 	assert.True(t, txSuccess)
-	assert.Equal(t, OpqTxSuccess, stripePayment.OpqTxStatus)
+	stripeRow, err := GetStripePaymentByAccountId(stripePayment.AccountID)
+	assert.NotNil(t, err)
+	assert.Equal(t, "", stripeRow.StripeToken)
+
 }
 
 func Test_CheckOPQTransaction_transaction_incomplete(t *testing.T) {
@@ -175,4 +200,20 @@ func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
 	stripePayment.RetryIfTimedOut()
 
 	assert.True(t, retryOccurred)
+}
+
+func Test_DeleteStripePaymentIfExists(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment := returnValidStripePaymentForTest()
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	accountID := stripePayment.AccountID
+	err := DeleteStripePaymentIfExists(accountID)
+	assert.Nil(t, err)
+	stripeRow, err := GetStripePaymentByAccountId(accountID)
+	assert.NotNil(t, err)
+	assert.Equal(t, "", stripeRow.StripeToken)
 }

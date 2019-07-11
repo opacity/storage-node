@@ -65,8 +65,6 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 
 func Test_Init_Accounts(t *testing.T) {
 	setupTests(t)
-	err := services.InitStripe()
-	assert.Nil(t, err)
 }
 
 func Test_NoErrorsWithValidPost(t *testing.T) {
@@ -199,5 +197,10 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"stripePaymentExists":true`)
+	assert.Contains(t, w.Body.String(), `"paymentStatus":"paid"`)
 	assert.Contains(t, w.Body.String(), stripePayment.StripeToken)
+
+	account, _ = models.GetAccountById(account.AccountID)
+	// check that from the account's perspective, it is still unpaid
+	assert.Equal(t, models.InitialPaymentInProgress, account.PaymentStatus)
 }

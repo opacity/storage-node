@@ -36,7 +36,7 @@ type accountDataRes struct {
 	PaymentStatus string        `json:"paymentStatus" example:"paid"`
 	Error         error         `json:"error" example:"the error encountered while checking"`
 	Account       accountGetObj `json:"account" binding:"required"`
-	StripeData    stripeGetObj  `json:"stripeData"`
+	StripeData    stripeDataObj `json:"stripeData"`
 }
 
 type accountUnpaidRes struct {
@@ -58,13 +58,6 @@ type accountGetObj struct {
 	TotalMetadataSizeInMB int64                   `json:"totalMetadataSizeInMB" binding:"exists" example:"245765432"`
 	MaxFolders            int                     `json:"maxFolders" binding:"exists" example:"2000"`
 	MaxMetadataSizeInMB   int64                   `json:"maxMetadataSizeInMB" binding:"exists" example:"200"`
-}
-
-type stripeGetObj struct {
-	StripePaymentExists bool   `json:"stripePaymentExists"`
-	ChargePaid          bool   `json:"chargePaid"`
-	StripeToken         string `json:"stripeToken"`
-	OpqTxStatus         string `json:"opqTxStatus"`
 }
 
 type accountGetReqObj struct {
@@ -116,6 +109,7 @@ func CreateAccountHandler() gin.HandlerFunc {
 // @description 	"timestamp": 1557346389
 // @description }
 // @Success 200 {object} routes.accountDataRes
+// @Success 200 {object} routes.accountUnpaidRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
 // @Router /api/v1/account-data [post]
@@ -214,30 +208,13 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	cost, _ := account.Cost()
-	paymentStatus := createPaymentStatusResponse(paid, pending)
-	res := accountDataRes{
-		PaymentStatus: createPaymentStatusResponse(paid, pending),
-		Error:         err,
-		Account: accountGetObj{
-			CreatedAt:             account.CreatedAt,
-			UpdatedAt:             account.UpdatedAt,
-			ExpirationDate:        account.ExpirationDate(),
-			MonthsInSubscription:  account.MonthsInSubscription,
-			StorageLimit:          account.StorageLimit,
-			StorageUsed:           float64(account.StorageUsedInByte) / 1e9,
-			EthAddress:            account.EthAddress,
-			Cost:                  cost,
-			ApiVersion:            account.ApiVersion,
-			TotalFolders:          account.TotalFolders,
-			TotalMetadataSizeInMB: account.TotalMetadataSizeInBytes / 1e6,
-			MaxFolders:            utils.Env.Plans[int(account.StorageLimit)].MaxFolders,
-			MaxMetadataSizeInMB:   utils.Env.Plans[int(account.StorageLimit)].MaxMetadataSizeInMB,
-		},
-	}
 
-	stripePayment, err := models.GetStripePaymentByAccountId(account.AccountID)
-	if err == nil && len(stripePayment.AccountID) != 0 {
-		chargePaid, err := checkChargePaid(c, stripePayment.ChargeID)
+	var res accountDataRes
+	chargePaid := false
+
+	stripePayment, _ := models.GetStripePaymentByAccountId(account.AccountID)
+	if len(stripePayment.AccountID) != 0 {
+		chargePaid, err = checkChargePaid(c, stripePayment.ChargeID)
 		if err != nil {
 			return err
 		}
@@ -245,15 +222,38 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		if err != nil {
 			return InternalErrorResponse(c, err)
 		}
-		res.StripeData = stripeGetObj{
+		amount, err := checkChargeAmount(c, stripePayment.ChargeID)
+		if err != nil {
+			return err
+		}
+		res.StripeData = stripeDataObj{
 			StripeToken:         stripePayment.StripeToken,
 			OpqTxStatus:         models.OpqTxStatusMap[stripePayment.OpqTxStatus],
 			StripePaymentExists: true,
 			ChargePaid:          chargePaid,
+			ChargeID:            stripePayment.ChargeID,
+			Amount:              amount,
 		}
 	}
 
-	if paymentStatus == Paid {
+	res.PaymentStatus = createPaymentStatusResponse(paid, pending, chargePaid)
+	res.Error = err
+	res.Account = accountGetObj{
+		CreatedAt:             account.CreatedAt,
+		UpdatedAt:             account.UpdatedAt,
+		ExpirationDate:        account.ExpirationDate(),
+		MonthsInSubscription:  account.MonthsInSubscription,
+		StorageLimit:          account.StorageLimit,
+		StorageUsed:           float64(account.StorageUsedInByte) / 1e9,
+		EthAddress:            account.EthAddress,
+		Cost:                  cost,
+		ApiVersion:            account.ApiVersion,
+		TotalMetadataSizeInMB: account.TotalMetadataSizeInBytes / 1e6,
+		MaxFolders:            utils.Env.Plans[int(account.StorageLimit)].MaxFolders,
+		MaxMetadataSizeInMB:   utils.Env.Plans[int(account.StorageLimit)].MaxMetadataSizeInMB,
+	}
+
+	if res.PaymentStatus == Paid {
 		return OkResponse(c, res)
 	}
 
@@ -266,8 +266,8 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	})
 }
 
-func createPaymentStatusResponse(paid bool, pending bool) string {
-	if paid {
+func createPaymentStatusResponse(paid bool, pending bool, chargePaid bool) string {
+	if paid || chargePaid {
 		return Paid
 	}
 	if pending {

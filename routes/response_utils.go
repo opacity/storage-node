@@ -135,8 +135,9 @@ func setUpSession(c *gin.Context) {
 func verifyIfPaid(account models.Account, c *gin.Context) error {
 	// Check if paid
 	paid, err := account.CheckIfPaid()
+	paidWithCreditCard, _ := models.CheckForPaidStripePayment(account.AccountID)
 
-	if err == nil && !paid {
+	if err == nil && !paid && !paidWithCreditCard {
 		cost, _ := account.Cost()
 		response := accountCreateRes{
 			Invoice: models.Invoice{
@@ -148,5 +149,5 @@ func verifyIfPaid(account models.Account, c *gin.Context) error {
 		return AccountNotPaidResponse(c, response)
 	}
 
-	return nil
+	return err
 }

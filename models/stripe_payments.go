@@ -32,7 +32,7 @@ const (
 	OpqTxSuccess
 )
 
-const MinutesBeforeRetry = 3
+const MinutesBeforeRetry = 360
 
 /*OpqTxStatus is for pretty printing the OpqTxStatus*/
 var OpqTxStatusMap = make(map[OpqTxStatusType]string)
@@ -64,6 +64,20 @@ func GetStripePaymentByAccountId(accountID string) (StripePayment, error) {
 	return stripePayment, err
 }
 
+/*CheckForPaidStripePayment checks for a stripe payment that has been paid. */
+func CheckForPaidStripePayment(accountID string) (bool, error) {
+	paid := false
+	var err error
+	stripePayment, err := GetStripePaymentByAccountId(accountID)
+	if len(stripePayment.AccountID) != 0 && err == nil {
+		paid, err = services.CheckChargePaid(stripePayment.ChargeID)
+	}
+	if account, _ := GetAccountById(accountID); len(account.AccountID) != 0 && paid && len(account.MetadataKey) != 0 {
+		err = HandleMetadataKeyForPaidAccount(account)
+	}
+	return paid, err
+}
+
 /*SendAccountOPQ sends OPQ to the account associated with a stripe payment. */
 func (stripePayment *StripePayment) SendAccountOPQ() error {
 	account, err := GetAccountById(stripePayment.AccountID)
@@ -78,7 +92,7 @@ func (stripePayment *StripePayment) SendAccountOPQ() error {
 		services.MainWalletPrivateKey,
 		services.StringToAddress(account.EthAddress),
 		*costInWei,
-		services.FastGasPrice)
+		services.SlowGasPrice)
 
 	if !success {
 		return errors.New("OPQ transaction failed")
@@ -104,9 +118,7 @@ func (stripePayment *StripePayment) CheckOPQTransaction() (bool, error) {
 	}
 
 	if paid {
-		if err := DB.Model(&stripePayment).Update("opq_tx_status", OpqTxSuccess).Error; err != nil {
-			return false, err
-		}
+		DB.Delete(stripePayment)
 		return true, err
 	}
 
@@ -121,6 +133,15 @@ func (stripePayment *StripePayment) RetryIfTimedOut() error {
 
 	if targetTime.After(stripePayment.UpdatedAt) {
 		return stripePayment.SendAccountOPQ()
+	}
+	return nil
+}
+
+/*DeleteStripePaymentIfExists deletes a stripe payment if it exists. */
+func DeleteStripePaymentIfExists(accountID string) error {
+	stripePayment, _ := GetStripePaymentByAccountId(accountID)
+	if len(stripePayment.AccountID) != 0 {
+		return DB.Delete(&stripePayment).Error
 	}
 	return nil
 }

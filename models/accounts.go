@@ -131,6 +131,12 @@ func (account *Account) BeforeUpdate(scope *gorm.Scope) error {
 	return utils.Validator.Struct(account)
 }
 
+/*BeforeDelete - callback called before the row is deleted*/
+func (account *Account) BeforeDelete(scope *gorm.Scope) error {
+	DeleteStripePaymentIfExists(account.AccountID)
+	return nil
+}
+
 /*ExpirationDate returns the date the account expires*/
 func (account *Account) ExpirationDate() time.Time {
 	return account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
@@ -158,9 +164,8 @@ func (account *Account) CheckIfPaid() (bool, error) {
 		costInWei)
 	if paid {
 		SetAccountsToNextPaymentStatus([]Account{*(account)})
+		DeleteStripePaymentIfExists(account.AccountID)
 	}
-	// TODO:  Does it make sense to add a final check here to call services.CheckChargePaid(chargeID)
-	// if the account has a stripe payment?
 	return paid, err
 }
 
@@ -175,7 +180,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 	if err != nil {
 		return err
 	}
-	if !paid {
+	if paidWithCreditCard, _ := CheckForPaidStripePayment(account.AccountID); !paidWithCreditCard && !paid {
 		return errors.New("no payment. Unable to update the storage")
 	}
 
@@ -334,10 +339,17 @@ func CalculatePercentSpaceUsed(spaceReport SpaceReport) float64 {
 
 /*PurgeOldUnpaidAccounts deletes accounts past a certain age which have not been paid for*/
 func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
+	accounts := []Account{}
 	err := DB.Where("created_at < ? AND payment_status = ? AND storage_used_in_byte = ?",
 		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainUnpaidAccounts)),
 		InitialPaymentInProgress,
-		int64(0)).Delete(&Account{}).Error
+		int64(0)).Find(&accounts).Error
+	for _, account := range accounts {
+		if paid, _ := CheckForPaidStripePayment(account.AccountID); !paid {
+			DeleteStripePaymentIfExists(account.AccountID)
+			err = DB.Delete(&account).Error
+		}
+	}
 	return err
 }
 

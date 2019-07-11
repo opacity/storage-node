@@ -221,7 +221,7 @@ definitions:
         example: paid
         type: string
       stripeData:
-        $ref: '#/definitions/routes.stripeGetObj'
+        $ref: '#/definitions/routes.stripeDataObj'
         type: object
     type: object
   routes.accountGetObj:
@@ -281,6 +281,21 @@ definitions:
         type: integer
     required:
     - timestamp
+    type: object
+  routes.accountUnpaidRes:
+    properties:
+      account:
+        $ref: '#/definitions/routes.accountGetObj'
+        type: object
+      invoice:
+        $ref: '#/definitions/models.Invoice'
+        type: object
+      paymentStatus:
+        example: paid
+        type: string
+      stripeData:
+        $ref: '#/definitions/routes.stripeDataObj'
+        type: object
     type: object
   routes.createMetadataRes:
     properties:
@@ -460,11 +475,33 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.stripeGetObj:
+  routes.stripeDataObj:
     properties:
+      amount:
+        type: number
+      chargeID:
+        type: string
       chargePaid:
         type: boolean
       opqTxStatus:
+        type: string
+      stripePaymentExists:
+        type: boolean
+      stripeToken:
+        type: string
+    type: object
+  routes.stripeDataRes:
+    properties:
+      amount:
+        type: number
+      chargeID:
+        type: string
+      chargePaid:
+        type: boolean
+      opqTxStatus:
+        type: string
+      status:
+        example: status of the request
         type: string
       stripePaymentExists:
         type: boolean
@@ -609,7 +646,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.accountDataRes'
+            $ref: '#/definitions/routes.accountUnpaidRes'
             type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
@@ -955,7 +992,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.StatusRes'
+            $ref: '#/definitions/routes.stripeDataRes'
             type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'

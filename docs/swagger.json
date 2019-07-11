@@ -37,7 +37,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.accountDataRes"
+                            "$ref": "#/definitions/routes.accountUnpaidRes"
                         }
                     },
                     "400": {
@@ -490,7 +490,7 @@
                         "description": "OK",
                         "schema": {
                             "type": "object",
-                            "$ref": "#/definitions/routes.StatusRes"
+                            "$ref": "#/definitions/routes.stripeDataRes"
                         }
                     },
                     "400": {
@@ -925,7 +925,7 @@
                 },
                 "stripeData": {
                     "type": "object",
-                    "$ref": "#/definitions/routes.stripeGetObj"
+                    "$ref": "#/definitions/routes.stripeDataObj"
                 }
             }
         },
@@ -1004,6 +1004,27 @@
             "properties": {
                 "timestamp": {
                     "type": "integer"
+                }
+            }
+        },
+        "routes.accountUnpaidRes": {
+            "type": "object",
+            "properties": {
+                "account": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.accountGetObj"
+                },
+                "invoice": {
+                    "type": "object",
+                    "$ref": "#/definitions/models.Invoice"
+                },
+                "paymentStatus": {
+                    "type": "string",
+                    "example": "paid"
+                },
+                "stripeData": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.stripeDataObj"
                 }
             }
         },
@@ -1226,14 +1247,47 @@
                 }
             }
         },
-        "routes.stripeGetObj": {
+        "routes.stripeDataObj": {
             "type": "object",
             "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "chargeID": {
+                    "type": "string"
+                },
                 "chargePaid": {
                     "type": "boolean"
                 },
                 "opqTxStatus": {
                     "type": "string"
+                },
+                "stripePaymentExists": {
+                    "type": "boolean"
+                },
+                "stripeToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "routes.stripeDataRes": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "chargeID": {
+                    "type": "string"
+                },
+                "chargePaid": {
+                    "type": "boolean"
+                },
+                "opqTxStatus": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "status of the request"
                 },
                 "stripePaymentExists": {
                     "type": "boolean"

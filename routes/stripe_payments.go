@@ -19,6 +19,20 @@ type createStripePaymentReq struct {
 	createStripePaymentObject createStripePaymentObject
 }
 
+type stripeDataRes struct {
+	stripeDataObj
+	StatusRes
+}
+
+type stripeDataObj struct {
+	StripePaymentExists bool    `json:"stripePaymentExists"`
+	ChargePaid          bool    `json:"chargePaid"`
+	StripeToken         string  `json:"stripeToken"`
+	OpqTxStatus         string  `json:"opqTxStatus"`
+	ChargeID            string  `json:"chargeID"`
+	Amount              float64 `json:"amount" binding:"omitempty,gte=0"`
+}
+
 func (v *createStripePaymentReq) getObjectRef() interface{} {
 	return &v.createStripePaymentObject
 }
@@ -33,7 +47,7 @@ func (v *createStripePaymentReq) getObjectRef() interface{} {
 // @description {
 // @description 	"stripeToken": "tok_KPte7942xySKBKyrBu11yEpf",
 // @description }
-// @Success 200 {object} routes.StatusRes
+// @Success 200 {object} routes.stripeDataRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
 // @Failure 403 {string} string "account is already paid for"
@@ -91,6 +105,25 @@ func createStripePayment(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
+	amount, err := checkChargeAmount(c, stripePayment.ChargeID)
+	if err != nil {
+		return err
+	}
+
+	return OkResponse(c, stripeDataRes{
+		StatusRes: StatusRes{
+			Status: "successfully charged card, now sending OPQ to payment address",
+		},
+		stripeDataObj: stripeDataObj{
+			StripePaymentExists: true,
+			ChargePaid:          charge.Paid,
+			StripeToken:         stripePayment.StripeToken,
+			OpqTxStatus:         models.OpqTxStatusMap[stripePayment.OpqTxStatus],
+			ChargeID:            charge.ID,
+			Amount:              amount,
+		},
+	})
+
 	return OkResponse(c, StatusRes{
 		Status: "successfully charged card, now sending OPQ to payment address",
 	})
@@ -103,6 +136,15 @@ func checkChargePaid(c *gin.Context, chargeID string) (bool, error) {
 	paid, err := services.CheckChargePaid(chargeID)
 	err = handleStripeError(err, c)
 	return paid, err
+}
+
+func checkChargeAmount(c *gin.Context, chargeID string) (float64, error) {
+	if len(chargeID) == 0 {
+		return 0, InternalErrorResponse(c, errors.New("no charge ID"))
+	}
+	amount, err := services.CheckChargeAmount(chargeID)
+	err = handleStripeError(err, c)
+	return amount, err
 }
 
 func handleStripeError(err error, c *gin.Context) error {
