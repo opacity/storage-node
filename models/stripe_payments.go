@@ -72,9 +72,6 @@ func CheckForPaidStripePayment(accountID string) (bool, error) {
 	if len(stripePayment.AccountID) != 0 && err == nil {
 		paid, err = services.CheckChargePaid(stripePayment.ChargeID)
 	}
-	if account, _ := GetAccountById(accountID); len(account.AccountID) != 0 && paid && len(account.MetadataKey) != 0 {
-		err = HandleMetadataKeyForPaidAccount(account)
-	}
 	return paid, err
 }
 
