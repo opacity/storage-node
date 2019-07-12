@@ -149,7 +149,7 @@ func checkChargePaid(c *gin.Context, stripePayment models.StripePayment) (bool, 
 	var err error
 
 	for i := 0; i < stripeRetryCount; i++ {
-		paid, err := stripePayment.CheckChargePaid()
+		paid, err = stripePayment.CheckChargePaid()
 		if !waitOnRetryableStripeError(err) {
 			break
 		}
