@@ -93,7 +93,7 @@ func GetMetadataHandler() gin.HandlerFunc {
 // @Success 200 {object} routes.updateMetadataRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no value found for that key, or account not found"
-// @Failure 403 {string} string "subscription expired, or the invoice resonse"
+// @Failure 403 {string} string "subscription expired, or the invoice response"
 // @Failure 500 {string} string "some information about the internal error"
 // @Router /api/v1/metadata/set [post]
 /*UpdateMetadataHandler is a handler for updating the file metadata*/
