@@ -2,10 +2,18 @@ package routes
 
 import (
 	"errors"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
+	"github.com/stripe/stripe-go"
+)
+
+const (
+	stripeRetryCount        = 3
+	retrySleepIntervalInSec = 1
 )
 
 type createStripePaymentObject struct {
@@ -81,11 +89,16 @@ func createStripePayment(c *gin.Context) error {
 
 	costInDollars := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 
-	charge, err := services.CreateCharge(costInDollars, request.createStripePaymentObject.StripeToken, account.AccountID)
+	var charge *stripe.Charge
+	for i := 0; i < stripeRetryCount; i++ {
+		charge, err = services.CreateCharge(costInDollars, request.createStripePaymentObject.StripeToken, account.AccountID)
+		if !waitOnRetryableStripeError(err) {
+			break
+		}
+	}
 
 	if err != nil {
-		err = handleStripeError(err, c)
-		return err
+		return handleStripeError(err, c)
 	}
 
 	stripePayment := models.StripePayment{
@@ -99,9 +112,7 @@ func createStripePayment(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	err = stripePayment.SendAccountOPQ()
-
-	if err != nil {
+	if err := stripePayment.SendAccountOPQ(); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
@@ -133,25 +144,73 @@ func checkChargePaid(c *gin.Context, stripePayment models.StripePayment) (bool, 
 	if len(stripePayment.ChargeID) == 0 {
 		return false, InternalErrorResponse(c, errors.New("no charge ID"))
 	}
-	paid, err := stripePayment.CheckChargePaid()
-	err = handleStripeError(err, c)
-	return paid, err
+
+	var paid bool
+	var err error
+
+	for i := 0; i < stripeRetryCount; i++ {
+		paid, err = stripePayment.CheckChargePaid()
+		if !waitOnRetryableStripeError(err) {
+			break
+		}
+	}
+	return paid, handleStripeError(err, c)
 }
 
 func checkChargeAmount(c *gin.Context, chargeID string) (float64, error) {
 	if len(chargeID) == 0 {
 		return 0, InternalErrorResponse(c, errors.New("no charge ID"))
 	}
-	amount, err := services.CheckChargeAmount(chargeID)
-	err = handleStripeError(err, c)
-	return amount, err
+
+	var amount float64
+	var err error
+	for i := 0; i < stripeRetryCount; i++ {
+		amount, err = services.CheckChargeAmount(chargeID)
+		if !waitOnRetryableStripeError(err) {
+			break
+		}
+	}
+
+	return amount, handleStripeError(err, c)
+}
+
+func waitOnRetryableStripeError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if stripeErr, ok := err.(*stripe.Error); ok && stripeErr.Code == stripe.ErrorCodeRateLimit {
+		time.Sleep(retrySleepIntervalInSec * time.Second)
+		return true
+	}
+
+	return false
 }
 
 func handleStripeError(err error, c *gin.Context) error {
-	if err != nil {
-		// TODO: more granularity with errors
-		// https://stripe.com/docs/api/errors/handling
-		err = InternalErrorResponse(c, err)
+	if err == nil {
+		return nil
 	}
-	return err
+
+	if stripeErr, ok := err.(*stripe.Error); ok {
+		switch stripeErr.Code {
+		case stripe.ErrorCodeRateLimit,
+			stripe.ErrorCodeProcessingError:
+			return ServiceUnavailableResponse(c, err)
+		case stripe.ErrorCodeCardDeclined,
+			stripe.ErrorCodeExpiredCard,
+			stripe.ErrorCodeIncorrectCVC,
+			stripe.ErrorCodeIncorrectZip,
+			stripe.ErrorCodeIncorrectNumber,
+			stripe.ErrorCodeInvalidExpiryMonth,
+			stripe.ErrorCodeInvalidExpiryYear,
+			stripe.ErrorCodeInvalidNumber,
+			stripe.ErrorCodeInvalidSwipeData,
+			stripe.ErrorCodeResourceMissing:
+			return BadRequestResponse(c, err)
+		case stripe.ErrorCodeMissing:
+			return InternalErrorResponse(c, err)
+		}
+	}
+	return InternalErrorResponse(c, err)
 }
