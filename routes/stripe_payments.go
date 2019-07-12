@@ -2,6 +2,7 @@ package routes
 
 import (
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -10,7 +11,10 @@ import (
 	"github.com/stripe/stripe-go"
 )
 
-const stripeRetryCount = 3
+const (
+	stripeRetryCount        = 3
+	retrySleepIntervalInSec = 1
+)
 
 type createStripePaymentObject struct {
 	StripeToken string `json:"stripeToken" binding:"required" example:"tok_KPte7942xySKBKyrBu11yEpf"`
@@ -88,7 +92,7 @@ func createStripePayment(c *gin.Context) error {
 	var charge *stripe.Charge
 	for i := 0; i < stripeRetryCount; i++ {
 		charge, err = services.CreateCharge(costInDollars, request.createStripePaymentObject.StripeToken, account.AccountID)
-		if !canRetryOnStripeError(err) {
+		if !waitOnRetryableStripeError(err) {
 			break
 		}
 	}
@@ -146,7 +150,7 @@ func checkChargePaid(c *gin.Context, stripePayment models.StripePayment) (bool, 
 
 	for i := 0; i < stripeRetryCount; i++ {
 		paid, err := stripePayment.CheckChargePaid()
-		if !canRetryOnStripeError(err) {
+		if !waitOnRetryableStripeError(err) {
 			break
 		}
 	}
@@ -162,7 +166,7 @@ func checkChargeAmount(c *gin.Context, chargeID string) (float64, error) {
 	var err error
 	for i := 0; i < stripeRetryCount; i++ {
 		amount, err = services.CheckChargeAmount(chargeID)
-		if !canRetryOnStripeError(err) {
+		if !waitOnRetryableStripeError(err) {
 			break
 		}
 	}
@@ -170,12 +174,13 @@ func checkChargeAmount(c *gin.Context, chargeID string) (float64, error) {
 	return amount, handleStripeError(err, c)
 }
 
-func canRetryOnStripeError(err error) bool {
+func waitOnRetryableStripeError(err error) bool {
 	if err == nil {
 		return false
 	}
 
 	if stripeErr, ok := err.(*stripe.Error); ok && stripeErr.Code == stripe.ErrorCodeRateLimit {
+		time.Sleep(retrySleepIntervalInSec * time.Second)
 		return true
 	}
 
