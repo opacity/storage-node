@@ -17,8 +17,7 @@ func main() {
 	defer catchError()
 	defer models.Close()
 
-	//utils.SetProduction()
-	utils.SetDevelopment()
+	utils.SetLive()
 	services.SetWallet()
 	err := services.InitStripe()
 	utils.PanicOnError(err)

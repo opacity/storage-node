@@ -714,22 +714,22 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 
 	// after cutoff time and payment has been received
 	// should NOT get purged
-	accounts[0].CreatedAt = time.Now().Add(-1 * 6 * 24 * time.Hour)
+	accounts[0].CreatedAt = time.Now().Add(-1 * time.Duration(utils.Env.AccountRetentionDays-1) * 24 * time.Hour)
 	accounts[0].PaymentStatus = InitialPaymentReceived
 
 	// before cutoff time but payment has been received
 	// should NOT get purged
-	accounts[1].CreatedAt = time.Now().Add(-1 * 8 * 24 * time.Hour)
+	accounts[1].CreatedAt = time.Now().Add(-1 * time.Duration(utils.Env.AccountRetentionDays+1) * 24 * time.Hour)
 	accounts[1].PaymentStatus = InitialPaymentReceived
 
 	// after cutoff time, payment still in progress
 	// should NOT get purged
-	accounts[2].CreatedAt = time.Now().Add(-1 * 6 * 24 * time.Hour)
+	accounts[2].CreatedAt = time.Now().Add(-1 * time.Duration(utils.Env.AccountRetentionDays-1) * 24 * time.Hour)
 	accounts[2].PaymentStatus = InitialPaymentInProgress
 
 	// before cutoff time, payment still in progress
 	// this one should get purged
-	accounts[3].CreatedAt = time.Now().Add(-1 * 8 * 24 * time.Hour)
+	accounts[3].CreatedAt = time.Now().Add(-1 * time.Duration(utils.Env.AccountRetentionDays+1) * 24 * time.Hour)
 	accounts[3].StorageUsedInByte = 0
 	accounts[3].PaymentStatus = InitialPaymentInProgress
 
@@ -740,7 +740,7 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 	DB.Save(&accounts[2])
 	DB.Save(&accounts[3])
 
-	PurgeOldUnpaidAccounts(7)
+	PurgeOldUnpaidAccounts(utils.Env.AccountRetentionDays)
 
 	accounts = []Account{}
 	DB.Find(&accounts)
@@ -749,6 +749,37 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 	accounts = []Account{}
 	DB.Where("account_id = ?", accountToBeDeletedID).Find(&accounts)
 	assert.Equal(t, 0, len(accounts))
+}
+
+func Test_PurgeOldUnpaidAccounts_Stripe_Payment_Is_Deleted(t *testing.T) {
+	DeleteAccountsForTest(t)
+	DeleteStripePaymentsForTest(t)
+	stripePayment := returnValidStripePaymentForTest()
+	DB.Create(&stripePayment)
+
+	account, _ := GetAccountById(stripePayment.AccountID)
+	account.CreatedAt = time.Now().Add(time.Duration(utils.Env.AccountRetentionDays+1) * -24 * time.Hour)
+	account.StorageUsedInByte = 0
+	account.PaymentStatus = InitialPaymentInProgress
+	DB.Save(&account)
+
+	accounts := []Account{}
+	DB.Find(&accounts)
+	assert.Equal(t, 1, len(accounts))
+
+	stripePayments := []StripePayment{}
+	DB.Find(&stripePayments)
+	assert.Equal(t, 1, len(stripePayments))
+
+	PurgeOldUnpaidAccounts(utils.Env.AccountRetentionDays)
+
+	accounts = []Account{}
+	DB.Find(&accounts)
+	assert.Equal(t, 0, len(accounts))
+
+	stripePayments = []StripePayment{}
+	DB.Find(&stripePayments)
+	assert.Equal(t, 0, len(stripePayments))
 }
 
 func Test_GetAccountsByPaymentStatus(t *testing.T) {

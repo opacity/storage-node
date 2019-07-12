@@ -86,13 +86,36 @@ func Test_CheckForPaidStripePayment(t *testing.T) {
 	assert.False(t, paidWithCreditCard)
 	assert.NotNil(t, err)
 
-	charge, _ := services.CreateCharge(10, stripePayment.StripeToken)
+	charge, _ := services.CreateCharge(10, stripePayment.StripeToken, utils.RandHexString(64))
 	stripePayment.ChargeID = charge.ID
 	DB.Save(&stripePayment)
 
 	paidWithCreditCard, err = CheckForPaidStripePayment(stripePayment.AccountID)
 	assert.True(t, paidWithCreditCard)
 	assert.Nil(t, err)
+}
+
+func Test_CheckChargePaid(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment := returnValidStripePaymentForTest()
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	paid, err := stripePayment.CheckChargePaid()
+	assert.False(t, paid)
+	assert.NotNil(t, err)
+	assert.False(t, stripePayment.ChargePaid)
+
+	charge, _ := services.CreateCharge(10, stripePayment.StripeToken, utils.RandHexString(64))
+	stripePayment.ChargeID = charge.ID
+	DB.Save(&stripePayment)
+
+	paid, err = stripePayment.CheckChargePaid()
+	assert.True(t, paid)
+	assert.Nil(t, err)
+	assert.True(t, stripePayment.ChargePaid)
 }
 
 func Test_SendAccountOPQ(t *testing.T) {
@@ -130,9 +153,8 @@ func Test_CheckOPQTransaction_transaction_complete(t *testing.T) {
 	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
 	txSuccess, err := stripePayment.CheckOPQTransaction()
 	assert.True(t, txSuccess)
-	stripeRow, err := GetStripePaymentByAccountId(stripePayment.AccountID)
-	assert.NotNil(t, err)
-	assert.Equal(t, "", stripeRow.StripeToken)
+	assert.Nil(t, err)
+	assert.Equal(t, OpqTxSuccess, stripePayment.OpqTxStatus)
 
 }
 
@@ -216,4 +238,25 @@ func Test_DeleteStripePaymentIfExists(t *testing.T) {
 	stripeRow, err := GetStripePaymentByAccountId(accountID)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", stripeRow.StripeToken)
+}
+
+func Test_PurgeOldStripePayments(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePaymentNew := returnValidStripePaymentForTest()
+	DB.Create(&stripePaymentNew)
+
+	stripePaymentOld := returnValidStripePaymentForTest()
+	DB.Create(&stripePaymentOld)
+
+	stripePayments := []StripePayment{}
+	DB.Find(&stripePayments)
+	assert.Equal(t, 2, len(stripePayments))
+
+	DB.Model(&stripePaymentOld).UpdateColumn("updated_at", time.Now().Add(time.Hour*time.Duration(utils.Env.StripeRetentionDays+1)*-24))
+
+	PurgeOldStripePayments(utils.Env.StripeRetentionDays)
+
+	stripePayments = []StripePayment{}
+	DB.Find(&stripePayments)
+	assert.Equal(t, 1, len(stripePayments))
 }

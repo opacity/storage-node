@@ -214,7 +214,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 
 	stripePayment, _ := models.GetStripePaymentByAccountId(account.AccountID)
 	if len(stripePayment.AccountID) != 0 {
-		chargePaid, err = checkChargePaid(c, stripePayment.ChargeID)
+		chargePaid, err = checkChargePaid(c, stripePayment)
 		if err != nil {
 			return err
 		}

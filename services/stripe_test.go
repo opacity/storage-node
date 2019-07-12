@@ -23,7 +23,7 @@ func Test_CreateCharge(t *testing.T) {
 	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 
-	_, err := CreateCharge(costInDollars, stripeToken)
+	_, err := CreateCharge(costInDollars, stripeToken, utils.RandHexString(64))
 	assert.Nil(t, err)
 }
 
@@ -36,7 +36,7 @@ func Test_CheckChargeStatus(t *testing.T) {
 	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 
-	c, _ := CreateCharge(costInDollars, stripeToken)
+	c, _ := CreateCharge(costInDollars, stripeToken, utils.RandHexString(64))
 
 	status, err := CheckChargeStatus(c.ID)
 	assert.Nil(t, err)
@@ -52,7 +52,7 @@ func Test_CheckChargePaid(t *testing.T) {
 	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 
-	c, _ := CreateCharge(costInDollars, stripeToken)
+	c, _ := CreateCharge(costInDollars, stripeToken, utils.RandHexString(64))
 
 	paid, err := CheckChargePaid(c.ID)
 	assert.Nil(t, err)

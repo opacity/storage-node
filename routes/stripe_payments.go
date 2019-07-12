@@ -81,7 +81,7 @@ func createStripePayment(c *gin.Context) error {
 
 	costInDollars := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 
-	charge, err := services.CreateCharge(costInDollars, request.createStripePaymentObject.StripeToken)
+	charge, err := services.CreateCharge(costInDollars, request.createStripePaymentObject.StripeToken, account.AccountID)
 
 	if err != nil {
 		err = handleStripeError(err, c)
@@ -129,11 +129,11 @@ func createStripePayment(c *gin.Context) error {
 	})
 }
 
-func checkChargePaid(c *gin.Context, chargeID string) (bool, error) {
-	if len(chargeID) == 0 {
+func checkChargePaid(c *gin.Context, stripePayment models.StripePayment) (bool, error) {
+	if len(stripePayment.ChargeID) == 0 {
 		return false, InternalErrorResponse(c, errors.New("no charge ID"))
 	}
-	paid, err := services.CheckChargePaid(chargeID)
+	paid, err := stripePayment.CheckChargePaid()
 	err = handleStripeError(err, c)
 	return paid, err
 }
