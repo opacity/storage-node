@@ -241,6 +241,8 @@ func setMetadata(c *gin.Context) error {
 		return ForbiddenResponse(c, err)
 	}
 
+	ttl := time.Until(account.ExpirationDate())
+
 	if err := utils.BatchSet(&utils.KVPairs{
 		requestBodyParsed.MetadataKey: requestBodyParsed.Metadata,
 		permissionHashKey:             permissionHashInBadger,
