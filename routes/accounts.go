@@ -17,9 +17,8 @@ const Pending = "pending"
 const Paid = "paid"
 
 type accountCreateObj struct {
-	StorageLimit     int    `json:"storageLimit" binding:"required,gte=100" minimum:"100" maximum:"100" example:"100"`
-	DurationInMonths int    `json:"durationInMonths" binding:"required,gte=1" minimum:"1" example:"12"`
-	MetadataKey      string `json:"metadataKey" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a 64-char hex string created deterministically from your account handle or private key"`
+	StorageLimit     int `json:"storageLimit" binding:"required,gte=100" minimum:"100" maximum:"100" example:"100"`
+	DurationInMonths int `json:"durationInMonths" binding:"required,gte=1" minimum:"1" example:"12"`
 }
 
 type accountCreateReq struct {
@@ -46,15 +45,19 @@ type accountUnpaidRes struct {
 }
 
 type accountGetObj struct {
-	CreatedAt            time.Time               `json:"createdAt"`
-	UpdatedAt            time.Time               `json:"updatedAt"`
-	ExpirationDate       time.Time               `json:"expirationDate" binding:"required"`
-	MonthsInSubscription int                     `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
-	StorageLimit         models.StorageLimitType `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
-	StorageUsed          float64                 `json:"storageUsed" binding:"exists" example:"30"`                                                                         // how much storage they have used, in GB
-	EthAddress           string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	Cost                 float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
-	ApiVersion           int                     `json:"apiVersion" binding:"required,gte=1"`
+	CreatedAt             time.Time               `json:"createdAt"`
+	UpdatedAt             time.Time               `json:"updatedAt"`
+	ExpirationDate        time.Time               `json:"expirationDate" binding:"required"`
+	MonthsInSubscription  int                     `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
+	StorageLimit          models.StorageLimitType `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
+	StorageUsed           float64                 `json:"storageUsed" binding:"exists" example:"30"`                                                                         // how much storage they have used, in GB
+	EthAddress            string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	Cost                  float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
+	ApiVersion            int                     `json:"apiVersion" binding:"required,gte=1"`
+	TotalFolders          int                     `json:"totalFolders" binding:"exists" example:"2"`
+	TotalMetadataSizeInMB int64                   `json:"totalMetadataSizeInMB" binding:"exists" example:"245765432"`
+	MaxFolders            int                     `json:"maxFolders" binding:"exists" example:"2000"`
+	MaxMetadataSizeInMB   int64                   `json:"maxMetadataSizeInMB" binding:"exists" example:"200"`
 }
 
 type accountGetReqObj struct {
@@ -85,7 +88,6 @@ func (v *getAccountDataReq) getObjectRef() interface{} {
 // @description {
 // @description 	"storageLimit": 100,
 // @description 	"durationInMonths": 12,
-// @description 	"metadataKey": "a 64-char hex string created deterministically from your account handle or private key",
 // @description }
 // @Success 200 {object} routes.accountCreateRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -155,7 +157,6 @@ func createAccount(c *gin.Context) error {
 
 	account := models.Account{
 		AccountID:            accountId,
-		MetadataKey:          request.accountCreateObj.MetadataKey,
 		StorageLimit:         models.StorageLimitType(plan.StorageInGB),
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
@@ -238,15 +239,18 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	res.PaymentStatus = createPaymentStatusResponse(paid, pending, chargePaid)
 	res.Error = err
 	res.Account = accountGetObj{
-		CreatedAt:            account.CreatedAt,
-		UpdatedAt:            account.UpdatedAt,
-		ExpirationDate:       account.ExpirationDate(),
-		MonthsInSubscription: account.MonthsInSubscription,
-		StorageLimit:         account.StorageLimit,
-		StorageUsed:          float64(account.StorageUsedInByte) / 1e9,
-		EthAddress:           account.EthAddress,
-		Cost:                 cost,
-		ApiVersion:           account.ApiVersion,
+		CreatedAt:             account.CreatedAt,
+		UpdatedAt:             account.UpdatedAt,
+		ExpirationDate:        account.ExpirationDate(),
+		MonthsInSubscription:  account.MonthsInSubscription,
+		StorageLimit:          account.StorageLimit,
+		StorageUsed:           float64(account.StorageUsedInByte) / 1e9,
+		EthAddress:            account.EthAddress,
+		Cost:                  cost,
+		ApiVersion:            account.ApiVersion,
+		TotalMetadataSizeInMB: account.TotalMetadataSizeInBytes / 1e6,
+		MaxFolders:            utils.Env.Plans[int(account.StorageLimit)].MaxFolders,
+		MaxMetadataSizeInMB:   utils.Env.Plans[int(account.StorageLimit)].MaxMetadataSizeInMB,
 	}
 
 	if res.PaymentStatus == Paid {

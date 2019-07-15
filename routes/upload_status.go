@@ -71,7 +71,7 @@ func checkUploadStatus(c *gin.Context) error {
 		return FileNotFoundResponse(c, fileId)
 	}
 
-	if err := verifyPermissions(request.PublicKey, fileId, file.ModifierHash, c); err != nil {
+	if err := verifyPermissions(request.PublicKey, request.uploadStatusObj.FileHandle, file.ModifierHash, c); err != nil {
 		return err
 	}
 

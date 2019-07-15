@@ -19,7 +19,6 @@ func returnValidCreateAccountBody() accountCreateObj {
 	return accountCreateObj{
 		StorageLimit:     int(models.BasicStorageLimit),
 		DurationInMonths: 12,
-		MetadataKey:      utils.GenerateFileHandle(),
 	}
 }
 
@@ -52,7 +51,6 @@ func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.Priva
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
-		MetadataKey:          utils.GenerateFileHandle(),
 	}, privateKeyToSignWith
 }
 

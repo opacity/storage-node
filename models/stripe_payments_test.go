@@ -14,7 +14,6 @@ import (
 
 func returnValidStripePaymentForTest() StripePayment {
 	account := returnValidAccount()
-	account.MetadataKey = utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890"))
 
 	// Add account to DB
 	DB.Create(&account)

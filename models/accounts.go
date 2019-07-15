@@ -16,18 +16,19 @@ import (
 
 /*Account defines a model for managing a user subscription for uploads*/
 type Account struct {
-	AccountID            string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
-	CreatedAt            time.Time         `json:"createdAt"`
-	UpdatedAt            time.Time         `json:"updatedAt"`
-	MonthsInSubscription int               `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
-	StorageLocation      string            `json:"storageLocation" binding:"omitempty,url"`                                                                           // where their files live, on S3 or elsewhere
-	StorageLimit         StorageLimitType  `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
-	StorageUsedInByte    int64             `json:"storageUsedInByte" binding:"exists,gte=0" example:"30"`                                                             // how much storage they have used, in B
-	EthAddress           string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	EthPrivateKey        string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
-	PaymentStatus        PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
-	MetadataKey          string            `json:"metadataKey" binding:"omitempty,len=64"`
-	ApiVersion           int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+	AccountID                string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
+	CreatedAt                time.Time         `json:"createdAt"`
+	UpdatedAt                time.Time         `json:"updatedAt"`
+	MonthsInSubscription     int               `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
+	StorageLocation          string            `json:"storageLocation" binding:"omitempty,url"`                                                                           // where their files live, on S3 or elsewhere
+	StorageLimit             StorageLimitType  `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
+	StorageUsedInByte        int64             `json:"storageUsedInByte" binding:"exists,gte=0" example:"30"`                                                             // how much storage they have used, in B
+	EthAddress               string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	EthPrivateKey            string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
+	PaymentStatus            PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
+	ApiVersion               int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+	TotalFolders             int               `json:"totalFolders" binding:"omitempty,gte=0" gorm:"default:0"`
+	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
 }
 
 /*SpaceReport defines a model for capturing the space allotted compared to space used*/
@@ -121,12 +122,6 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	}
 	if utils.FreeModeEnabled() {
 		account.PaymentStatus = PaymentRetrievalComplete
-		ttl := time.Until(account.ExpirationDate())
-		if err := utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
-			return err
-		}
-		// Clear out the metadata key on the account model
-		account.MetadataKey = ""
 	}
 	return utils.Validator.Struct(account)
 }
@@ -168,10 +163,6 @@ func (account *Account) CheckIfPaid() (bool, error) {
 	paid, err := BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress),
 		costInWei)
 	if paid {
-		err := HandleMetadataKeyForPaidAccount(*account)
-		if err != nil {
-			return false, err
-		}
 		SetAccountsToNextPaymentStatus([]Account{*(account)})
 	}
 	return paid, err
@@ -235,6 +226,82 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 	}
 
 	return tx.Commit().Error
+}
+
+/*MaxAllowedMetadataSizeInBytes returns the maximum possible metadata size for an account based on its plan*/
+func (account *Account) MaxAllowedMetadataSizeInBytes() int64 {
+	maxAllowedMetadataSizeInMB := utils.Env.Plans[int(account.StorageLimit)].MaxMetadataSizeInMB
+	return maxAllowedMetadataSizeInMB * 1e6
+}
+
+/*MaxAllowedMetadatas returns the maximum possible number of metadatas for an account based on its plan*/
+func (account *Account) MaxAllowedMetadatas() int {
+	return utils.Env.Plans[int(account.StorageLimit)].MaxFolders
+}
+
+/*CanAddNewMetadata checks if an account can have another metadata*/
+func (account *Account) CanAddNewMetadata() bool {
+	intendedNumberOfMetadatas := account.TotalFolders + 1
+	return intendedNumberOfMetadatas <= account.MaxAllowedMetadatas()
+}
+
+/*CanRemoveMetadata checks if an account can delete a metadata*/
+func (account *Account) CanRemoveMetadata() bool {
+	intendedNumberOfMetadatas := account.TotalFolders - 1
+	return intendedNumberOfMetadatas >= 0
+}
+
+/*CanUpdateMetadata deducts the old size of a metadata, adds the size of the new value the user has sent,
+and makes sure the intended total metadata size is below the amount the user is allowed to have*/
+func (account *Account) CanUpdateMetadata(oldMetadataSizeInBytes, newMetadataSizeInBytes int64) bool {
+	intendedMetadataSizeInBytes := account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes + newMetadataSizeInBytes
+	return intendedMetadataSizeInBytes <= account.MaxAllowedMetadataSizeInBytes() &&
+		intendedMetadataSizeInBytes >= 0
+}
+
+/*IncrementMetadataCount increments the account's metadata count*/
+func (account *Account) IncrementMetadataCount() error {
+	err := errors.New("cannot exceed allowed metadatas")
+	if account.CanAddNewMetadata() {
+		account.TotalFolders++
+		err = DB.Model(&account).Update("total_folders", account.TotalFolders).Error
+	}
+	return err
+}
+
+/*DecrementMetadataCount decrements the account's metadata count*/
+func (account *Account) DecrementMetadataCount() error {
+	err := errors.New("metadata count cannot go below 0")
+	account.TotalFolders--
+	if account.TotalFolders >= 0 {
+		err = DB.Model(&account).Update("total_folders", account.TotalFolders).Error
+	}
+	return err
+}
+
+/*UpdateMetadataSizeInBytes updates the account's TotalMetadataSizeInBytes or returns an error*/
+func (account *Account) UpdateMetadataSizeInBytes(oldMetadataSizeInBytes, newMetadataSizeInBytes int64) error {
+	err := errors.New("metadata size is too large for this account")
+	if account.CanUpdateMetadata(oldMetadataSizeInBytes, newMetadataSizeInBytes) {
+		account.TotalMetadataSizeInBytes = account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes + newMetadataSizeInBytes
+		err = DB.Model(&account).Update("total_metadata_size_in_bytes", account.TotalMetadataSizeInBytes).Error
+	}
+
+	return err
+}
+
+/*RemoveMetadata removes a metadata and its size from TotalMetadataSizeInBytes*/
+func (account *Account) RemoveMetadata(oldMetadataSizeInBytes int64) error {
+	err := errors.New("cannot remove metadata or its size")
+	if account.CanUpdateMetadata(oldMetadataSizeInBytes, 0) && account.CanRemoveMetadata() {
+		account.TotalMetadataSizeInBytes = account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes
+		account.TotalFolders--
+		err = DB.Model(account).Updates(map[string]interface{}{
+			"total_folders":                account.TotalFolders,
+			"total_metadata_size_in_bytes": account.TotalMetadataSizeInBytes,
+		}).Error
+	}
+	return err
 }
 
 /*Return Account object(first one) if there is not any error. */
@@ -322,24 +389,6 @@ func SetAccountsToNextPaymentStatus(accounts []Account) {
 	}
 }
 
-/*HandleMetadataKeyForPaidAccount adds the metadata key to badger and removes from the sql table*/
-func HandleMetadataKeyForPaidAccount(account Account) (err error) {
-	if account.MetadataKey == "" {
-		// metadata has already been init
-		return nil
-	}
-	// Create empty key:value data in badger DB
-	ttl := time.Until(account.ExpirationDate())
-	if err = utils.BatchSet(&utils.KVPairs{account.MetadataKey: ""}, ttl); err != nil {
-		return err
-	}
-	// Delete the metadata key on the account model
-	if err = DB.Model(&account).Update("metadata_key", "").Error; err != nil {
-		return err
-	}
-	return nil
-}
-
 /*getNextPaymentStatus returns the next payment status in the sequence*/
 func getNextPaymentStatus(paymentStatus PaymentStatusType) PaymentStatusType {
 	if paymentStatus == PaymentRetrievalComplete {
@@ -349,18 +398,13 @@ func getNextPaymentStatus(paymentStatus PaymentStatusType) PaymentStatusType {
 }
 
 /*handleAccountWithPaymentInProgress checks if the user has paid for their account, and if so
-sets the account to the next payment status, adds the metadata key to badger, and deletes the
-metadata key from the SQL DB.
+sets the account to the next payment status.
 
 Not calling SetAccountsToNextPaymentStatus here because CheckIfPaid calls it
 */
 func handleAccountWithPaymentInProgress(account Account) error {
 	_, err := account.CheckIfPaid()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 /*handleAccountThatNeedsGas sends some ETH to an account that we will later need to collect tokens from and sets the
@@ -479,4 +523,13 @@ func (account *Account) PrettyString() {
 
 	fmt.Print("EthPrivateKey:                  ")
 	fmt.Println(account.EthPrivateKey)
+
+	fmt.Print("ApiVersion:                     ")
+	fmt.Println(account.ApiVersion)
+
+	fmt.Print("TotalFolders:                 ")
+	fmt.Println(account.TotalFolders)
+
+	fmt.Print("TotalMetadataSizeInBytes:       ")
+	fmt.Println(account.TotalMetadataSizeInBytes)
 }

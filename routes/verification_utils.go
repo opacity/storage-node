@@ -277,23 +277,27 @@ func returnAccountId(hash []byte, verificationData verification, c *gin.Context)
 	return verificationData.getAccountId(c)
 }
 
-func getPermissionHash(publicKey, fileID string, c *gin.Context) (string, error) {
-	modifierHash, err := utils.HashString(publicKey + fileID)
+func getPermissionHash(publicKey, key string, c *gin.Context) (string, error) {
+	permissionHash, err := utils.HashString(publicKey + key)
 	if err != nil {
 		return "", InternalErrorResponse(c, err)
 	}
-	return modifierHash, nil
+	return permissionHash, nil
 }
 
-func verifyPermissions(publicKey, fileID, expectedModifierHash string, c *gin.Context) error {
-	if expectedModifierHash == "" {
-		return ForbiddenResponse(c, errors.New("file is ineligible for modification"))
+func getPermissionHashKeyForBadger(metadataKey string) string {
+	return metadataKey + "_permissionHash"
+}
+
+func verifyPermissions(publicKey, key, expectedPermissionHash string, c *gin.Context) error {
+	if expectedPermissionHash == "" {
+		return ForbiddenResponse(c, errors.New("resource is ineligible for modification"))
 	}
-	modifierHash, err := getPermissionHash(publicKey, fileID, c)
+	permissionHash, err := getPermissionHash(publicKey, key, c)
 	if err != nil {
 		return err
 	}
-	if modifierHash != expectedModifierHash {
+	if permissionHash != expectedPermissionHash {
 		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))
 	}
 	return nil

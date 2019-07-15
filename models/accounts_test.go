@@ -195,7 +195,6 @@ func Test_GetTotalCostInWei(t *testing.T) {
 
 func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 	account := returnValidAccount()
-	account.MetadataKey = utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890"))
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
@@ -406,6 +405,186 @@ func Test_Space_Updates_at_Scale(t *testing.T) {
 
 	accountFromDB, _ = GetAccountById(account.AccountID)
 	assert.Equal(t, int64(0), accountFromDB.StorageUsedInByte)
+}
+
+func Test_MaxAllowedMetadataSizeInBytes(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+	expectedMaxAllowedMetadataSizeInBytes := int64(200 * 1e6)
+
+	account := returnValidAccount()
+	account.StorageLimit = BasicStorageLimit
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	actualMaxAllowedMetadataSizeInBytes := account.MaxAllowedMetadataSizeInBytes()
+
+	assert.Equal(t, expectedMaxAllowedMetadataSizeInBytes, actualMaxAllowedMetadataSizeInBytes)
+}
+
+func Test_MaxAllowedMetadatas(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+	expectedMaxAllowedMetadatas := utils.Env.Plans[int(BasicStorageLimit)].MaxFolders
+
+	account := returnValidAccount()
+	account.StorageLimit = BasicStorageLimit
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	actualMaxAllowedMetadatas := account.MaxAllowedMetadatas()
+
+	assert.Equal(t, expectedMaxAllowedMetadatas, actualMaxAllowedMetadatas)
+}
+
+func Test_CanAddNewMetadata(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+	account := returnValidAccount()
+	account.TotalFolders = 1998
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	assert.True(t, account.CanAddNewMetadata())
+	account.TotalFolders++
+	assert.True(t, account.CanAddNewMetadata())
+	account.TotalFolders++
+	assert.False(t, account.CanAddNewMetadata())
+}
+
+func Test_CanRemoveMetadata(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.TotalFolders = 1
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	assert.True(t, account.CanRemoveMetadata())
+	account.TotalFolders = 0
+	assert.False(t, account.CanRemoveMetadata())
+}
+
+func Test_CanUpdateMetadata(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.TotalMetadataSizeInBytes = int64(100 * 1e6)
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	assert.True(t, account.CanUpdateMetadata(100, 50e6))
+	account.TotalMetadataSizeInBytes = int64(200 * 1e6)
+	assert.False(t, account.CanUpdateMetadata(3.2e10, 50e6))
+}
+
+func Test_IncrementMetadataCount(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.TotalFolders = utils.Env.Plans[int(BasicStorageLimit)].MaxFolders - 2
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	err := account.IncrementMetadataCount()
+	assert.Nil(t, err)
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.TotalFolders == utils.Env.Plans[int(BasicStorageLimit)].MaxFolders-1)
+
+	err = account.IncrementMetadataCount()
+	assert.Nil(t, err)
+
+	accountFromDB, _ = GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.TotalFolders == utils.Env.Plans[int(BasicStorageLimit)].MaxFolders)
+
+	err = account.IncrementMetadataCount()
+	assert.NotNil(t, err)
+
+	accountFromDB, _ = GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.TotalFolders == utils.Env.Plans[int(BasicStorageLimit)].MaxFolders)
+}
+
+func Test_DecrementMetadataCount(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.TotalFolders = 1
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	err := account.DecrementMetadataCount()
+	assert.Nil(t, err)
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.TotalFolders == 0)
+
+	err = account.DecrementMetadataCount()
+	assert.NotNil(t, err)
+}
+
+func Test_UpdateMetadataSizeInBytes(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.TotalMetadataSizeInBytes = 100
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	assert.Nil(t, account.UpdateMetadataSizeInBytes(100, 3.2e6))
+	account.TotalMetadataSizeInBytes = 200e6
+	assert.NotNil(t, account.UpdateMetadataSizeInBytes(200e6, 300e6))
+}
+
+func Test_RemoveMetadata(t *testing.T) {
+	// This test relies upon TestFileStoragePerMetadataInMB
+	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
+	// If those values are changed this test will fail.
+
+	account := returnValidAccount()
+	account.TotalMetadataSizeInBytes = 100
+	account.TotalFolders = 1
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	assert.Nil(t, account.RemoveMetadata(100))
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+	assert.True(t, accountFromDB.TotalFolders == 0)
+	assert.True(t, accountFromDB.TotalMetadataSizeInBytes == int64(0))
+
+	account.TotalMetadataSizeInBytes = 100
+	account.TotalFolders = 1
+	DB.Save(&account)
+
+	assert.NotNil(t, account.RemoveMetadata(101))
+	account.TotalMetadataSizeInBytes = 100
+	account.TotalFolders = 0
+	DB.Save(&account)
+
+	assert.NotNil(t, account.RemoveMetadata(100))
 }
 
 func Test_GetAccountById(t *testing.T) {
@@ -719,7 +898,7 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentInProgress
-	account.MetadataKey = utils.GenerateFileHandle()
+
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -731,34 +910,14 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 	// grab the account from the DB
 	accountFromDB, _ := GetAccountById(account.AccountID)
 
-	// verify no badger pair exists with that metadata key
-	_, _, err := utils.GetValueFromKV(accountFromDB.MetadataKey)
-	assert.NotNil(t, err)
-
-	// verify that the account has a metadata key
-	assert.Equal(t, 64, len(accountFromDB.MetadataKey))
-
-	verifyPaymentStatusExpectations(t, account, InitialPaymentInProgress, InitialPaymentReceived, handleAccountWithPaymentInProgress)
-
-	// The user has paid so we expect changes after calling handleAccountWithPaymentInProgress
-
-	// grab the account from the DB
-	accountFromDB, _ = GetAccountById(account.AccountID)
-
-	// verify a badger pair exists with that metadata key
-	metadata, _, err := utils.GetValueFromKV(account.MetadataKey)
-	assert.Nil(t, err)
-	assert.Equal(t, "", metadata)
-
-	//verify account metadata key is deleted
-	assert.Equal(t, 0, len(accountFromDB.MetadataKey))
+	verifyPaymentStatusExpectations(t, accountFromDB, InitialPaymentInProgress, InitialPaymentReceived, handleAccountWithPaymentInProgress)
 }
 
 func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 	DeleteAccountsForTest(t)
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentInProgress
-	account.MetadataKey = utils.GenerateFileHandle()
+
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -770,26 +929,7 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 	// grab the account from the DB
 	accountFromDB, _ := GetAccountById(account.AccountID)
 
-	// verify no badger pair exists with that metadata key
-	_, _, err := utils.GetValueFromKV(accountFromDB.MetadataKey)
-	assert.NotNil(t, err)
-
-	// verify that the account has a metadata key
-	assert.Equal(t, 64, len(accountFromDB.MetadataKey))
-
-	verifyPaymentStatusExpectations(t, account, InitialPaymentInProgress, InitialPaymentInProgress, handleAccountWithPaymentInProgress)
-
-	// The user has not paid so we expect everything to be the same
-
-	// grab the account from the DB
-	accountFromDB, _ = GetAccountById(account.AccountID)
-
-	// verify no badger pair exists with that metadata key
-	_, _, err = utils.GetValueFromKV(accountFromDB.MetadataKey)
-	assert.NotNil(t, err)
-
-	// verify that the account has a metadata key
-	assert.Equal(t, 64, len(accountFromDB.MetadataKey))
+	verifyPaymentStatusExpectations(t, accountFromDB, InitialPaymentInProgress, InitialPaymentInProgress, handleAccountWithPaymentInProgress)
 }
 
 func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {

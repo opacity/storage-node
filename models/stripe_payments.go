@@ -87,9 +87,6 @@ func (stripePayment *StripePayment) CheckChargePaid() (bool, error) {
 	}
 	errDB := DB.Model(&stripePayment).Update("charge_paid", true).Error
 	var errMeta error
-	if account, _ := GetAccountById(stripePayment.AccountID); len(account.AccountID) != 0 && paid && len(account.MetadataKey) != 0 {
-		errMeta = HandleMetadataKeyForPaidAccount(account)
-	}
 	return paid, utils.ReturnFirstError([]error{errStripe, errDB, errMeta})
 }
 
