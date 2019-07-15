@@ -169,15 +169,15 @@ func getMetadata(c *gin.Context) error {
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
-		// TODO: Enable this after beta is over.
+		// TODO: Enable this after everyone should have migrated.
 		// cannot enable it now since many users already created metadatas without permission hashes
 		// being stored
 		//
 		//return NotFoundResponse(c, err)
 	}
 
-	// TODO remove this if block wrapping the other if, after beta
-	// This is only in effect for beta because many users already created metadatas without
+	// TODO remove this if block wrapping the other if after everyone should have migrated
+	// This is only in effect for a limited time because many users already created metadatas without
 	// permission hashes being stored
 	if permissionHashInBadger != "" {
 		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
@@ -233,34 +233,13 @@ func setMetadata(c *gin.Context) error {
 	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
-	if err != nil {
-		// TODO: Enable this after beta is over.
-		// cannot enable it now since many users already created metadatas without permission hashes
-		// being stored
-		//
-		//return NotFoundResponse(c, err)
+	if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
+		permissionHashInBadger, c); err != nil {
+		return err
 	}
-
-	// TODO remove this if block wrapping the other if, after beta
-	// This is only in effect for beta because many users already created metadatas without
-	// permission hashes being stored
-	if permissionHashInBadger != "" {
-		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
-			permissionHashInBadger, c); err != nil {
-			return err
-		}
+	if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadata)), int64(len(requestBodyParsed.Metadata))); err != nil {
+		return ForbiddenResponse(c, err)
 	}
-
-	// TODO remove this if block wrapping the other if, after beta
-	// This is only in effect for beta because many users already created metadatas without
-	// permission hashes being stored
-	if permissionHashInBadger != "" {
-		if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadata)), int64(len(requestBodyParsed.Metadata))); err != nil {
-			return ForbiddenResponse(c, err)
-		}
-	}
-
-	ttl := time.Until(account.ExpirationDate())
 
 	if err := utils.BatchSet(&utils.KVPairs{
 		requestBodyParsed.MetadataKey: requestBodyParsed.Metadata,
@@ -358,15 +337,15 @@ func deleteMetadata(c *gin.Context) error {
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
-		// TODO: Enable this after beta is over.
+		// TODO: Enable this after everyone should have migrated.
 		// cannot enable it now since many users already created metadatas without permission hashes
 		// being stored
 		//
 		//return NotFoundResponse(c, err)
 	}
 
-	// TODO remove this if block wrapping the other if, after beta
-	// This is only in effect for beta because many users already created metadatas without
+	// TODO remove this if block wrapping the other if after everyone should have migrated
+	// This is only in effect for a limited time because many users already created metadatas without
 	// permission hashes being stored
 	if permissionHashInBadger != "" {
 		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
@@ -377,8 +356,8 @@ func deleteMetadata(c *gin.Context) error {
 
 	oldMetadata, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
 
-	// TODO remove this if block wrapping the other if, after beta
-	// This is only in effect for beta because many users already created metadatas without
+	// TODO remove this if block wrapping the other if after everyone should have migrated
+	// This is only in effect for a limited time because many users already created metadatas without
 	// permission hashes being stored
 	if permissionHashInBadger != "" {
 		if err := account.RemoveMetadata(int64(len(oldMetadata))); err != nil {
