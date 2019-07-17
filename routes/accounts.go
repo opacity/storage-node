@@ -249,7 +249,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		Cost:                  cost,
 		ApiVersion:            account.ApiVersion,
 		TotalFolders:          account.TotalFolders,
-		TotalMetadataSizeInMB: float64(account.TotalMetadataSizeInBytes / 1e6),
+		TotalMetadataSizeInMB: float64(account.TotalMetadataSizeInBytes) / 1e6,
 		MaxFolders:            utils.Env.Plans[int(account.StorageLimit)].MaxFolders,
 		MaxMetadataSizeInMB:   utils.Env.Plans[int(account.StorageLimit)].MaxMetadataSizeInMB,
 	}
