@@ -55,7 +55,7 @@ type accountGetObj struct {
 	Cost                  float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
 	ApiVersion            int                     `json:"apiVersion" binding:"required,gte=1"`
 	TotalFolders          int                     `json:"totalFolders" binding:"exists" example:"2"`
-	TotalMetadataSizeInMB int64                   `json:"totalMetadataSizeInMB" binding:"exists" example:"245765432"`
+	TotalMetadataSizeInMB float64                 `json:"totalMetadataSizeInMB" binding:"exists" example:"1.245765432"`
 	MaxFolders            int                     `json:"maxFolders" binding:"exists" example:"2000"`
 	MaxMetadataSizeInMB   int64                   `json:"maxMetadataSizeInMB" binding:"exists" example:"200"`
 }
@@ -248,7 +248,8 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		EthAddress:            account.EthAddress,
 		Cost:                  cost,
 		ApiVersion:            account.ApiVersion,
-		TotalMetadataSizeInMB: account.TotalMetadataSizeInBytes / 1e6,
+		TotalFolders:          account.TotalFolders,
+		TotalMetadataSizeInMB: float64(account.TotalMetadataSizeInBytes / 1e6),
 		MaxFolders:            utils.Env.Plans[int(account.StorageLimit)].MaxFolders,
 		MaxMetadataSizeInMB:   utils.Env.Plans[int(account.StorageLimit)].MaxMetadataSizeInMB,
 	}
