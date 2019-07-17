@@ -246,6 +246,12 @@ func Test_PurgeOldStripePayments(t *testing.T) {
 	DB.Create(&stripePaymentNew)
 
 	stripePaymentOld := returnValidStripePaymentForTest()
+	for {
+		if stripePaymentOld.StripeToken != stripePaymentNew.StripeToken {
+			break
+		}
+		stripePaymentOld = returnValidStripePaymentForTest()
+	}
 	DB.Create(&stripePaymentOld)
 
 	stripePayments := []StripePayment{}
