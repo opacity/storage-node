@@ -92,9 +92,9 @@ func Test_StorageLocation_Invalid_URL_Fails(t *testing.T) {
 	}
 }
 
-func Test_StorageLimit_Less_Than_100_Fails(t *testing.T) {
+func Test_StorageLimit_Less_Than_10_Fails(t *testing.T) {
 	account := returnValidAccount()
-	account.StorageLimit = 99
+	account.StorageLimit = 9
 
 	if err := utils.Validator.Struct(account); err == nil {
 		t.Fatalf("account should have failed validation")

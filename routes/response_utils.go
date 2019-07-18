@@ -132,12 +132,18 @@ func setUpSession(c *gin.Context) {
 	c.Writer.Header().Set(REQUEST_UUID, v)
 }
 
-func verifyIfPaid(account models.Account, c *gin.Context) error {
+func verifyIfPaid(account models.Account) bool {
 	// Check if paid
-	paid, err := account.CheckIfPaid()
+	paid, _ := account.CheckIfPaid()
 	paidWithCreditCard, _ := models.CheckForPaidStripePayment(account.AccountID)
 
-	if err == nil && !paid && !paidWithCreditCard {
+	return paid || paidWithCreditCard
+}
+
+func verifyIfPaidWithContext(account models.Account, c *gin.Context) error {
+	paid := verifyIfPaid(account)
+
+	if !paid {
 		cost, _ := account.Cost()
 		response := accountCreateRes{
 			Invoice: models.Invoice{
@@ -149,5 +155,5 @@ func verifyIfPaid(account models.Account, c *gin.Context) error {
 		return AccountNotPaidResponse(c, response)
 	}
 
-	return err
+	return nil
 }

@@ -83,13 +83,13 @@ func createStripePayment(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyIfPaid(account, c); err == nil && !utils.FreeModeEnabled() {
-		return ForbiddenResponse(c, errors.New("account is already paid for"))
-	}
-
 	costInDollars := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 	if costInDollars <= float64(0.50) {
 		return ForbiddenResponse(c, errors.New("cannot create stripe charge for less than $0.50"))
+	}
+
+	if paid := verifyIfPaid(account); paid && !utils.FreeModeEnabled() {
+		return ForbiddenResponse(c, errors.New("account is already paid for"))
 	}
 
 	var charge *stripe.Charge
@@ -136,10 +136,6 @@ func createStripePayment(c *gin.Context) error {
 			ChargeID:            charge.ID,
 			Amount:              amount,
 		},
-	})
-
-	return OkResponse(c, StatusRes{
-		Status: "successfully charged card, now sending OPQ to payment address",
 	})
 }
 

@@ -108,8 +108,9 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
 	account := CreateUnpaidAccountForTest(t, accountID)
-	account.StorageLimit = models.StorageLimitType(utils.Env.Plans[0].StorageInGB)
-	models.DB.Save(&account)
+	account.StorageLimit = models.StorageLimitType(utils.Env.Plans[10].StorageInGB)
+	err = models.DB.Save(&account).Error
+	assert.Nil(t, err)
 
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: services.RandTestStripeToken(),

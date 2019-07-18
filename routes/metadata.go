@@ -155,7 +155,7 @@ func getMetadata(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyIfPaid(account, c); err != nil {
+	if err := verifyIfPaidWithContext(account, c); err != nil {
 		return err
 	}
 
@@ -210,7 +210,7 @@ func setMetadata(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyIfPaid(account, c); err != nil {
+	if err := verifyIfPaidWithContext(account, c); err != nil {
 		return err
 	}
 
@@ -270,7 +270,7 @@ func createMetadata(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyIfPaid(account, c); err != nil {
+	if err := verifyIfPaidWithContext(account, c); err != nil {
 		return err
 	}
 
@@ -325,7 +325,7 @@ func deleteMetadata(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyIfPaid(account, c); err != nil {
+	if err := verifyIfPaidWithContext(account, c); err != nil {
 		return err
 	}
 

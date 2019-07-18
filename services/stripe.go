@@ -56,5 +56,5 @@ func CheckChargeAmount(chargeID string) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return float64(c.Amount / 100.00), nil
+	return float64(c.Amount) / 100.00, nil
 }
