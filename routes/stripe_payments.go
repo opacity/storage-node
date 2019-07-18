@@ -83,11 +83,14 @@ func createStripePayment(c *gin.Context) error {
 		return err
 	}
 
-	if account.PaymentStatus > models.InitialPaymentInProgress && !utils.FreeModeEnabled() {
+	if err := verifyIfPaid(account, c); err == nil && !utils.FreeModeEnabled() {
 		return ForbiddenResponse(c, errors.New("account is already paid for"))
 	}
 
 	costInDollars := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
+	if costInDollars <= float64(0.50) {
+		return ForbiddenResponse(c, errors.New("cannot create stripe charge for less than $0.50"))
+	}
 
 	var charge *stripe.Charge
 	for i := 0; i < stripeRetryCount; i++ {
