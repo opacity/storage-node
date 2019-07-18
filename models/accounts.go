@@ -21,7 +21,7 @@ type Account struct {
 	UpdatedAt                time.Time         `json:"updatedAt"`
 	MonthsInSubscription     int               `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
 	StorageLocation          string            `json:"storageLocation" binding:"omitempty,url"`                                                                           // where their files live, on S3 or elsewhere
-	StorageLimit             StorageLimitType  `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
+	StorageLimit             StorageLimitType  `json:"storageLimit" binding:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
 	StorageUsedInByte        int64             `json:"storageUsedInByte" binding:"exists,gte=0" example:"30"`                                                             // how much storage they have used, in B
 	EthAddress               string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	EthPrivateKey            string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
@@ -120,7 +120,7 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	if account.PaymentStatus < InitialPaymentInProgress {
 		account.PaymentStatus = InitialPaymentInProgress
 	}
-	if utils.FreeModeEnabled() {
+	if utils.FreeModeEnabled() || utils.Env.Plans[int(account.StorageLimit)].Name == "Free" {
 		account.PaymentStatus = PaymentRetrievalComplete
 	}
 	return utils.Validator.Struct(account)

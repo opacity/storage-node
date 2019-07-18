@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-func Test_verifyIfPaid_account_status_already_paid(t *testing.T) {
+func Test_verifyIfPaidWithContext_account_status_already_paid(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
@@ -21,12 +21,12 @@ func Test_verifyIfPaid_account_status_already_paid(t *testing.T) {
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
-	err = verifyIfPaid(account, c)
+	err = verifyIfPaidWithContext(account, c)
 
 	assert.Nil(t, err)
 }
 
-func Test_verifyIfPaid_account_opq_balance_has_arrived(t *testing.T) {
+func Test_verifyIfPaidWithContext_account_opq_balance_has_arrived(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
@@ -39,12 +39,12 @@ func Test_verifyIfPaid_account_opq_balance_has_arrived(t *testing.T) {
 		return true, nil
 	}
 
-	err = verifyIfPaid(account, c)
+	err = verifyIfPaidWithContext(account, c)
 
 	assert.Nil(t, err)
 }
 
-func Test_verifyIfPaid_stripe_payment_has_been_paid(t *testing.T) {
+func Test_verifyIfPaidWithContext_stripe_payment_has_been_paid(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	models.DeleteStripePaymentsForTest(t)
 	privateKey, err := utils.GenerateKey()
@@ -69,12 +69,12 @@ func Test_verifyIfPaid_stripe_payment_has_been_paid(t *testing.T) {
 
 	models.DB.Create(&stripePayment)
 
-	err = verifyIfPaid(account, c)
+	err = verifyIfPaidWithContext(account, c)
 
 	assert.Nil(t, err)
 }
 
-func Test_verifyIfPaid_account_not_paid_and_no_stripe_payment(t *testing.T) {
+func Test_verifyIfPaidWithContext_account_not_paid_and_no_stripe_payment(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
@@ -83,7 +83,7 @@ func Test_verifyIfPaid_account_not_paid_and_no_stripe_payment(t *testing.T) {
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
-	err = verifyIfPaid(account, c)
+	err = verifyIfPaidWithContext(account, c)
 
 	assert.NotNil(t, err)
 }

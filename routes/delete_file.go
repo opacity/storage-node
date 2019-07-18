@@ -58,7 +58,7 @@ func deleteFile(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyIfPaid(account, c); err != nil {
+	if err := verifyIfPaidWithContext(account, c); err != nil {
 		return err
 	}
 

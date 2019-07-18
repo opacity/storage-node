@@ -66,7 +66,7 @@ func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error 
 		return err
 	}
 
-	if err := verifyIfPaid(account, c); err != nil {
+	if err := verifyIfPaidWithContext(account, c); err != nil {
 		return err
 	}
 

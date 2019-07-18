@@ -36,7 +36,7 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+		return false, nil
 	}
 	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
@@ -64,6 +64,10 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 		requestBody:  b,
 	}
 
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
 	w := httpPostRequestHelperForTest(t, StripeCreatePath, post)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
@@ -88,10 +92,45 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 		requestBody:  b,
 	}
 
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return true, nil
+	}
+
 	w := httpPostRequestHelperForTest(t, StripeCreatePath, post)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), "account is already paid for")
+}
+
+func Test_Fails_If_Account_Is_Free(t *testing.T) {
+	models.DeleteStripePaymentsForTest(t)
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
+	account := CreateUnpaidAccountForTest(t, accountID)
+	account.StorageLimit = models.StorageLimitType(utils.Env.Plans[10].StorageInGB)
+	err = models.DB.Save(&account).Error
+	assert.Nil(t, err)
+
+	stripeTokenBody := createStripePaymentObject{
+		StripeToken: services.RandTestStripeToken(),
+		Timestamp:   time.Now().Unix(),
+	}
+	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
+
+	post := createStripePaymentReq{
+		verification: v,
+		requestBody:  b,
+	}
+
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
+	w := httpPostRequestHelperForTest(t, StripeCreatePath, post)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), "cannot create stripe charge for less than $0.50")
 }
 
 func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
@@ -113,7 +152,7 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+		return false, nil
 	}
 	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
