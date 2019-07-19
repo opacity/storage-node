@@ -161,7 +161,7 @@ func getValueFromPostForm(field reflect.StructField, c *gin.Context) (string, er
 	}
 
 	if fileTag != "" {
-		v, err := readFileFromForm(fileTag)
+		v, err := readFileFromForm(fileTag, c.Request)
 		if err != nil && required {
 			return "", BadRequestResponse(c, err)
 		}
@@ -171,8 +171,8 @@ func getValueFromPostForm(field reflect.StructField, c *gin.Context) (string, er
 	return strV, nil
 }
 
-func readFileFromForm(fileTag string) (string, error) {
-	multiFile, _, err := c.Request.FormFile(fileTag)
+func readFileFromForm(fileTag string, r *http.Request) (string, error) {
+	multiFile, _, err := r.FormFile(fileTag)
 	defer func() {
 		if multiFile != nil {
 			multiFile.Close()
