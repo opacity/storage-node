@@ -29,6 +29,7 @@ type Account struct {
 	ApiVersion               int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 	TotalFolders             int               `json:"totalFolders" binding:"omitempty,gte=0" gorm:"default:0"`
 	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
+	PaidWithCard             bool              `json:"paidWithCard" gorm:"default:false"`
 }
 
 /*SpaceReport defines a model for capturing the space allotted compared to space used*/
