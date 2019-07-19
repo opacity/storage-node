@@ -15,8 +15,8 @@ import (
 )
 
 const(
-	NotPaidWithCard 	iota
-	PaidWithCreditCard
+	PaymentMethodNone       	iota
+	PaymentMethodWithCreditCard
 )
 
 /*Account defines a model for managing a user subscription for uploads*/
@@ -34,7 +34,7 @@ type Account struct {
 	ApiVersion               int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 	TotalFolders             int               `json:"totalFolders" binding:"omitempty,gte=0" gorm:"default:0"`
 	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
-	PaidWithCard             int              `json:"paidWithCard" gorm:"default:0"`
+	PaymentMethod            int               `json:"paidWithCard" gorm:"default:0"`
 }
 
 /*SpaceReport defines a model for capturing the space allotted compared to space used*/
