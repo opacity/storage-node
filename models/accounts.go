@@ -14,6 +14,14 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
+const(
+	/*PaymentMethodNone as default value.*/
+	PaymentMethodNone = iota
+	
+	/*PaymentMethodWithCreditCard indicated this payment is via Stripe Creditcard processing.*/
+	PaymentMethodWithCreditCard
+)
+
 /*Account defines a model for managing a user subscription for uploads*/
 type Account struct {
 	AccountID                string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
@@ -29,6 +37,7 @@ type Account struct {
 	ApiVersion               int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 	TotalFolders             int               `json:"totalFolders" binding:"omitempty,gte=0" gorm:"default:0"`
 	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
+	PaymentMethod            int               `json:"paidWithCard" gorm:"default:0"`
 }
 
 /*SpaceReport defines a model for capturing the space allotted compared to space used*/
