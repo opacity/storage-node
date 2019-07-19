@@ -75,6 +75,21 @@ func Test_initFileUploadWithPaidAccount_MissingFormFile(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 }
 
+func Test_initFileUploadWithPaidAccount_MissingForm(t *testing.T) {
+	accountID, privateKey := generateValidateAccountId(t)
+	CreatePaidAccountForTest(t, accountID)
+
+	req, _ := createValidInitFileUploadRequest(t, 123, 1, privateKey)
+	formFile := map[string]string{
+		"metadata": "abc_file",
+	}
+
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, nil, formFile)
+
+	assert.Contains(t, w.Body.String(), "Account does not have enough space")
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
 func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	accountID, privateKey := generateValidateAccountId(t)
 	account := CreatePaidAccountForTest(t, accountID)
