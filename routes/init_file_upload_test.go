@@ -64,7 +64,7 @@ func Test_initFileUploadWithPaidAccount_MissingFormAndFormFile(t *testing.T) {
 	accountID, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountID)
 
-	req, uploadObj := createValidInitFileUploadRequest(t, 123, 1, privateKey)
+	req, _ := createValidInitFileUploadRequest(t, 123, 1, privateKey)
 
 	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, nil, nil)
 
