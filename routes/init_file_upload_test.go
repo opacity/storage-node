@@ -60,31 +60,13 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	assert.Nil(t, utils.DeleteDefaultBucketObjectKeys(file.FileID))
 }
 
-func Test_initFileUploadWithPaidAccount_MissingFormFile(t *testing.T) {
+func Test_initFileUploadWithPaidAccount_MissingFormAndFormFile(t *testing.T) {
 	accountID, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountID)
 
 	req, _ := createValidInitFileUploadRequest(t, 123, 1, privateKey)
-	form := map[string]string{
-		"metadata": "abc",
-	}
 
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, nil)
-
-	assert.Contains(t, w.Body.String(), "Account does not have enough space")
-	assert.Equal(t, http.StatusOK, w.Code)
-}
-
-func Test_initFileUploadWithPaidAccount_MissingForm(t *testing.T) {
-	accountID, privateKey := generateValidateAccountId(t)
-	CreatePaidAccountForTest(t, accountID)
-
-	req, _ := createValidInitFileUploadRequest(t, 123, 1, privateKey)
-	formFile := map[string]string{
-		"metadata": "abc_file",
-	}
-
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, nil, formFile)
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, nil, nil)
 
 	assert.Contains(t, w.Body.String(), "Account does not have enough space")
 	assert.Equal(t, http.StatusBadRequest, w.Code)
