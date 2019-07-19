@@ -161,9 +161,9 @@ func getValueFromPostForm(field reflect.StructField, c *gin.Context) (string, er
 	}
 
 	if fileTag != "" {
-		v, err := readFileFromForm(fileTag, c)
+		v, err := readFileFromForm(fileTag, c.Request)
 		if err != nil && required {
-			return "", err
+			return "", BadRequestResponse(c, err)
 		}
 		// otherwise, just ignore the error
 		strV = v
@@ -171,8 +171,8 @@ func getValueFromPostForm(field reflect.StructField, c *gin.Context) (string, er
 	return strV, nil
 }
 
-func readFileFromForm(fileTag string, c *gin.Context) (string, error) {
-	multiFile, _, err := c.Request.FormFile(fileTag)
+func readFileFromForm(fileTag string, r *http.Request) (string, error) {
+	multiFile, _, err := r.FormFile(fileTag)
 	defer func() {
 		if multiFile != nil {
 			multiFile.Close()
@@ -180,11 +180,11 @@ func readFileFromForm(fileTag string, c *gin.Context) (string, error) {
 	}()
 
 	if err != nil {
-		return "", BadRequestResponse(c, fmt.Errorf("Unable to get file %v from POST form", fileTag))
+		return "", fmt.Errorf("Unable to get file %v from POST form", fileTag)
 	}
 	var fileBytes bytes.Buffer
 	if _, err := io.Copy(&fileBytes, multiFile); err != nil {
-		return "", InternalErrorResponse(c, err)
+		return "", err
 	}
 	return fileBytes.String(), nil
 }
