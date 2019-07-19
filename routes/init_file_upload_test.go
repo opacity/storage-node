@@ -60,13 +60,16 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	assert.Nil(t, utils.DeleteDefaultBucketObjectKeys(file.FileID))
 }
 
-func Test_initFileUploadWithPaidAccount_MissingFormAndFormFile(t *testing.T) {
+func Test_initFileUploadWithPaidAccount_MissingFormFile(t *testing.T) {
 	accountID, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountID)
 
 	req, _ := createValidInitFileUploadRequest(t, 123, 1, privateKey)
+	form := map[string]string{
+		"metadata": "abc",
+	}
 
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, nil, nil)
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, nil)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
