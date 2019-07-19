@@ -16,9 +16,9 @@ func Test_Init_File_Upload(t *testing.T) {
 }
 
 func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
-	accountId, privateKey := generateValidateAccountId(t)
+	accountID, privateKey := generateValidateAccountId(t)
 
-	CreateUnpaidAccountForTest(t, accountId)
+	CreateUnpaidAccountForTest(t, accountID)
 	req, _ := createValidInitFileUploadRequest(t, 123, 1, privateKey)
 
 	form := map[string]string{
@@ -35,8 +35,8 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 }
 
 func Test_initFileUploadWithPaidAccount(t *testing.T) {
-	accountId, privateKey := generateValidateAccountId(t)
-	CreatePaidAccountForTest(t, accountId)
+	accountID, privateKey := generateValidateAccountId(t)
+	CreatePaidAccountForTest(t, accountID)
 
 	req, uploadObj := createValidInitFileUploadRequest(t, 123, 1, privateKey)
 
@@ -60,9 +60,20 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	assert.Nil(t, utils.DeleteDefaultBucketObjectKeys(file.FileID))
 }
 
+func Test_initFileUploadWithPaidAccount_MissingFormAndFormFile(t *testing.T) {
+	accountID, privateKey := generateValidateAccountId(t)
+	CreatePaidAccountForTest(t, accountID)
+
+	req, uploadObj := createValidInitFileUploadRequest(t, 123, 1, privateKey)
+
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, nil, nil)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+}
+
 func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
-	accountId, privateKey := generateValidateAccountId(t)
-	account := CreatePaidAccountForTest(t, accountId)
+	accountID, privateKey := generateValidateAccountId(t)
+	account := CreatePaidAccountForTest(t, accountID)
 
 	fileSizeInByte := (int64(account.StorageLimit)-(int64(account.StorageUsedInByte)/1e9))*1e9 + 1
 	req, uploadObj := createValidInitFileUploadRequest(t, fileSizeInByte, 1, privateKey)
