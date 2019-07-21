@@ -46,6 +46,9 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 	w := httpPostRequestHelperForTest(t, StripeCreatePath, post)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+
+	account, _ := models.GetAccountById(accountID)
+	assert.Equal(t, models.PaymentMethodWithCreditCard, account.PaymentMethod)
 }
 
 func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
