@@ -104,6 +104,145 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
+func Test_GetMetadataHistoryHandler_Returns_Metadata_History(t *testing.T) {
+	ttl := utils.TestValueTimeToLive
+
+	testMetadataKey := utils.GenerateFileHandle()
+	testMetadataValue := "quick"
+
+	getMetadataHistoryObj := metadataKeyObject{
+		MetadataKey: testMetadataKey,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadataHistoryObj)
+
+	get := metadataKeyReq{
+		verification: v,
+		requestBody:  b,
+	}
+
+	accountID, _ := utils.HashString(v.PublicKey)
+	CreatePaidAccountForTest(t, accountID)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
+	assert.Nil(t, err)
+
+	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+
+	if err := utils.BatchSet(&utils.KVPairs{
+		testMetadataKey: testMetadataValue,
+		getVersionKeyForBadger(testMetadataKey, 0): "red",
+		getVersionKeyForBadger(testMetadataKey, 1): "fox",
+		getVersionKeyForBadger(testMetadataKey, 2): "jumps",
+		getVersionKeyForBadger(testMetadataKey, 3): "over",
+		getVersionKeyForBadger(testMetadataKey, 4): "the",
+		permissionHashKey:                          permissionHash,
+	}, ttl); err != nil {
+		t.Fatalf("there should not have been an error")
+	}
+
+	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, get)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), testMetadataValue)
+	assert.Contains(t, w.Body.String(), "metadataHistory")
+	assert.Contains(t, w.Body.String(), `metadataHistory":["red","fox","jumps","over","the"]`)
+}
+
+func Test_GetMetadataHistoryHandler_Returns_Metadata_History_If_Not_Maxed_Out(t *testing.T) {
+	ttl := utils.TestValueTimeToLive
+
+	testMetadataKey := utils.GenerateFileHandle()
+	testMetadataValue := "quick"
+
+	getMetadataHistoryObj := metadataKeyObject{
+		MetadataKey: testMetadataKey,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadataHistoryObj)
+
+	get := metadataKeyReq{
+		verification: v,
+		requestBody:  b,
+	}
+
+	accountID, _ := utils.HashString(v.PublicKey)
+	CreatePaidAccountForTest(t, accountID)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
+	assert.Nil(t, err)
+
+	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+
+	if err := utils.BatchSet(&utils.KVPairs{
+		testMetadataKey: testMetadataValue,
+		getVersionKeyForBadger(testMetadataKey, 0): "red",
+		permissionHashKey:                          permissionHash,
+	}, ttl); err != nil {
+		t.Fatalf("there should not have been an error")
+	}
+
+	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, get)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), testMetadataValue)
+	assert.Contains(t, w.Body.String(), "metadataHistory")
+	assert.Contains(t, w.Body.String(), `metadataHistory":["red"]`)
+}
+
+func Test_GetMetadataHistoryHandler_Error_If_Not_Paid(t *testing.T) {
+	testMetadataKey := utils.GenerateFileHandle()
+
+	getMetadataHistoryObj := metadataKeyObject{
+		MetadataKey: testMetadataKey,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadataHistoryObj)
+
+	get := metadataKeyReq{
+		verification: v,
+		requestBody:  b,
+	}
+
+	accountID, _ := utils.HashString(v.PublicKey)
+	CreateUnpaidAccountForTest(t, accountID)
+
+	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, get)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), `"invoice"`)
+}
+
+func Test_GetMetadataHistoryHandler_Error_If_Not_In_KV_Store(t *testing.T) {
+	testMetadataKey := utils.GenerateFileHandle()
+
+	getMetadata := metadataKeyObject{
+		MetadataKey: testMetadataKey,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadata)
+
+	get := metadataKeyReq{
+		verification: v,
+		requestBody:  b,
+	}
+
+	accountID, _ := utils.HashString(v.PublicKey)
+	CreatePaidAccountForTest(t, accountID)
+
+	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, get)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
 func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
@@ -155,6 +294,148 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
 	assert.Equal(t, int64(len(newValue)), accountFromDB.TotalMetadataSizeInBytes)
+}
+
+func Test_UpdateMetadataHandler_Can_Update_Metadata_History(t *testing.T) {
+	ttl := utils.TestValueTimeToLive
+
+	testMetadataKey := utils.GenerateFileHandle()
+	startingCurrentMetadataValue := "quick"
+	newCurrentMetadataValue := "the"
+
+	updateMetadataObj := updateMetadataObject{
+		MetadataKey: testMetadataKey,
+		Metadata:    newCurrentMetadataValue,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, updateMetadataObj)
+
+	post := updateMetadataReq{
+		verification: v,
+		requestBody:  b,
+	}
+
+	accountID, _ := utils.HashString(v.PublicKey)
+	account := CreatePaidAccountForTest(t, accountID)
+	err := account.IncrementMetadataCount()
+	assert.Nil(t, err)
+	err = account.UpdateMetadataSizeInBytes(0, int64(len(startingCurrentMetadataValue)))
+	assert.Nil(t, err)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
+	assert.Nil(t, err)
+
+	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+
+	if err := utils.BatchSet(&utils.KVPairs{
+		testMetadataKey: startingCurrentMetadataValue,
+		getVersionKeyForBadger(testMetadataKey, 0): "red",
+		getVersionKeyForBadger(testMetadataKey, 1): "fox",
+		getVersionKeyForBadger(testMetadataKey, 2): "jumps",
+		getVersionKeyForBadger(testMetadataKey, 3): "over",
+		getVersionKeyForBadger(testMetadataKey, 4): "the",
+		permissionHashKey:                          permissionHash,
+	}, ttl); err != nil {
+		t.Fatalf("there should not have been an error")
+	}
+
+	expectedStartingMetadataHistory := []string{
+		"red", "fox", "jumps", "over", "the",
+	}
+
+	expectedEndingMetadataHistory := []string{
+		"quick", "red", "fox", "jumps", "over",
+	}
+
+	metadataHistory, err := getMetadataHistoryWithoutContext(testMetadataKey)
+	assert.Equal(t, expectedStartingMetadataHistory, metadataHistory)
+	assert.Nil(t, err)
+
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), newCurrentMetadataValue)
+
+	metadata, _, _ := utils.GetValueFromKV(testMetadataKey)
+	assert.Equal(t, newCurrentMetadataValue, metadata)
+
+	accountFromDB, _ := models.GetAccountById(account.AccountID)
+	assert.Equal(t, int64(len(newCurrentMetadataValue)), accountFromDB.TotalMetadataSizeInBytes)
+
+	metadataHistory, err = getMetadataHistoryWithoutContext(testMetadataKey)
+	assert.Equal(t, expectedEndingMetadataHistory, metadataHistory)
+}
+
+func Test_UpdateMetadataHandler_Can_Update_Metadata_History_If_Not_Maxed_Out(t *testing.T) {
+	ttl := utils.TestValueTimeToLive
+
+	testMetadataKey := utils.GenerateFileHandle()
+	startingCurrentMetadataValue := "quick"
+	newCurrentMetadataValue := "the"
+
+	updateMetadataObj := updateMetadataObject{
+		MetadataKey: testMetadataKey,
+		Metadata:    newCurrentMetadataValue,
+		Timestamp:   time.Now().Unix(),
+	}
+
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, updateMetadataObj)
+
+	post := updateMetadataReq{
+		verification: v,
+		requestBody:  b,
+	}
+
+	accountID, _ := utils.HashString(v.PublicKey)
+	account := CreatePaidAccountForTest(t, accountID)
+	err := account.IncrementMetadataCount()
+	assert.Nil(t, err)
+	err = account.UpdateMetadataSizeInBytes(0, int64(len(startingCurrentMetadataValue)))
+	assert.Nil(t, err)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
+	assert.Nil(t, err)
+
+	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+
+	if err := utils.BatchSet(&utils.KVPairs{
+		testMetadataKey: startingCurrentMetadataValue,
+		getVersionKeyForBadger(testMetadataKey, 0): "red",
+		permissionHashKey:                          permissionHash,
+	}, ttl); err != nil {
+		t.Fatalf("there should not have been an error")
+	}
+
+	expectedStartingMetadataHistory := []string{
+		"red",
+	}
+
+	expectedEndingMetadataHistory := []string{
+		"quick", "red",
+	}
+
+	metadataHistory, err := getMetadataHistoryWithoutContext(testMetadataKey)
+	assert.Equal(t, expectedStartingMetadataHistory, metadataHistory)
+	assert.Nil(t, err)
+
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), newCurrentMetadataValue)
+
+	metadata, _, _ := utils.GetValueFromKV(testMetadataKey)
+	assert.Equal(t, newCurrentMetadataValue, metadata)
+
+	accountFromDB, _ := models.GetAccountById(account.AccountID)
+	assert.Equal(t, int64(len(newCurrentMetadataValue)), accountFromDB.TotalMetadataSizeInBytes)
+
+	metadataHistory, err = getMetadataHistoryWithoutContext(testMetadataKey)
+	assert.Equal(t, expectedEndingMetadataHistory, metadataHistory)
 }
 
 func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
@@ -397,7 +678,7 @@ func Test_Create_Metadata_Error_If_Duplicate_Metadata(t *testing.T) {
 			RequestBody: b.RequestBody,
 		},
 	}
-	
+
 	w = httpPostRequestHelperForTest(t, MetadataCreatePath, post)
 
 	// Check to see if the response was what you expected

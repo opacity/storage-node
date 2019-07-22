@@ -52,6 +52,9 @@ const (
 	/*MetadataGetPath is the path for getting metadata*/
 	MetadataGetPath = "/metadata/get"
 
+	/*MetadataHistoryPath is the path for getting historical metadata*/
+	MetadataHistoryPath = "/metadata/history"
+
 	/*MetadataSetPath is the path for setting metadata*/
 	MetadataSetPath = "/metadata/set"
 
@@ -142,6 +145,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 
 	v1Router.POST(MetadataSetPath, UpdateMetadataHandler())
 	v1Router.POST(MetadataGetPath, GetMetadataHandler())
+	v1Router.POST(MetadataHistoryPath, GetMetadataHistoryHandler())
 	v1Router.POST(MetadataCreatePath, CreateMetadataHandler())
 	v1Router.POST(MetadataDeletePath, DeleteMetadataHandler())
 

@@ -263,8 +263,8 @@ definitions:
         example: 2
         type: integer
       totalMetadataSizeInMB:
-        example: 245765432
-        type: integer
+        example: 1.245765432
+        type: number
       updatedAt:
         type: string
     required:
@@ -424,6 +424,22 @@ definitions:
     - publicKey
     - requestBody
     - signature
+    type: object
+  routes.getMetadataHistoryRes:
+    properties:
+      expirationDate:
+        type: string
+      metadata:
+        example: your account metadata
+        type: string
+      metadataHistory:
+        example:
+        - your account metadata
+        items:
+          type: string
+        type: array
+    required:
+    - expirationDate
     type: object
   routes.getMetadataRes:
     properties:
@@ -924,6 +940,41 @@ paths:
           schema:
             type: string
       summary: Retrieve account metadata
+  /api/v1/metadata/history:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
+        "timestamp": 1557346389
+        }
+      parameters:
+      - description: object for endpoints that only need metadataKey and timestamp
+        in: body
+        name: metadataKeyReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.metadataKeyReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.getMetadataHistoryRes'
+            type: object
+        "403":
+          description: subscription expired, or the invoice resonse
+          schema:
+            type: string
+        "404":
+          description: no value found for that key, or account not found
+          schema:
+            type: string
+      summary: Retrieve metadata history
   /api/v1/metadata/set:
     post:
       consumes:
@@ -956,7 +1007,7 @@ paths:
           schema:
             type: string
         "403":
-          description: subscription expired, or the invoice resonse
+          description: subscription expired, or the invoice response
           schema:
             type: string
         "404":

@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
+	"strconv"
 )
 
 const (
@@ -285,8 +286,12 @@ func getPermissionHash(publicKey, key string, c *gin.Context) (string, error) {
 	return permissionHash, nil
 }
 
-func getPermissionHashKeyForBadger(metadataKey string) string {
-	return metadataKey + "_permissionHash"
+func getPermissionHashKeyForBadger(prefix string) string {
+	return prefix + "_permissionHash"
+}
+
+func getVersionKeyForBadger(prefix string, index int) string {
+	return prefix + "_" + strconv.Itoa(index)
 }
 
 func verifyPermissions(publicKey, key, expectedPermissionHash string, c *gin.Context) error {
