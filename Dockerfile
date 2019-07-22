@@ -6,7 +6,7 @@ RUN go version
 
 # Install db client (assumes mysql)
 RUN apt-get update
-RUN apt-get install -y -q --no-install-recommends default-mysql-client
+RUN apt-get install -y -q --no-install-recommends mysql-client-5.7
 RUN apt-get install -y -q --no-install-recommends netcat
 RUN apt autoremove -y
 RUN apt-get clean
