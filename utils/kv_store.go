@@ -104,9 +104,6 @@ func GetValueFromKV(key string) (value string, expirationTime time.Time, err err
 		}
 
 		item, err := txn.Get([]byte(key))
-		if err == badger.ErrKeyNotFound {
-			return errors.New("no value found for that key")
-		}
 		if err != nil {
 			return err
 		}
@@ -132,7 +129,9 @@ func GetValueFromKV(key string) (value string, expirationTime time.Time, err err
 
 		return nil
 	})
-	LogIfError(err, nil)
+	if err != badger.ErrKeyNotFound {
+		LogIfError(err, nil)
+	}
 
 	return
 }
