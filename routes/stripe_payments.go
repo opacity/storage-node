@@ -119,6 +119,8 @@ func createStripePayment(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
+	account.UpdatePaymentViaStripe()
+	
 	amount, err := checkChargeAmount(c, stripePayment.ChargeID)
 	if err != nil {
 		return err

@@ -268,6 +268,12 @@ func (account *Account) CanUpdateMetadata(oldMetadataSizeInBytes, newMetadataSiz
 		intendedMetadataSizeInBytes >= 0
 }
 
+/*UpdatePaymentViaStripe update PaymentMethod to be PaymentMethodWithCreditCard*/
+func (account *Account) UpdatePaymentViaStripe() error {
+	account.PaymentMethod = PaymentMethodWithCreditCard
+	return DB.Model(&account).Update("payment_method", account.PaymentMethod).Error
+}
+
 /*IncrementMetadataCount increments the account's metadata count*/
 func (account *Account) IncrementMetadataCount() error {
 	err := errors.New("cannot exceed allowed metadatas")
