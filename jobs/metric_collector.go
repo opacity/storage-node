@@ -41,7 +41,7 @@ func (m metricCollector) accountsMetrics() {
 	}
 
 	accountsPaidWithStripe := 0
-	totalAccountPaidWithStripeErr := models.DB.Models(&models.Account{}).Where("payment_method = ?", models.PaymentMethodWithCreditCard).Count(&accountsPaidWithStripe).Error
+	totalAccountPaidWithStripeErr := models.DB.Model(&models.Account{}).Where("payment_method = ?", models.PaymentMethodWithCreditCard).Count(&accountsPaidWithStripe).Error
 	if totalAccountPaidWithStripeErr == nil {
 		utils.Metrics_Total_Stripe_Paid_Accounts_Map[utils.TotalLbl].Set(float64(accountsPaidWithStripe))
 	}
