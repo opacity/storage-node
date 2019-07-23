@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
 )
@@ -44,6 +45,12 @@ type getMetadataRes struct {
 	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
 }
 
+type getMetadataHistoryRes struct {
+	Metadata        string    `json:"metadata" binding:"exists" example:"your account metadata"`
+	MetadataHistory []string  `json:"metadataHistory" binding:"exists" example:"your account metadata"`
+	ExpirationDate  time.Time `json:"expirationDate" binding:"required"`
+}
+
 type createMetadataRes struct {
 	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
 }
@@ -55,6 +62,8 @@ var metadataDeletedRes = StatusRes{
 func (v *updateMetadataReq) getObjectRef() interface{} {
 	return &v.updateMetadataObject
 }
+
+const numMetadatasToRetain = 5
 
 func (v *metadataKeyReq) getObjectRef() interface{} {
 	return &v.metadataKeyObject
@@ -77,6 +86,25 @@ func (v *metadataKeyReq) getObjectRef() interface{} {
 /*GetMetadataHandler is a handler for getting the file metadata*/
 func GetMetadataHandler() gin.HandlerFunc {
 	return ginHandlerFunc(getMetadata)
+}
+
+// GetMetadataHistoryHandler godoc
+// @Summary Retrieve metadata history
+// @Accept  json
+// @Produce  json
+// @Param metadataKeyReq body routes.metadataKeyReq true "object for endpoints that only need metadataKey and timestamp"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
+// @description 	"timestamp": 1557346389
+// @description }
+// @Success 200 {object} routes.getMetadataHistoryRes
+// @Failure 404 {string} string "no value found for that key, or account not found"
+// @Failure 403 {string} string "subscription expired, or the invoice resonse"
+// @Router /api/v1/metadata/history [post]
+/*GetMetadataHistoryHandler is a handler for getting the file metadata history*/
+func GetMetadataHistoryHandler() gin.HandlerFunc {
+	return ginHandlerFunc(getMetadataHistory)
 }
 
 // UpdateMetadataHandler godoc
@@ -198,6 +226,57 @@ func getMetadata(c *gin.Context) error {
 	})
 }
 
+func getMetadataHistory(c *gin.Context) error {
+	request := metadataKeyReq{}
+
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
+	}
+
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyIfPaidWithContext(account, c); err != nil {
+		return err
+	}
+
+	requestBodyParsed := metadataKeyObject{}
+
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
+		return err
+	}
+
+	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
+		permissionHashInBadger, c); err != nil {
+		return err
+	}
+
+	currentMetadata, expirationTime, err := utils.GetValueFromKV(request.metadataKeyObject.MetadataKey)
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	metadataHistory, err := getMetadataHistoryWithoutContext(request.metadataKeyObject.MetadataKey)
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	return OkResponse(c, getMetadataHistoryRes{
+		Metadata:        currentMetadata,
+		MetadataHistory: metadataHistory,
+		ExpirationDate:  expirationTime,
+	})
+}
+
 func setMetadata(c *gin.Context) error {
 	request := updateMetadataReq{}
 
@@ -248,6 +327,10 @@ func setMetadata(c *gin.Context) error {
 		permissionHashKey:             permissionHashInBadger,
 	}, ttl); err != nil {
 		return InternalErrorResponse(c, err)
+	}
+
+	if err := storeMetadataHistory(requestBodyParsed.MetadataKey, oldMetadata, ttl, c); err != nil {
+		return err
 	}
 
 	return OkResponse(c, updateMetadataRes{
@@ -375,4 +458,47 @@ func deleteMetadata(c *gin.Context) error {
 	}
 
 	return OkResponse(c, metadataDeletedRes)
+}
+
+func storeMetadataHistory(metadataKey string, oldMetadata string, ttl time.Duration, c *gin.Context) error {
+	newValue := oldMetadata
+	stopOnNextKey := false
+	for i := 0; i < numMetadatasToRetain; i++ {
+		if stopOnNextKey {
+			break
+		}
+		badgerKey := getVersionKeyForBadger(metadataKey, i)
+		oldValue, _, err := utils.GetValueFromKV(badgerKey)
+		if err := utils.BatchSet(&utils.KVPairs{
+			badgerKey: newValue,
+		}, ttl); err != nil {
+			return InternalErrorResponse(c, err)
+		}
+		if err == badger.ErrKeyNotFound {
+			stopOnNextKey = true
+		}
+		newValue = oldValue
+	}
+	return nil
+}
+
+func getMetadataHistoryWithoutContext(metadataKey string) ([]string, error) {
+	metadataHistory := []string{}
+	for i := 0; i < numMetadatasToRetain; i++ {
+		oldMetadata, _, err := utils.GetValueFromKV(getVersionKeyForBadger(metadataKey, i))
+		if err == badger.ErrKeyNotFound {
+			break
+		}
+		if err != nil {
+			return metadataHistory, err
+		}
+		metadataHistory = append(metadataHistory, oldMetadata)
+	}
+	return metadataHistory, nil
+}
+
+func getCurrentMetadata() {
+	// TODO:  After everyone has migrated, consolidate the first parts of getMetadata and
+	// getMetadataHistory since they are very similar except for the exceptions for accounts
+	// that haven't been migrated
 }

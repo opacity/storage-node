@@ -406,6 +406,51 @@
                 }
             }
         },
+        "/api/v1/metadata/history": {
+            "post": {
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataKey\": \"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders\",\n\"timestamp\": 1557346389\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Retrieve metadata history",
+                "parameters": [
+                    {
+                        "description": "object for endpoints that only need metadataKey and timestamp",
+                        "name": "metadataKeyReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.metadataKeyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.getMetadataHistoryRes"
+                        }
+                    },
+                    "403": {
+                        "description": "subscription expired, or the invoice resonse",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no value found for that key, or account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/metadata/set": {
             "post": {
                 "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataKey\": \"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders\",\n\"metadata\": \"your (updated) account metadata\",\n\"timestamp\": 1557346389\n}",
@@ -443,7 +488,7 @@
                         }
                     },
                     "403": {
-                        "description": "subscription expired, or the invoice resonse",
+                        "description": "subscription expired, or the invoice response",
                         "schema": {
                             "type": "string"
                         }
@@ -988,8 +1033,8 @@
                     "example": 2
                 },
                 "totalMetadataSizeInMB": {
-                    "type": "integer",
-                    "example": 245765432
+                    "type": "number",
+                    "example": 1.245765432
                 },
                 "updatedAt": {
                     "type": "string"
@@ -1182,6 +1227,30 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.getMetadataHistoryRes": {
+            "type": "object",
+            "required": [
+                "expirationDate"
+            ],
+            "properties": {
+                "expirationDate": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "string",
+                    "example": "your account metadata"
+                },
+                "metadataHistory": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "your account metadata"
+                    ]
                 }
             }
         },
