@@ -45,6 +45,12 @@ var (
 	}, []string{"plan_type"})
 	Metrics_Total_Paid_Accounts_Map = make(map[string]prometheus.Gauge)
 
+	Metrics_Total_Stripe_Paid_Accounts = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "storagenode_total_stripe_paid_accounts",
+		Help: "Total number of paid accounts via Stripe",
+	}, []string{"plan_type"})
+	Metrics_Total_Stripe_Paid_Accounts_Map = make(map[string]prometheus.Gauge)
+
 	Metrics_Total_Unpaid_Accounts = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "storagenode_total_unpaid_accounts",
 		Help: "Total number of unpaid accounts",
@@ -96,9 +102,12 @@ var (
 func createPlanMetrics() {
 	Metrics_Percent_Of_Space_Used_Map[TotalLbl] = Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": TotalLbl})
 	Metrics_Total_Paid_Accounts_Map[TotalLbl] = Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": TotalLbl})
+	Metrics_Total_Stripe_Paid_Accounts_Map[TotalLbl] = Metrics_Total_Stripe_Paid_Accounts.With(prometheus.Labels{"plan_type": TotalLbl})
 	for _, plan := range Env.Plans {
-		Metrics_Percent_Of_Space_Used_Map[plan.Name] = Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": plan.Name})
-		Metrics_Total_Paid_Accounts_Map[plan.Name] = Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": plan.Name})
+		name := plan.Name
+		Metrics_Percent_Of_Space_Used_Map[name] = Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": name})
+		Metrics_Total_Paid_Accounts_Map[name] = Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": name})
+		Metrics_Total_Stripe_Paid_Accounts_Map[name] = Metrics_Total_Stripe_Paid_Accounts.With(prometheus.Labels{"plan_type": name})
 	}
 }
 

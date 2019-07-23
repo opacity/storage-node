@@ -40,6 +40,12 @@ func (m metricCollector) accountsMetrics() {
 		utils.Metrics_Total_Accounts.Set(float64(accountsCount))
 	}
 
+	accountsPaidWithStripe := 0
+	totalAccountPaidWithStripeErr := models.DB.Model(&models.Account{}).Where("payment_method = ?", models.PaymentMethodWithCreditCard).Count(&accountsPaidWithStripe).Error
+	if totalAccountPaidWithStripeErr == nil {
+		utils.Metrics_Total_Stripe_Paid_Accounts_Map[utils.TotalLbl].Set(float64(accountsPaidWithStripe))
+	}
+
 	unpaidAccountsCount, unpaidCountErr := models.CountAccountsByPaymentStatus(models.InitialPaymentInProgress)
 	if unpaidCountErr == nil {
 		utils.Metrics_Total_Unpaid_Accounts.Set(float64(unpaidAccountsCount))
@@ -68,9 +74,16 @@ func (m metricCollector) accountsMetrics() {
 	}
 
 	for _, plan := range utils.Env.Plans {
+		name := plan.Name
 		accountCount, err := models.CountPaidAccountsByPlanType(models.StorageLimitType(plan.StorageInGB))
 		if err == nil {
-			utils.Metrics_Total_Paid_Accounts_Map[plan.Name].Set(float64(accountCount))
+			utils.Metrics_Total_Paid_Accounts_Map[name].Set(float64(accountCount))
+		}
+		utils.LogIfError(err, nil)
+
+		stripeCount, err := models.CountPaidAccountsByPaymentMethodAndPlanType(models.StorageLimitType(plan.StorageInGB), models.PaymentMethodWithCreditCard)
+		if err == nil {
+			utils.Metrics_Total_Stripe_Paid_Accounts_Map[name].Set(float64(stripeCount))
 		}
 		utils.LogIfError(err, nil)
 	}

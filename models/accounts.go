@@ -16,7 +16,7 @@ import (
 
 const(
 	/*PaymentMethodNone as default value.*/
-	PaymentMethodNone = iota
+	PaymentMethodNone PaymentMethodType = iota
 	
 	/*PaymentMethodWithCreditCard indicated this payment is via Stripe Creditcard processing.*/
 	PaymentMethodWithCreditCard
@@ -37,7 +37,7 @@ type Account struct {
 	ApiVersion               int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 	TotalFolders             int               `json:"totalFolders" binding:"omitempty,gte=0" gorm:"default:0"`
 	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
-	PaymentMethod            int               `json:"paidWithCard" gorm:"default:0"`
+	PaymentMethod            PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 }
 
 /*SpaceReport defines a model for capturing the space allotted compared to space used*/
@@ -57,6 +57,8 @@ type StorageLimitType int
 
 /*PaymentStatusType defines a type for the payment statuses*/
 type PaymentStatusType int
+
+type PaymentMethodType int
 
 const (
 	/*BasicStorageLimit allows 128 GB on the basic plan*/
@@ -389,6 +391,14 @@ func CountPaidAccountsByPlanType(storageLimit StorageLimitType) (int, error) {
 	count := 0
 	err := DB.Model(&Account{}).Where("storage_limit = ? AND payment_status >= ?",
 		storageLimit, InitialPaymentReceived).Count(&count).Error
+	utils.LogIfError(err, nil)
+	return count, err
+}
+
+func CountPaidAccountsByPaymentMethodAndPlanType(storageLimit StorageLimitType, paymentMethod PaymentMethodType) (int, error) {
+	count := 0
+	err := DB.Model(&Account{}).Where("storage_limit = ? AND payment_status >= ? AND payment_method = ?",
+		storageLimit, InitialPaymentReceived, paymentMethod).Count(&count).Error
 	utils.LogIfError(err, nil)
 	return count, err
 }
