@@ -16,7 +16,7 @@ import (
 
 const(
 	/*PaymentMethodNone as default value.*/
-	PaymentMethodNone = iota
+	PaymentMethodNone PaymentMethodType = iota
 	
 	/*PaymentMethodWithCreditCard indicated this payment is via Stripe Creditcard processing.*/
 	PaymentMethodWithCreditCard
