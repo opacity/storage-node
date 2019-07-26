@@ -700,7 +700,6 @@
         "models.Invoice": {
             "type": "object",
             "required": [
-                "cost",
                 "ethAddress"
             ],
             "properties": {
