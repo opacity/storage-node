@@ -169,20 +169,39 @@ func createAccount(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
+	if utils.Env.Plans[int(account.StorageLimit)].Name == "Free" {
+		return OkResponse(c, accountDataRes{
+			PaymentStatus: createPaymentStatusResponse(true, false, false),
+			Error:         nil,
+			Account: accountGetObj{
+				CreatedAt:             account.CreatedAt,
+				UpdatedAt:             account.UpdatedAt,
+				ExpirationDate:        account.ExpirationDate(),
+				MonthsInSubscription:  account.MonthsInSubscription,
+				StorageLimit:          account.StorageLimit,
+				StorageUsed:           float64(account.StorageUsedInByte) / 1e9,
+				EthAddress:            account.EthAddress,
+				Cost:                  0.00,
+				ApiVersion:            account.ApiVersion,
+				TotalFolders:          account.TotalFolders,
+				TotalMetadataSizeInMB: float64(account.TotalMetadataSizeInBytes) / 1e6,
+				MaxFolders:            utils.Env.Plans[int(account.StorageLimit)].MaxFolders,
+				MaxMetadataSizeInMB:   utils.Env.Plans[int(account.StorageLimit)].MaxMetadataSizeInMB,
+			},
+		})
+	}
+
 	cost, err := account.Cost()
 	if err != nil {
 		return BadRequestResponse(c, err)
 	}
 
 	response := accountCreateRes{
-		ExpirationDate: account.ExpirationDate(),
-	}
-
-	if utils.Env.Plans[int(account.StorageLimit)].Name != "Free" {
-		response.Invoice = models.Invoice{
+		Invoice: models.Invoice{
 			Cost:       cost,
 			EthAddress: ethAddr.String(),
-		}
+		},
+		ExpirationDate: account.ExpirationDate(),
 	}
 
 	return OkResponse(c, response)
