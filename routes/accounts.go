@@ -17,7 +17,7 @@ const Pending = "pending"
 const Paid = "paid"
 
 type accountCreateObj struct {
-	StorageLimit     int `json:"storageLimit" binding:"required,gte=100" minimum:"100" maximum:"100" example:"100"`
+	StorageLimit     int `json:"storageLimit" binding:"required,gte=10" minimum:"10" maximum:"2048" example:"100"`
 	DurationInMonths int `json:"durationInMonths" binding:"required,gte=1" minimum:"1" example:"12"`
 }
 

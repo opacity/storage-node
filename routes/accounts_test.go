@@ -94,7 +94,7 @@ func Test_ExpectErrorIfVerificationFails(t *testing.T) {
 
 func Test_ExpectErrorWithInvalidStorageLimit(t *testing.T) {
 	body := returnValidCreateAccountBody()
-	body.StorageLimit = 99
+	body.StorageLimit = 9
 	post := returnValidCreateAccountReq(t, body)
 
 	w := httpPostRequestHelperForTest(t, AccountsPath, post)
