@@ -905,8 +905,8 @@
                 },
                 "storageLimit": {
                     "type": "integer",
-                    "maximum": 100,
-                    "minimum": 100,
+                    "maximum": 2048,
+                    "minimum": 10,
                     "example": 100
                 }
             }

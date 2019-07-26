@@ -167,8 +167,8 @@ definitions:
         type: integer
       storageLimit:
         example: 100
-        maximum: 100
-        minimum: 100
+        maximum: 2048
+        minimum: 10
         type: integer
     required:
     - durationInMonths
