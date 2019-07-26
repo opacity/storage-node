@@ -29,7 +29,7 @@ type accountCreateReq struct {
 
 type accountCreateRes struct {
 	ExpirationDate time.Time      `json:"expirationDate" binding:"required,gte"`
-	Invoice        models.Invoice `json:"invoice"`
+	Invoice        models.Invoice `json:"invoice" binding:"omitempty"`
 }
 
 type accountDataRes struct {
@@ -49,10 +49,10 @@ type accountGetObj struct {
 	UpdatedAt             time.Time               `json:"updatedAt"`
 	ExpirationDate        time.Time               `json:"expirationDate" binding:"required"`
 	MonthsInSubscription  int                     `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
-	StorageLimit          models.StorageLimitType `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
+	StorageLimit          models.StorageLimitType `json:"storageLimit" binding:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
 	StorageUsed           float64                 `json:"storageUsed" binding:"exists" example:"30"`                                                                         // how much storage they have used, in GB
 	EthAddress            string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	Cost                  float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
+	Cost                  float64                 `json:"cost" binding:"omitempty,gte=0" example:"2.00"`
 	ApiVersion            int                     `json:"apiVersion" binding:"required,gte=1"`
 	TotalFolders          int                     `json:"totalFolders" binding:"exists" example:"2"`
 	TotalMetadataSizeInMB float64                 `json:"totalMetadataSizeInMB" binding:"exists" example:"1.245765432"`
@@ -175,18 +175,11 @@ func createAccount(c *gin.Context) error {
 	}
 
 	response := accountCreateRes{
-		ExpirationDate: account.ExpirationDate(),
-	}
-
-	if utils.Env.Plans[int(account.StorageLimit)].Name != "Free" {
-		response.Invoice = models.Invoice{
+		Invoice: models.Invoice{
 			Cost:       cost,
 			EthAddress: ethAddr.String(),
-		}
-	}
-
-	if err := utils.Validator.Struct(&response); err != nil {
-		return BadRequestResponse(c, fmt.Errorf("could not create a valid response:  %v", err))
+		},
+		ExpirationDate: account.ExpirationDate(),
 	}
 
 	return OkResponse(c, response)

@@ -700,7 +700,6 @@
         "models.Invoice": {
             "type": "object",
             "required": [
-                "cost",
                 "ethAddress"
             ],
             "properties": {
@@ -978,7 +977,6 @@
             "type": "object",
             "required": [
                 "apiVersion",
-                "cost",
                 "ethAddress",
                 "expirationDate",
                 "monthsInSubscription",

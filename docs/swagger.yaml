@@ -11,7 +11,6 @@ definitions:
         minLength: 42
         type: string
     required:
-    - cost
     - ethAddress
     type: object
   routes.InitFileUploadObj:
@@ -269,7 +268,6 @@ definitions:
         type: string
     required:
     - apiVersion
-    - cost
     - ethAddress
     - expirationDate
     - monthsInSubscription
