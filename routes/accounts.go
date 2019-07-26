@@ -29,7 +29,7 @@ type accountCreateReq struct {
 
 type accountCreateRes struct {
 	ExpirationDate time.Time      `json:"expirationDate" binding:"required,gte"`
-	Invoice        models.Invoice `json:"invoice"`
+	Invoice        models.Invoice `json:"invoice" binding:"omitempty"`
 }
 
 type accountDataRes struct {
