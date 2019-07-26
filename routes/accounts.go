@@ -185,10 +185,6 @@ func createAccount(c *gin.Context) error {
 		}
 	}
 
-	if err := utils.Validator.Struct(&response); err != nil {
-		return BadRequestResponse(c, fmt.Errorf("could not create a valid response:  %v", err))
-	}
-
 	return OkResponse(c, response)
 }
 
