@@ -12,12 +12,13 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
+	"math"
 )
 
-const(
+const (
 	/*PaymentMethodNone as default value.*/
 	PaymentMethodNone PaymentMethodType = iota
-	
+
 	/*PaymentMethodWithCreditCard indicated this payment is via Stripe Creditcard processing.*/
 	PaymentMethodWithCreditCard
 )
@@ -157,6 +158,44 @@ func (account *Account) ExpirationDate() time.Time {
 func (account *Account) Cost() (float64, error) {
 	return utils.Env.Plans[int(account.StorageLimit)].Cost *
 		float64(account.MonthsInSubscription/DefaultMonthsPerSubscription), nil
+}
+
+/*UpgradeCostInOPQ returns the cost to upgrade in OPQ*/
+func (account *Account) UpgradeCostInOPQ(upgradeStorageLimit int, monthsForNewPlan int) (float64, error) {
+	baseCostOfHigherPlan := utils.Env.Plans[int(upgradeStorageLimit)].Cost *
+		float64(monthsForNewPlan/DefaultMonthsPerSubscription)
+	costOfCurrentPlan, _ := account.Cost()
+
+	if account.ExpirationDate().Before(time.Now()) {
+		return baseCostOfHigherPlan, nil
+	}
+
+	return upgradeCost(costOfCurrentPlan, baseCostOfHigherPlan, account)
+}
+
+/*UpgradeCostInUSD returns the cost to upgrade in USD*/
+func (account *Account) UpgradeCostInUSD(upgradeStorageLimit int, monthsForNewPlan int) (float64, error) {
+	baseCostOfHigherPlan := utils.Env.Plans[int(upgradeStorageLimit)].CostInUSD *
+		float64(monthsForNewPlan/DefaultMonthsPerSubscription)
+	costOfCurrentPlan := utils.Env.Plans[int(account.StorageLimit)].CostInUSD *
+		float64(account.MonthsInSubscription/DefaultMonthsPerSubscription)
+
+	if account.ExpirationDate().Before(time.Now()) {
+		return baseCostOfHigherPlan, nil
+	}
+
+	return upgradeCost(costOfCurrentPlan, baseCostOfHigherPlan, account)
+}
+
+func upgradeCost(costOfCurrentPlan, baseCostOfHigherPlan float64, account *Account) (float64, error) {
+	accountTimeTotal := account.ExpirationDate().Sub(account.CreatedAt)
+	accountTimeRemaining := accountTimeTotal - time.Now().Sub(account.CreatedAt)
+
+	accountBalance := costOfCurrentPlan * float64(accountTimeRemaining.Hours()/accountTimeTotal.Hours())
+
+	paymentStillNeeded := baseCostOfHigherPlan - (accountBalance)
+
+	return math.Ceil(paymentStillNeeded), nil
 }
 
 /*GetTotalCostInWei gets the total cost in wei for a subscription*/
