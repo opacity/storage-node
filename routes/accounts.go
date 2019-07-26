@@ -175,11 +175,14 @@ func createAccount(c *gin.Context) error {
 	}
 
 	response := accountCreateRes{
-		Invoice: models.Invoice{
+		ExpirationDate: account.ExpirationDate(),
+	}
+
+	if utils.Env.Plans[int(account.StorageLimit)].Name != "Free" {
+		response.Invoice = models.Invoice{
 			Cost:       cost,
 			EthAddress: ethAddr.String(),
-		},
-		ExpirationDate: account.ExpirationDate(),
+		}
 	}
 
 	if err := utils.Validator.Struct(&response); err != nil {
