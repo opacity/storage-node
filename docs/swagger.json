@@ -978,7 +978,6 @@
             "type": "object",
             "required": [
                 "apiVersion",
-                "cost",
                 "ethAddress",
                 "expirationDate",
                 "monthsInSubscription",

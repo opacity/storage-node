@@ -49,10 +49,10 @@ type accountGetObj struct {
 	UpdatedAt             time.Time               `json:"updatedAt"`
 	ExpirationDate        time.Time               `json:"expirationDate" binding:"required"`
 	MonthsInSubscription  int                     `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
-	StorageLimit          models.StorageLimitType `json:"storageLimit" binding:"required,gte=100" example:"100"`                                                             // how much storage they are allowed, in GB
+	StorageLimit          models.StorageLimitType `json:"storageLimit" binding:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
 	StorageUsed           float64                 `json:"storageUsed" binding:"exists" example:"30"`                                                                         // how much storage they have used, in GB
 	EthAddress            string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	Cost                  float64                 `json:"cost" binding:"required,gte=0" example:"2.00"`
+	Cost                  float64                 `json:"cost" binding:"omitempty,gte=0" example:"2.00"`
 	ApiVersion            int                     `json:"apiVersion" binding:"required,gte=1"`
 	TotalFolders          int                     `json:"totalFolders" binding:"exists" example:"2"`
 	TotalMetadataSizeInMB float64                 `json:"totalMetadataSizeInMB" binding:"exists" example:"1.245765432"`
@@ -181,7 +181,7 @@ func createAccount(c *gin.Context) error {
 				StorageLimit:          account.StorageLimit,
 				StorageUsed:           float64(account.StorageUsedInByte) / 1e9,
 				EthAddress:            account.EthAddress,
-				Cost:                  0.00,
+				Cost:                  utils.Env.Plans[int(account.StorageLimit)].Cost,
 				ApiVersion:            account.ApiVersion,
 				TotalFolders:          account.TotalFolders,
 				TotalMetadataSizeInMB: float64(account.TotalMetadataSizeInBytes) / 1e6,
