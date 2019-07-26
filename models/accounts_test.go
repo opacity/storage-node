@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"encoding/hex"
-
 	"time"
 
 	"math/big"
@@ -19,6 +18,7 @@ import (
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
+	"math"
 )
 
 func returnValidAccount() Account {
@@ -171,7 +171,7 @@ func Test_Returns_Expiration_Date(t *testing.T) {
 	assert.Equal(t, currentTime.Month(), expirationDate.Month())
 }
 
-func Test_Returns_Cost(t *testing.T) {
+func Test_Cost_Returns_Cost(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
@@ -182,6 +182,146 @@ func Test_Returns_Cost(t *testing.T) {
 	}
 
 	assert.Equal(t, BasicSubscriptionDefaultCost, cost)
+}
+
+func Test_UpgradeCostInOPQ_Half_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(1024)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * (365 / 2)
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 24.00, math.Ceil(upgradeCostInOPQ))
+}
+
+func Test_UpgradeCostInOPQ_Fourth_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(1024)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * (365 / 4)
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 20.00, math.Ceil(upgradeCostInOPQ))
+}
+
+func Test_UpgradeCostInOPQ_Three_Fourths_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(1024)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * ((365 / 4) * 3)
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 28.00, math.Ceil(upgradeCostInOPQ))
+}
+
+func Test_UpgradeCostInOPQ_Subscription_Expired(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(1024)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * 366
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 32.00, math.Ceil(upgradeCostInOPQ))
+}
+
+func Test_UpgradeCostInOPQ_Upgrade_From_Free_Plan_Half_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(10)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * (365 / 2)
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 32.00, math.Ceil(upgradeCostInOPQ))
+}
+
+func Test_UpgradeCostInUSD_Half_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(1024)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * (365 / 2)
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 100.00, math.Ceil(upgradeCostInUSD))
+}
+
+func Test_UpgradeCostInUSD_Fourth_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(1024)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * (365 / 4)
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 75.00, math.Ceil(upgradeCostInUSD))
+}
+
+func Test_UpgradeCostInUSD_Three_Fourths_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(1024)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * ((365 / 4) * 3)
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 125.00, math.Ceil(upgradeCostInUSD))
+}
+
+func Test_UpgradeCostInUSD_Subscription_Expired(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(1024)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * 366
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 150.00, math.Ceil(upgradeCostInUSD))
+}
+
+func Test_UpgradeCostInUSD_Upgrade_From_Free_Plan_Half_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(10)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * (365 / 2)
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 150.00, math.Ceil(upgradeCostInUSD))
 }
 
 func Test_GetTotalCostInWei(t *testing.T) {
