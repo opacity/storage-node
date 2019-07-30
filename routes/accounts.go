@@ -2,7 +2,6 @@ package routes
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"time"
 
@@ -135,9 +134,8 @@ func createAccount(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	plan, ok := utils.Env.Plans[request.accountCreateObj.StorageLimit]
-	if !ok {
-		return BadRequestResponse(c, errors.New("storage not offered in that increment in GB"))
+	if err := verifyValidStorageLimit(request.accountCreateObj.StorageLimit, c); err != nil {
+		return err
 	}
 
 	accountId, err := request.getAccountId(c)
@@ -157,7 +155,7 @@ func createAccount(c *gin.Context) error {
 
 	account := models.Account{
 		AccountID:            accountId,
-		StorageLimit:         models.StorageLimitType(plan.StorageInGB),
+		StorageLimit:         models.StorageLimitType(request.accountCreateObj.StorageLimit),
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:        models.InitialPaymentInProgress,
