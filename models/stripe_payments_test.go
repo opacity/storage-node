@@ -12,12 +12,16 @@ import (
 	"time"
 )
 
-func returnValidStripePaymentForTest() StripePayment {
+func returnValidStripePaymentForTest() (StripePayment, Account) {
 	account := returnValidAccount()
 
 	// Add account to DB
 	DB.Create(&account)
 
+	return returnStripePaymentForTestForAccount(account), account
+}
+
+func returnStripePaymentForTestForAccount(account Account) StripePayment {
 	return StripePayment{
 		StripeToken: services.RandTestStripeToken(),
 		AccountID:   account.AccountID,
@@ -33,7 +37,7 @@ func Test_Init_Stripe_Payments(t *testing.T) {
 
 func Test_Valid_Stripe_Payment_Passes(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -42,7 +46,7 @@ func Test_Valid_Stripe_Payment_Passes(t *testing.T) {
 
 func Test_Valid_Stripe_Fails_If_No_Account_Exists(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 	account, _ := GetAccountById(stripePayment.AccountID)
 	DB.Delete(&account)
 
@@ -53,7 +57,7 @@ func Test_Valid_Stripe_Fails_If_No_Account_Exists(t *testing.T) {
 
 func Test_GetStripePaymentByAccountId(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -66,7 +70,7 @@ func Test_GetStripePaymentByAccountId(t *testing.T) {
 
 	DB.Delete(&stripePayment)
 
-	stripePayment = returnValidStripePaymentForTest()
+	stripePayment, _ = returnValidStripePaymentForTest()
 
 	stripeRowFromDB, err = GetStripePaymentByAccountId(stripePayment.AccountID)
 	assert.NotNil(t, err)
@@ -74,9 +78,31 @@ func Test_GetStripePaymentByAccountId(t *testing.T) {
 	assert.Equal(t, "", stripeRowFromDB.AccountID)
 }
 
+func Test_GetNewestStripePaymentByAccountId(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment1, account := returnValidStripePaymentForTest()
+
+	if err := DB.Create(&stripePayment1).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	stripePayment1.CreatedAt = time.Now().Add(time.Hour * 24 * 20 * -1)
+	DB.Save(&stripePayment1)
+
+	stripePayment2 := returnStripePaymentForTestForAccount(account)
+
+	if err := DB.Create(&stripePayment2).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	stripeRowFromDB, err := GetNewestStripePaymentByAccountId(account.AccountID)
+	assert.Nil(t, err)
+	assert.Equal(t, stripePayment2.StripeToken, stripeRowFromDB.StripeToken)
+}
+
 func Test_CheckForPaidStripePayment(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -97,7 +123,7 @@ func Test_CheckForPaidStripePayment(t *testing.T) {
 
 func Test_CheckChargePaid(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -120,7 +146,7 @@ func Test_CheckChargePaid(t *testing.T) {
 
 func Test_SendAccountOPQ(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -137,9 +163,28 @@ func Test_SendAccountOPQ(t *testing.T) {
 	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
 }
 
+func Test_SendAccountOPQForUpgrade(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment, _ := returnValidStripePaymentForTest()
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		return true, "", 1
+	}
+
+	assert.Equal(t, OpqTxNotStarted, stripePayment.OpqTxStatus)
+	err := stripePayment.SendAccountOPQForUpgrade(24.00)
+	assert.Nil(t, err)
+	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+}
+
 func Test_CheckOPQTransaction_transaction_complete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 	stripePayment.OpqTxStatus = OpqTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -160,7 +205,7 @@ func Test_CheckOPQTransaction_transaction_complete(t *testing.T) {
 
 func Test_CheckOPQTransaction_transaction_incomplete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 	stripePayment.OpqTxStatus = OpqTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -180,7 +225,7 @@ func Test_CheckOPQTransaction_transaction_incomplete(t *testing.T) {
 
 func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 	stripePayment.OpqTxStatus = OpqTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -202,7 +247,7 @@ func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
 
 func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 	stripePayment.OpqTxStatus = OpqTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -226,7 +271,7 @@ func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
 
 func Test_DeleteStripePaymentIfExists(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -242,15 +287,15 @@ func Test_DeleteStripePaymentIfExists(t *testing.T) {
 
 func Test_PurgeOldStripePayments(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePaymentNew := returnValidStripePaymentForTest()
+	stripePaymentNew, _ := returnValidStripePaymentForTest()
 	DB.Create(&stripePaymentNew)
 
-	stripePaymentOld := returnValidStripePaymentForTest()
+	stripePaymentOld, _ := returnValidStripePaymentForTest()
 	for {
 		if stripePaymentOld.StripeToken != stripePaymentNew.StripeToken {
 			break
 		}
-		stripePaymentOld = returnValidStripePaymentForTest()
+		stripePaymentOld, _ = returnValidStripePaymentForTest()
 	}
 	DB.Create(&stripePaymentOld)
 

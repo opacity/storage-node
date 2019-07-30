@@ -941,7 +941,7 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 func Test_PurgeOldUnpaidAccounts_Stripe_Payment_Is_Deleted(t *testing.T) {
 	DeleteAccountsForTest(t)
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 	DB.Create(&stripePayment)
 
 	account, _ := GetAccountById(stripePayment.AccountID)
