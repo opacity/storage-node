@@ -87,3 +87,13 @@ func Test_verifyIfPaidWithContext_account_not_paid_and_no_stripe_payment(t *test
 
 	assert.NotNil(t, err)
 }
+
+func Test_verifyValidStorageLimit(t *testing.T) {
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	err := verifyValidStorageLimit(128, c)
+	assert.Nil(t, err)
+
+	c, _ = gin.CreateTestContext(httptest.NewRecorder())
+	err = verifyValidStorageLimit(129, c)
+	assert.NotNil(t, err)
+}

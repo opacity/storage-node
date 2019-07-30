@@ -157,3 +157,11 @@ func verifyIfPaidWithContext(account models.Account, c *gin.Context) error {
 
 	return nil
 }
+
+func verifyValidStorageLimit(storageLimit int, c *gin.Context) error {
+	_, ok := utils.Env.Plans[storageLimit]
+	if !ok {
+		return BadRequestResponse(c, models.InvalidStorageLimitError)
+	}
+	return nil
+}
