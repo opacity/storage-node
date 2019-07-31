@@ -165,3 +165,14 @@ func verifyValidStorageLimit(storageLimit int, c *gin.Context) error {
 	}
 	return nil
 }
+
+func verifyUpgradeEligible(oldStorageLimit, newStorageLimit int, c *gin.Context) error {
+	err := verifyValidStorageLimit(newStorageLimit, c)
+	if err != nil {
+		return err
+	}
+	if newStorageLimit <= oldStorageLimit {
+		return BadRequestResponse(c, errors.New("cannot upgrade to storage limit lower than current limit"))
+	}
+	return nil
+}

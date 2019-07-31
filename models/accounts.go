@@ -368,6 +368,7 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 		return InvalidStorageLimitError
 	}
 	if upgradeStorageLimit == int(account.StorageLimit) {
+		// assume they have already upgraded and the method has simply been called twice
 		return nil
 	}
 	monthsSinceCreation := differenceInMonths(account.CreatedAt, time.Now())
