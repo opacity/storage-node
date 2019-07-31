@@ -47,10 +47,10 @@ const (
 	AccountDataPath = "/account-data"
 
 	/*AccountUpgradeInvoicePath is the path for getting an invoice to upgrade an account*/
-	AccountUpgradeInvoicePath = "/account/upgrade/invoice"
+	AccountUpgradeInvoicePath = "/upgrade/invoice"
 
 	/*AccountUpgradePath is the path for checking the upgrade status of an account*/
-	AccountUpgradePath = "/account/upgrade"
+	AccountUpgradePath = "/upgrade"
 
 	/*AdminPath is a router group for admin task. */
 	AdminPath = "/admin"

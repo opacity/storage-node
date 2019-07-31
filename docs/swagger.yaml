@@ -295,6 +295,62 @@ definitions:
         $ref: '#/definitions/routes.stripeDataObj'
         type: object
     type: object
+  routes.checkUpgradeStatusObject:
+    properties:
+      durationInMonths:
+        example: 12
+        minimum: 1
+        type: integer
+      fileHandles:
+        example:
+        - an array containing all your file handles
+        items:
+          type: string
+        type: array
+      metadataKeys:
+        example:
+        - an array containing all your metadata keys
+        items:
+          type: string
+        type: array
+      storageLimit:
+        example: 128
+        minimum: 128
+        type: integer
+    required:
+    - durationInMonths
+    - fileHandles
+    - metadataKeys
+    - storageLimit
+    type: object
+  routes.checkUpgradeStatusReq:
+    properties:
+      checkUpgradeStatusObject:
+        $ref: '#/definitions/routes.checkUpgradeStatusObject'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.createMetadataRes:
     properties:
       expirationDate:
@@ -304,11 +360,21 @@ definitions:
     type: object
   routes.createStripePaymentObject:
     properties:
+      durationInMonths:
+        example: 12
+        minimum: 1
+        type: integer
+      storageLimit:
+        example: 128
+        minimum: 128
+        type: integer
       stripeToken:
         example: tok_KPte7942xySKBKyrBu11yEpf
         type: string
       timestamp:
         type: integer
+      upgradeAccount:
+        type: boolean
     required:
     - stripeToken
     - timestamp
@@ -448,6 +514,56 @@ definitions:
         type: string
     required:
     - expirationDate
+    type: object
+  routes.getUpgradeAccountInvoiceObject:
+    properties:
+      durationInMonths:
+        example: 12
+        minimum: 1
+        type: integer
+      storageLimit:
+        example: 128
+        minimum: 128
+        type: integer
+    required:
+    - durationInMonths
+    - storageLimit
+    type: object
+  routes.getUpgradeAccountInvoiceReq:
+    properties:
+      getUpgradeAccountInvoiceObject:
+        $ref: '#/definitions/routes.getUpgradeAccountInvoiceObject'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
+  routes.getUpgradeAccountInvoiceRes:
+    properties:
+      opqInvoice:
+        $ref: '#/definitions/models.Invoice'
+        type: object
+      usdInvoice:
+        type: number
     type: object
   routes.metadataKeyObject:
     properties:
@@ -1060,6 +1176,88 @@ paths:
           schema:
             type: string
       summary: create a stripe payment
+  /api/v1/upgrade:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        check the upgrade status
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "storageLimit": 100,
+        "durationInMonths": 12,
+        "metadataKeys": "["someKey", "someOtherKey]",
+        "fileHandles": "["someHandle", "someOtherHandle]",
+        }
+      parameters:
+      - description: check upgrade status object
+        in: body
+        name: checkUpgradeStatusReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.checkUpgradeStatusReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: check the upgrade status
+  /api/v1/upgrade/invoice:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        get an invoice to upgrade an account
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "storageLimit": 100,
+        "durationInMonths": 12,
+        }
+      parameters:
+      - description: get upgrade invoice object
+        in: body
+        name: getUpgradeAccountInvoiceReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.getUpgradeAccountInvoiceReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.getUpgradeAccountInvoiceRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: get an invoice to upgrade an account
   /api/v1/upload:
     post:
       consumes:

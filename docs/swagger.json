@@ -565,6 +565,108 @@
                 }
             }
         },
+        "/api/v1/upgrade": {
+            "post": {
+                "description": "check the upgrade status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "check the upgrade status",
+                "parameters": [
+                    {
+                        "description": "check upgrade status object",
+                        "name": "checkUpgradeStatusReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.checkUpgradeStatusReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/upgrade/invoice": {
+            "post": {
+                "description": "get an invoice to upgrade an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get an invoice to upgrade an account",
+                "parameters": [
+                    {
+                        "description": "get upgrade invoice object",
+                        "name": "getUpgradeAccountInvoiceReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.getUpgradeAccountInvoiceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "$ref": "#/definitions/routes.getUpgradeAccountInvoiceRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/upload": {
             "post": {
                 "description": "upload a chunk of a file. The first partIndex must be 1.\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"partIndex\": 1,\n}",
@@ -1071,6 +1173,76 @@
                 }
             }
         },
+        "routes.checkUpgradeStatusObject": {
+            "type": "object",
+            "required": [
+                "durationInMonths",
+                "fileHandles",
+                "metadataKeys",
+                "storageLimit"
+            ],
+            "properties": {
+                "durationInMonths": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 12
+                },
+                "fileHandles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "an array containing all your file handles"
+                    ]
+                },
+                "metadataKeys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "an array containing all your metadata keys"
+                    ]
+                },
+                "storageLimit": {
+                    "type": "integer",
+                    "minimum": 128,
+                    "example": 128
+                }
+            }
+        },
+        "routes.checkUpgradeStatusReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "checkUpgradeStatusObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.checkUpgradeStatusObject"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
         "routes.createMetadataRes": {
             "type": "object",
             "required": [
@@ -1089,12 +1261,25 @@
                 "timestamp"
             ],
             "properties": {
+                "durationInMonths": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 12
+                },
+                "storageLimit": {
+                    "type": "integer",
+                    "minimum": 128,
+                    "example": 128
+                },
                 "stripeToken": {
                     "type": "string",
                     "example": "tok_KPte7942xySKBKyrBu11yEpf"
                 },
                 "timestamp": {
                     "type": "integer"
+                },
+                "upgradeAccount": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1264,6 +1449,68 @@
                 "metadata": {
                     "type": "string",
                     "example": "your account metadata"
+                }
+            }
+        },
+        "routes.getUpgradeAccountInvoiceObject": {
+            "type": "object",
+            "required": [
+                "durationInMonths",
+                "storageLimit"
+            ],
+            "properties": {
+                "durationInMonths": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 12
+                },
+                "storageLimit": {
+                    "type": "integer",
+                    "minimum": 128,
+                    "example": 128
+                }
+            }
+        },
+        "routes.getUpgradeAccountInvoiceReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "getUpgradeAccountInvoiceObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.getUpgradeAccountInvoiceObject"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.getUpgradeAccountInvoiceRes": {
+            "type": "object",
+            "properties": {
+                "opqInvoice": {
+                    "type": "object",
+                    "$ref": "#/definitions/models.Invoice"
+                },
+                "usdInvoice": {
+                    "type": "number"
                 }
             }
         },

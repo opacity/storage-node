@@ -46,10 +46,46 @@ func (v *checkUpgradeStatusReq) getObjectRef() interface{} {
 	return &v.checkUpgradeStatusObject
 }
 
+// GetAccountUpgradeInvoiceHandler godoc
+// @Summary get an invoice to upgrade an account
+// @Description get an invoice to upgrade an account
+// @Accept  json
+// @Produce  json
+// @Param getUpgradeAccountInvoiceReq body routes.getUpgradeAccountInvoiceReq true "get upgrade invoice object"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"storageLimit": 100,
+// @description 	"durationInMonths": 12,
+// @description }
+// @Success 200 {object} routes.getUpgradeAccountInvoiceRes
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 404 {string} string "no account with that id: (with your accountID)"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v1/upgrade/invoice [post]
+/*GetAccountUpgradeInvoiceHandler is a handler for getting an invoice to upgrade an account*/
 func GetAccountUpgradeInvoiceHandler() gin.HandlerFunc {
 	return ginHandlerFunc(getAccountUpgradeInvoice)
 }
 
+// CheckUpgradeStatusHandler godoc
+// @Summary check the upgrade status
+// @Description check the upgrade status
+// @Accept  json
+// @Produce  json
+// @Param checkUpgradeStatusReq body routes.checkUpgradeStatusReq true "check upgrade status object"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"storageLimit": 100,
+// @description 	"durationInMonths": 12,
+// @description 	"metadataKeys": "["someKey", "someOtherKey]",
+// @description 	"fileHandles": "["someHandle", "someOtherHandle]",
+// @description }
+// @Success 200 {object} routes.StatusRes
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 404 {string} string "no account with that id: (with your accountID)"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v1/upgrade [post]
+/*CheckUpgradeStatusHandler is a handler for checking the upgrade status*/
 func CheckUpgradeStatusHandler() gin.HandlerFunc {
 	return ginHandlerFunc(checkUpgradeStatus)
 }
