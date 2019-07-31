@@ -727,6 +727,53 @@ func Test_RemoveMetadata(t *testing.T) {
 	assert.NotNil(t, account.RemoveMetadata(100))
 }
 
+func Test_UpgradeAccount(t *testing.T) {
+	account := returnValidAccount()
+
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
+	DB.Save(&account)
+
+	startingExpirationDate := account.ExpirationDate()
+	startingStorageLimit := account.StorageLimit
+	startingMonthsInSubscription := account.MonthsInSubscription
+
+	err := account.UpgradeAccount(1024, 12)
+
+	assert.Nil(t, err)
+	assert.Equal(t, 1024, int(account.StorageLimit))
+
+	newExpirationDate := account.ExpirationDate()
+	assert.NotEqual(t, startingExpirationDate, newExpirationDate)
+	assert.NotEqual(t, startingMonthsInSubscription, account.MonthsInSubscription)
+	assert.NotEqual(t, startingStorageLimit, int(account.MonthsInSubscription))
+}
+
+func Test_UpgradeAccount_Invalid_Storage_Value(t *testing.T) {
+	account := returnValidAccount()
+
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
+	DB.Save(&account)
+
+	startingExpirationDate := account.ExpirationDate()
+	startingStorageLimit := account.StorageLimit
+	startingMonthsInSubscription := account.MonthsInSubscription
+
+	err := account.UpgradeAccount(1023, 12)
+
+	assert.NotNil(t, err)
+	assert.Equal(t, startingStorageLimit, account.StorageLimit)
+
+	newExpirationDate := account.ExpirationDate()
+	assert.Equal(t, startingExpirationDate, newExpirationDate)
+	assert.Equal(t, startingMonthsInSubscription, account.MonthsInSubscription)
+}
+
 func Test_GetAccountById(t *testing.T) {
 	account := returnValidAccount()
 	if err := DB.Create(&account).Error; err != nil {
@@ -894,7 +941,7 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 func Test_PurgeOldUnpaidAccounts_Stripe_Payment_Is_Deleted(t *testing.T) {
 	DeleteAccountsForTest(t)
 	DeleteStripePaymentsForTest(t)
-	stripePayment := returnValidStripePaymentForTest()
+	stripePayment, _ := returnValidStripePaymentForTest()
 	DB.Create(&stripePayment)
 
 	account, _ := GetAccountById(stripePayment.AccountID)

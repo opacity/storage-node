@@ -1,10 +1,11 @@
 package models
 
 import (
-	"time"
-
+	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
+	"time"
 )
 
 type CompletedFile struct {
@@ -64,4 +65,35 @@ func GetCompletedFileByFileID(fileID string) (CompletedFile, error) {
 	completedFile := CompletedFile{}
 	err := DB.Where("file_id = ?", fileID).First(&completedFile).Error
 	return completedFile, err
+}
+
+/*UpdateExpiredAt receives an array of file handles and updates the ExpiredAt times of any file that matches
+one of the file handles*/
+func UpdateExpiredAt(fileHandles []string, key string, newExpiredAtTime time.Time) error {
+	modifierHashes, err := CreateModifierHashes(fileHandles, key)
+	if err != nil {
+		return err
+	}
+	db := DB.Table("completed_files").Where("file_id IN (?) AND modifier_hash IN (?)",
+		fileHandles, modifierHashes).Updates(map[string]interface{}{"expired_at": newExpiredAtTime})
+	if db.Error != nil {
+		return db.Error
+	}
+	if db.RowsAffected != int64(len(fileHandles)) {
+		return errors.New(fmt.Sprintf("Expected to affect %d rows in UpdateExpiredAt but actually affected %d rows", len(fileHandles), db.RowsAffected))
+	}
+	return nil
+}
+
+/*CreateModifierHashes creates the modifier hashes for the array of file handles passed in*/
+func CreateModifierHashes(fileHandles []string, key string) ([]string, error) {
+	var modifierHashes []string
+	for _, fileHandle := range fileHandles {
+		modifierHash, err := utils.HashString(key + fileHandle)
+		if err != nil {
+			return []string{}, err
+		}
+		modifierHashes = append(modifierHashes, modifierHash)
+	}
+	return modifierHashes, nil
 }

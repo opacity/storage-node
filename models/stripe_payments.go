@@ -7,6 +7,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
+	"math/big"
 )
 
 /*StripePayment defines a model for managing a credit card payment*/
@@ -58,10 +59,17 @@ func (stripePayment *StripePayment) BeforeCreate(scope *gorm.Scope) error {
 	return utils.Validator.Struct(stripePayment)
 }
 
-/*Return Stripe Payment object(first one) if there is not any error. */
+/*GetStripePaymentByAccountId returns Stripe Payment object(first one) if there is not any error. */
 func GetStripePaymentByAccountId(accountID string) (StripePayment, error) {
 	stripePayment := StripePayment{}
 	err := DB.Where("account_id = ?", accountID).First(&stripePayment).Error
+	return stripePayment, err
+}
+
+/*GetNewestStripePaymentByAccountId returns newest Stripe Payment if there is not any error. */
+func GetNewestStripePaymentByAccountId(accountID string) (StripePayment, error) {
+	stripePayment := StripePayment{}
+	err := DB.Order("created_at desc").Where("account_id = ?", accountID).First(&stripePayment).Error
 	return stripePayment, err
 }
 
@@ -69,7 +77,7 @@ func GetStripePaymentByAccountId(accountID string) (StripePayment, error) {
 func CheckForPaidStripePayment(accountID string) (bool, error) {
 	paid := false
 	var err error
-	stripePayment, err := GetStripePaymentByAccountId(accountID)
+	stripePayment, err := GetNewestStripePaymentByAccountId(accountID)
 	if len(stripePayment.AccountID) != 0 && err == nil {
 		paid, err = stripePayment.CheckChargePaid()
 	}
@@ -98,6 +106,33 @@ func (stripePayment *StripePayment) SendAccountOPQ() error {
 	}
 
 	costInWei := account.GetTotalCostInWei()
+
+	success, _, _ := EthWrapper.TransferToken(
+		services.MainWalletAddress,
+		services.MainWalletPrivateKey,
+		services.StringToAddress(account.EthAddress),
+		*costInWei,
+		services.SlowGasPrice)
+
+	if !success {
+		return errors.New("OPQ transaction failed")
+	}
+
+	if err := DB.Model(&stripePayment).Update("opq_tx_status", OpqTxInProgress).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+/*SendAccountOPQForUpgrade sends OPQ to the account being upgraded, associated with a stripe payment. */
+func (stripePayment *StripePayment) SendAccountOPQForUpgrade(upgradeCostInOPQ float64) error {
+	account, err := GetAccountById(stripePayment.AccountID)
+	if err != nil {
+		return err
+	}
+
+	costInWei := utils.ConvertToWeiUnit(big.NewFloat(upgradeCostInOPQ))
 
 	success, _, _ := EthWrapper.TransferToken(
 		services.MainWalletAddress,

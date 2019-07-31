@@ -111,6 +111,8 @@ on an account of that status*/
 var PaymentCollectionFunctions = make(map[PaymentStatusType]func(
 	account Account) error)
 
+var InvalidStorageLimitError = errors.New("storage not offered in that increment in GB")
+
 func init() {
 	PaymentStatusMap[InitialPaymentInProgress] = "InitialPaymentInProgress"
 	PaymentStatusMap[InitialPaymentReceived] = "InitialPaymentReceived"
@@ -358,6 +360,47 @@ func (account *Account) RemoveMetadata(oldMetadataSizeInBytes int64) error {
 		}).Error
 	}
 	return err
+}
+
+func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan int) error {
+	_, ok := utils.Env.Plans[upgradeStorageLimit]
+	if !ok {
+		return InvalidStorageLimitError
+	}
+	if upgradeStorageLimit == int(account.StorageLimit) {
+		// assume they have already upgraded and the method has simply been called twice
+		return nil
+	}
+	monthsSinceCreation := differenceInMonths(account.CreatedAt, time.Now())
+	account.StorageLimit = StorageLimitType(upgradeStorageLimit)
+	account.MonthsInSubscription = monthsSinceCreation + monthsForNewPlan
+	return DB.Model(account).Updates(map[string]interface{}{
+		"months_in_subscription": account.MonthsInSubscription,
+		"storage_limit":          account.StorageLimit,
+	}).Error
+}
+
+func differenceInMonths(a, b time.Time) int {
+	y1, M1, d1 := a.Date()
+	y2, M2, d2 := b.Date()
+
+	year := int(y2 - y1)
+	day := int(d2 - d1)
+	month := int(M2 - M1)
+
+	// Normalize negative values
+	if day < 0 {
+		// days in month:
+		t := time.Date(y1, M1, 32, 0, 0, 0, 0, time.UTC)
+		day += 32 - t.Day()
+		month--
+	}
+	if month < 0 {
+		month += 12
+		year--
+	}
+
+	return month + (year * 12) + int(math.Ceil(float64(day)/30))
 }
 
 /*Return Account object(first one) if there is not any error. */

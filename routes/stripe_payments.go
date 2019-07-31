@@ -17,8 +17,11 @@ const (
 )
 
 type createStripePaymentObject struct {
-	StripeToken string `json:"stripeToken" binding:"required" example:"tok_KPte7942xySKBKyrBu11yEpf"`
-	Timestamp   int64  `json:"timestamp" binding:"required"`
+	StripeToken      string `json:"stripeToken" binding:"required" example:"tok_KPte7942xySKBKyrBu11yEpf"`
+	Timestamp        int64  `json:"timestamp" binding:"required"`
+	UpgradeAccount   bool   `json:"upgradeAccount"`
+	StorageLimit     int    `json:"storageLimit" binding:"omitempty,gte=128" minimum:"128" example:"128"`
+	DurationInMonths int    `json:"durationInMonths" binding:"omitempty,gte=1" minimum:"1" example:"12"`
 }
 
 type createStripePaymentReq struct {
@@ -83,48 +86,42 @@ func createStripePayment(c *gin.Context) error {
 		return err
 	}
 
-	costInDollars := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
+	var costInDollars float64
+	if request.createStripePaymentObject.UpgradeAccount {
+		if err := verifyValidStorageLimit(request.createStripePaymentObject.StorageLimit, c); err != nil {
+			return err
+		}
+		costInDollars, _ = account.UpgradeCostInUSD(request.createStripePaymentObject.StorageLimit,
+			request.createStripePaymentObject.DurationInMonths)
+	} else {
+		costInDollars = utils.Env.Plans[int(account.StorageLimit)].CostInUSD
+	}
+
 	if costInDollars <= float64(0.50) {
 		return ForbiddenResponse(c, errors.New("cannot create stripe charge for less than $0.50"))
 	}
 
-	if paid := verifyIfPaid(account); paid && !utils.FreeModeEnabled() {
+	if paid := verifyIfPaid(account); paid && !utils.FreeModeEnabled() &&
+		!request.createStripePaymentObject.UpgradeAccount {
 		return ForbiddenResponse(c, errors.New("account is already paid for"))
 	}
 
-	var charge *stripe.Charge
-	for i := 0; i < stripeRetryCount; i++ {
-		charge, err = services.CreateCharge(costInDollars, request.createStripePaymentObject.StripeToken, account.AccountID)
-		if !waitOnRetryableStripeError(err) {
-			break
-		}
-	}
-
-	if err != nil {
-		return handleStripeError(err, c)
-	}
-
-	stripePayment := models.StripePayment{
-		StripeToken: request.createStripePaymentObject.StripeToken,
-		AccountID:   account.AccountID,
-		ChargeID:    charge.ID,
-	}
-
-	// Add stripe payment to DB
-	if err := models.DB.Create(&stripePayment).Error; err != nil {
-		return BadRequestResponse(c, err)
-	}
-
-	if err := stripePayment.SendAccountOPQ(); err != nil {
-		return InternalErrorResponse(c, err)
-	}
-
-	account.UpdatePaymentViaStripe()
-	
-	amount, err := checkChargeAmount(c, stripePayment.ChargeID)
+	charge, stripePayment, err := createChargeAndStripePayment(c, costInDollars, account, request.createStripePaymentObject.StripeToken)
 	if err != nil {
 		return err
 	}
+
+	if !request.createStripePaymentObject.UpgradeAccount {
+		if err := stripePayment.SendAccountOPQ(); err != nil {
+			return InternalErrorResponse(c, err)
+		}
+	} else {
+		if err := payUpgradeCostWithStripe(c, stripePayment, account, request.createStripePaymentObject); err != nil {
+			return err
+		}
+	}
+
+	account.UpdatePaymentViaStripe()
 
 	return OkResponse(c, stripeDataRes{
 		StatusRes: StatusRes{
@@ -136,9 +133,56 @@ func createStripePayment(c *gin.Context) error {
 			StripeToken:         stripePayment.StripeToken,
 			OpqTxStatus:         models.OpqTxStatusMap[stripePayment.OpqTxStatus],
 			ChargeID:            charge.ID,
-			Amount:              amount,
+			Amount:              float64(charge.Amount) / 100.00,
 		},
 	})
+}
+
+func createChargeAndStripePayment(c *gin.Context, costInDollars float64, account models.Account,
+	stripeToken string) (*stripe.Charge, models.StripePayment, error) {
+	var charge *stripe.Charge
+	var err error
+	for i := 0; i < stripeRetryCount; i++ {
+		charge, err = services.CreateCharge(costInDollars, stripeToken, account.AccountID)
+		if !waitOnRetryableStripeError(err) {
+			break
+		}
+	}
+
+	if err != nil {
+		return charge, models.StripePayment{}, handleStripeError(err, c)
+	}
+
+	stripePayment := models.StripePayment{
+		StripeToken: stripeToken,
+		AccountID:   account.AccountID,
+		ChargeID:    charge.ID,
+	}
+
+	// Add stripe payment to DB
+	if err := models.DB.Create(&stripePayment).Error; err != nil {
+		return charge, stripePayment, BadRequestResponse(c, err)
+	}
+	return charge, stripePayment, nil
+}
+
+func payUpgradeCostWithStripe(c *gin.Context, stripePayment models.StripePayment, account models.Account, createStripePaymentObject createStripePaymentObject) error {
+	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(createStripePaymentObject.StorageLimit,
+		createStripePaymentObject.DurationInMonths)
+	if err := stripePayment.SendAccountOPQForUpgrade(upgradeCostInOPQ); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	var paid bool
+	var err error
+	if paid, err = checkChargePaid(c, stripePayment); err != nil {
+		return InternalErrorResponse(c, err)
+	} else if paid {
+		err = models.DB.Model(&account).Update("payment_status", models.InitialPaymentInProgress).Error
+	}
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	return nil
 }
 
 func checkChargePaid(c *gin.Context, stripePayment models.StripePayment) (bool, error) {

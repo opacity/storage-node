@@ -166,3 +166,61 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }
+
+func Test_Successful_Stripe_Payment_For_Upgrade(t *testing.T) {
+	models.DeleteStripePaymentsForTest(t)
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
+	account := CreatePaidAccountForTest(t, accountID)
+	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
+	models.DB.Save(&account)
+
+	newStorageLimit := 1024
+	oldExpirationDate := account.ExpirationDate()
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(newStorageLimit, models.DefaultMonthsPerSubscription)
+	assert.Nil(t, err)
+
+	stripeTokenBody := createStripePaymentObject{
+		StripeToken:      services.RandTestStripeToken(),
+		Timestamp:        time.Now().Unix(),
+		UpgradeAccount:   true,
+		StorageLimit:     newStorageLimit,
+		DurationInMonths: models.DefaultMonthsPerSubscription,
+	}
+	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
+
+	post := createStripePaymentReq{
+		verification: v,
+		requestBody:  b,
+	}
+
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		return true, "", 1
+	}
+
+	w := httpPostRequestHelperForTest(t, StripeCreatePath, post)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	account, _ = models.GetAccountById(accountID)
+	assert.Equal(t, models.PaymentMethodWithCreditCard, account.PaymentMethod)
+	y1, m1, d1 := oldExpirationDate.Date()
+	y2, m2, d2 := account.ExpirationDate().Date()
+	assert.Equal(t, y1, y2)
+	assert.Equal(t, m1, m2)
+	assert.Equal(t, d1, d2)
+	assert.Equal(t, models.InitialPaymentInProgress, account.PaymentStatus)
+
+	stripePayment, err := models.GetStripePaymentByAccountId(account.AccountID)
+	assert.Nil(t, err)
+
+	amount, err := services.CheckChargeAmount(stripePayment.ChargeID)
+	assert.Nil(t, err)
+
+	assert.Equal(t, upgradeCostInUSD, amount)
+}
