@@ -367,6 +367,9 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 	if !ok {
 		return InvalidStorageLimitError
 	}
+	if upgradeStorageLimit == int(account.StorageLimit) {
+		return nil
+	}
 	monthsSinceCreation := differenceInMonths(account.CreatedAt, time.Now())
 	account.StorageLimit = StorageLimitType(upgradeStorageLimit)
 	account.MonthsInSubscription = monthsSinceCreation + monthsForNewPlan

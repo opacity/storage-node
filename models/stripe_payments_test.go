@@ -90,6 +90,12 @@ func Test_GetNewestStripePaymentByAccountId(t *testing.T) {
 	DB.Save(&stripePayment1)
 
 	stripePayment2 := returnStripePaymentForTestForAccount(account)
+	for {
+		if stripePayment1.StripeToken != stripePayment2.StripeToken {
+			break
+		}
+		stripePayment2 = returnStripePaymentForTestForAccount(account)
+	}
 
 	if err := DB.Create(&stripePayment2).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())

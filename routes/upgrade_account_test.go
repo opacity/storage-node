@@ -48,6 +48,7 @@ func Test_GetAccountUpgradeInvoiceHandler_Returns_Invoice(t *testing.T) {
 
 func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Success(t *testing.T) {
 	newStorageLimit := 2048
+
 	checkUpgradeStatusObj := checkUpgradeStatusObject{
 		StorageLimit:     newStorageLimit,
 		DurationInMonths: models.DefaultMonthsPerSubscription,
@@ -68,6 +69,9 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Success(t *testin
 	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
 	account.PaymentStatus = models.PaymentRetrievalComplete
 	models.DB.Save(&account)
+
+	makeCompletedFileForTest(checkUpgradeStatusObj.FileHandles[0], account.ExpirationDate(), v.PublicKey)
+	makeMetadataForTest(checkUpgradeStatusObj.MetadataKeys[0], v.PublicKey)
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return true, nil
@@ -148,6 +152,9 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_Stripe_Upgrade(t *testing.T) 
 	account.PaymentStatus = models.PaymentRetrievalComplete
 	models.DB.Save(&account)
 
+	makeCompletedFileForTest(checkUpgradeStatusObj.FileHandles[0], account.ExpirationDate(), v.PublicKey)
+	makeMetadataForTest(checkUpgradeStatusObj.MetadataKeys[0], v.PublicKey)
+
 	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return true, "", 1
@@ -176,4 +183,28 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_Stripe_Upgrade(t *testing.T) 
 	assert.Equal(t, newStorageLimit, int(account.StorageLimit))
 	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
 	assert.Contains(t, w.Body.String(), `Success with Stripe`)
+}
+
+func makeCompletedFileForTest(handle string, expirationDate time.Time, key string) {
+	completedFile := models.CompletedFile{
+		FileID:         handle,
+		FileSizeInByte: 150,
+		ExpiredAt:      expirationDate,
+	}
+	modifierHash, _ := utils.HashString(key + completedFile.FileID)
+	completedFile.ModifierHash = modifierHash
+	models.DB.Save(&completedFile)
+}
+
+func makeMetadataForTest(metadataKey string, key string) {
+	ttl := utils.TestValueTimeToLive
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	permissionHash, _ := getPermissionHash(key, metadataKey, c)
+
+	permissionHashKey := getPermissionHashKeyForBadger(metadataKey)
+	utils.BatchSet(&utils.KVPairs{
+		metadataKey:       "",
+		permissionHashKey: permissionHash,
+	}, ttl)
 }

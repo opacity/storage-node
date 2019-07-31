@@ -109,3 +109,81 @@ func Test_GetCompletedFileByFileID(t *testing.T) {
 	assert.True(t, completedFile.FileSizeInByte == s.FileSizeInByte)
 	assert.Nil(t, err)
 }
+
+func Test_UpdateExpiredAt(t *testing.T) {
+	DeleteCompletedFilesForTest(t)
+
+	startingExpiredAtTime := time.Now().Add(3 * 24 * time.Hour)
+
+	publicKey := utils.GenerateFileHandle()
+
+	// The first two files should have their expiration dates updated because
+	// we will pass in their file handles
+	c1 := CompletedFile{
+		FileID:         utils.GenerateFileHandle(),
+		FileSizeInByte: 150,
+		ExpiredAt:      startingExpiredAtTime,
+	}
+	modifierHash, _ := utils.HashString(publicKey + c1.FileID)
+	c1.ModifierHash = modifierHash
+	assert.Nil(t, DB.Create(&c1).Error)
+
+	c2 := CompletedFile{
+		FileID:         utils.GenerateFileHandle(),
+		FileSizeInByte: 210,
+		ExpiredAt:      startingExpiredAtTime,
+	}
+	modifierHash, _ = utils.HashString(publicKey + c2.FileID)
+	c2.ModifierHash = modifierHash
+	assert.Nil(t, DB.Create(&c2).Error)
+
+	// the next file should not have its expiration date updated because although
+	// we are passing in its file handle, the modifier hash won't match
+	c3 := CompletedFile{
+		FileID:         utils.GenerateFileHandle(),
+		FileSizeInByte: 230,
+		ExpiredAt:      startingExpiredAtTime,
+	}
+	// not using its file handle to create the modifier hash
+	modifierHash, _ = utils.HashString(publicKey + utils.GenerateFileHandle())
+	c3.ModifierHash = modifierHash
+	assert.Nil(t, DB.Create(&c3).Error)
+
+	// the next file should not have its expiration date updated because we will
+	// not pass in its file handle
+	c4 := CompletedFile{
+		FileID:         utils.GenerateFileHandle(),
+		FileSizeInByte: 250,
+		ExpiredAt:      startingExpiredAtTime,
+	}
+	modifierHash, _ = utils.HashString(publicKey + c4.FileID)
+	c4.ModifierHash = modifierHash
+	assert.Nil(t, DB.Create(&c4).Error)
+
+	newExpiredAtTime := time.Now().Add(7 * 24 * time.Hour)
+
+	// pass in handles of first two completed files with new ExpiredAt time
+	err := UpdateExpiredAt([]string{c1.FileID, c2.FileID, c3.FileID}, publicKey, newExpiredAtTime)
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), `affect 3 rows`)
+	assert.Contains(t, err.Error(), `affected 2 rows`)
+
+	// check that first two files have their ExpiredAt times changed
+	completedFile, err := GetCompletedFileByFileID(c1.FileID)
+	assert.Equal(t, newExpiredAtTime.Day(), completedFile.ExpiredAt.Day())
+	assert.Nil(t, err)
+
+	completedFile, err = GetCompletedFileByFileID(c2.FileID)
+	assert.Equal(t, newExpiredAtTime.Day(), completedFile.ExpiredAt.Day())
+	assert.Nil(t, err)
+
+	// check that third file still has the same expired at time as before
+	completedFile, err = GetCompletedFileByFileID(c3.FileID)
+	assert.Equal(t, startingExpiredAtTime.Day(), completedFile.ExpiredAt.Day())
+	assert.Nil(t, err)
+
+	// check that last file still has the same expired at time as before
+	completedFile, err = GetCompletedFileByFileID(c4.FileID)
+	assert.Equal(t, startingExpiredAtTime.Day(), completedFile.ExpiredAt.Day())
+	assert.Nil(t, err)
+}

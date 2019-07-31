@@ -178,7 +178,6 @@ func Test_Successful_Stripe_Payment_For_Upgrade(t *testing.T) {
 
 	newStorageLimit := 1024
 	oldExpirationDate := account.ExpirationDate()
-	oldMonthsInSubscription := account.MonthsInSubscription
 	upgradeCostInUSD, err := account.UpgradeCostInUSD(newStorageLimit, models.DefaultMonthsPerSubscription)
 	assert.Nil(t, err)
 
@@ -210,9 +209,11 @@ func Test_Successful_Stripe_Payment_For_Upgrade(t *testing.T) {
 
 	account, _ = models.GetAccountById(accountID)
 	assert.Equal(t, models.PaymentMethodWithCreditCard, account.PaymentMethod)
-	assert.Equal(t, newStorageLimit, int(account.StorageLimit))
-	assert.NotEqual(t, oldExpirationDate, account.ExpirationDate())
-	assert.NotEqual(t, oldMonthsInSubscription, account.MonthsInSubscription)
+	y1, m1, d1 := oldExpirationDate.Date()
+	y2, m2, d2 := account.ExpirationDate().Date()
+	assert.Equal(t, y1, y2)
+	assert.Equal(t, m1, m2)
+	assert.Equal(t, d1, d2)
 	assert.Equal(t, models.InitialPaymentInProgress, account.PaymentStatus)
 
 	stripePayment, err := models.GetStripePaymentByAccountId(account.AccountID)

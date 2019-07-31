@@ -182,10 +182,6 @@ func payUpgradeCostWithStripe(c *gin.Context, stripePayment models.StripePayment
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
-	if err = account.UpgradeAccount(createStripePaymentObject.StorageLimit,
-		createStripePaymentObject.DurationInMonths); err != nil {
-		return InternalErrorResponse(c, err)
-	}
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"math/big"
+	"time"
 )
 
 type getUpgradeAccountInvoiceObject struct {
@@ -110,23 +111,23 @@ func checkUpgradeStatus(c *gin.Context) error {
 		if err != nil {
 			return InternalErrorResponse(c, err)
 		}
-		if paid {
-			amount, err := checkChargeAmount(c, stripePayment.ChargeID)
-			if err != nil {
-				return InternalErrorResponse(c, err)
+		if !paid {
+			return OkResponse(c, StatusRes{
+				Status: "Incomplete",
+			})
+		}
+		stripePayment.CheckOPQTransaction()
+		amount, err := checkChargeAmount(c, stripePayment.ChargeID)
+		if err != nil {
+			return InternalErrorResponse(c, err)
+		}
+		if amount >= upgradeCostInUSD {
+			if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
+				return err
 			}
-			if amount >= upgradeCostInUSD {
-				if err := account.UpgradeAccount(request.checkUpgradeStatusObject.StorageLimit,
-					request.checkUpgradeStatusObject.DurationInMonths); err != nil {
-					return InternalErrorResponse(c, err)
-				}
-				go func() {
-					stripePayment.CheckOPQTransaction()
-				}()
-				return OkResponse(c, StatusRes{
-					Status: "Success with Stripe",
-				})
-			}
+			return OkResponse(c, StatusRes{
+				Status: "Success with Stripe",
+			})
 		}
 	}
 
@@ -140,15 +141,63 @@ func checkUpgradeStatus(c *gin.Context) error {
 			Status: "Incomplete",
 		})
 	}
+	if err := models.DB.Model(&account).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
+		return err
+	}
+	return OkResponse(c, StatusRes{
+		Status: "Success with OPQ",
+	})
+}
+
+func upgradeAccountAndUpdateExpireDates(account models.Account, request checkUpgradeStatusReq, c *gin.Context) error {
 	if err := account.UpgradeAccount(request.checkUpgradeStatusObject.StorageLimit,
 		request.checkUpgradeStatusObject.DurationInMonths); err != nil {
 		return InternalErrorResponse(c, err)
 	}
-	if err := models.DB.Model(&account).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+	if err := models.UpdateExpiredAt(request.checkUpgradeStatusObject.FileHandles,
+		request.verification.PublicKey, account.ExpirationDate()); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	if err := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
+		request.verification.PublicKey, account.ExpirationDate(), c); err != nil {
+		return err
+	}
+	return nil
+}
+
+func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTime time.Time, c *gin.Context) error {
+	var kvPairs = make(utils.KVPairs)
+	var kvKeys utils.KVKeys
+
+	for _, metadataKey := range metadataKeys {
+		permissionHashKey := getPermissionHashKeyForBadger(metadataKey)
+		permissionHashValue, _, err := utils.GetValueFromKV(permissionHashKey)
+		if err != nil {
+			return InternalErrorResponse(c, err)
+		}
+
+		if err := verifyPermissions(key, metadataKey,
+			permissionHashValue, c); err != nil {
+			return err
+		}
+		kvPairs[permissionHashKey] = permissionHashValue
+		kvKeys = append(kvKeys, metadataKey)
+	}
+
+	kvs, err := utils.BatchGet(&kvKeys)
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	for key, value := range *kvs {
+		kvPairs[key] = value
+	}
+
+	if err := utils.BatchSet(&kvPairs, time.Until(newExpiredAtTime)); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
-	return OkResponse(c, StatusRes{
-		Status: "Success with OPQ",
-	})
+	return nil
 }
