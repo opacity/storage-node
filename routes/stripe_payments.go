@@ -88,6 +88,10 @@ func createStripePayment(c *gin.Context) error {
 
 	var costInDollars float64
 	if request.createStripePaymentObject.UpgradeAccount {
+		// TODO remove once we support upgrading
+		if !utils.IsTestEnv() {
+			return InternalErrorResponse(c, errors.New("upgrade not supported yet"))
+		}
 		if err := verifyValidStorageLimit(request.createStripePaymentObject.StorageLimit, c); err != nil {
 			return err
 		}
