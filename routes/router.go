@@ -170,6 +170,8 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 }
 
 func setupAdminPaths(router *gin.Engine) {
+	router.LoadHTMLGlob("templates/*")
+
 	g := router.Group(AdminPath, gin.BasicAuth(gin.Accounts{
 		utils.Env.AdminUser: utils.Env.AdminPassword,
 	}))
@@ -177,6 +179,14 @@ func setupAdminPaths(router *gin.Engine) {
 	g.GET("/jobrunner/json", jobs.JobJson)
 
 	g.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	g.GET("/delete", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "admin-delete.tmpl", gin.H{
+			"title": "Delete File",
+		})
+	})
+
+	g.POST("/delete", AdminDeleteFileHandler())
 
 	// Load template file location relative to the current working directory
 	// Unable to find the file.

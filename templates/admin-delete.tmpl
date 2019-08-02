@@ -1,0 +1,13 @@
+<html>
+<h1>
+{{ .title }}
+</h1>
+<body>
+<form action="/admin/delete" method="POST" novalidate enctype="multipart/form-data">
+    <label>Enter handle: </label>
+    <input type = "text" name = "fileId" value="{{ .fileId }}" />
+    <br>
+    <input type = "submit" name = "delete" value = "Delete" />
+</form>
+</body>
+</html>
