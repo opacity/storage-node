@@ -89,12 +89,12 @@ func Test_Verify(t *testing.T) {
 	signature, err := Sign(msg, privateKey)
 	assert.Nil(t, err)
 
-	// matches with 64 bytes
+	// matches with 65 bytes
 	isMatch, err := Verify(publicKeyAsBytes, msg, signature)
 	assert.Nil(t, err)
 	assert.True(t, isMatch)
 
-	// matches with 65 bytes
+	// matches with 64 bytes
 	isMatch, err = Verify(publicKeyAsBytes, msg, signature[:len(signature)-1])
 	assert.Nil(t, err)
 	assert.True(t, isMatch)
