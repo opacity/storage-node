@@ -1,5 +1,5 @@
 global:
-  scrape_interval:     5s # Set the scrape interval to every 5 seconds. Default is every 1 minute.
+  scrape_interval:     15s # Set the scrape interval to every 5 seconds. Default is every 1 minute.
   evaluation_interval: 5s # Evaluate rules every 5 seconds. The default is every 1 minute.
   # scrape_timeout is set to the global default (10s).
 
@@ -17,18 +17,26 @@ rule_files:
 # Here it's Prometheus itself.
 scrape_configs:
   # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
-  
+
   - job_name: 'storage-node'
     metrics_path: '/admin/metrics'
     basic_auth:
       # these values will be replaced by the sed commands in the prometheus Dockerfile
       username: @@ADMIN_USER@@
       password: @@ADMIN_PASSWORD@@
-
     # scheme defaults to 'http'.
     static_configs:
     - targets: ['app:3000']
-  
+
   - job_name: 'node-exporter'
     static_configs:
-    - targets: ['node-exporter:9100'] 
+    - targets: ['node-exporter:9100']
+
+  - job_name: 'influxdb'
+    static_configs:
+    - targets: ['influxdb:8086']
+
+remote_write:
+  - url: http://influxdb:8086/api/v1/prom/write?db=prometheus&u=@@ADMIN_USER@@&p=@@ADMIN_PASSWORD@@
+remote_read:
+  - url: http://influxdb:8086/api/v1/prom/read?db=prometheus&u=@@ADMIN_USER@@&p=@@ADMIN_PASSWORD@@

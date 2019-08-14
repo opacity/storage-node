@@ -1,4 +1,4 @@
-FROM prom/prometheus
+FROM quay.io/prometheus/prometheus:latest
 
 USER root
 

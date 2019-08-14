@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+
+influx -execute "CREATE USER IF NOT EXISTS ${INFLUXDB_USER} WITH PASSWORD '${INFLUXDB_USER_PASSWORD}' WITH ALL PRIVILEGES"
+influx -execute "CREATE DATABASE IF NOT EXISTS prometheus"

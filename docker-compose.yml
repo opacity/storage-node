@@ -16,6 +16,30 @@ services:
     networks:
       - promnet
 
+  influxdb:
+    build:
+      context: ./influxdb
+      dockerfile: Dockerfile
+    networks:
+      - promnet
+    ports:
+      - 8083:8083
+      - 8086:8086
+      - 8090:8090
+    restart: "always"
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
+      - ./influxdb/prometheus.iql:/docker-entrypoint-initdb.d/prometheus.iql:ro
+    environment:
+      - INFLUXDB_DB=prometheus
+      - INFLUXDB_ADMIN_USER=${ADMIN_USER}
+      - INFLUXDB_ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - INFLUXDB_USER=${ADMIN_USER}
+      - INFLUXDB_USER_PASSWORD=${ADMIN_PASSWORD}
+      - INFLUXDB_READ_USER=${ADMIN_USER}
+      - INFLUXDB_READ_USER_PASSWORD=${ADMIN_PASSWORD}
+
   # Explore current machine metric for prometheus to scrape.
   node-exporter:
     image: prom/node-exporter
@@ -103,4 +127,6 @@ networks:
 
 volumes:
   prometheus_data: {}
+  influxdb_data: {}
 # grafana_data: {}
+
