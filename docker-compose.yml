@@ -19,9 +19,10 @@ services:
   influxdb:
     networks:
       - promnet
-    image: influxdb
+    image: influxdb:latest
     ports:
       - 8086:8086
+    restart: "always"
     volumes:
       - ./prometheus/influxdb.conf:/etc/influxdb/influxdb.conf:ro
       - ./prometheus/prometheus.iql:/docker-entrypoint-initdb.d/prometheus.iql:ro
