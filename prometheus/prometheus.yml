@@ -38,11 +38,6 @@ scrape_configs:
       - targets:
         - influxdb:8086
 
-  - job_name: prometheus
-    static_configs:
-      - targets:
-        - prometheus:9090
-
 remote_write:
   - url: http://influxdb:8086/api/v1/prom/write?db=prometheus&u=@@ADMIN_USER@@&p=@@ADMIN_PASSWORD@@
 remote_read:
