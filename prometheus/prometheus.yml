@@ -24,7 +24,6 @@ scrape_configs:
       # these values will be replaced by the sed commands in the prometheus Dockerfile
       username: @@ADMIN_USER@@
       password: @@ADMIN_PASSWORD@@
-
     # scheme defaults to 'http'.
     static_configs:
     - targets: ['app:3000']
@@ -33,10 +32,9 @@ scrape_configs:
     static_configs:
     - targets: ['node-exporter:9100']
 
-  - job_name: influxdb
+  - job_name: 'influxdb'
     static_configs:
-      - targets:
-        - influxdb:8086
+    - targets: ['influxdb:8086']
 
 remote_write:
   - url: http://influxdb:8086/api/v1/prom/write?db=prometheus&u=@@ADMIN_USER@@&p=@@ADMIN_PASSWORD@@
