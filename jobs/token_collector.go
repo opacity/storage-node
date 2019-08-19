@@ -33,11 +33,12 @@ func (t tokenCollector) Runnable() bool {
 func runCollectionSequence(accounts []models.Account) {
 	for _, account := range accounts {
 		err := models.PaymentCollectionFunctions[account.PaymentStatus](account)
+		cost, _ := account.Cost()
 		utils.LogIfError(err, map[string]interface{}{
 			"eth_address":    account.EthAddress,
 			"account_id":     account.AccountID,
 			"payment_status": models.PaymentStatusMap[account.PaymentStatus],
-			"cost":           account.Cost(),
+			"cost":           cost,
 		})
 	}
 }
