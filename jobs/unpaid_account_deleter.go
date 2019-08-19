@@ -8,11 +8,17 @@ import (
 type unpaidAccountDeleter struct {
 }
 
+func (u unpaidAccountDeleter) Name() string {
+	return "unpaidAccountDeleter"
+}
+
 func (u unpaidAccountDeleter) ScheduleInterval() string {
 	return "@midnight"
 }
 
 func (u unpaidAccountDeleter) Run() {
+	utils.SlackLog("running " + u.Name())
+
 	err := models.PurgeOldUnpaidAccounts(utils.Env.AccountRetentionDays)
 
 	utils.LogIfError(err, nil)

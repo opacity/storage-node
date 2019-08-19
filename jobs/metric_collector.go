@@ -7,11 +7,17 @@ import (
 
 type metricCollector struct{}
 
+func (m metricCollector) Name() string {
+	return "metricCollector"
+}
+
 func (m metricCollector) ScheduleInterval() string {
 	return "@every 1h"
 }
 
 func (m metricCollector) Run() {
+	utils.SlackLog("running " + m.Name())
+
 	m.spaceUsageMetrics()
 	m.accountsMetrics()
 	m.fileMetrics()

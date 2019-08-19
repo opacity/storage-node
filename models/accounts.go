@@ -529,7 +529,6 @@ func handleAccountThatNeedsGas(account Account) error {
 			SetAccountsToNextPaymentStatus([]Account{account})
 			return nil
 		}
-		utils.LogIfError(transferErr, nil)
 	}
 	return transferErr
 }
@@ -538,7 +537,7 @@ func handleAccountThatNeedsGas(account Account) error {
 status if so.*/
 func handleAccountReceivingGas(account Account) error {
 	ethBalance := EthWrapper.GetETHBalance(services.StringToAddress(account.EthAddress))
-	if ethBalance.Int64() > 0 {
+	if ethBalance.Cmp(big.NewInt(0)) > 0 {
 		SetAccountsToNextPaymentStatus([]Account{account})
 	}
 	return nil
@@ -556,32 +555,36 @@ func handleAccountReadyForCollection(account Account) error {
 	)
 	privateKey, keyErr := services.StringToPrivateKey(hex.EncodeToString(keyInBytes))
 
-	if tokenBalance.Int64() == 0 {
-		utils.LogIfError(errors.New("expected a token balance but found 0"), nil)
-	} else if ethBalance.Int64() == 0 {
-		utils.LogIfError(errors.New("expected an eth balance but found 0"), nil)
-	} else if tokenBalance.Int64() > 0 && ethBalance.Int64() > 0 &&
-		utils.ReturnFirstError([]error{decryptErr, keyErr}) == nil {
-		success, _, _ := EthWrapper.TransferToken(
-			services.StringToAddress(account.EthAddress),
-			privateKey,
-			services.MainWalletAddress,
-			*tokenBalance,
-			services.SlowGasPrice)
-		if success {
-			SetAccountsToNextPaymentStatus([]Account{account})
-			return nil
-		}
-		utils.LogIfError(errors.New("payment collection failed"), nil)
+	if err := utils.ReturnFirstError([]error{decryptErr, keyErr}); err != nil {
+		return err
+	} else if tokenBalance.Cmp(big.NewInt(0)) == 0 {
+		return errors.New("expected a token balance but found 0")
+	} else if ethBalance.Cmp(big.NewInt(0)) == 0 {
+		return errors.New("expected an eth balance but found 0")
+	} else if tokenBalance.Cmp(big.NewInt(0)) < 0 {
+		return errors.New("got negative balance for tokenBalance")
+	} else if ethBalance.Cmp(big.NewInt(0)) < 0 {
+		return errors.New("got negative balance for ethBalance")
 	}
-	return utils.ReturnFirstError([]error{decryptErr, keyErr})
+
+	success, _, _ := EthWrapper.TransferToken(
+		services.StringToAddress(account.EthAddress),
+		privateKey,
+		services.MainWalletAddress,
+		*tokenBalance,
+		services.SlowGasPrice)
+	if success {
+		SetAccountsToNextPaymentStatus([]Account{account})
+		return nil
+	}
+	return errors.New("payment collection failed")
 }
 
 /*handleAccountWithCollectionInProgress will check the token balance of an account's payment address.  If the balance
 is zero, it means the collection has succeeded and the payment status is set to the next status*/
 func handleAccountWithCollectionInProgress(account Account) error {
 	balance := EthWrapper.GetTokenBalance(services.StringToAddress(account.EthAddress))
-	if balance.Int64() > 0 {
+	if balance.Cmp(big.NewInt(0)) == 0 {
 		SetAccountsToNextPaymentStatus([]Account{account})
 	}
 	return nil

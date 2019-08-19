@@ -12,11 +12,17 @@ type fileCleaner struct {
 
 var olderThanOffset = -1 * 24 * time.Hour
 
+func (f fileCleaner) Name() string {
+	return "fileCleaner"
+}
+
 func (f fileCleaner) ScheduleInterval() string {
-	return "@every 15s"
+	return "@every 15m"
 }
 
 func (f fileCleaner) Run() {
+	utils.SlackLog("running " + f.Name())
+
 	files, err := models.DeleteUploadsOlderThan(time.Now().Add(olderThanOffset))
 	utils.LogIfError(err, nil)
 
