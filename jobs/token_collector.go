@@ -13,7 +13,7 @@ func (t tokenCollector) Name() string {
 }
 
 func (t tokenCollector) ScheduleInterval() string {
-	return "@every 30m"
+	return "@every 10m"
 }
 
 func (t tokenCollector) Run() {
