@@ -8,11 +8,17 @@ import (
 
 type stripePaymentDeleter struct{}
 
+func (s stripePaymentDeleter) Name() string {
+	return "stripePaymentDeleter"
+}
+
 func (s stripePaymentDeleter) ScheduleInterval() string {
 	return "@midnight"
 }
 
 func (s stripePaymentDeleter) Run() {
+	utils.SlackLog("running " + s.Name())
+
 	err := models.PurgeOldStripePayments(utils.Env.StripeRetentionDays)
 
 	utils.LogIfError(err, nil)

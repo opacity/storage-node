@@ -19,6 +19,8 @@ const (
 type s3LifeCycleSetup struct{}
 
 func (e s3LifeCycleSetup) Run() error {
+	utils.SlackLog("running s3LifeCycleSetup")
+
 	lifecycles := getLifecyclesMap()
 
 	rules, err := utils.GetDefaultBucketLifecycle()

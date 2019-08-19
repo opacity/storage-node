@@ -10,11 +10,17 @@ import (
 type s3Deleter struct {
 }
 
+func (e s3Deleter) Name() string {
+	return "s3Deleter"
+}
+
 func (e s3Deleter) ScheduleInterval() string {
 	return "@midnight"
 }
 
 func (e s3Deleter) Run() {
+	utils.SlackLog("running " + e.Name())
+
 	fileIDs, err := models.GetAllExpiredCompletedFiles(time.Now())
 	if err != nil {
 		utils.LogIfError(err, nil)

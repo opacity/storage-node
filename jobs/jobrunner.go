@@ -14,6 +14,7 @@ type BackgroundRunnable interface {
 	Run()
 	/** Indicate whether it can run or not. */
 	Runnable() bool
+	Name() string
 }
 
 type StartUpRunnable interface {
@@ -57,7 +58,10 @@ func ScheduleBackgroundJobs() {
 
 	for _, s := range jobs {
 		if s.Runnable() {
+			utils.SlackLog("job " + s.Name() + " is runnable")
 			jobrunner.Schedule(s.ScheduleInterval(), s)
+		} else {
+			utils.LogIfError(errors.New("job "+s.Name()+" not runnable"), nil)
 		}
 	}
 }
@@ -74,6 +78,10 @@ func JobHtml(c *gin.Context) {
 
 type pingStdOut struct {
 	counter int
+}
+
+func (e *pingStdOut) Name() string {
+	return "pingStdOut"
 }
 
 func (e *pingStdOut) ScheduleInterval() string {

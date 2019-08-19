@@ -529,7 +529,6 @@ func handleAccountThatNeedsGas(account Account) error {
 			SetAccountsToNextPaymentStatus([]Account{account})
 			return nil
 		}
-		utils.LogIfError(transferErr, nil)
 	}
 	return transferErr
 }
@@ -572,7 +571,7 @@ func handleAccountReadyForCollection(account Account) error {
 			SetAccountsToNextPaymentStatus([]Account{account})
 			return nil
 		}
-		utils.LogIfError(errors.New("payment collection failed"), nil)
+		return errors.New("payment collection failed")
 	}
 	return utils.ReturnFirstError([]error{decryptErr, keyErr})
 }
