@@ -556,9 +556,9 @@ func handleAccountReadyForCollection(account Account) error {
 	privateKey, keyErr := services.StringToPrivateKey(hex.EncodeToString(keyInBytes))
 
 	if tokenBalance.Int64() == 0 {
-		utils.LogIfError(errors.New("expected a token balance but found 0"), nil)
+		return errors.New("expected a token balance but found 0")
 	} else if ethBalance.Int64() == 0 {
-		utils.LogIfError(errors.New("expected an eth balance but found 0"), nil)
+		return errors.New("expected an eth balance but found 0")
 	} else if tokenBalance.Int64() > 0 && ethBalance.Int64() > 0 &&
 		utils.ReturnFirstError([]error{decryptErr, keyErr}) == nil {
 		success, _, _ := EthWrapper.TransferToken(
