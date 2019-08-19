@@ -203,7 +203,6 @@ func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.
 		Amount:     opqAmount,
 		Gas:        GasLimitTokenSend,
 		PrivateKey: *privateKey,
-		TotalWei:   *big.NewInt(0).SetUint64(uint64(opqAmount.Int64())),
 	}
 
 	client, _ := sharedClient()
@@ -328,7 +327,7 @@ func checkForPendingTokenTxs(address common.Address) (bool, error) {
 		utils.LogIfError(err, nil)
 		return false, err
 	}
-	return balance.Int64() > big.NewInt(0).Int64(), nil
+	return balance.Cmp(big.NewInt(0)) > 0, nil
 }
 
 /*RemoveFromAddressNonceMap removes a key with a certain address from the map of addresses to their
@@ -358,7 +357,7 @@ func UpdateLastNonceInMap(address common.Address, lastNonce uint64) {
 // execution for new transaction
 func getGasPrice() (*big.Int, error) {
 	// if QAing, un-comment out the line immediately below to hard-code a high gwei value for fast txs
-	return utils.ConvertGweiToWei(big.NewInt(2)), nil
+	return DefaultGasPrice, nil
 
 	// connect ethereum client
 	client, err := sharedClient()

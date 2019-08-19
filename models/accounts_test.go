@@ -1238,7 +1238,7 @@ func Test_handleAccountReadyForCollection_transfer_failed(t *testing.T) {
 
 }
 
-func Test_handleAccountWithCollectionInProgress_balance_found(t *testing.T) {
+func Test_handleAccountWithCollectionInProgress_balance_not_found(t *testing.T) {
 	DeleteAccountsForTest(t)
 	account := returnValidAccount()
 	account.PaymentStatus = PaymentRetrievalInProgress
@@ -1250,10 +1250,10 @@ func Test_handleAccountWithCollectionInProgress_balance_found(t *testing.T) {
 		return big.NewInt(1)
 	}
 
-	verifyPaymentStatusExpectations(t, account, PaymentRetrievalInProgress, PaymentRetrievalComplete, handleAccountWithCollectionInProgress)
+	verifyPaymentStatusExpectations(t, account, PaymentRetrievalInProgress, PaymentRetrievalInProgress, handleAccountWithCollectionInProgress)
 }
 
-func Test_handleAccountWithCollectionInProgress_balance_not_found(t *testing.T) {
+func Test_handleAccountWithCollectionInProgress_balance_found(t *testing.T) {
 	DeleteAccountsForTest(t)
 	account := returnValidAccount()
 	account.PaymentStatus = PaymentRetrievalInProgress
@@ -1265,7 +1265,7 @@ func Test_handleAccountWithCollectionInProgress_balance_not_found(t *testing.T) 
 		return big.NewInt(0)
 	}
 
-	verifyPaymentStatusExpectations(t, account, PaymentRetrievalInProgress, PaymentRetrievalInProgress, handleAccountWithCollectionInProgress)
+	verifyPaymentStatusExpectations(t, account, PaymentRetrievalInProgress, PaymentRetrievalComplete, handleAccountWithCollectionInProgress)
 }
 
 func verifyPaymentStatusExpectations(t *testing.T,
