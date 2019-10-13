@@ -45,9 +45,9 @@ func InitKvStore() (err error) {
 	var opts badger.Options
 
 	if IsTestEnv() {
-		opts = badger.DefaultOptions(badgerDirTest)
+		opts = badger.DefaultOptions(badgerDirTest).WithTruncate(true)
 	} else {
-		opts = badger.DefaultOptions(badgerDirProd)
+		opts = badger.DefaultOptions(badgerDirProd).WithTruncate(true)
 	}
 
 	badgerDB, err = badger.Open(opts)
