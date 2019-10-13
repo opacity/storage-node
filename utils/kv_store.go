@@ -42,14 +42,12 @@ func InitKvStore() (err error) {
 	}
 
 	// Setup opts
-	opts := badger.DefaultOptions
+	var opts badger.Options
 
 	if IsTestEnv() {
-		opts.Dir = badgerDirTest
-		opts.ValueDir = badgerDirTest
+		opts = badger.DefaultOptions(badgerDirTest)
 	} else {
-		opts.Dir = badgerDirProd
-		opts.ValueDir = badgerDirProd
+		opts = badger.DefaultOptions(badgerDirProd)
 	}
 
 	badgerDB, err = badger.Open(opts)
@@ -204,7 +202,7 @@ func BatchSet(kvs *KVPairs, ttl time.Duration) error {
 			break
 		}
 
-		e := txn.SetWithTTL([]byte(k), []byte(v), ttl)
+		e := txn.SetEntry(badger.NewEntry([]byte(k), []byte(v)).WithTTL(ttl))
 		if e == nil {
 			continue
 		}
@@ -215,7 +213,7 @@ func BatchSet(kvs *KVPairs, ttl time.Duration) error {
 				e = commitErr
 			} else {
 				txn = badgerDB.NewTransaction(true)
-				e = txn.SetWithTTL([]byte(k), []byte(v), ttl)
+				e = txn.SetEntry(badger.NewEntry([]byte(k), []byte(v)).WithTTL(ttl))
 			}
 		}
 
