@@ -92,11 +92,6 @@ func CheckUpgradeStatusHandler() gin.HandlerFunc {
 }
 
 func getAccountUpgradeInvoice(c *gin.Context) error {
-	// TODO remove once we support upgrading
-	if !utils.IsTestEnv() {
-		return InternalErrorResponse(c, errors.New("upgrade not supported yet"))
-	}
-
 	request := getUpgradeAccountInvoiceReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
@@ -127,12 +122,6 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 }
 
 func checkUpgradeStatus(c *gin.Context) error {
-
-	// TODO remove once we support upgrading
-	if !utils.IsTestEnv() {
-		return InternalErrorResponse(c, errors.New("upgrade not supported yet"))
-	}
-
 	request := checkUpgradeStatusReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
