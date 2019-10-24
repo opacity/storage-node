@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
