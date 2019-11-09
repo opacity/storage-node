@@ -159,7 +159,7 @@ func checkUpgradeStatus(c *gin.Context) error {
 		}
 		if amount >= upgradeCostInUSD {
 			if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
-				return err
+				return InternalErrorResponse(c, err)
 			}
 			return OkResponse(c, StatusRes{
 				Status: "Success with Stripe",
@@ -181,7 +181,7 @@ func checkUpgradeStatus(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 	if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
-		return err
+		return InternalErrorResponse(c, err)
 	}
 	return OkResponse(c, StatusRes{
 		Status: "Success with OPQ",
@@ -191,17 +191,14 @@ func checkUpgradeStatus(c *gin.Context) error {
 func upgradeAccountAndUpdateExpireDates(account models.Account, request checkUpgradeStatusReq, c *gin.Context) error {
 	if err := account.UpgradeAccount(request.checkUpgradeStatusObject.StorageLimit,
 		request.checkUpgradeStatusObject.DurationInMonths); err != nil {
-		return InternalErrorResponse(c, err)
-	}
-	if err := models.UpdateExpiredAt(request.checkUpgradeStatusObject.FileHandles,
-		request.verification.PublicKey, account.ExpirationDate()); err != nil {
-		return InternalErrorResponse(c, err)
-	}
-	if err := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate(), c); err != nil {
 		return err
 	}
-	return nil
+	filesErr := models.UpdateExpiredAt(request.checkUpgradeStatusObject.FileHandles,
+		request.verification.PublicKey, account.ExpirationDate())
+	metadatasErr := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
+		request.verification.PublicKey, account.ExpirationDate(), c)
+
+	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }
 
 func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTime time.Time, c *gin.Context) error {
@@ -212,7 +209,7 @@ func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTim
 		permissionHashKey := getPermissionHashKeyForBadger(metadataKey)
 		permissionHashValue, _, err := utils.GetValueFromKV(permissionHashKey)
 		if err != nil {
-			return InternalErrorResponse(c, err)
+			return err
 		}
 
 		if err := verifyPermissions(key, metadataKey,
@@ -225,14 +222,14 @@ func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTim
 
 	kvs, err := utils.BatchGet(&kvKeys)
 	if err != nil {
-		return InternalErrorResponse(c, err)
+		return err
 	}
 	for key, value := range *kvs {
 		kvPairs[key] = value
 	}
 
 	if err := utils.BatchSet(&kvPairs, time.Until(newExpiredAtTime)); err != nil {
-		return InternalErrorResponse(c, err)
+		return err
 	}
 
 	return nil
