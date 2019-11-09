@@ -73,6 +73,9 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Success(t *testin
 	makeCompletedFileForTest(checkUpgradeStatusObj.FileHandles[0], account.ExpirationDate(), v.PublicKey)
 	makeMetadataForTest(checkUpgradeStatusObj.MetadataKeys[0], v.PublicKey)
 
+	completedFileStart, err := models.GetCompletedFileByFileID(checkUpgradeStatusObj.FileHandles[0])
+	assert.Nil(t, err)
+
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return true, nil
 	}
@@ -81,8 +84,15 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Success(t *testin
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	account, err := models.GetAccountById(account.AccountID)
+	completedFileEnd, err := models.GetCompletedFileByFileID(checkUpgradeStatusObj.FileHandles[0])
 	assert.Nil(t, err)
+
+	account, err = models.GetAccountById(account.AccountID)
+	assert.Nil(t, err)
+
+	assert.NotEqual(t, completedFileStart.ExpiredAt, completedFileEnd.ExpiredAt)
+	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
+
 	assert.Equal(t, newStorageLimit, int(account.StorageLimit))
 	assert.Equal(t, models.InitialPaymentReceived, account.PaymentStatus)
 	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
@@ -155,6 +165,9 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_Stripe_Upgrade(t *testing.T) 
 	makeCompletedFileForTest(checkUpgradeStatusObj.FileHandles[0], account.ExpirationDate(), v.PublicKey)
 	makeMetadataForTest(checkUpgradeStatusObj.MetadataKeys[0], v.PublicKey)
 
+	completedFileStart, err := models.GetCompletedFileByFileID(checkUpgradeStatusObj.FileHandles[0])
+	assert.Nil(t, err)
+
 	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return true, "", 1
@@ -178,8 +191,15 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_Stripe_Upgrade(t *testing.T) 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 
+	completedFileEnd, err := models.GetCompletedFileByFileID(checkUpgradeStatusObj.FileHandles[0])
+	assert.Nil(t, err)
+
 	account, err = models.GetAccountById(account.AccountID)
 	assert.Nil(t, err)
+
+	assert.NotEqual(t, completedFileStart.ExpiredAt, completedFileEnd.ExpiredAt)
+	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
+
 	assert.Equal(t, newStorageLimit, int(account.StorageLimit))
 	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
 	assert.Contains(t, w.Body.String(), `Success with Stripe`)
