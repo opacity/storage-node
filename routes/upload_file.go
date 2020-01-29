@@ -18,7 +18,7 @@ type UploadFileObj struct {
 type UploadFileReq struct {
 	verification
 	requestBody
-	ChunkData   string `formFile:"chunkData" binding:"required" example:"a binary string of the chunk data"`
+	ChunkData     string `formFile:"chunkData" binding:"required" example:"a binary string of the chunk data"`
 	uploadFileObj UploadFileObj
 }
 

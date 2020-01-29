@@ -21,7 +21,7 @@ type ObjectIterator func([]*s3.Object) bool
 
 const (
 	MaxMultiPartSize          = int64(1024 * 1024 * 50)
-	MinMultiPartSize   		  = int64(1024 * 1024 * 5)
+	MinMultiPartSize          = int64(1024 * 1024 * 5)
 	MaxMultiPartRetries       = 10
 	CannedAcl_Private         = "private"
 	CannedAcl_PublicRead      = "public-read"
