@@ -377,6 +377,7 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 	return DB.Model(account).Updates(map[string]interface{}{
 		"months_in_subscription": account.MonthsInSubscription,
 		"storage_limit":          account.StorageLimit,
+		"updated_at":             time.Now(),
 	}).Error
 }
 

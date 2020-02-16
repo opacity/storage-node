@@ -102,7 +102,7 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyUpgradeEligible(int(account.StorageLimit), request.getUpgradeAccountInvoiceObject.StorageLimit, c); err != nil {
+	if err := verifyUpgradeEligible(account, request.getUpgradeAccountInvoiceObject.StorageLimit, c); err != nil {
 		return err
 	}
 
@@ -132,7 +132,7 @@ func checkUpgradeStatus(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyUpgradeEligible(int(account.StorageLimit), request.checkUpgradeStatusObject.StorageLimit, c); err != nil {
+	if err := verifyUpgradeEligible(account, request.checkUpgradeStatusObject.StorageLimit, c); err != nil {
 		return err
 	}
 

@@ -166,13 +166,17 @@ func verifyValidStorageLimit(storageLimit int, c *gin.Context) error {
 	return nil
 }
 
-func verifyUpgradeEligible(oldStorageLimit, newStorageLimit int, c *gin.Context) error {
+func verifyUpgradeEligible(account models.Account, newStorageLimit int, c *gin.Context) error {
 	err := verifyValidStorageLimit(newStorageLimit, c)
 	if err != nil {
 		return err
 	}
-	if newStorageLimit <= oldStorageLimit {
+	if newStorageLimit <= int(account.StorageLimit) {
 		return BadRequestResponse(c, errors.New("cannot upgrade to storage limit lower than current limit"))
+	}
+	if account.PaymentStatus != models.PaymentRetrievalComplete {
+		models.PaymentCollectionFunctions[account.PaymentStatus](account)
+		return ForbiddenResponse(c, errors.New("account too new to upgrade, or another upgrade performed too recently"))
 	}
 	return nil
 }
