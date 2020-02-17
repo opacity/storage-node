@@ -71,7 +71,7 @@ func CreateStripePaymentHandler() gin.HandlerFunc {
 
 func createStripePayment(c *gin.Context) error {
 
-	if !utils.Env.EnableCreditCards && !utils.IsTestEnv() {
+	if !utils.Env.EnableCreditCards {
 		return ForbiddenResponse(c, errors.New("not accepting credit cards yet"))
 	}
 
@@ -80,7 +80,6 @@ func createStripePayment(c *gin.Context) error {
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
 	}
-
 	account, err := request.getAccount(c)
 	if err != nil {
 		return err
@@ -88,10 +87,6 @@ func createStripePayment(c *gin.Context) error {
 
 	var costInDollars float64
 	if request.createStripePaymentObject.UpgradeAccount {
-		// TODO remove once we support upgrading
-		if !utils.IsTestEnv() {
-			return InternalErrorResponse(c, errors.New("upgrade not supported yet"))
-		}
 		if err := verifyValidStorageLimit(request.createStripePaymentObject.StorageLimit, c); err != nil {
 			return err
 		}
@@ -110,7 +105,7 @@ func createStripePayment(c *gin.Context) error {
 		return ForbiddenResponse(c, errors.New("account is already paid for"))
 	}
 
-	charge, stripePayment, err := createChargeAndStripePayment(c, costInDollars, account, request.createStripePaymentObject.StripeToken)
+	charge, stripePayment, err := createChargeAndStripePayment(c, costInDollars, account, request.createStripePaymentObject)
 	if err != nil {
 		return err
 	}
@@ -120,6 +115,7 @@ func createStripePayment(c *gin.Context) error {
 			return InternalErrorResponse(c, err)
 		}
 	} else {
+
 		if err := payUpgradeCostWithStripe(c, stripePayment, account, request.createStripePaymentObject); err != nil {
 			return err
 		}
@@ -143,11 +139,11 @@ func createStripePayment(c *gin.Context) error {
 }
 
 func createChargeAndStripePayment(c *gin.Context, costInDollars float64, account models.Account,
-	stripeToken string) (*stripe.Charge, models.StripePayment, error) {
+	reqBody createStripePaymentObject) (*stripe.Charge, models.StripePayment, error) {
 	var charge *stripe.Charge
 	var err error
 	for i := 0; i < stripeRetryCount; i++ {
-		charge, err = services.CreateCharge(costInDollars, stripeToken, account.AccountID)
+		charge, err = services.CreateCharge(costInDollars, reqBody.StripeToken, account.AccountID)
 		if !waitOnRetryableStripeError(err) {
 			break
 		}
@@ -158,9 +154,10 @@ func createChargeAndStripePayment(c *gin.Context, costInDollars float64, account
 	}
 
 	stripePayment := models.StripePayment{
-		StripeToken: stripeToken,
-		AccountID:   account.AccountID,
-		ChargeID:    charge.ID,
+		StripeToken:    reqBody.StripeToken,
+		AccountID:      account.AccountID,
+		ChargeID:       charge.ID,
+		UpgradePayment: reqBody.UpgradeAccount,
 	}
 
 	// Add stripe payment to DB
@@ -171,9 +168,7 @@ func createChargeAndStripePayment(c *gin.Context, costInDollars float64, account
 }
 
 func payUpgradeCostWithStripe(c *gin.Context, stripePayment models.StripePayment, account models.Account, createStripePaymentObject createStripePaymentObject) error {
-	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(createStripePaymentObject.StorageLimit,
-		createStripePaymentObject.DurationInMonths)
-	if err := stripePayment.SendAccountOPQForUpgrade(upgradeCostInOPQ); err != nil {
+	if err := stripePayment.SendUpgradeOPQ(account.AccountID, createStripePaymentObject.StorageLimit); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	var paid bool

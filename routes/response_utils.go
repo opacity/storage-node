@@ -174,9 +174,5 @@ func verifyUpgradeEligible(account models.Account, newStorageLimit int, c *gin.C
 	if newStorageLimit <= int(account.StorageLimit) {
 		return BadRequestResponse(c, errors.New("cannot upgrade to storage limit lower than current limit"))
 	}
-	if account.PaymentStatus != models.PaymentRetrievalComplete {
-		models.PaymentCollectionFunctions[account.PaymentStatus](account)
-		return ForbiddenResponse(c, errors.New("account too new to upgrade, or another upgrade performed too recently"))
-	}
 	return nil
 }

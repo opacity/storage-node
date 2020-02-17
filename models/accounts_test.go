@@ -184,6 +184,27 @@ func Test_Cost_Returns_Cost(t *testing.T) {
 	assert.Equal(t, BasicSubscriptionDefaultCost, cost)
 }
 
+func Test_UpgradeCostInOPQ_Basic_To_Professional_None_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+
+	DB.Create(&account)
+
+	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[1024].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 15.00, math.Ceil(upgradeCostInOPQ))
+}
+
+func Test_UpgradeCostInOPQ_None_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(1024)
+
+	DB.Create(&account)
+
+	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 17.00, math.Ceil(upgradeCostInOPQ))
+}
+
 func Test_UpgradeCostInOPQ_Half_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
 	account.StorageLimit = StorageLimitType(1024)

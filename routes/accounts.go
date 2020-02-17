@@ -212,7 +212,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		if err != nil {
 			return err
 		}
-		_, err = stripePayment.CheckOPQTransaction()
+		_, err = stripePayment.CheckAccountCreationOPQTransaction()
 		if err != nil {
 			return InternalErrorResponse(c, err)
 		}

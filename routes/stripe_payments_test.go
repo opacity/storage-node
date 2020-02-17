@@ -177,6 +177,10 @@ func Test_Successful_Stripe_Payment_For_Upgrade(t *testing.T) {
 	models.DB.Save(&account)
 
 	newStorageLimit := 1024
+
+	upgrade := CreateUpgradeForTest(t, account, newStorageLimit)
+	models.DB.Save(&upgrade)
+
 	oldExpirationDate := account.ExpirationDate()
 	upgradeCostInUSD, err := account.UpgradeCostInUSD(newStorageLimit, models.DefaultMonthsPerSubscription)
 	assert.Nil(t, err)

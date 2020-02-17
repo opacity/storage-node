@@ -1,6 +1,9 @@
 package routes
 
 import (
+	"encoding/hex"
+	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
@@ -111,10 +114,43 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 	upgradeCostInUSD, _ := account.UpgradeCostInUSD(request.getUpgradeAccountInvoiceObject.StorageLimit,
 		request.getUpgradeAccountInvoiceObject.DurationInMonths)
 
+	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
+	if err != nil {
+		err = fmt.Errorf("error generating upgrade wallet:  %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
+		utils.Env.EncryptionKey,
+		privKey,
+		account.AccountID,
+	)
+
+	if encryptErr != nil {
+		return ServiceUnavailableResponse(c, fmt.Errorf("error encrypting private key:  %v", encryptErr))
+	}
+
+	upgrade := models.Upgrade{
+		AccountID:        account.AccountID,
+		NewStorageLimit:  models.StorageLimitType(request.getUpgradeAccountInvoiceObject.StorageLimit),
+		EthAddress:       ethAddr.String(),
+		EthPrivateKey:    hex.EncodeToString(encryptedKeyInBytes),
+		PaymentStatus:    models.InitialPaymentInProgress,
+		OpqCost:          upgradeCostInOPQ,
+		UsdCost:          upgradeCostInUSD,
+		DurationInMonths: request.getUpgradeAccountInvoiceObject.DurationInMonths,
+	}
+
+	upgradeInDB, err := models.GetOrCreateUpgrade(upgrade)
+	if err != nil {
+		err = fmt.Errorf("error getting or creating upgrade:  %v", err)
+		return ServiceUnavailableResponse(c, err)
+	}
+
 	return OkResponse(c, getUpgradeAccountInvoiceRes{
 		OpqInvoice: models.Invoice{
 			Cost:       upgradeCostInOPQ,
-			EthAddress: account.EthAddress,
+			EthAddress: upgradeInDB.EthAddress,
 		},
 		UsdInvoice: upgradeCostInUSD,
 	})
@@ -136,13 +172,14 @@ func checkUpgradeStatus(c *gin.Context) error {
 		return err
 	}
 
-	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(request.checkUpgradeStatusObject.StorageLimit,
-		request.checkUpgradeStatusObject.DurationInMonths)
-	upgradeCostInUSD, _ := account.UpgradeCostInUSD(request.checkUpgradeStatusObject.StorageLimit,
-		request.checkUpgradeStatusObject.DurationInMonths)
+	upgrade, err := models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, request.checkUpgradeStatusObject.StorageLimit)
+	if upgrade.DurationInMonths != request.checkUpgradeStatusObject.DurationInMonths {
+		return ForbiddenResponse(c, errors.New("durationInMonths does not match durationInMonths "+
+			"when upgrade was initiated"))
+	}
 
 	stripePayment, err := models.GetNewestStripePaymentByAccountId(account.AccountID)
-	if stripePayment.AccountID == account.AccountID && err == nil {
+	if stripePayment.AccountID == account.AccountID && err == nil && stripePayment.UpgradePayment {
 		paid, err := stripePayment.CheckChargePaid()
 		if err != nil {
 			return InternalErrorResponse(c, err)
@@ -152,12 +189,12 @@ func checkUpgradeStatus(c *gin.Context) error {
 				Status: "Incomplete",
 			})
 		}
-		stripePayment.CheckOPQTransaction()
+		stripePayment.CheckUpgradeOPQTransaction(account.AccountID, request.checkUpgradeStatusObject.StorageLimit)
 		amount, err := checkChargeAmount(c, stripePayment.ChargeID)
 		if err != nil {
 			return InternalErrorResponse(c, err)
 		}
-		if amount >= upgradeCostInUSD {
+		if amount >= upgrade.UsdCost {
 			if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
 				return InternalErrorResponse(c, err)
 			}
@@ -167,8 +204,8 @@ func checkUpgradeStatus(c *gin.Context) error {
 		}
 	}
 
-	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(upgradeCostInOPQ)))
+	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgrade.EthAddress),
+		utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpqCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -177,7 +214,7 @@ func checkUpgradeStatus(c *gin.Context) error {
 			Status: "Incomplete",
 		})
 	}
-	if err := models.DB.Model(&account).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+	if err := models.DB.Model(&upgrade).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {

@@ -20,7 +20,10 @@ func (t tokenCollector) Run() {
 	utils.SlackLog("running " + t.Name())
 	for paymentStatus := models.InitialPaymentInProgress; paymentStatus < models.PaymentRetrievalComplete; paymentStatus++ {
 		accounts := models.GetAccountsByPaymentStatus(paymentStatus)
-		runCollectionSequence(accounts)
+		runAccountsCollectionSequence(accounts)
+
+		upgrades := models.GetUpgradesByPaymentStatus(paymentStatus)
+		runUpgradesCollectionSequence(upgrades)
 	}
 }
 
@@ -30,15 +33,29 @@ func (t tokenCollector) Runnable() bool {
 	return models.DB != nil && err == nil
 }
 
-func runCollectionSequence(accounts []models.Account) {
+func runAccountsCollectionSequence(accounts []models.Account) {
 	for _, account := range accounts {
-		err := models.PaymentCollectionFunctions[account.PaymentStatus](account)
+		err := models.AccountCollectionFunctions[account.PaymentStatus](account)
 		cost, _ := account.Cost()
 		utils.LogIfError(err, map[string]interface{}{
+			"message":        "error running token collection functions on account",
 			"eth_address":    account.EthAddress,
 			"account_id":     account.AccountID,
 			"payment_status": models.PaymentStatusMap[account.PaymentStatus],
 			"cost":           cost,
+		})
+	}
+}
+
+func runUpgradesCollectionSequence(upgrades []models.Upgrade) {
+	for _, upgrade := range upgrades {
+		err := models.UpgradeCollectionFunctions[upgrade.PaymentStatus](upgrade)
+		utils.LogIfError(err, map[string]interface{}{
+			"message":        "error running token collection functions on upgrade",
+			"eth_address":    upgrade.EthAddress,
+			"account_id":     upgrade.AccountID,
+			"payment_status": models.PaymentStatusMap[upgrade.PaymentStatus],
+			"cost":           upgrade.OpqCost,
 		})
 	}
 }
