@@ -79,7 +79,9 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Success(t *testin
 
 	CreateUpgradeForTest(t, account, newStorageLimit)
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, newStorageLimit)
+	originalStorageLimit := int(account.StorageLimit)
+
+	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
@@ -110,7 +112,7 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Success(t *testin
 	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
 	assert.Contains(t, w.Body.String(), `Success with OPQ`)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, newStorageLimit)
+	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentReceived, upgrade.PaymentStatus)
 }
@@ -145,7 +147,9 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Still_Pending(t *
 
 	CreateUpgradeForTest(t, account, newStorageLimit)
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, newStorageLimit)
+	originalStorageLimit := int(account.StorageLimit)
+
+	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
@@ -164,7 +168,7 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Still_Pending(t *
 	assert.False(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
 	assert.Contains(t, w.Body.String(), `Incomplete`)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, newStorageLimit)
+	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 }
@@ -198,7 +202,9 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_Stripe_Upgrade(t *testing.T) 
 
 	CreateUpgradeForTest(t, account, newStorageLimit)
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, newStorageLimit)
+	originalStorageLimit := int(account.StorageLimit)
+
+	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
@@ -224,10 +230,11 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_Stripe_Upgrade(t *testing.T) 
 		StripeToken:    stripeToken,
 		UpgradeAccount: true,
 	})
-	payUpgradeCostWithStripe(c, stripePayment, account, createStripePaymentObject{
+	err = payUpgradeCostWithStripe(c, stripePayment, account, createStripePaymentObject{
 		StorageLimit:     newStorageLimit,
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 	})
+	assert.Nil(t, err)
 	account.UpdatePaymentViaStripe()
 
 	w := httpPostRequestHelperForTest(t, AccountUpgradePath, checkUpgradeStatusReq)
@@ -247,7 +254,7 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_Stripe_Upgrade(t *testing.T) 
 	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
 	assert.Contains(t, w.Body.String(), `Success with Stripe`)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, newStorageLimit)
+	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)
 	// This is in progress because we returned false for the CheckIfPaid mock
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
@@ -283,7 +290,9 @@ func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 
 	CreateUpgradeForTest(t, account, newStorageLimit)
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, newStorageLimit)
+	originalStorageLimit := int(account.StorageLimit)
+
+	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
@@ -328,11 +337,11 @@ func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
 	assert.Contains(t, w.Body.String(), `Success with OPQ`)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, newStorageLimit)
+	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, newStorageLimit2)
+	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit2, originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentReceived, upgrade.PaymentStatus)
 }
@@ -384,6 +393,7 @@ func returnUpgradeForTest(t *testing.T, account models.Account, newStorageLimit 
 	return models.Upgrade{
 		AccountID:        account.AccountID,
 		NewStorageLimit:  models.StorageLimitType(newStorageLimit),
+		OldStorageLimit:  account.StorageLimit,
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		PaymentStatus:    models.InitialPaymentInProgress,
 		OpqCost:          upgradeCostInOPQ,

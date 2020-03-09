@@ -14,6 +14,7 @@ type Upgrade struct {
 	/*AccountID associates an entry in the upgrades table with an entry in the accounts table*/
 	AccountID        string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"`
 	NewStorageLimit  StorageLimitType  `gorm:"primary_key;auto_increment:false" json:"newStorageLimit" binding:"required,gte=128" example:"100"` // how much storage they are allowed, in GB.  This will be the new StorageLimit of the account
+	OldStorageLimit  StorageLimitType  `json:"oldStorageLimit" binding:"required,gte=10" example:"10"`                                           // how much storage they are allowed, in GB.  This will be the new StorageLimit of the account
 	CreatedAt        time.Time         `json:"createdAt"`
 	UpdatedAt        time.Time         `json:"updatedAt"`
 	EthAddress       string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
@@ -64,25 +65,29 @@ and UsdCost but will not update the EthAddress and EthPrivateKey*/
 func GetOrCreateUpgrade(upgrade Upgrade) (*Upgrade, error) {
 	var upgradeFromDB Upgrade
 
-	upgradeFromDB, err := GetUpgradeFromAccountIDAndNewStorageLimit(upgrade.AccountID, int(upgrade.NewStorageLimit))
+	upgradeFromDB, err := GetUpgradeFromAccountIDAndStorageLimits(upgrade.AccountID, int(upgrade.NewStorageLimit), int(upgrade.OldStorageLimit))
 	if len(upgradeFromDB.AccountID) == 0 {
 		err = DB.Create(&upgrade).Error
 		upgradeFromDB = upgrade
 	} else {
-		upgradeFromDB.OpqCost = upgrade.OpqCost
-		upgradeFromDB.UsdCost = upgrade.UsdCost
-		err = DB.Model(&upgradeFromDB).Updates(Upgrade{OpqCost: upgrade.OpqCost, UsdCost: upgrade.UsdCost}).Error
+		targetTime := time.Now().Add(-60 * time.Minute)
+		if targetTime.After(upgradeFromDB.UpdatedAt) {
+			upgradeFromDB.OpqCost = upgrade.OpqCost
+			upgradeFromDB.UsdCost = upgrade.UsdCost
+			err = DB.Model(&upgradeFromDB).Updates(Upgrade{OpqCost: upgrade.OpqCost, UsdCost: upgrade.UsdCost}).Error
+		}
 	}
 
 	return &upgradeFromDB, err
 }
 
-/*GetUpgradeFromAccountIDAndNewStorageLimit will get an upgrade based on AccountID and NewStorageLimit*/
-func GetUpgradeFromAccountIDAndNewStorageLimit(accountID string, newStorageLimit int) (Upgrade, error) {
+/*GetUpgradeFromAccountIDAndStorageLimits will get an upgrade based on AccountID and storage limits*/
+func GetUpgradeFromAccountIDAndStorageLimits(accountID string, newStorageLimit, oldStorageLimit int) (Upgrade, error) {
 	upgrade := Upgrade{}
-	err := DB.Where("account_id = ? AND new_storage_limit = ?",
+	err := DB.Where("account_id = ? AND new_storage_limit = ? AND old_storage_limit = ?",
 		accountID,
-		newStorageLimit).First(&upgrade).Error
+		newStorageLimit,
+		oldStorageLimit).First(&upgrade).Error
 	return upgrade, err
 }
 

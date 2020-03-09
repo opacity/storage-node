@@ -133,6 +133,7 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 	upgrade := models.Upgrade{
 		AccountID:        account.AccountID,
 		NewStorageLimit:  models.StorageLimitType(request.getUpgradeAccountInvoiceObject.StorageLimit),
+		OldStorageLimit:  account.StorageLimit,
 		EthAddress:       ethAddr.String(),
 		EthPrivateKey:    hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:    models.InitialPaymentInProgress,
@@ -172,7 +173,7 @@ func checkUpgradeStatus(c *gin.Context) error {
 		return err
 	}
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndNewStorageLimit(account.AccountID, request.checkUpgradeStatusObject.StorageLimit)
+	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, request.checkUpgradeStatusObject.StorageLimit, int(account.StorageLimit))
 	if upgrade.DurationInMonths != request.checkUpgradeStatusObject.DurationInMonths {
 		return ForbiddenResponse(c, errors.New("durationInMonths does not match durationInMonths "+
 			"when upgrade was initiated"))
@@ -189,7 +190,7 @@ func checkUpgradeStatus(c *gin.Context) error {
 				Status: "Incomplete",
 			})
 		}
-		stripePayment.CheckUpgradeOPQTransaction(account.AccountID, request.checkUpgradeStatusObject.StorageLimit)
+		stripePayment.CheckUpgradeOPQTransaction(account, request.checkUpgradeStatusObject.StorageLimit)
 		amount, err := checkChargeAmount(c, stripePayment.ChargeID)
 		if err != nil {
 			return InternalErrorResponse(c, err)

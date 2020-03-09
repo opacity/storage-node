@@ -168,7 +168,7 @@ func createChargeAndStripePayment(c *gin.Context, costInDollars float64, account
 }
 
 func payUpgradeCostWithStripe(c *gin.Context, stripePayment models.StripePayment, account models.Account, createStripePaymentObject createStripePaymentObject) error {
-	if err := stripePayment.SendUpgradeOPQ(account.AccountID, createStripePaymentObject.StorageLimit); err != nil {
+	if err := stripePayment.SendUpgradeOPQ(account, createStripePaymentObject.StorageLimit); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	var paid bool

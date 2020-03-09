@@ -9,9 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
+	"time"
 )
 
-func returnValidUpgrade() Upgrade {
+func returnValidUpgrade() (Upgrade, Account) {
 	account := returnValidAccount()
 
 	// Add account to DB
@@ -27,13 +28,14 @@ func returnValidUpgrade() Upgrade {
 	return Upgrade{
 		AccountID:        account.AccountID,
 		NewStorageLimit:  ProfessionalStorageLimit,
+		OldStorageLimit:  account.StorageLimit,
 		EthAddress:       ethAddress.String(),
 		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
 		PaymentStatus:    InitialPaymentInProgress,
 		OpqCost:          upgradeCostInOPQ,
 		UsdCost:          upgradeCostInUSD,
 		DurationInMonths: 12,
-	}
+	}, account
 }
 
 func Test_Init_Upgrades(t *testing.T) {
@@ -42,7 +44,7 @@ func Test_Init_Upgrades(t *testing.T) {
 }
 
 func Test_Valid_Upgrade_Passes(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 
 	if err := utils.Validator.Struct(upgrade); err != nil {
 		t.Fatalf("upgrade should have passed validation but didn't: " + err.Error())
@@ -50,7 +52,7 @@ func Test_Valid_Upgrade_Passes(t *testing.T) {
 }
 
 func Test_Upgrade_Empty_AccountID_Fails(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 	upgrade.AccountID = ""
 
 	if err := utils.Validator.Struct(upgrade); err == nil {
@@ -59,7 +61,7 @@ func Test_Upgrade_Empty_AccountID_Fails(t *testing.T) {
 }
 
 func Test_Upgrade_Invalid_AccountID_Length_Fails(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 	upgrade.AccountID = utils.RandSeqFromRunes(63, []rune("abcdef01234567890"))
 
 	if err := utils.Validator.Struct(upgrade); err == nil {
@@ -74,7 +76,7 @@ func Test_Upgrade_Invalid_AccountID_Length_Fails(t *testing.T) {
 }
 
 func Test_Upgrade_Not_Enough_Months_Fails(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 	upgrade.DurationInMonths = 0
 
 	if err := utils.Validator.Struct(upgrade); err == nil {
@@ -83,7 +85,7 @@ func Test_Upgrade_Not_Enough_Months_Fails(t *testing.T) {
 }
 
 func Test_Upgrade_StorageLimit_Less_Than_128_Fails(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 	upgrade.NewStorageLimit = 127
 
 	if err := utils.Validator.Struct(upgrade); err == nil {
@@ -92,7 +94,7 @@ func Test_Upgrade_StorageLimit_Less_Than_128_Fails(t *testing.T) {
 }
 
 func Test_Upgrade_No_Eth_Address_Fails(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 	upgrade.EthAddress = ""
 
 	if err := utils.Validator.Struct(upgrade); err == nil {
@@ -101,7 +103,7 @@ func Test_Upgrade_No_Eth_Address_Fails(t *testing.T) {
 }
 
 func Test_Upgrade_Eth_Address_Invalid_Length_Fails(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 	upgrade.EthAddress = utils.RandSeqFromRunes(6, []rune("abcdef01234567890"))
 
 	if err := utils.Validator.Struct(upgrade); err == nil {
@@ -110,7 +112,7 @@ func Test_Upgrade_Eth_Address_Invalid_Length_Fails(t *testing.T) {
 }
 
 func Test_Upgrade_No_Eth_Private_Key_Fails(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 	upgrade.EthPrivateKey = ""
 
 	if err := utils.Validator.Struct(upgrade); err == nil {
@@ -119,7 +121,7 @@ func Test_Upgrade_No_Eth_Private_Key_Fails(t *testing.T) {
 }
 
 func Test_Upgrade_Eth_Private_Key_Invalid_Length_Fails(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 	upgrade.EthPrivateKey = utils.RandSeqFromRunes(6, []rune("abcdef01234567890"))
 
 	if err := utils.Validator.Struct(upgrade); err == nil {
@@ -128,7 +130,7 @@ func Test_Upgrade_Eth_Private_Key_Invalid_Length_Fails(t *testing.T) {
 }
 
 func Test_Upgrade_No_Payment_Status_Fails(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 	upgrade.PaymentStatus = 0
 
 	if err := utils.Validator.Struct(upgrade); err == nil {
@@ -137,7 +139,7 @@ func Test_Upgrade_No_Payment_Status_Fails(t *testing.T) {
 }
 
 func Test_Upgrade_GetOrCreateUpgrade(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 
 	// Test that new upgrade is created
 	uPtr, err := GetOrCreateUpgrade(upgrade)
@@ -149,11 +151,26 @@ func Test_Upgrade_GetOrCreateUpgrade(t *testing.T) {
 	assert.Equal(t, uPtr.UsdCost, upgrade.UsdCost)
 
 	// simulate generating a new update with the same AccountID and NewStorageLimit
-	// although another upgrade already exists
-	upgrade2 := returnValidUpgrade()
+	// although another upgrade already exists--price should not change due to 1 hour price
+	// locking
+	upgrade2, _ := returnValidUpgrade()
 	upgrade2.AccountID = upgrade.AccountID
 	upgrade2.NewStorageLimit = upgrade.NewStorageLimit
 	upgrade2.OpqCost = 1337.00
+	uPtr, err = GetOrCreateUpgrade(upgrade2)
+	assert.Nil(t, err)
+
+	// verify AccountID, EthAddress, EthPrivateKey are still the same
+	assert.Equal(t, uPtr.AccountID, upgrade.AccountID)
+	assert.Equal(t, uPtr.EthAddress, upgrade.EthAddress)
+	assert.Equal(t, uPtr.EthPrivateKey, upgrade.EthPrivateKey)
+
+	// verify OpqCost has NOT changed -- price locking keeps the price the same for an hour
+	assert.NotEqual(t, upgrade2.OpqCost, uPtr.OpqCost)
+	assert.Equal(t, upgrade.OpqCost, uPtr.OpqCost)
+
+	// set the original upgrade's UpgradedAt time to be over an hour old.
+	DB.Model(uPtr).UpdateColumn("updated_at", time.Now().Add(-61*time.Minute))
 	uPtr, err = GetOrCreateUpgrade(upgrade2)
 	assert.Nil(t, err)
 
@@ -167,27 +184,27 @@ func Test_Upgrade_GetOrCreateUpgrade(t *testing.T) {
 	assert.NotEqual(t, upgrade.OpqCost, uPtr.OpqCost)
 }
 
-func Test_Upgrade_GetUpgradeFromAccountIDAndNewStorageLimit(t *testing.T) {
-	upgrade := returnValidUpgrade()
+func Test_Upgrade_GetUpgradeFromAccountIDAndStorageLimits(t *testing.T) {
+	upgrade, account := returnValidUpgrade()
 
 	DB.Create(&upgrade)
 
-	upgradeFromDB, err := GetUpgradeFromAccountIDAndNewStorageLimit(upgrade.AccountID, int(upgrade.NewStorageLimit))
+	upgradeFromDB, err := GetUpgradeFromAccountIDAndStorageLimits(upgrade.AccountID, int(upgrade.NewStorageLimit), int(account.StorageLimit))
 	assert.Nil(t, err)
 	assert.Equal(t, upgrade.AccountID, upgradeFromDB.AccountID)
 
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndNewStorageLimit(
-		utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890")), 128)
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
+		utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890")), 128, 10)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", upgradeFromDB.AccountID)
 }
 
 func Test_Upgrade_GetUpgradesFromAccountID(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 
 	DB.Create(&upgrade)
 
-	upgrade2 := returnValidUpgrade()
+	upgrade2, _ := returnValidUpgrade()
 	upgrade2.NewStorageLimit = BasicStorageLimit
 	upgrade2.AccountID = upgrade.AccountID
 
@@ -201,51 +218,53 @@ func Test_Upgrade_GetUpgradesFromAccountID(t *testing.T) {
 }
 
 func Test_Upgrade_SetUpgradesToNextPaymentStatus(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, account := returnValidUpgrade()
 
 	DB.Create(&upgrade)
 
 	assert.Equal(t, InitialPaymentInProgress, upgrade.PaymentStatus)
 
+	originalStorageLimit := int(account.StorageLimit)
+
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgrade})
-	upgradeFromDB, err := GetUpgradeFromAccountIDAndNewStorageLimit(
-		upgrade.AccountID, int(upgrade.NewStorageLimit))
+	upgradeFromDB, err := GetUpgradeFromAccountIDAndStorageLimits(
+		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, InitialPaymentReceived, upgradeFromDB.PaymentStatus)
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgradeFromDB})
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndNewStorageLimit(
-		upgrade.AccountID, int(upgrade.NewStorageLimit))
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
+		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, GasTransferInProgress, upgradeFromDB.PaymentStatus)
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgradeFromDB})
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndNewStorageLimit(
-		upgrade.AccountID, int(upgrade.NewStorageLimit))
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
+		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, GasTransferComplete, upgradeFromDB.PaymentStatus)
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgradeFromDB})
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndNewStorageLimit(
-		upgrade.AccountID, int(upgrade.NewStorageLimit))
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
+		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, PaymentRetrievalInProgress, upgradeFromDB.PaymentStatus)
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgradeFromDB})
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndNewStorageLimit(
-		upgrade.AccountID, int(upgrade.NewStorageLimit))
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
+		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, PaymentRetrievalComplete, upgradeFromDB.PaymentStatus)
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgradeFromDB})
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndNewStorageLimit(
-		upgrade.AccountID, int(upgrade.NewStorageLimit))
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
+		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, PaymentRetrievalComplete, upgradeFromDB.PaymentStatus)
 }
 
 func Test_Upgrade_CheckIfPaid_Has_Paid(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return true, nil
@@ -265,7 +284,7 @@ func Test_Upgrade_CheckIfPaid_Has_Paid(t *testing.T) {
 }
 
 func Test_Upgrade_CheckIfPaid_Not_Paid(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return false, nil
@@ -285,7 +304,7 @@ func Test_Upgrade_CheckIfPaid_Not_Paid(t *testing.T) {
 }
 
 func Test_Upgrade_CheckIfPaid_Error_While_Checking(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
 		return false, errors.New("some error")
@@ -305,7 +324,7 @@ func Test_Upgrade_CheckIfPaid_Error_While_Checking(t *testing.T) {
 }
 
 func Test_Upgrade_GetTotalCostInWei(t *testing.T) {
-	upgrade := returnValidUpgrade()
+	upgrade, _ := returnValidUpgrade()
 
 	costInWei := upgrade.GetTotalCostInWei()
 

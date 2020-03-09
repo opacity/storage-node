@@ -133,8 +133,8 @@ func (stripePayment *StripePayment) SendAccountOPQ() error {
 }
 
 /*SendUpgradeOPQ sends OPQ to the account being upgraded, associated with a stripe payment. */
-func (stripePayment *StripePayment) SendUpgradeOPQ(accountID string, newStorageLimit int) error {
-	upgrade, _ := GetUpgradeFromAccountIDAndNewStorageLimit(accountID, newStorageLimit)
+func (stripePayment *StripePayment) SendUpgradeOPQ(account Account, newStorageLimit int) error {
+	upgrade, _ := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
 
 	costInWei := utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpqCost))
 
@@ -181,8 +181,8 @@ func (stripePayment *StripePayment) CheckAccountCreationOPQTransaction() (bool, 
 }
 
 /*CheckUpgradeOPQTransaction checks the status of an OPQ payment to an upgrade. */
-func (stripePayment *StripePayment) CheckUpgradeOPQTransaction(accountID string, newStorageLimit int) (bool, error) {
-	upgrade, err := GetUpgradeFromAccountIDAndNewStorageLimit(accountID, newStorageLimit)
+func (stripePayment *StripePayment) CheckUpgradeOPQTransaction(account Account, newStorageLimit int) (bool, error) {
+	upgrade, err := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
 	if err != nil {
 		return false, err
 	}
