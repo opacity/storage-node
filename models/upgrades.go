@@ -224,7 +224,14 @@ func handleUpgradeWithCollectionInProgress(upgrade Upgrade) error {
 	return nil
 }
 
-/*handleUpgradeAlreadyCollected deletes a completed upgrade*/
 func handleUpgradeAlreadyCollected(upgrade Upgrade) error {
-	return DB.Delete(&upgrade).Error
+	return nil
+}
+
+/*PurgeOldUpgrades deletes upgrades past a certain age*/
+func PurgeOldUpgrades(hoursToRetain int) error {
+	err := DB.Where("updated_at < ?",
+		time.Now().Add(-1*time.Hour*time.Duration(hoursToRetain))).Delete(&Upgrade{}).Error
+
+	return err
 }

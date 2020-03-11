@@ -54,6 +54,7 @@ func ScheduleBackgroundJobs() {
 		tokenCollector{},
 		fileCleaner{},
 		stripePaymentDeleter{},
+		upgradeDeleter{},
 	}
 
 	for _, s := range jobs {
