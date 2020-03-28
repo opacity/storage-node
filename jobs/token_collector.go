@@ -24,6 +24,9 @@ func (t tokenCollector) Run() {
 
 		upgrades := models.GetUpgradesByPaymentStatus(paymentStatus)
 		runUpgradesCollectionSequence(upgrades)
+
+		renewals := models.GetRenewalsByPaymentStatus(paymentStatus)
+		runRenewalsCollectionSequence(renewals)
 	}
 }
 
@@ -56,6 +59,19 @@ func runUpgradesCollectionSequence(upgrades []models.Upgrade) {
 			"account_id":     upgrade.AccountID,
 			"payment_status": models.PaymentStatusMap[upgrade.PaymentStatus],
 			"cost":           upgrade.OpqCost,
+		})
+	}
+}
+
+func runRenewalsCollectionSequence(renewals []models.Renewal) {
+	for _, renewal := range renewals {
+		err := models.RenewalCollectionFunctions[renewal.PaymentStatus](renewal)
+		utils.LogIfError(err, map[string]interface{}{
+			"message":        "error running token collection functions on renewal",
+			"eth_address":    renewal.EthAddress,
+			"account_id":     renewal.AccountID,
+			"payment_status": models.PaymentStatusMap[renewal.PaymentStatus],
+			"cost":           renewal.OpqCost,
 		})
 	}
 }

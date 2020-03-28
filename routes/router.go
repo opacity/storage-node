@@ -52,6 +52,12 @@ const (
 	/*AccountUpgradePath is the path for checking the upgrade status of an account*/
 	AccountUpgradePath = "/upgrade"
 
+	/*AccountUpgradeInvoicePath is the path for getting an invoice to renew an account*/
+	AccountRenewInvoicePath = "/renew/invoice"
+
+	/*AccountUpgradePath is the path for checking the renew status of an account*/
+	AccountRenewPath = "/renew"
+
 	/*AdminPath is a router group for admin task. */
 	AdminPath = "/admin"
 
@@ -148,8 +154,12 @@ func returnV1Group(router *gin.Engine) *gin.RouterGroup {
 func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(AccountsPath, CreateAccountHandler())
 	v1Router.POST(AccountDataPath, CheckAccountPaymentStatusHandler())
+
 	v1Router.POST(AccountUpgradeInvoicePath, GetAccountUpgradeInvoiceHandler())
 	v1Router.POST(AccountUpgradePath, CheckUpgradeStatusHandler())
+
+	v1Router.POST(AccountRenewInvoicePath, GetAccountRenewalInvoiceHandler())
+	v1Router.POST(AccountRenewPath, CheckRenewalStatusHandler())
 
 	v1Router.POST(MetadataSetPath, UpdateMetadataHandler())
 	v1Router.POST(MetadataGetPath, GetMetadataHandler())

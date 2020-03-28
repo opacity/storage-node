@@ -2,15 +2,16 @@ package routes
 
 import (
 	"crypto/ecdsa"
+	"math/big"
+	"net/http"
+	"testing"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"math/big"
-	"net/http"
-	"testing"
-	"time"
 )
 
 func Test_Init_Stripe_Payments(t *testing.T) {

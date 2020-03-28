@@ -22,6 +22,14 @@ func DeleteUpgradesForTest(t *testing.T) {
 	}
 }
 
+func DeleteRenewalsForTest(t *testing.T) {
+	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
+		t.Fatalf("should only be calling DeleteRenewalsForTest method on test database")
+	} else {
+		DB.Exec("DELETE from renewals;")
+	}
+}
+
 func DeleteFilesForTest(t *testing.T) {
 	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
 		t.Fatalf("should only be calling DeleteFilesForTest method on test database")

@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"crypto/ecdsa"
+	"math/big"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"math/big"
-	"time"
 )
 
 func returnValidStripePaymentForTest() (StripePayment, Account) {

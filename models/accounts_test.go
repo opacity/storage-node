@@ -13,12 +13,13 @@ import (
 
 	"math/rand"
 
+	"math"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"math"
 )
 
 func returnValidAccount() Account {
@@ -793,6 +794,22 @@ func Test_UpgradeAccount_Invalid_Storage_Value(t *testing.T) {
 	newExpirationDate := account.ExpirationDate()
 	assert.Equal(t, startingExpirationDate, newExpirationDate)
 	assert.Equal(t, startingMonthsInSubscription, account.MonthsInSubscription)
+}
+
+func Test_RenewAccount(t *testing.T) {
+	account := returnValidAccount()
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	originalMonthsInSubscription := account.MonthsInSubscription
+
+	err := account.RenewAccount()
+	assert.Nil(t, err)
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+
+	assert.Equal(t, originalMonthsInSubscription+12, accountFromDB.MonthsInSubscription)
 }
 
 func Test_GetAccountById(t *testing.T) {

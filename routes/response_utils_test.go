@@ -1,15 +1,16 @@
 package routes
 
 import (
+	"math/big"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"math/big"
-	"net/http/httptest"
-	"testing"
 )
 
 func Test_verifyIfPaidWithContext_account_status_already_paid(t *testing.T) {

@@ -3,17 +3,18 @@ package routes
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
+	"math/big"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"math/big"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
 )
 
 func Test_Init_Upgrade_Accounts(t *testing.T) {

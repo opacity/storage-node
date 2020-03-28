@@ -42,6 +42,7 @@ func Connect(dbURL string) {
 	DB.AutoMigrate(&CompletedUploadIndex{})
 	DB.AutoMigrate(&StripePayment{})
 	DB.AutoMigrate(&Upgrade{})
+	DB.AutoMigrate(&Renewal{})
 }
 
 /*Close a database connection*/

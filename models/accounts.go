@@ -382,6 +382,13 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 	}).Error
 }
 
+func (account *Account) RenewAccount() error {
+	return DB.Model(account).Updates(map[string]interface{}{
+		"months_in_subscription": account.MonthsInSubscription + 12,
+		"updated_at":             time.Now(),
+	}).Error
+}
+
 func differenceInMonths(a, b time.Time) int {
 	y1, M1, d1 := a.Date()
 	y2, M2, d2 := b.Date()
