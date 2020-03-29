@@ -2,13 +2,13 @@ package routes
 
 import (
 	"errors"
+	"github.com/stripe/stripe-go"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"github.com/stripe/stripe-go"
 )
 
 const (
@@ -100,7 +100,7 @@ func createStripePayment(c *gin.Context) error {
 		return ForbiddenResponse(c, errors.New("cannot create stripe charge for less than $0.50"))
 	}
 
-	if paid := verifyIfPaid(account); paid && !utils.FreeModeEnabled() &&
+	if paid := verifyIfPaid(account); paid && !utils.FreeModeEnabled() && verifyAccountStillActive(account) &&
 		!request.createStripePaymentObject.UpgradeAccount {
 		return ForbiddenResponse(c, errors.New("account is already paid for"))
 	}

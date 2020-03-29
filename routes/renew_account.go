@@ -102,6 +102,10 @@ func getAccountRenewalInvoice(c *gin.Context) error {
 		return err
 	}
 
+	if err := verifyRenewEligible(account, c); err != nil {
+		return err
+	}
+
 	renewalCostInOPQ, err := account.Cost()
 	if err != nil {
 		return InternalErrorResponse(c, err)
