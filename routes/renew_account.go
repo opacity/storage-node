@@ -54,8 +54,6 @@ func (v *checkRenewalStatusReq) getObjectRef() interface{} {
 // @Param getRenewalAccountInvoiceReq body routes.getRenewalAccountInvoiceReq true "get renewal invoice object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"storageLimit": 100,
-// @description 	"durationInMonths": 12,
 // @description }
 // @Success 200 {object} routes.getRenewalAccountInvoiceRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -75,8 +73,6 @@ func GetAccountRenewalInvoiceHandler() gin.HandlerFunc {
 // @Param checkRenewalStatusReq body routes.checkRenewalStatusReq true "check renewal status object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"storageLimit": 100,
-// @description 	"durationInMonths": 12,
 // @description 	"metadataKeys": "["someKey", "someOtherKey]",
 // @description 	"fileHandles": "["someHandle", "someOtherHandle]",
 // @description }
