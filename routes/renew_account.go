@@ -163,6 +163,10 @@ func checkRenewalStatus(c *gin.Context) error {
 		return err
 	}
 
+	if err := verifyRenewEligible(account, c); err != nil {
+		return err
+	}
+
 	renewals, err := models.GetRenewalsFromAccountID(account.AccountID)
 	if err != nil {
 		return InternalErrorResponse(c, err)
@@ -181,6 +185,13 @@ func checkRenewalStatus(c *gin.Context) error {
 			Status: "Incomplete",
 		})
 	}
+
+	if renewals[0].PaymentStatus >= models.InitialPaymentReceived {
+		return OkResponse(c, StatusRes{
+			Status: "Success with OPQ",
+		})
+	}
+
 	if err := models.DB.Model(&renewals[0]).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
 		return InternalErrorResponse(c, err)
 	}
