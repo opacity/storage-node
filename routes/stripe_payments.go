@@ -71,7 +71,7 @@ func CreateStripePaymentHandler() gin.HandlerFunc {
 
 func createStripePayment(c *gin.Context) error {
 
-	if !utils.Env.EnableCreditCards {
+	if !utils.Env.EnableCreditCards && !utils.IsTestEnv() {
 		return ForbiddenResponse(c, errors.New("not accepting credit cards yet"))
 	}
 
@@ -87,6 +87,10 @@ func createStripePayment(c *gin.Context) error {
 
 	var costInDollars float64
 	if request.createStripePaymentObject.UpgradeAccount {
+		// TODO remove if / when we decide to support Stripe for upgrade
+		return BadRequestResponse(c, errors.New("stripe not supported for upgrades"))
+
+
 		if err := verifyValidStorageLimit(request.createStripePaymentObject.StorageLimit, c); err != nil {
 			return err
 		}

@@ -179,31 +179,31 @@ func checkUpgradeStatus(c *gin.Context) error {
 			"when upgrade was initiated"))
 	}
 
-	stripePayment, err := models.GetNewestStripePaymentByAccountId(account.AccountID)
-	if stripePayment.AccountID == account.AccountID && err == nil && stripePayment.UpgradePayment {
-		paid, err := stripePayment.CheckChargePaid()
-		if err != nil {
-			return InternalErrorResponse(c, err)
-		}
-		if !paid {
-			return OkResponse(c, StatusRes{
-				Status: "Incomplete",
-			})
-		}
-		stripePayment.CheckUpgradeOPQTransaction(account, request.checkUpgradeStatusObject.StorageLimit)
-		amount, err := checkChargeAmount(c, stripePayment.ChargeID)
-		if err != nil {
-			return InternalErrorResponse(c, err)
-		}
-		if amount >= upgrade.UsdCost {
-			if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
-				return InternalErrorResponse(c, err)
-			}
-			return OkResponse(c, StatusRes{
-				Status: "Success with Stripe",
-			})
-		}
-	}
+	//stripePayment, err := models.GetNewestStripePaymentByAccountId(account.AccountID)
+	//if stripePayment.AccountID == account.AccountID && err == nil && stripePayment.UpgradePayment {
+	//	paid, err := stripePayment.CheckChargePaid()
+	//	if err != nil {
+	//		return InternalErrorResponse(c, err)
+	//	}
+	//	if !paid {
+	//		return OkResponse(c, StatusRes{
+	//			Status: "Incomplete",
+	//		})
+	//	}
+	//	stripePayment.CheckUpgradeOPQTransaction(account, request.checkUpgradeStatusObject.StorageLimit)
+	//	amount, err := checkChargeAmount(c, stripePayment.ChargeID)
+	//	if err != nil {
+	//		return InternalErrorResponse(c, err)
+	//	}
+	//	if amount >= upgrade.UsdCost {
+	//		if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
+	//			return InternalErrorResponse(c, err)
+	//		}
+	//		return OkResponse(c, StatusRes{
+	//			Status: "Success with Stripe",
+	//		})
+	//	}
+	//}
 
 	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgrade.EthAddress),
 		utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpqCost)))

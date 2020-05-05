@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"crypto/ecdsa"
 	"encoding/hex"
 	"math/big"
 	"net/http"
@@ -174,92 +173,93 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Still_Pending(t *
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 }
 
-func Test_CheckUpgradeStatusHandler_Returns_Status_Stripe_Upgrade(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteUpgradesForTest(t)
-
-	newStorageLimit := 1024
-
-	checkUpgradeStatusObj := checkUpgradeStatusObject{
-		StorageLimit:     newStorageLimit,
-		DurationInMonths: models.DefaultMonthsPerSubscription,
-		MetadataKeys:     []string{utils.GenerateFileHandle()},
-		FileHandles:      []string{utils.GenerateFileHandle()},
-	}
-
-	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeStatusObj)
-
-	checkUpgradeStatusReq := checkUpgradeStatusReq{
-		verification: v,
-		requestBody:  b,
-	}
-
-	accountID, _ := utils.HashString(v.PublicKey)
-	account := CreatePaidAccountForTest(t, accountID)
-
-	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
-	account.PaymentStatus = models.PaymentRetrievalComplete
-	models.DB.Save(&account)
-
-	CreateUpgradeForTest(t, account, newStorageLimit)
-
-	originalStorageLimit := int(account.StorageLimit)
-
-	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
-	assert.Nil(t, err)
-	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
-
-	makeCompletedFileForTest(checkUpgradeStatusObj.FileHandles[0], account.ExpirationDate(), v.PublicKey)
-	makeMetadataForTest(checkUpgradeStatusObj.MetadataKeys[0], v.PublicKey)
-
-	completedFileStart, err := models.GetCompletedFileByFileID(checkUpgradeStatusObj.FileHandles[0])
-	assert.Nil(t, err)
-
-	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
-		return true, "", 1
-	}
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
-	}
-
-	upgradeCostInUSD, _ := account.UpgradeCostInUSD(checkUpgradeStatusObj.StorageLimit,
-		checkUpgradeStatusObj.DurationInMonths)
-	stripeToken := services.RandTestStripeToken()
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	_, stripePayment, err := createChargeAndStripePayment(c, upgradeCostInUSD, account, createStripePaymentObject{
-		StripeToken:    stripeToken,
-		UpgradeAccount: true,
-	})
-	err = payUpgradeCostWithStripe(c, stripePayment, account, createStripePaymentObject{
-		StorageLimit:     newStorageLimit,
-		DurationInMonths: models.DefaultMonthsPerSubscription,
-	})
-	assert.Nil(t, err)
-	account.UpdatePaymentViaStripe()
-
-	w := httpPostRequestHelperForTest(t, AccountUpgradePath, checkUpgradeStatusReq)
-	// Check to see if the response was what you expected
-	assert.Equal(t, http.StatusOK, w.Code)
-
-	completedFileEnd, err := models.GetCompletedFileByFileID(checkUpgradeStatusObj.FileHandles[0])
-	assert.Nil(t, err)
-
-	account, err = models.GetAccountById(account.AccountID)
-	assert.Nil(t, err)
-
-	assert.NotEqual(t, completedFileStart.ExpiredAt, completedFileEnd.ExpiredAt)
-	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
-
-	assert.Equal(t, newStorageLimit, int(account.StorageLimit))
-	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
-	assert.Contains(t, w.Body.String(), `Success with Stripe`)
-
-	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
-	assert.Nil(t, err)
-	// This is in progress because we returned false for the CheckIfPaid mock
-	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
-}
+// TODO: uncomment out if/when we support stripe for upgrade
+//func Test_CheckUpgradeStatusHandler_Returns_Status_Stripe_Upgrade(t *testing.T) {
+//	models.DeleteAccountsForTest(t)
+//	models.DeleteUpgradesForTest(t)
+//
+//	newStorageLimit := 1024
+//
+//	checkUpgradeStatusObj := checkUpgradeStatusObject{
+//		StorageLimit:     newStorageLimit,
+//		DurationInMonths: models.DefaultMonthsPerSubscription,
+//		MetadataKeys:     []string{utils.GenerateFileHandle()},
+//		FileHandles:      []string{utils.GenerateFileHandle()},
+//	}
+//
+//	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeStatusObj)
+//
+//	checkUpgradeStatusReq := checkUpgradeStatusReq{
+//		verification: v,
+//		requestBody:  b,
+//	}
+//
+//	accountID, _ := utils.HashString(v.PublicKey)
+//	account := CreatePaidAccountForTest(t, accountID)
+//
+//	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
+//	account.PaymentStatus = models.PaymentRetrievalComplete
+//	models.DB.Save(&account)
+//
+//	CreateUpgradeForTest(t, account, newStorageLimit)
+//
+//	originalStorageLimit := int(account.StorageLimit)
+//
+//	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
+//	assert.Nil(t, err)
+//	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
+//
+//	makeCompletedFileForTest(checkUpgradeStatusObj.FileHandles[0], account.ExpirationDate(), v.PublicKey)
+//	makeMetadataForTest(checkUpgradeStatusObj.MetadataKeys[0], v.PublicKey)
+//
+//	completedFileStart, err := models.GetCompletedFileByFileID(checkUpgradeStatusObj.FileHandles[0])
+//	assert.Nil(t, err)
+//
+//	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+//		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+//		return true, "", 1
+//	}
+//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+//		return false, nil
+//	}
+//
+//	upgradeCostInUSD, _ := account.UpgradeCostInUSD(checkUpgradeStatusObj.StorageLimit,
+//		checkUpgradeStatusObj.DurationInMonths)
+//	stripeToken := services.RandTestStripeToken()
+//	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+//	_, stripePayment, err := createChargeAndStripePayment(c, upgradeCostInUSD, account, createStripePaymentObject{
+//		StripeToken:    stripeToken,
+//		UpgradeAccount: true,
+//	})
+//	err = payUpgradeCostWithStripe(c, stripePayment, account, createStripePaymentObject{
+//		StorageLimit:     newStorageLimit,
+//		DurationInMonths: models.DefaultMonthsPerSubscription,
+//	})
+//	assert.Nil(t, err)
+//	account.UpdatePaymentViaStripe()
+//
+//	w := httpPostRequestHelperForTest(t, AccountUpgradePath, checkUpgradeStatusReq)
+//	// Check to see if the response was what you expected
+//	assert.Equal(t, http.StatusOK, w.Code)
+//
+//	completedFileEnd, err := models.GetCompletedFileByFileID(checkUpgradeStatusObj.FileHandles[0])
+//	assert.Nil(t, err)
+//
+//	account, err = models.GetAccountById(account.AccountID)
+//	assert.Nil(t, err)
+//
+//	assert.NotEqual(t, completedFileStart.ExpiredAt, completedFileEnd.ExpiredAt)
+//	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
+//
+//	assert.Equal(t, newStorageLimit, int(account.StorageLimit))
+//	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
+//	assert.Contains(t, w.Body.String(), `Success with Stripe`)
+//
+//	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
+//	assert.Nil(t, err)
+//	// This is in progress because we returned false for the CheckIfPaid mock
+//	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
+//}
 
 func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 	models.DeleteAccountsForTest(t)
