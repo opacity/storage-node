@@ -200,11 +200,9 @@ func verifyUpgradeEligible(account models.Account, newStorageLimit int, c *gin.C
 }
 
 func verifyRenewEligible(account models.Account, c *gin.Context) error {
-	// TODO: re-enable this for the actual release
-
-	//renewalCutoffTimestamp := time.Now().Add(time.Hour * 24 * 365)
-	//if account.ExpirationDate().After(renewalCutoffTimestamp) {
-	//	return ForbiddenResponse(c, errors.New("account has too much time left to renew"))
-	//}
+	renewalCutoffTimestamp := time.Now().Add(time.Hour * 24 * 365)
+	if account.ExpirationDate().After(renewalCutoffTimestamp) {
+		return ForbiddenResponse(c, errors.New("account has too much time left to renew"))
+	}
 	return nil
 }
