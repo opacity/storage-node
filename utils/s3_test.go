@@ -1,11 +1,11 @@
 package utils
 
 import (
-	"os"
-	"testing"
 	"io"
 	"net/http"
+	"os"
 	"strings"
+	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"

@@ -14,6 +14,7 @@ import (
 const Unpaid = "unpaid"
 const Pending = "pending"
 const Paid = "paid"
+const Expired = "expired"
 
 type accountCreateObj struct {
 	StorageLimit     int `json:"storageLimit" binding:"required,gte=10" minimum:"10" maximum:"2048" example:"100"`
@@ -212,7 +213,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		if err != nil {
 			return err
 		}
-		_, err = stripePayment.CheckOPQTransaction()
+		_, err = stripePayment.CheckAccountCreationOPQTransaction()
 		if err != nil {
 			return InternalErrorResponse(c, err)
 		}
@@ -230,7 +231,9 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		}
 	}
 
-	res.PaymentStatus = createPaymentStatusResponse(paid, pending, chargePaid)
+	accountStillActive := verifyAccountStillActive(account)
+
+	res.PaymentStatus = createPaymentStatusResponse(paid, pending, chargePaid, accountStillActive)
 	res.Error = err
 	res.Account = accountGetObj{
 		CreatedAt:             account.CreatedAt,
@@ -261,7 +264,10 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	})
 }
 
-func createPaymentStatusResponse(paid bool, pending bool, chargePaid bool) string {
+func createPaymentStatusResponse(paid bool, pending bool, chargePaid bool, stillActive bool) string {
+	if !stillActive {
+		return Expired
+	}
 	if paid || chargePaid {
 		return Paid
 	}

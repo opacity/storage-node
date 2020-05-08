@@ -39,6 +39,7 @@ type Account struct {
 	TotalFolders             int               `json:"totalFolders" binding:"omitempty,gte=0" gorm:"default:0"`
 	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
 	PaymentMethod            PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
+	Upgrades                 []Upgrade         `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
 }
 
 /*SpaceReport defines a model for capturing the space allotted compared to space used*/
@@ -66,7 +67,7 @@ const (
 	BasicStorageLimit StorageLimitType = iota + 128
 
 	/*ProfessionalStorageLimit allows 1024 GB on the professional plan*/
-	ProfessionalStorageLimit StorageLimitType = iota + 1024
+	ProfessionalStorageLimit StorageLimitType = 1024
 )
 
 const (
@@ -106,9 +107,9 @@ const AccountIDLength = 64
 /*PaymentStatusMap is for pretty printing the PaymentStatus*/
 var PaymentStatusMap = make(map[PaymentStatusType]string)
 
-/*PaymentCollectionFunctions maps a PaymentStatus to the method that should be run
+/*AccountCollectionFunctions maps a PaymentStatus to the method that should be run
 on an account of that status*/
-var PaymentCollectionFunctions = make(map[PaymentStatusType]func(
+var AccountCollectionFunctions = make(map[PaymentStatusType]func(
 	account Account) error)
 
 var InvalidStorageLimitError = errors.New("storage not offered in that increment in GB")
@@ -121,12 +122,12 @@ func init() {
 	PaymentStatusMap[PaymentRetrievalInProgress] = "PaymentRetrievalInProgress"
 	PaymentStatusMap[PaymentRetrievalComplete] = "PaymentRetrievalComplete"
 
-	PaymentCollectionFunctions[InitialPaymentInProgress] = handleAccountWithPaymentInProgress
-	PaymentCollectionFunctions[InitialPaymentReceived] = handleAccountThatNeedsGas
-	PaymentCollectionFunctions[GasTransferInProgress] = handleAccountReceivingGas
-	PaymentCollectionFunctions[GasTransferComplete] = handleAccountReadyForCollection
-	PaymentCollectionFunctions[PaymentRetrievalInProgress] = handleAccountWithCollectionInProgress
-	PaymentCollectionFunctions[PaymentRetrievalComplete] = handleAccountAlreadyCollected
+	AccountCollectionFunctions[InitialPaymentInProgress] = handleAccountWithPaymentInProgress
+	AccountCollectionFunctions[InitialPaymentReceived] = handleAccountThatNeedsGas
+	AccountCollectionFunctions[GasTransferInProgress] = handleAccountReceivingGas
+	AccountCollectionFunctions[GasTransferComplete] = handleAccountReadyForCollection
+	AccountCollectionFunctions[PaymentRetrievalInProgress] = handleAccountWithCollectionInProgress
+	AccountCollectionFunctions[PaymentRetrievalComplete] = handleAccountAlreadyCollected
 }
 
 /*BeforeCreate - callback called before the row is created*/
@@ -377,6 +378,14 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 	return DB.Model(account).Updates(map[string]interface{}{
 		"months_in_subscription": account.MonthsInSubscription,
 		"storage_limit":          account.StorageLimit,
+		"updated_at":             time.Now(),
+	}).Error
+}
+
+func (account *Account) RenewAccount() error {
+	return DB.Model(account).Updates(map[string]interface{}{
+		"months_in_subscription": account.MonthsInSubscription + 12,
+		"updated_at":             time.Now(),
 	}).Error
 }
 
@@ -450,7 +459,7 @@ func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
 	return err
 }
 
-/*getAccountsByPaymentStatus gets accounts based on the payment status passed in*/
+/*GetAccountsByPaymentStatus gets accounts based on the payment status passed in*/
 func GetAccountsByPaymentStatus(paymentStatus PaymentStatusType) []Account {
 	accounts := []Account{}
 	err := DB.Where("payment_status = ?",

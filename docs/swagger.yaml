@@ -295,6 +295,52 @@ definitions:
         $ref: '#/definitions/routes.stripeDataObj'
         type: object
     type: object
+  routes.checkRenewalStatusObject:
+    properties:
+      fileHandles:
+        example:
+        - an array containing all your file handles
+        items:
+          type: string
+        type: array
+      metadataKeys:
+        example:
+        - an array containing all your metadata keys
+        items:
+          type: string
+        type: array
+    required:
+    - fileHandles
+    - metadataKeys
+    type: object
+  routes.checkRenewalStatusReq:
+    properties:
+      checkRenewalStatusObject:
+        $ref: '#/definitions/routes.checkRenewalStatusObject'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.checkUpgradeStatusObject:
     properties:
       durationInMonths:
@@ -514,6 +560,42 @@ definitions:
         type: string
     required:
     - expirationDate
+    type: object
+  routes.getRenewalAccountInvoiceObject:
+    type: object
+  routes.getRenewalAccountInvoiceReq:
+    properties:
+      getRenewalAccountInvoiceObject:
+        $ref: '#/definitions/routes.getRenewalAccountInvoiceObject'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
+  routes.getRenewalAccountInvoiceRes:
+    properties:
+      opqInvoice:
+        $ref: '#/definitions/models.Invoice'
+        type: object
     type: object
   routes.getUpgradeAccountInvoiceObject:
     properties:
@@ -746,11 +828,15 @@ definitions:
     type: object
 host: '{{.Host}}'
 info:
-  contact: {}
-  description: '{{.Description}}'
-  license: {}
-  title: '{{.Title}}'
-  version: '{{.Version}}'
+  contact:
+    name: Opacity Staff
+    url: https://telegram.me/opacitystorage
+  description: Opacity backend for file storage.
+  license:
+    name: OPACITY LIMITED CODE REVIEW LICENSE LICENSE.md
+  termsOfService: https://opacity.io/terms-of-service
+  title: Storage Node
+  version: "1.0"
 paths:
   /api/v1/account-data:
     post:
@@ -1133,6 +1219,84 @@ paths:
           schema:
             type: string
       summary: Update metadata
+  /api/v1/renew:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        check the renewal status
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "metadataKeys": "["someKey", "someOtherKey]",
+        "fileHandles": "["someHandle", "someOtherHandle]",
+        }
+      parameters:
+      - description: check renewal status object
+        in: body
+        name: checkRenewalStatusReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.checkRenewalStatusReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: check the renewal status
+  /api/v1/renew/invoice:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        get an invoice to renew an account
+        requestBody should be a stringified version of (values are just examples):
+        {
+        }
+      parameters:
+      - description: get renewal invoice object
+        in: body
+        name: getRenewalAccountInvoiceReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.getRenewalAccountInvoiceReq'
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.getRenewalAccountInvoiceRes'
+            type: object
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: get an invoice to renew an account
   /api/v1/stripe/create:
     post:
       consumes:

@@ -1,15 +1,18 @@
 package routes
 
 import (
+	"math/big"
+	"net/http/httptest"
+	"testing"
+
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"math/big"
-	"net/http/httptest"
-	"testing"
 )
 
 func Test_verifyIfPaidWithContext_account_status_already_paid(t *testing.T) {
@@ -96,4 +99,52 @@ func Test_verifyValidStorageLimit(t *testing.T) {
 	c, _ = gin.CreateTestContext(httptest.NewRecorder())
 	err = verifyValidStorageLimit(129, c)
 	assert.NotNil(t, err)
+}
+
+func Test_verifyAccountStillActive(t *testing.T) {
+	models.DeleteAccountsForTest(t)
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
+	account := CreatePaidAccountForTest(t, accountID)
+
+	stillActive := verifyAccountStillActive(account)
+	assert.True(t, stillActive)
+
+	account.CreatedAt = time.Now().Add(time.Hour * 24 * 366 * -1)
+	err = models.DB.Save(&account).Error
+	assert.Nil(t, err)
+
+	stillActive = verifyAccountStillActive(account)
+	assert.False(t, stillActive)
+
+	account.StorageLimit = 10
+	err = models.DB.Save(&account).Error
+	assert.Nil(t, err)
+
+	stillActive = verifyAccountStillActive(account)
+	assert.True(t, stillActive)
+}
+
+func Test_verifyRenewEligible(t *testing.T) {
+	models.DeleteAccountsForTest(t)
+	privateKey, err := utils.GenerateKey()
+	assert.Nil(t, err)
+	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
+	account := CreatePaidAccountForTest(t, accountID)
+	account.MonthsInSubscription = 6
+	err = models.DB.Save(&account).Error
+	assert.Nil(t, err)
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+
+	err = verifyRenewEligible(account, c)
+	assert.Nil(t, err)
+
+	account.MonthsInSubscription = 24
+	err = models.DB.Save(&account).Error
+	assert.Nil(t, err)
+
+	err = verifyRenewEligible(account, c)
+	assert.Error(t, err)
 }

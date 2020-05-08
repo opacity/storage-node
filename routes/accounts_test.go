@@ -167,6 +167,32 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 	assert.Contains(t, w.Body.String(), `"invoice"`)
 }
 
+func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsExpired(t *testing.T) {
+	account, privateKey := returnValidAccountAndPrivateKey(t)
+	validReq := returnValidGetAccountReq(t, accountGetReqObj{
+		Timestamp: time.Now().Unix(),
+	}, privateKey)
+	//	// Add account to DB
+	if err := models.DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	account.CreatedAt = time.Now().Add(time.Hour * 24 * 400 * -1)
+	err := models.DB.Save(&account).Error
+	assert.Nil(t, err)
+
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
+	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `"paymentStatus":"expired"`)
+	assert.Contains(t, w.Body.String(), `"stripePaymentExists":false`)
+	assert.Contains(t, w.Body.String(), `"invoice"`)
+}
+
 func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExists(t *testing.T) {
 	models.DeleteStripePaymentsForTest(t)
 	account, privateKey := returnValidAccountAndPrivateKey(t)

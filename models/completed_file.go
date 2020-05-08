@@ -11,6 +11,7 @@ import (
 type CompletedFile struct {
 	FileID         string    `gorm:"primary_key" json:"fileID" binding:"required,len=64" minLength:"64" maxLength:"64"`
 	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
 	ExpiredAt      time.Time `json:"expiredAt"`
 	FileSizeInByte int64     `json:"fileSizeInByte"`
 	ModifierHash   string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
@@ -75,7 +76,8 @@ func UpdateExpiredAt(fileHandles []string, key string, newExpiredAtTime time.Tim
 		return err
 	}
 	db := DB.Table("completed_files").Where("file_id IN (?) AND modifier_hash IN (?)",
-		fileHandles, modifierHashes).Updates(map[string]interface{}{"expired_at": newExpiredAtTime})
+		fileHandles, modifierHashes).Updates(map[string]interface{}{"expired_at": newExpiredAtTime,
+		"updated_at": time.Now()})
 	if db.Error != nil {
 		return db.Error
 	}

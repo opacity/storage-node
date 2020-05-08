@@ -13,7 +13,7 @@ func (u unpaidAccountDeleter) Name() string {
 }
 
 func (u unpaidAccountDeleter) ScheduleInterval() string {
-	return "@midnight"
+	return "@every 8h"
 }
 
 func (u unpaidAccountDeleter) Run() {

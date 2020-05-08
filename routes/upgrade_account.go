@@ -1,7 +1,9 @@
 package routes
 
 import (
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
@@ -92,11 +94,6 @@ func CheckUpgradeStatusHandler() gin.HandlerFunc {
 }
 
 func getAccountUpgradeInvoice(c *gin.Context) error {
-	// TODO remove once we support upgrading
-	if !utils.IsTestEnv() {
-		return InternalErrorResponse(c, errors.New("upgrade not supported yet"))
-	}
-
 	request := getUpgradeAccountInvoiceReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
@@ -108,7 +105,7 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyUpgradeEligible(int(account.StorageLimit), request.getUpgradeAccountInvoiceObject.StorageLimit, c); err != nil {
+	if err := verifyUpgradeEligible(account, request.getUpgradeAccountInvoiceObject.StorageLimit, c); err != nil {
 		return err
 	}
 
@@ -117,22 +114,50 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 	upgradeCostInUSD, _ := account.UpgradeCostInUSD(request.getUpgradeAccountInvoiceObject.StorageLimit,
 		request.getUpgradeAccountInvoiceObject.DurationInMonths)
 
+	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
+	if err != nil {
+		err = fmt.Errorf("error generating upgrade wallet:  %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
+		utils.Env.EncryptionKey,
+		privKey,
+		account.AccountID,
+	)
+
+	if encryptErr != nil {
+		return ServiceUnavailableResponse(c, fmt.Errorf("error encrypting private key:  %v", encryptErr))
+	}
+
+	upgrade := models.Upgrade{
+		AccountID:        account.AccountID,
+		NewStorageLimit:  models.StorageLimitType(request.getUpgradeAccountInvoiceObject.StorageLimit),
+		OldStorageLimit:  account.StorageLimit,
+		EthAddress:       ethAddr.String(),
+		EthPrivateKey:    hex.EncodeToString(encryptedKeyInBytes),
+		PaymentStatus:    models.InitialPaymentInProgress,
+		OpqCost:          upgradeCostInOPQ,
+		UsdCost:          upgradeCostInUSD,
+		DurationInMonths: request.getUpgradeAccountInvoiceObject.DurationInMonths,
+	}
+
+	upgradeInDB, err := models.GetOrCreateUpgrade(upgrade)
+	if err != nil {
+		err = fmt.Errorf("error getting or creating upgrade:  %v", err)
+		return ServiceUnavailableResponse(c, err)
+	}
+
 	return OkResponse(c, getUpgradeAccountInvoiceRes{
 		OpqInvoice: models.Invoice{
 			Cost:       upgradeCostInOPQ,
-			EthAddress: account.EthAddress,
+			EthAddress: upgradeInDB.EthAddress,
 		},
 		UsdInvoice: upgradeCostInUSD,
 	})
 }
 
 func checkUpgradeStatus(c *gin.Context) error {
-
-	// TODO remove once we support upgrading
-	if !utils.IsTestEnv() {
-		return InternalErrorResponse(c, errors.New("upgrade not supported yet"))
-	}
-
 	request := checkUpgradeStatusReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
@@ -144,43 +169,44 @@ func checkUpgradeStatus(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyUpgradeEligible(int(account.StorageLimit), request.checkUpgradeStatusObject.StorageLimit, c); err != nil {
+	if err := verifyUpgradeEligible(account, request.checkUpgradeStatusObject.StorageLimit, c); err != nil {
 		return err
 	}
 
-	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(request.checkUpgradeStatusObject.StorageLimit,
-		request.checkUpgradeStatusObject.DurationInMonths)
-	upgradeCostInUSD, _ := account.UpgradeCostInUSD(request.checkUpgradeStatusObject.StorageLimit,
-		request.checkUpgradeStatusObject.DurationInMonths)
-
-	stripePayment, err := models.GetNewestStripePaymentByAccountId(account.AccountID)
-	if stripePayment.AccountID == account.AccountID && err == nil {
-		paid, err := stripePayment.CheckChargePaid()
-		if err != nil {
-			return InternalErrorResponse(c, err)
-		}
-		if !paid {
-			return OkResponse(c, StatusRes{
-				Status: "Incomplete",
-			})
-		}
-		stripePayment.CheckOPQTransaction()
-		amount, err := checkChargeAmount(c, stripePayment.ChargeID)
-		if err != nil {
-			return InternalErrorResponse(c, err)
-		}
-		if amount >= upgradeCostInUSD {
-			if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
-				return err
-			}
-			return OkResponse(c, StatusRes{
-				Status: "Success with Stripe",
-			})
-		}
+	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, request.checkUpgradeStatusObject.StorageLimit, int(account.StorageLimit))
+	if upgrade.DurationInMonths != request.checkUpgradeStatusObject.DurationInMonths {
+		return ForbiddenResponse(c, errors.New("durationInMonths does not match durationInMonths "+
+			"when upgrade was initiated"))
 	}
 
-	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(upgradeCostInOPQ)))
+	//stripePayment, err := models.GetNewestStripePaymentByAccountId(account.AccountID)
+	//if stripePayment.AccountID == account.AccountID && err == nil && stripePayment.UpgradePayment {
+	//	paid, err := stripePayment.CheckChargePaid()
+	//	if err != nil {
+	//		return InternalErrorResponse(c, err)
+	//	}
+	//	if !paid {
+	//		return OkResponse(c, StatusRes{
+	//			Status: "Incomplete",
+	//		})
+	//	}
+	//	stripePayment.CheckUpgradeOPQTransaction(account, request.checkUpgradeStatusObject.StorageLimit)
+	//	amount, err := checkChargeAmount(c, stripePayment.ChargeID)
+	//	if err != nil {
+	//		return InternalErrorResponse(c, err)
+	//	}
+	//	if amount >= upgrade.UsdCost {
+	//		if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
+	//			return InternalErrorResponse(c, err)
+	//		}
+	//		return OkResponse(c, StatusRes{
+	//			Status: "Success with Stripe",
+	//		})
+	//	}
+	//}
+
+	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgrade.EthAddress),
+		utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpqCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -189,11 +215,11 @@ func checkUpgradeStatus(c *gin.Context) error {
 			Status: "Incomplete",
 		})
 	}
-	if err := models.DB.Model(&account).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+	if err := models.DB.Model(&upgrade).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
-		return err
+		return InternalErrorResponse(c, err)
 	}
 	return OkResponse(c, StatusRes{
 		Status: "Success with OPQ",
@@ -203,17 +229,14 @@ func checkUpgradeStatus(c *gin.Context) error {
 func upgradeAccountAndUpdateExpireDates(account models.Account, request checkUpgradeStatusReq, c *gin.Context) error {
 	if err := account.UpgradeAccount(request.checkUpgradeStatusObject.StorageLimit,
 		request.checkUpgradeStatusObject.DurationInMonths); err != nil {
-		return InternalErrorResponse(c, err)
-	}
-	if err := models.UpdateExpiredAt(request.checkUpgradeStatusObject.FileHandles,
-		request.verification.PublicKey, account.ExpirationDate()); err != nil {
-		return InternalErrorResponse(c, err)
-	}
-	if err := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate(), c); err != nil {
 		return err
 	}
-	return nil
+	filesErr := models.UpdateExpiredAt(request.checkUpgradeStatusObject.FileHandles,
+		request.verification.PublicKey, account.ExpirationDate())
+	metadatasErr := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
+		request.verification.PublicKey, account.ExpirationDate(), c)
+
+	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }
 
 func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTime time.Time, c *gin.Context) error {
@@ -224,7 +247,7 @@ func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTim
 		permissionHashKey := getPermissionHashKeyForBadger(metadataKey)
 		permissionHashValue, _, err := utils.GetValueFromKV(permissionHashKey)
 		if err != nil {
-			return InternalErrorResponse(c, err)
+			return err
 		}
 
 		if err := verifyPermissions(key, metadataKey,
@@ -237,14 +260,14 @@ func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTim
 
 	kvs, err := utils.BatchGet(&kvKeys)
 	if err != nil {
-		return InternalErrorResponse(c, err)
+		return err
 	}
 	for key, value := range *kvs {
 		kvPairs[key] = value
 	}
 
 	if err := utils.BatchSet(&kvPairs, time.Until(newExpiredAtTime)); err != nil {
-		return InternalErrorResponse(c, err)
+		return err
 	}
 
 	return nil

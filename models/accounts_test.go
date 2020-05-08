@@ -13,12 +13,13 @@ import (
 
 	"math/rand"
 
+	"math"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"math"
 )
 
 func returnValidAccount() Account {
@@ -184,18 +185,25 @@ func Test_Cost_Returns_Cost(t *testing.T) {
 	assert.Equal(t, BasicSubscriptionDefaultCost, cost)
 }
 
-func Test_UpgradeCostInOPQ_Half_Of_Subscription_Has_Passed(t *testing.T) {
+func Test_UpgradeCostInOPQ_Basic_To_Professional_None_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+
+	DB.Create(&account)
+
+	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[1024].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 15.00, math.Ceil(upgradeCostInOPQ))
+}
+
+func Test_UpgradeCostInOPQ_None_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
 	account.StorageLimit = StorageLimitType(1024)
 
 	DB.Create(&account)
-	timeToSubtract := time.Hour * 24 * (365 / 2)
-	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
-	DB.Save(&account)
 
 	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
 	assert.Nil(t, err)
-	assert.Equal(t, 24.00, math.Ceil(upgradeCostInOPQ))
+	assert.Equal(t, 17.00, math.Ceil(upgradeCostInOPQ))
 }
 
 func Test_UpgradeCostInOPQ_Fourth_Of_Subscription_Has_Passed(t *testing.T) {
@@ -210,6 +218,20 @@ func Test_UpgradeCostInOPQ_Fourth_Of_Subscription_Has_Passed(t *testing.T) {
 	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
 	assert.Nil(t, err)
 	assert.Equal(t, 20.00, math.Ceil(upgradeCostInOPQ))
+}
+
+func Test_UpgradeCostInOPQ_Half_Of_Subscription_Has_Passed(t *testing.T) {
+	account := returnValidAccount()
+	account.StorageLimit = StorageLimitType(1024)
+
+	DB.Create(&account)
+	timeToSubtract := time.Hour * 24 * (365 / 2)
+	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
+	DB.Save(&account)
+
+	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	assert.Nil(t, err)
+	assert.Equal(t, 24.00, math.Ceil(upgradeCostInOPQ))
 }
 
 func Test_UpgradeCostInOPQ_Three_Fourths_Of_Subscription_Has_Passed(t *testing.T) {
@@ -772,6 +794,22 @@ func Test_UpgradeAccount_Invalid_Storage_Value(t *testing.T) {
 	newExpirationDate := account.ExpirationDate()
 	assert.Equal(t, startingExpirationDate, newExpirationDate)
 	assert.Equal(t, startingMonthsInSubscription, account.MonthsInSubscription)
+}
+
+func Test_RenewAccount(t *testing.T) {
+	account := returnValidAccount()
+	if err := DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	originalMonthsInSubscription := account.MonthsInSubscription
+
+	err := account.RenewAccount()
+	assert.Nil(t, err)
+
+	accountFromDB, _ := GetAccountById(account.AccountID)
+
+	assert.Equal(t, originalMonthsInSubscription+12, accountFromDB.MonthsInSubscription)
 }
 
 func Test_GetAccountById(t *testing.T) {

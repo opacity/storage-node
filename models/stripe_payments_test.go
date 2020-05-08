@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"crypto/ecdsa"
+	"math/big"
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"math/big"
-	"time"
 )
 
 func returnValidStripePaymentForTest() (StripePayment, Account) {
@@ -21,10 +22,27 @@ func returnValidStripePaymentForTest() (StripePayment, Account) {
 	return returnStripePaymentForTestForAccount(account), account
 }
 
+func returnValidUpgradeStripePaymentForTest() (StripePayment, Upgrade, Account) {
+	upgrade, account := returnValidUpgrade()
+
+	// Add upgrade to DB
+	DB.Create(&upgrade)
+
+	return returnStripePaymentForTestForUpgrade(upgrade), upgrade, account
+}
+
 func returnStripePaymentForTestForAccount(account Account) StripePayment {
 	return StripePayment{
 		StripeToken: services.RandTestStripeToken(),
 		AccountID:   account.AccountID,
+	}
+}
+
+func returnStripePaymentForTestForUpgrade(upgrade Upgrade) StripePayment {
+	return StripePayment{
+		StripeToken:    services.RandTestStripeToken(),
+		AccountID:      upgrade.AccountID,
+		UpgradePayment: true,
 	}
 }
 
@@ -169,9 +187,9 @@ func Test_SendAccountOPQ(t *testing.T) {
 	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
 }
 
-func Test_SendAccountOPQForUpgrade(t *testing.T) {
+func Test_SendUpgradeOPQ(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment, _ := returnValidStripePaymentForTest()
+	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -183,12 +201,12 @@ func Test_SendAccountOPQForUpgrade(t *testing.T) {
 	}
 
 	assert.Equal(t, OpqTxNotStarted, stripePayment.OpqTxStatus)
-	err := stripePayment.SendAccountOPQForUpgrade(24.00)
+	err := stripePayment.SendUpgradeOPQ(account, int(ProfessionalStorageLimit))
 	assert.Nil(t, err)
 	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
 }
 
-func Test_CheckOPQTransaction_transaction_complete(t *testing.T) {
+func Test_CheckAccountCreationOPQTransaction_transaction_complete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _ := returnValidStripePaymentForTest()
 	stripePayment.OpqTxStatus = OpqTxInProgress
@@ -202,14 +220,14 @@ func Test_CheckOPQTransaction_transaction_complete(t *testing.T) {
 	}
 
 	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
-	txSuccess, err := stripePayment.CheckOPQTransaction()
+	txSuccess, err := stripePayment.CheckAccountCreationOPQTransaction()
 	assert.True(t, txSuccess)
 	assert.Nil(t, err)
 	assert.Equal(t, OpqTxSuccess, stripePayment.OpqTxStatus)
 
 }
 
-func Test_CheckOPQTransaction_transaction_incomplete(t *testing.T) {
+func Test_CheckAccountCreationOPQTransaction_transaction_incomplete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _ := returnValidStripePaymentForTest()
 	stripePayment.OpqTxStatus = OpqTxInProgress
@@ -223,7 +241,48 @@ func Test_CheckOPQTransaction_transaction_incomplete(t *testing.T) {
 	}
 
 	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
-	success, err := stripePayment.CheckOPQTransaction()
+	success, err := stripePayment.CheckAccountCreationOPQTransaction()
+	assert.Nil(t, err)
+	assert.False(t, success)
+	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+}
+
+func Test_CheckUpgradeOPQTransaction_transaction_complete(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
+	stripePayment.OpqTxStatus = OpqTxInProgress
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return true, nil
+	}
+
+	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+	success, err := stripePayment.CheckUpgradeOPQTransaction(account, int(ProfessionalStorageLimit))
+	assert.True(t, success)
+	assert.Nil(t, err)
+	assert.Equal(t, OpqTxSuccess, stripePayment.OpqTxStatus)
+
+}
+
+func Test_CheckUpgradeOPQTransaction_transaction_incomplete(t *testing.T) {
+	DeleteStripePaymentsForTest(t)
+	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
+	stripePayment.OpqTxStatus = OpqTxInProgress
+
+	if err := DB.Create(&stripePayment).Error; err != nil {
+		t.Fatalf("should have created row but didn't: " + err.Error())
+	}
+
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+		return false, nil
+	}
+
+	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+	success, err := stripePayment.CheckUpgradeOPQTransaction(account, int(ProfessionalStorageLimit))
 	assert.Nil(t, err)
 	assert.False(t, success)
 	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
@@ -295,6 +354,8 @@ func Test_PurgeOldStripePayments(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePaymentNew, _ := returnValidStripePaymentForTest()
 	DB.Create(&stripePaymentNew)
+	stripePaymentNew.OpqTxStatus = OpqTxSuccess
+	DB.Save(&stripePaymentNew)
 
 	stripePaymentOld, _ := returnValidStripePaymentForTest()
 	for {
@@ -304,14 +365,17 @@ func Test_PurgeOldStripePayments(t *testing.T) {
 		stripePaymentOld, _ = returnValidStripePaymentForTest()
 	}
 	DB.Create(&stripePaymentOld)
+	stripePaymentOld.OpqTxStatus = OpqTxSuccess
+	DB.Save(&stripePaymentOld)
 
-	stripePayments := []StripePayment{}
+	var stripePayments []StripePayment
 	DB.Find(&stripePayments)
 	assert.Equal(t, 2, len(stripePayments))
 
 	DB.Model(&stripePaymentOld).UpdateColumn("updated_at", time.Now().Add(time.Hour*time.Duration(utils.Env.StripeRetentionDays+1)*-24))
 
-	PurgeOldStripePayments(utils.Env.StripeRetentionDays)
+	err := PurgeOldStripePayments(utils.Env.StripeRetentionDays)
+	assert.Nil(t, err)
 
 	stripePayments = []StripePayment{}
 	DB.Find(&stripePayments)

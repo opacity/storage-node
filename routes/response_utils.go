@@ -8,6 +8,8 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/opacity/storage-node/models"
@@ -65,6 +67,17 @@ func AccountNotPaidResponse(c *gin.Context, response interface{}) error {
 	utils.Metrics_403_Response_Counter.Inc()
 
 	return errors.New("Account not paid and forbidden to access the resource")
+}
+
+func AccountExpiredResponse(c *gin.Context, response interface{}) error {
+	if err := utils.Validator.Struct(response); err != nil {
+		err = fmt.Errorf("could not create a valid response:  %v", err)
+		return BadRequestResponse(c, err)
+	}
+	c.AbortWithStatusJSON(http.StatusForbidden, response)
+	utils.Metrics_403_Response_Counter.Inc()
+
+	return errors.New("Account expired and forbidden to access the resource, must renew account.")
 }
 
 func AccountNotEnoughSpaceResponse(c *gin.Context) error {
@@ -140,19 +153,28 @@ func verifyIfPaid(account models.Account) bool {
 	return paid || paidWithCreditCard
 }
 
+func verifyAccountStillActive(account models.Account) bool {
+	return account.ExpirationDate().After(time.Now()) || utils.Env.Plans[int(account.StorageLimit)].Name == "Free"
+}
+
 func verifyIfPaidWithContext(account models.Account, c *gin.Context) error {
 	paid := verifyIfPaid(account)
 
+	cost, _ := account.Cost()
+	response := accountCreateRes{
+		Invoice: models.Invoice{
+			Cost:       cost,
+			EthAddress: account.EthAddress,
+		},
+		ExpirationDate: account.ExpirationDate(),
+	}
+
 	if !paid {
-		cost, _ := account.Cost()
-		response := accountCreateRes{
-			Invoice: models.Invoice{
-				Cost:       cost,
-				EthAddress: account.EthAddress,
-			},
-			ExpirationDate: account.ExpirationDate(),
-		}
 		return AccountNotPaidResponse(c, response)
+	}
+
+	if !verifyAccountStillActive(account) {
+		return AccountExpiredResponse(c, response)
 	}
 
 	return nil
@@ -166,13 +188,21 @@ func verifyValidStorageLimit(storageLimit int, c *gin.Context) error {
 	return nil
 }
 
-func verifyUpgradeEligible(oldStorageLimit, newStorageLimit int, c *gin.Context) error {
+func verifyUpgradeEligible(account models.Account, newStorageLimit int, c *gin.Context) error {
 	err := verifyValidStorageLimit(newStorageLimit, c)
 	if err != nil {
 		return err
 	}
-	if newStorageLimit <= oldStorageLimit {
+	if newStorageLimit <= int(account.StorageLimit) {
 		return BadRequestResponse(c, errors.New("cannot upgrade to storage limit lower than current limit"))
+	}
+	return nil
+}
+
+func verifyRenewEligible(account models.Account, c *gin.Context) error {
+	renewalCutoffTimestamp := time.Now().Add(time.Hour * 24 * 365)
+	if account.ExpirationDate().After(renewalCutoffTimestamp) {
+		return ForbiddenResponse(c, errors.New("account has too much time left to renew"))
 	}
 	return nil
 }

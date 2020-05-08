@@ -1,5 +1,7 @@
 module github.com/opacity/storage-node
 
+go 1.14
+
 require (
 	cloud.google.com/go v0.47.0 // indirect
 	cloud.google.com/go/bigquery v1.1.0 // indirect

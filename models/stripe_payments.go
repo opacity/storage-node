@@ -12,14 +12,15 @@ import (
 
 /*StripePayment defines a model for managing a credit card payment*/
 type StripePayment struct {
-	StripeToken string          `gorm:"primary_key" json:"stripeToken" binding:"required"`
-	AccountID   string          `json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
-	ChargeID    string          `json:"chargeID" binding:"omitempty"`
-	ApiVersion  int             `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
-	OpqTxStatus OpqTxStatusType `json:"opqTxStatus" binding:"required" gorm:"default:1"`
-	ChargePaid  bool            `json:"chargePaid"`
-	CreatedAt   time.Time       `json:"createdAt"`
-	UpdatedAt   time.Time       `json:"updatedAt"`
+	StripeToken    string          `gorm:"primary_key" json:"stripeToken" binding:"required"`
+	AccountID      string          `json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
+	ChargeID       string          `json:"chargeID" binding:"omitempty"`
+	ApiVersion     int             `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+	OpqTxStatus    OpqTxStatusType `json:"opqTxStatus" binding:"required" gorm:"default:1"`
+	ChargePaid     bool            `json:"chargePaid"`
+	CreatedAt      time.Time       `json:"createdAt"`
+	UpdatedAt      time.Time       `json:"updatedAt"`
+	UpgradePayment bool            `json:"upgradePayment" gorm:"default:false"`
 }
 
 /*OpqTxStatusType defines a type for the OPQ tx statuses*/
@@ -54,6 +55,12 @@ func (stripePayment *StripePayment) BeforeCreate(scope *gorm.Scope) error {
 	account, err := GetAccountById(stripePayment.AccountID)
 	if err != nil || len(account.AccountID) == 0 {
 		return errors.New("cannot create stripe payment for non-existent account")
+	}
+	if stripePayment.UpgradePayment {
+		upgrades, err := GetUpgradesFromAccountID(stripePayment.AccountID)
+		if err != nil || len(upgrades) == 0 {
+			return errors.New("cannot create stripe payment for upgrade for non-existent upgrade")
+		}
 	}
 
 	return utils.Validator.Struct(stripePayment)
@@ -125,19 +132,16 @@ func (stripePayment *StripePayment) SendAccountOPQ() error {
 	return nil
 }
 
-/*SendAccountOPQForUpgrade sends OPQ to the account being upgraded, associated with a stripe payment. */
-func (stripePayment *StripePayment) SendAccountOPQForUpgrade(upgradeCostInOPQ float64) error {
-	account, err := GetAccountById(stripePayment.AccountID)
-	if err != nil {
-		return err
-	}
+/*SendUpgradeOPQ sends OPQ to the account being upgraded, associated with a stripe payment. */
+func (stripePayment *StripePayment) SendUpgradeOPQ(account Account, newStorageLimit int) error {
+	upgrade, _ := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
 
-	costInWei := utils.ConvertToWeiUnit(big.NewFloat(upgradeCostInOPQ))
+	costInWei := utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpqCost))
 
 	success, _, _ := EthWrapper.TransferToken(
 		services.MainWalletAddress,
 		services.MainWalletPrivateKey,
-		services.StringToAddress(account.EthAddress),
+		services.StringToAddress(upgrade.EthAddress),
 		*costInWei,
 		services.SlowGasPrice)
 
@@ -152,14 +156,38 @@ func (stripePayment *StripePayment) SendAccountOPQForUpgrade(upgradeCostInOPQ fl
 	return nil
 }
 
-/*CheckOPQTransaction checks the status of an OPQ payment to an account. */
-func (stripePayment *StripePayment) CheckOPQTransaction() (bool, error) {
+/*CheckAccountCreationOPQTransaction checks the status of an OPQ payment to an account. */
+func (stripePayment *StripePayment) CheckAccountCreationOPQTransaction() (bool, error) {
 	account, err := GetAccountById(stripePayment.AccountID)
 	if err != nil {
 		return false, err
 	}
 
 	paid, err := account.CheckIfPaid()
+	if err != nil {
+		return false, err
+	}
+
+	if paid {
+		if err := DB.Model(&stripePayment).Update("opq_tx_status", OpqTxSuccess).Error; err != nil {
+			return false, err
+		}
+		return true, err
+	}
+
+	err = stripePayment.RetryIfTimedOut()
+
+	return false, err
+}
+
+/*CheckUpgradeOPQTransaction checks the status of an OPQ payment to an upgrade. */
+func (stripePayment *StripePayment) CheckUpgradeOPQTransaction(account Account, newStorageLimit int) (bool, error) {
+	upgrade, err := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
+	if err != nil {
+		return false, err
+	}
+
+	paid, err := upgrade.CheckIfPaid()
 	if err != nil {
 		return false, err
 	}
@@ -197,7 +225,9 @@ func DeleteStripePaymentIfExists(accountID string) error {
 
 /*PurgeOldStripePayments deletes stripe payments past a certain age*/
 func PurgeOldStripePayments(daysToRetainStripePayment int) error {
-	err := DB.Where("updated_at < ?",
-		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainStripePayment))).Delete(&StripePayment{}).Error
+	err := DB.Where("updated_at < ? AND opq_tx_status = ?",
+		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainStripePayment)),
+		OpqTxSuccess).Delete(&StripePayment{}).Error
+
 	return err
 }
