@@ -23,8 +23,8 @@ func returnValidUpgrade() (Upgrade, Account) {
 
 	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(utils.Env.Plans[1024].StorageInGB,
 		12)
-	upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[1024].StorageInGB,
-		12)
+	//upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[1024].StorageInGB,
+	//	12)
 
 	return Upgrade{
 		AccountID:        account.AccountID,
