@@ -245,7 +245,7 @@ func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTim
 
 	for _, metadataKey := range metadataKeys {
 		permissionHashKey := getPermissionHashKeyForBadger(metadataKey)
-		permissionHashValue, _, err := utils.GetValueFromKV(permissionHashKey)
+		permissionHashValue, _, err := utils.GetValueFromDynamoKv(permissionHashKey)
 		if err != nil {
 			return err
 		}
@@ -258,7 +258,7 @@ func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTim
 		kvKeys = append(kvKeys, metadataKey)
 	}
 
-	kvs, err := utils.BatchGet(&kvKeys)
+	kvs, err := utils.BatchGetFromDynamoKv(&kvKeys)
 	if err != nil {
 		return err
 	}
@@ -266,7 +266,7 @@ func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTim
 		kvPairs[key] = value
 	}
 
-	if err := utils.BatchSet(&kvPairs, time.Until(newExpiredAtTime)); err != nil {
+	if err := utils.BatchSetToDynamoKv(&kvPairs, time.Until(newExpiredAtTime)); err != nil {
 		return err
 	}
 

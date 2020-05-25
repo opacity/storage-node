@@ -365,7 +365,7 @@ func makeMetadataForTest(metadataKey string, key string) {
 	permissionHash, _ := getPermissionHash(key, metadataKey, c)
 
 	permissionHashKey := getPermissionHashKeyForBadger(metadataKey)
-	utils.BatchSet(&utils.KVPairs{
+	utils.BatchSetToDynamoKv(&utils.KVPairs{
 		metadataKey:       "",
 		permissionHashKey: permissionHash,
 	}, ttl)

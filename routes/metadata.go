@@ -194,7 +194,7 @@ func getMetadata(c *gin.Context) error {
 	}
 
 	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
-	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+	permissionHashInBadger, _, err := utils.GetValueFromDynamoKv(permissionHashKey)
 
 	if err != nil {
 		// TODO: Enable this after everyone should have migrated.
@@ -214,7 +214,7 @@ func getMetadata(c *gin.Context) error {
 		}
 	}
 
-	metadata, expirationTime, err := utils.GetValueFromKV(request.metadataKeyObject.MetadataKey)
+	metadata, expirationTime, err := utils.GetValueFromDynamoKv(request.metadataKeyObject.MetadataKey)
 
 	if err != nil {
 		return NotFoundResponse(c, err)
@@ -249,7 +249,7 @@ func getMetadataHistory(c *gin.Context) error {
 	}
 
 	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
-	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+	permissionHashInBadger, _, err := utils.GetValueFromDynamoKv(permissionHashKey)
 
 	if err != nil {
 		return NotFoundResponse(c, err)
@@ -260,7 +260,7 @@ func getMetadataHistory(c *gin.Context) error {
 		return err
 	}
 
-	currentMetadata, expirationTime, err := utils.GetValueFromKV(request.metadataKeyObject.MetadataKey)
+	currentMetadata, expirationTime, err := utils.GetValueFromDynamoKv(request.metadataKeyObject.MetadataKey)
 	if err != nil {
 		return NotFoundResponse(c, err)
 	}
@@ -299,7 +299,7 @@ func setMetadata(c *gin.Context) error {
 		return err
 	}
 
-	oldMetadata, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+	oldMetadata, _, err := utils.GetValueFromDynamoKv(requestBodyParsed.MetadataKey)
 
 	if err != nil {
 		return NotFoundResponse(c, err)
@@ -310,7 +310,7 @@ func setMetadata(c *gin.Context) error {
 	}
 
 	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
-	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+	permissionHashInBadger, _, err := utils.GetValueFromDynamoKv(permissionHashKey)
 
 	if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
 		permissionHashInBadger, c); err != nil {
@@ -322,7 +322,7 @@ func setMetadata(c *gin.Context) error {
 
 	ttl := time.Until(account.ExpirationDate())
 
-	if err := utils.BatchSet(&utils.KVPairs{
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{
 		requestBodyParsed.MetadataKey: requestBodyParsed.Metadata,
 		permissionHashKey:             permissionHashInBadger,
 	}, ttl); err != nil {
@@ -372,7 +372,7 @@ func createMetadata(c *gin.Context) error {
 
 	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
 
-	_, _, err = utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+	_, _, err = utils.GetValueFromDynamoKv(requestBodyParsed.MetadataKey)
 
 	if err == nil {
 		return ForbiddenResponse(c, errors.New("that metadata already exists"))
@@ -382,7 +382,7 @@ func createMetadata(c *gin.Context) error {
 		return ForbiddenResponse(c, err)
 	}
 
-	if err = utils.BatchSet(&utils.KVPairs{
+	if err = utils.BatchSetToDynamoKv(&utils.KVPairs{
 		requestBodyParsed.MetadataKey: "",
 		permissionHashKey:             permissionHash,
 	}, ttl); err != nil {
@@ -419,7 +419,7 @@ func deleteMetadata(c *gin.Context) error {
 	}
 
 	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
-	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+	permissionHashInBadger, _, err := utils.GetValueFromDynamoKv(permissionHashKey)
 
 	if err != nil {
 		// TODO: Enable this after everyone should have migrated.
@@ -439,7 +439,7 @@ func deleteMetadata(c *gin.Context) error {
 		}
 	}
 
-	oldMetadata, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+	oldMetadata, _, err := utils.GetValueFromDynamoKv(requestBodyParsed.MetadataKey)
 
 	// TODO remove this if block wrapping the other if after everyone should have migrated
 	// This is only in effect for a limited time because many users already created metadatas without
@@ -450,7 +450,7 @@ func deleteMetadata(c *gin.Context) error {
 		}
 	}
 
-	if err = utils.BatchDelete(&utils.KVKeys{
+	if err = utils.BatchDeleteFromDynamoKv(&utils.KVKeys{
 		requestBodyParsed.MetadataKey,
 		permissionHashKey,
 	}); err != nil {
@@ -468,8 +468,8 @@ func storeMetadataHistory(metadataKey string, oldMetadata string, ttl time.Durat
 			break
 		}
 		badgerKey := getVersionKeyForBadger(metadataKey, i)
-		oldValue, _, err := utils.GetValueFromKV(badgerKey)
-		if err := utils.BatchSet(&utils.KVPairs{
+		oldValue, _, err := utils.GetValueFromDynamoKv(badgerKey)
+		if err := utils.BatchSetToDynamoKv(&utils.KVPairs{
 			badgerKey: newValue,
 		}, ttl); err != nil {
 			return InternalErrorResponse(c, err)
@@ -485,7 +485,7 @@ func storeMetadataHistory(metadataKey string, oldMetadata string, ttl time.Durat
 func getMetadataHistoryWithoutContext(metadataKey string) ([]string, error) {
 	metadataHistory := []string{}
 	for i := 0; i < numMetadatasToRetain; i++ {
-		oldMetadata, _, err := utils.GetValueFromKV(getVersionKeyForBadger(metadataKey, i))
+		oldMetadata, _, err := utils.GetValueFromDynamoKv(getVersionKeyForBadger(metadataKey, i))
 		if err == badger.ErrKeyNotFound {
 			break
 		}

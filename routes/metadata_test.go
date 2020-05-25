@@ -25,7 +25,7 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	testMetadataKey := utils.GenerateFileHandle()
 	testMetadataValue := utils.GenerateFileHandle()
 
-	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
 	}
 
@@ -56,7 +56,7 @@ func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	testMetadataKey := utils.GenerateFileHandle()
 	testMetadataValue := utils.GenerateFileHandle()
 
-	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
 	}
 
@@ -132,7 +132,7 @@ func Test_GetMetadataHistoryHandler_Returns_Metadata_History(t *testing.T) {
 
 	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
 
-	if err := utils.BatchSet(&utils.KVPairs{
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{
 		testMetadataKey: testMetadataValue,
 		getVersionKeyForBadger(testMetadataKey, 0): "red",
 		getVersionKeyForBadger(testMetadataKey, 1): "fox",
@@ -180,7 +180,7 @@ func Test_GetMetadataHistoryHandler_Returns_Metadata_History_If_Not_Maxed_Out(t 
 
 	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
 
-	if err := utils.BatchSet(&utils.KVPairs{
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{
 		testMetadataKey: testMetadataValue,
 		getVersionKeyForBadger(testMetadataKey, 0): "red",
 		permissionHashKey:                          permissionHash,
@@ -277,7 +277,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 
 	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
 
-	if err := utils.BatchSet(&utils.KVPairs{
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{
 		testMetadataKey:   testMetadataValue,
 		permissionHashKey: permissionHash,
 	}, ttl); err != nil {
@@ -289,7 +289,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), newValue)
 
-	metadata, _, _ := utils.GetValueFromKV(testMetadataKey)
+	metadata, _, _ := utils.GetValueFromDynamoKv(testMetadataKey)
 	assert.Equal(t, newValue, metadata)
 
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
@@ -330,7 +330,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata_History(t *testing.T) {
 
 	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
 
-	if err := utils.BatchSet(&utils.KVPairs{
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{
 		testMetadataKey: startingCurrentMetadataValue,
 		getVersionKeyForBadger(testMetadataKey, 0): "red",
 		getVersionKeyForBadger(testMetadataKey, 1): "fox",
@@ -359,7 +359,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata_History(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), newCurrentMetadataValue)
 
-	metadata, _, _ := utils.GetValueFromKV(testMetadataKey)
+	metadata, _, _ := utils.GetValueFromDynamoKv(testMetadataKey)
 	assert.Equal(t, newCurrentMetadataValue, metadata)
 
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
@@ -403,7 +403,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata_History_If_Not_Maxed_Out(t *
 
 	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
 
-	if err := utils.BatchSet(&utils.KVPairs{
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{
 		testMetadataKey: startingCurrentMetadataValue,
 		getVersionKeyForBadger(testMetadataKey, 0): "red",
 		permissionHashKey:                          permissionHash,
@@ -428,7 +428,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata_History_If_Not_Maxed_Out(t *
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), newCurrentMetadataValue)
 
-	metadata, _, _ := utils.GetValueFromKV(testMetadataKey)
+	metadata, _, _ := utils.GetValueFromDynamoKv(testMetadataKey)
 	assert.Equal(t, newCurrentMetadataValue, metadata)
 
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
@@ -445,7 +445,7 @@ func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	testMetadataValue := utils.GenerateFileHandle()
 	newValue := utils.GenerateFileHandle()
 
-	if err := utils.BatchSet(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{testMetadataKey: testMetadataValue}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
 	}
 
@@ -553,9 +553,9 @@ func Test_Create_Metadata_Creates_Metadata(t *testing.T) {
 
 	permissionHashExpected, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
 
-	metadata, _, err := utils.GetValueFromKV(testMetadataKey)
+	metadata, _, err := utils.GetValueFromDynamoKv(testMetadataKey)
 	assert.Nil(t, err)
-	permissionHash, _, err := utils.GetValueFromKV(getPermissionHashKeyForBadger(testMetadataKey))
+	permissionHash, _, err := utils.GetValueFromDynamoKv(getPermissionHashKeyForBadger(testMetadataKey))
 	assert.Nil(t, err)
 	assert.Equal(t, "", metadata)
 	assert.Equal(t, permissionHashExpected, permissionHash)
@@ -751,7 +751,7 @@ func Test_Delete_Metadata_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T) 
 
 	ttl := time.Until(account.ExpirationDate())
 
-	if err := utils.BatchSet(&utils.KVPairs{
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{
 		testMetadataKey:   testMetadataValue,
 		permissionHashKey: "someIncorrectPermissionHash",
 	}, ttl); err != nil {
@@ -801,7 +801,7 @@ func Test_Delete_Metadata_Success(t *testing.T) {
 
 	ttl := time.Until(account.ExpirationDate())
 
-	if err := utils.BatchSet(&utils.KVPairs{
+	if err := utils.BatchSetToDynamoKv(&utils.KVPairs{
 		testMetadataKey:   testMetadataValue,
 		permissionHashKey: permissionHash,
 	}, ttl); err != nil {

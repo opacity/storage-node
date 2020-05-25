@@ -88,6 +88,12 @@ type StorageNodeEnv struct {
 
 	// Whether accepting credit cards is enabled
 	EnableCreditCards bool `env:"ENABLE_CREDIT_CARDS" envDefault:"false"`
+
+	DynamoEndpoint  string `env:"DYNAMODB_ENDPOINT" envDefault:""`
+	DynamoRegion    string `env:"DYNAMODB_REGION" envDefault:""`
+	DynamoTable     string `env:"DYNAMODB_TABLE" envDefault:""`
+	DynamoTableProd string `env:"DYNAMODB_TABLE_PROD" envDefault:""`
+	DynamoTableTest string `env:"DYNAMODB_TABLE_TEST" envDefault:""`
 }
 
 /*Env is the environment for a particular node while the application is running*/
@@ -124,6 +130,7 @@ func SetLive() {
 	Env.GoEnv = "live"
 	Env.DatabaseURL = Env.ProdDatabaseURL
 	Env.StripeKey = Env.StripeKeyProd
+	Env.DynamoTable = Env.DynamoTableProd
 	runInitializations()
 }
 
@@ -134,11 +141,13 @@ func SetTesting(filenames ...string) {
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
 	Env.StripeKey = Env.StripeKeyTest
+	Env.DynamoTable = Env.DynamoTableTest
 	runInitializations()
 }
 
 func runInitializations() {
 	InitKvStore()
+	InitDynamoKvStore()
 	newS3Session()
 
 	Env.Plans = make(PlanResponseType)
@@ -184,6 +193,12 @@ func tryLookUp() error {
 	stripeKeyTest := AppendLookupErrors("STRIPE_KEY_TEST", &collectedErrors)
 	stripeKeyProd := AppendLookupErrors("STRIPE_KEY_PROD", &collectedErrors)
 
+	dynamoEndpoint := AppendLookupErrors("DYNAMODB_ENDPOINT", &collectedErrors)
+	dynamoRegion := AppendLookupErrors("DYNAMODB_REGION", &collectedErrors)
+	dynamoTable := AppendLookupErrors("DYNAMODB_TABLE", &collectedErrors)
+	dynamoTableProd := AppendLookupErrors("DYNAMODB_TABLE_PROD", &collectedErrors)
+	dynamoTableTest := AppendLookupErrors("DYNAMODB_TABLE_TEST", &collectedErrors)
+
 	accountRetentionDaysStr := AppendLookupErrors("ACCOUNT_RETENTION_DAYS", &collectedErrors)
 	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
 	AppendIfError(err, &collectedErrors)
@@ -228,6 +243,11 @@ func tryLookUp() error {
 		StripeKeyTest:        stripeKeyTest,
 		StripeKeyProd:        stripeKeyProd,
 		EnableCreditCards:    enableCreditCards,
+		DynamoEndpoint:       dynamoEndpoint,
+		DynamoRegion:         dynamoRegion,
+		DynamoTable:          dynamoTable,
+		DynamoTableProd:      dynamoTableProd,
+		DynamoTableTest:      dynamoTableTest,
 	}
 
 	Env = serverEnv

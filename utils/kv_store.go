@@ -84,11 +84,6 @@ func RemoveAllKvStoreData() error {
 	return err
 }
 
-/*GetBadgerDb returns the underlying the database. If not call InitKvStore(), it will return nil*/
-func GetBadgerDb() *badger.DB {
-	return badgerDB
-}
-
 /*GetValueFromKV gets a single value from the provided key*/
 func GetValueFromKV(key string) (value string, expirationTime time.Time, err error) {
 	expirationTime = time.Now()
@@ -267,6 +262,28 @@ func BatchDelete(ks *KVKeys) error {
 	}
 
 	LogIfError(err, map[string]interface{}{"batchSize": len(*ks)})
+	return err
+}
+
+func Iterate() error {
+	err := badgerDB.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+			k := item.Key()
+
+			err := item.Value(func(v []byte) error {
+				fmt.Printf("key=%s, value=%s\n", k, v)
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	return err
 }
 
