@@ -94,8 +94,8 @@ func createStripePayment(c *gin.Context) error {
 		if err := verifyValidStorageLimit(request.createStripePaymentObject.StorageLimit, c); err != nil {
 			return err
 		}
-		costInDollars, _ = account.UpgradeCostInUSD(request.createStripePaymentObject.StorageLimit,
-			request.createStripePaymentObject.DurationInMonths)
+		//costInDollars, _ = account.UpgradeCostInUSD(request.createStripePaymentObject.StorageLimit,
+		//	request.createStripePaymentObject.DurationInMonths)
 	} else {
 		costInDollars = utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 	}

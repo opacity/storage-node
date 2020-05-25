@@ -34,7 +34,7 @@ func returnValidUpgrade() (Upgrade, Account) {
 		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
 		PaymentStatus:    InitialPaymentInProgress,
 		OpqCost:          upgradeCostInOPQ,
-		UsdCost:          upgradeCostInUSD,
+		//UsdCost:          upgradeCostInUSD,
 		DurationInMonths: 12,
 	}, account
 }
@@ -149,7 +149,7 @@ func Test_Upgrade_GetOrCreateUpgrade(t *testing.T) {
 	assert.Equal(t, uPtr.EthAddress, upgrade.EthAddress)
 	assert.Equal(t, uPtr.NewStorageLimit, upgrade.NewStorageLimit)
 	assert.Equal(t, uPtr.OpqCost, upgrade.OpqCost)
-	assert.Equal(t, uPtr.UsdCost, upgrade.UsdCost)
+	//assert.Equal(t, uPtr.UsdCost, upgrade.UsdCost)
 
 	// simulate generating a new update with the same AccountID and NewStorageLimit
 	// although another upgrade already exists--price should not change due to 1 hour price

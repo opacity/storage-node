@@ -2,7 +2,6 @@ package routes
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -37,8 +36,9 @@ type checkUpgradeStatusReq struct {
 }
 
 type getUpgradeAccountInvoiceRes struct {
-	OpqInvoice models.Invoice `json:"opqInvoice"`
-	UsdInvoice float64        `json:"usdInvoice"`
+	OpqInvoice models.Invoice  `json:"opqInvoice"`
+	// TODO: uncomment out if we decide to support stripe for upgrades
+	// UsdInvoice float64        `json:"usdInvoice,omitempty"`
 }
 
 func (v *getUpgradeAccountInvoiceReq) getObjectRef() interface{} {
@@ -110,9 +110,8 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 	}
 
 	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(request.getUpgradeAccountInvoiceObject.StorageLimit,
-		request.getUpgradeAccountInvoiceObject.DurationInMonths)
-	upgradeCostInUSD, _ := account.UpgradeCostInUSD(request.getUpgradeAccountInvoiceObject.StorageLimit,
-		request.getUpgradeAccountInvoiceObject.DurationInMonths)
+		//request.getUpgradeAccountInvoiceObject.DurationInMonths)
+		account.MonthsInSubscription)
 
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
 	if err != nil {
@@ -138,8 +137,9 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 		EthPrivateKey:    hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:    models.InitialPaymentInProgress,
 		OpqCost:          upgradeCostInOPQ,
-		UsdCost:          upgradeCostInUSD,
-		DurationInMonths: request.getUpgradeAccountInvoiceObject.DurationInMonths,
+		//UsdCost:          upgradeCostInUSD,
+		//DurationInMonths: request.getUpgradeAccountInvoiceObject.DurationInMonths,
+		DurationInMonths: account.MonthsInSubscription,
 	}
 
 	upgradeInDB, err := models.GetOrCreateUpgrade(upgrade)
@@ -153,7 +153,7 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 			Cost:       upgradeCostInOPQ,
 			EthAddress: upgradeInDB.EthAddress,
 		},
-		UsdInvoice: upgradeCostInUSD,
+		//UsdInvoice: upgradeCostInUSD,
 	})
 }
 
@@ -174,10 +174,10 @@ func checkUpgradeStatus(c *gin.Context) error {
 	}
 
 	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, request.checkUpgradeStatusObject.StorageLimit, int(account.StorageLimit))
-	if upgrade.DurationInMonths != request.checkUpgradeStatusObject.DurationInMonths {
-		return ForbiddenResponse(c, errors.New("durationInMonths does not match durationInMonths "+
-			"when upgrade was initiated"))
-	}
+	//if upgrade.DurationInMonths != request.checkUpgradeStatusObject.DurationInMonths {
+	//	return ForbiddenResponse(c, errors.New("durationInMonths does not match durationInMonths "+
+	//		"when upgrade was initiated"))
+	//}
 
 	//stripePayment, err := models.GetNewestStripePaymentByAccountId(account.AccountID)
 	//if stripePayment.AccountID == account.AccountID && err == nil && stripePayment.UpgradePayment {
@@ -228,13 +228,17 @@ func checkUpgradeStatus(c *gin.Context) error {
 
 func upgradeAccountAndUpdateExpireDates(account models.Account, request checkUpgradeStatusReq, c *gin.Context) error {
 	if err := account.UpgradeAccount(request.checkUpgradeStatusObject.StorageLimit,
-		request.checkUpgradeStatusObject.DurationInMonths); err != nil {
+		//request.checkUpgradeStatusObject.DurationInMonths); err != nil {
+		account.MonthsInSubscription); err != nil {
 		return err
 	}
 	filesErr := models.UpdateExpiredAt(request.checkUpgradeStatusObject.FileHandles,
 		request.verification.PublicKey, account.ExpirationDate())
+
+	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
+	// be deleted too soon
 	metadatasErr := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate(), c)
+		request.verification.PublicKey, account.ExpirationDate().Add(24 * time.Hour * 60), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }

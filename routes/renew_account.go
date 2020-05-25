@@ -10,6 +10,7 @@ import (
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
+	"time"
 )
 
 type getRenewalAccountInvoiceObject struct {
@@ -107,7 +108,7 @@ func getAccountRenewalInvoice(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	renewalCostInUSD := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
+	//renewalCostInUSD := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
 	if err != nil {
@@ -131,7 +132,6 @@ func getAccountRenewalInvoice(c *gin.Context) error {
 		EthPrivateKey:    hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:    models.InitialPaymentInProgress,
 		OpqCost:          renewalCostInOPQ,
-		UsdCost:          renewalCostInUSD,
 		DurationInMonths: 12,
 	}
 
@@ -210,8 +210,11 @@ func renewalAccountAndUpdateExpireDates(account models.Account, request checkRen
 	}
 	filesErr := models.UpdateExpiredAt(request.checkRenewalStatusObject.FileHandles,
 		request.verification.PublicKey, account.ExpirationDate())
+
+	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
+	// be deleted too soon
 	metadatasErr := updateMetadataExpiration(request.checkRenewalStatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate(), c)
+		request.verification.PublicKey, account.ExpirationDate().Add(24 * time.Hour * 60), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }

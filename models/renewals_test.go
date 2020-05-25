@@ -28,7 +28,7 @@ func returnValidRenewal() (Renewal, Account) {
 		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
 		PaymentStatus:    InitialPaymentInProgress,
 		OpqCost:          renewalCostInOPQ,
-		UsdCost:          utils.Env.Plans[int(account.StorageLimit)].CostInUSD,
+		//UsdCost:          utils.Env.Plans[int(account.StorageLimit)].CostInUSD,
 		DurationInMonths: 12,
 	}, account
 }
@@ -133,7 +133,7 @@ func Test_Renewal_GetOrCreateRenewal(t *testing.T) {
 	assert.Equal(t, uPtr.AccountID, renewal.AccountID)
 	assert.Equal(t, uPtr.EthAddress, renewal.EthAddress)
 	assert.Equal(t, uPtr.OpqCost, renewal.OpqCost)
-	assert.Equal(t, uPtr.UsdCost, renewal.UsdCost)
+	//assert.Equal(t, uPtr.UsdCost, renewal.UsdCost)
 
 	// simulate generating a new update with the same AccountID
 	// although another renewal already exists--price should not change

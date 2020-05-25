@@ -211,7 +211,6 @@ func returnRenewalForTest(t *testing.T, account models.Account) models.Renewal {
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		PaymentStatus:    models.InitialPaymentInProgress,
 		OpqCost:          renewalCostInOPQ,
-		UsdCost:          utils.Env.Plans[int(account.StorageLimit)].CostInUSD,
 		EthAddress:       ethAddress.String(),
 		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
 	}
