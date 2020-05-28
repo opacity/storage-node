@@ -21,7 +21,7 @@ type Renewal struct {
 	ApiVersion       int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 	PaymentMethod    PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	OpqCost          float64           `json:"opqCost" binding:"omitempty,gte=0" example:"1.56"`
-	UsdCost          float64           `json:"usdcost" binding:"omitempty,gte=0" example:"39.99"`
+	//UsdCost          float64           `json:"usdcost" binding:"omitempty,gte=0" example:"39.99"`
 	DurationInMonths int               `json:"durationInMonths" gorm:"default:12" binding:"required,gte=1" minimum:"1" example:"12"`
 }
 
@@ -59,7 +59,7 @@ func (renewal *Renewal) BeforeDelete(scope *gorm.Scope) error {
 }
 
 /*GetOrCreateRenewal will either get or create an renewal.  If the renewal already existed it will update the OpqCost
-and UsdCost but will not update the EthAddress and EthPrivateKey*/
+but will not update the EthAddress and EthPrivateKey*/
 func GetOrCreateRenewal(renewal Renewal) (*Renewal, error) {
 	renewalsFromDB, err := GetRenewalsFromAccountID(renewal.AccountID)
 	if err != nil {

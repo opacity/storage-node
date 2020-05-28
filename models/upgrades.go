@@ -23,7 +23,7 @@ type Upgrade struct {
 	ApiVersion       int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 	PaymentMethod    PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	OpqCost          float64           `json:"opqCost" binding:"omitempty,gte=0" example:"1.56"`
-	UsdCost          float64           `json:"usdcost" binding:"omitempty,gte=0" example:"39.99"`
+	//UsdCost          float64           `json:"usdcost" binding:"omitempty,gte=0" example:"39.99"`
 	DurationInMonths int               `json:"durationInMonths" gorm:"default:12" binding:"required,gte=1" minimum:"1" example:"12"`
 }
 
@@ -61,7 +61,7 @@ func (upgrade *Upgrade) BeforeDelete(scope *gorm.Scope) error {
 }
 
 /*GetOrCreateUpgrade will either get or create an upgrade.  If the upgrade already existed it will update the OpqCost
-and UsdCost but will not update the EthAddress and EthPrivateKey*/
+but will not update the EthAddress and EthPrivateKey*/
 func GetOrCreateUpgrade(upgrade Upgrade) (*Upgrade, error) {
 	var upgradeFromDB Upgrade
 
@@ -73,8 +73,8 @@ func GetOrCreateUpgrade(upgrade Upgrade) (*Upgrade, error) {
 		targetTime := time.Now().Add(-60 * time.Minute)
 		if targetTime.After(upgradeFromDB.UpdatedAt) {
 			upgradeFromDB.OpqCost = upgrade.OpqCost
-			upgradeFromDB.UsdCost = upgrade.UsdCost
-			err = DB.Model(&upgradeFromDB).Updates(Upgrade{OpqCost: upgrade.OpqCost, UsdCost: upgrade.UsdCost}).Error
+			//upgradeFromDB.UsdCost = upgrade.UsdCost
+			err = DB.Model(&upgradeFromDB).Updates(Upgrade{OpqCost: upgrade.OpqCost}).Error
 		}
 	}
 

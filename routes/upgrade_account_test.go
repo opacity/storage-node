@@ -46,7 +46,7 @@ func Test_GetAccountUpgradeInvoiceHandler_Returns_Invoice(t *testing.T) {
 	w := httpPostRequestHelperForTest(t, AccountUpgradeInvoicePath, getInvoiceReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), `"usdInvoice":100`)
+	//assert.Contains(t, w.Body.String(), `"usdInvoice":100`)
 	assert.Contains(t, w.Body.String(), `"opqInvoice":{"cost":24,`)
 }
 
@@ -302,11 +302,11 @@ func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 
 	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(utils.Env.Plans[newStorageLimit2].StorageInGB,
 		models.DefaultMonthsPerSubscription)
-	upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[newStorageLimit2].StorageInGB,
-		models.DefaultMonthsPerSubscription)
+	//upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[newStorageLimit2].StorageInGB,
+	//	models.DefaultMonthsPerSubscription)
 
 	upgrade2.OpqCost = upgradeCostInOPQ
-	upgrade2.UsdCost = upgradeCostInUSD
+	//upgrade2.UsdCost = upgradeCostInUSD
 
 	err = models.DB.Create(&upgrade2).Error
 	assert.Nil(t, err)
@@ -388,8 +388,8 @@ func returnUpgradeForTest(t *testing.T, account models.Account, newStorageLimit 
 
 	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(utils.Env.Plans[newStorageLimit].StorageInGB,
 		models.DefaultMonthsPerSubscription)
-	upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[newStorageLimit].StorageInGB,
-		models.DefaultMonthsPerSubscription)
+	//upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[newStorageLimit].StorageInGB,
+	//	models.DefaultMonthsPerSubscription)
 
 	return models.Upgrade{
 		AccountID:        account.AccountID,
@@ -398,7 +398,7 @@ func returnUpgradeForTest(t *testing.T, account models.Account, newStorageLimit 
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		PaymentStatus:    models.InitialPaymentInProgress,
 		OpqCost:          upgradeCostInOPQ,
-		UsdCost:          upgradeCostInUSD,
+		//UsdCost:          upgradeCostInUSD,
 		EthAddress:       ethAddress.String(),
 		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
 	}
