@@ -41,7 +41,7 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
 
-	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
+	account.CreatedAt = time.Now().Add(time.Hour * 24 * 360 * -1)
 	account.PaymentStatus = models.PaymentRetrievalComplete
 	models.DB.Save(&account)
 

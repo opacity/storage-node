@@ -35,7 +35,7 @@ func Test_GetAccountRenewInvoiceHandler_Returns_Invoice(t *testing.T) {
 	account := CreatePaidAccountForTest(t, accountID)
 
 	account.StorageLimit = models.StorageLimitType(1024)
-	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
+	account.CreatedAt = time.Now().Add(time.Hour * 24 * 360 * -1)
 	models.DB.Save(&account)
 
 	w := httpPostRequestHelperForTest(t, AccountRenewInvoicePath, getInvoiceReq)
@@ -92,7 +92,7 @@ func Test_CheckRenewalStatusHandler_Returns_Status_OPQ_Renew_Success(t *testing.
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
 
-	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
+	account.CreatedAt = time.Now().Add(time.Hour * 24 * 360 * -1)
 	account.PaymentStatus = models.PaymentRetrievalComplete
 	models.DB.Save(&account)
 
@@ -156,7 +156,7 @@ func Test_CheckRenewalStatusHandler_Returns_Status_OPQ_Renew_Still_Pending(t *te
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
 
-	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
+	account.CreatedAt = time.Now().Add(time.Hour * 24 * 360 * -1)
 	account.PaymentStatus = models.PaymentRetrievalComplete
 	models.DB.Save(&account)
 
