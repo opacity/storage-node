@@ -163,10 +163,9 @@ func checkRenewalStatus(c *gin.Context) error {
 		return err
 	}
 
-	// TODO: re-enable this for the actual release
-	//if err := verifyRenewEligible(account, c); err != nil {
-	//	return err
-	//}
+	if err := verifyRenewEligible(account, c); err != nil {
+		return err
+	}
 
 	renewals, err := models.GetRenewalsFromAccountID(account.AccountID)
 	if err != nil {

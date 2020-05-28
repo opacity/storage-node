@@ -47,32 +47,31 @@ func Test_GetAccountRenewInvoiceHandler_Returns_Invoice(t *testing.T) {
 	assert.Contains(t, w.Body.String(), `"opqInvoice":{"cost":16,`)
 }
 
-// TODO: re-enable this for the actual release
-//func Test_GetAccountRenewInvoiceHandler_ReturnsErrorIfExpirationDateTooFarInFuture(t *testing.T) {
-//	models.DeleteAccountsForTest(t)
-//	models.DeleteRenewalsForTest(t)
-//
-//	getInvoiceObj := getRenewalAccountInvoiceObject{}
-//
-//	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getInvoiceObj)
-//
-//	getInvoiceReq := getRenewalAccountInvoiceReq{
-//		verification: v,
-//		requestBody:  b,
-//	}
-//
-//	accountID, _ := utils.HashString(v.PublicKey)
-//	account := CreatePaidAccountForTest(t, accountID)
-//
-//	account.StorageLimit = models.StorageLimitType(1024)
-//	account.MonthsInSubscription = 13
-//	models.DB.Save(&account)
-//
-//	w := httpPostRequestHelperForTest(t, AccountRenewInvoicePath, getInvoiceReq)
-//	// Check to see if the response was what you expected
-//	assert.Equal(t, http.StatusForbidden, w.Code)
-//	assert.Contains(t, w.Body.String(), `account has too much time left to renew`)
-//}
+func Test_GetAccountRenewInvoiceHandler_ReturnsErrorIfExpirationDateTooFarInFuture(t *testing.T) {
+	models.DeleteAccountsForTest(t)
+	models.DeleteRenewalsForTest(t)
+
+	getInvoiceObj := getRenewalAccountInvoiceObject{}
+
+	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getInvoiceObj)
+
+	getInvoiceReq := getRenewalAccountInvoiceReq{
+		verification: v,
+		requestBody:  b,
+	}
+
+	accountID, _ := utils.HashString(v.PublicKey)
+	account := CreatePaidAccountForTest(t, accountID)
+
+	account.StorageLimit = models.StorageLimitType(1024)
+	account.MonthsInSubscription = 13
+	models.DB.Save(&account)
+
+	w := httpPostRequestHelperForTest(t, AccountRenewInvoicePath, getInvoiceReq)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusForbidden, w.Code)
+	assert.Contains(t, w.Body.String(), `account has too much time left to renew`)
+}
 
 func Test_CheckRenewalStatusHandler_Returns_Status_OPQ_Renew_Success(t *testing.T) {
 	models.DeleteAccountsForTest(t)
