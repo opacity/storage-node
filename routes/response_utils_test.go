@@ -132,7 +132,7 @@ func Test_verifyRenewEligible(t *testing.T) {
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
 	account := CreatePaidAccountForTest(t, accountID)
-	account.MonthsInSubscription = 6
+	account.MonthsInSubscription = 5
 	err = models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
