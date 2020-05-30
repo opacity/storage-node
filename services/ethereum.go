@@ -70,9 +70,9 @@ type TokenCallMsg struct {
 // Limits selected based on actual transactions from etherscan
 const (
 	// Token Transaction Gas Limit
-	GasLimitTokenSend uint64 = 54501
+	GasLimitTokenSend uint64 = 100000
 	// ETH Gas Limit
-	GasLimitETHSend uint64 = 21000
+	GasLimitETHSend uint64 = 42000
 )
 
 var (
