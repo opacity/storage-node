@@ -70,9 +70,9 @@ type TokenCallMsg struct {
 // Limits selected based on actual transactions from etherscan
 const (
 	// Token Transaction Gas Limit
-	GasLimitTokenSend uint64 = 100000
+	GasLimitTokenSend uint64 = 54501
 	// ETH Gas Limit
-	GasLimitETHSend uint64 = 42000
+	GasLimitETHSend uint64 = 21000
 )
 
 var (
@@ -84,9 +84,9 @@ var (
 	addressNonceMap                AddressToNonceMap
 	MainWalletAddress              common.Address
 	MainWalletPrivateKey           *ecdsa.PrivateKey
-	DefaultGasPrice                = utils.ConvertGweiToWei(big.NewInt(2))
+	DefaultGasPrice                = utils.ConvertGweiToWei(big.NewInt(6))
 	DefaultGasForPaymentCollection = new(big.Int).Mul(DefaultGasPrice, big.NewInt(int64(GasLimitTokenSend)))
-	SlowGasPrice                   = utils.ConvertGweiToWei(big.NewInt(2))
+	SlowGasPrice                   = utils.ConvertGweiToWei(big.NewInt(6))
 	FastGasPrice                   = utils.ConvertGweiToWei(big.NewInt(25))
 )
 
