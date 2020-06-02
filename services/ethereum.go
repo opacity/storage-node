@@ -84,9 +84,9 @@ var (
 	addressNonceMap                AddressToNonceMap
 	MainWalletAddress              common.Address
 	MainWalletPrivateKey           *ecdsa.PrivateKey
-	DefaultGasPrice                = utils.ConvertGweiToWei(big.NewInt(6))
+	DefaultGasPrice                = utils.ConvertGweiToWei(big.NewInt(20))
 	DefaultGasForPaymentCollection = new(big.Int).Mul(DefaultGasPrice, big.NewInt(int64(GasLimitTokenSend)))
-	SlowGasPrice                   = utils.ConvertGweiToWei(big.NewInt(6))
+	SlowGasPrice                   = utils.ConvertGweiToWei(big.NewInt(20))
 	FastGasPrice                   = utils.ConvertGweiToWei(big.NewInt(25))
 )
 
