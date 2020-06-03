@@ -23,11 +23,11 @@ func returnValidRenewal() (Renewal, Account) {
 	renewalCostInOPQ, _ := account.Cost()
 
 	return Renewal{
-		AccountID:        account.AccountID,
-		EthAddress:       ethAddress.String(),
-		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
-		PaymentStatus:    InitialPaymentInProgress,
-		OpqCost:          renewalCostInOPQ,
+		AccountID:     account.AccountID,
+		EthAddress:    ethAddress.String(),
+		EthPrivateKey: hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
+		PaymentStatus: InitialPaymentInProgress,
+		OpqCost:       renewalCostInOPQ,
 		//UsdCost:          utils.Env.Plans[int(account.StorageLimit)].CostInUSD,
 		DurationInMonths: 12,
 	}, account

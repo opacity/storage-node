@@ -22,8 +22,8 @@ type StartUpRunnable interface {
 }
 
 func StartupJobs() {
-	utils.SlackLog("Run StartUp Jobs")
-	defer utils.SlackLog("Finished StartUp Jobs")
+	utils.SlackLog("Running Startup Jobs")
+	defer utils.SlackLog("Finished Startup Jobs")
 
 	jobs := []StartUpRunnable{
 		noOps{},
@@ -56,6 +56,7 @@ func ScheduleBackgroundJobs() {
 		stripePaymentDeleter{},
 		upgradeDeleter{},
 		renewalDeleter{},
+		expiredAccountDeleter{},
 	}
 
 	for _, s := range jobs {

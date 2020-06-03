@@ -35,6 +35,7 @@ func returnValidAccount() Account {
 		PaymentStatus:        InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
+		ExpiredAt:            time.Now().AddDate(0, DefaultMonthsPerSubscription, 0),
 	}
 }
 
@@ -1304,6 +1305,57 @@ func Test_handleAccountWithCollectionInProgress_balance_found(t *testing.T) {
 	}
 
 	verifyPaymentStatusExpectations(t, account, PaymentRetrievalInProgress, PaymentRetrievalComplete, handleAccountWithCollectionInProgress)
+}
+
+func Test_GetAllExpiredAccounts(t *testing.T) {
+	DeleteAccountsForTest(t)
+	accountExpired := returnValidAccount()
+	accountExpired.ExpiredAt = time.Now().Add(-1 * time.Hour * 24)
+	if err := DB.Create(&accountExpired).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	accountNotExpired := returnValidAccount()
+	accountExpired.ExpiredAt = time.Now().Add(1 * time.Hour * 24)
+	if err := DB.Create(&accountNotExpired).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	accounts, err := GetAllExpiredAccounts(time.Now())
+
+	assert.Nil(t, err)
+
+	assert.Equal(t, 1, len(accounts))
+	assert.Equal(t, accountExpired.AccountID, accounts[0].AccountID)
+}
+
+func Test_DeleteExpiredAccounts(t *testing.T) {
+	DeleteAccountsForTest(t)
+	DeleteExpiredAccountsForTest(t)
+	accountExpired := returnValidAccount()
+	accountExpired.ExpiredAt = time.Now().Add(-1 * time.Hour * 24)
+	if err := DB.Create(&accountExpired).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	accountNotExpired := returnValidAccount()
+	accountExpired.ExpiredAt = time.Now().Add(1 * time.Hour * 24)
+	if err := DB.Create(&accountNotExpired).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	err := DeleteExpiredAccounts(time.Now())
+	assert.Nil(t, err)
+
+	accounts := []Account{}
+	DB.Find(&accounts)
+	assert.Equal(t, 1, len(accounts))
+	assert.Equal(t, accountNotExpired.AccountID, accounts[0].AccountID)
+
+	expiredAccounts := []ExpiredAccount{}
+	DB.Find(&expiredAccounts)
+	assert.Equal(t, 1, len(expiredAccounts))
+	assert.Equal(t, accountExpired.AccountID, expiredAccounts[0].AccountID)
 }
 
 func verifyPaymentStatusExpectations(t *testing.T,

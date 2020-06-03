@@ -12,17 +12,17 @@ import (
 
 type Renewal struct {
 	/*AccountID associates an entry in the renewals table with an entry in the accounts table*/
-	AccountID        string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"`
-	CreatedAt        time.Time         `json:"createdAt"`
-	UpdatedAt        time.Time         `json:"updatedAt"`
-	EthAddress       string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	EthPrivateKey    string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
-	PaymentStatus    PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
-	ApiVersion       int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
-	PaymentMethod    PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
-	OpqCost          float64           `json:"opqCost" binding:"omitempty,gte=0" example:"1.56"`
+	AccountID     string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"`
+	CreatedAt     time.Time         `json:"createdAt"`
+	UpdatedAt     time.Time         `json:"updatedAt"`
+	EthAddress    string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	EthPrivateKey string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
+	PaymentStatus PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
+	ApiVersion    int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+	PaymentMethod PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
+	OpqCost       float64           `json:"opqCost" binding:"omitempty,gte=0" example:"1.56"`
 	//UsdCost          float64           `json:"usdcost" binding:"omitempty,gte=0" example:"39.99"`
-	DurationInMonths int               `json:"durationInMonths" gorm:"default:12" binding:"required,gte=1" minimum:"1" example:"12"`
+	DurationInMonths int `json:"durationInMonths" gorm:"default:12" binding:"required,gte=1" minimum:"1" example:"12"`
 }
 
 /*RenewalCollectionFunctions maps a PaymentStatus to the method that should be run

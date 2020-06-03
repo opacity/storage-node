@@ -40,6 +40,7 @@ type Account struct {
 	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
 	PaymentMethod            PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	Upgrades                 []Upgrade         `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
+	ExpiredAt                time.Time         `json:"expiredAt"`
 }
 
 /*SpaceReport defines a model for capturing the space allotted compared to space used*/
@@ -154,6 +155,9 @@ func (account *Account) BeforeDelete(scope *gorm.Scope) error {
 
 /*ExpirationDate returns the date the account expires*/
 func (account *Account) ExpirationDate() time.Time {
+	account.ExpiredAt = account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
+	err := DB.Model(&account).Update("expired_at", account.ExpiredAt).Error
+	utils.LogIfError(err, nil)
 	return account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
 }
 
@@ -604,6 +608,37 @@ func handleAccountAlreadyCollected(account Account) error {
 	return nil
 }
 
+func GetAllExpiredAccounts(expiredTime time.Time) ([]Account, error) {
+	accounts := []Account{}
+	if err := DB.Where("expired_at < ?", expiredTime).Find(&accounts).Error; err != nil {
+		utils.LogIfError(err, nil)
+		return nil, err
+	}
+	return accounts, nil
+}
+
+func DeleteExpiredAccounts(expiredTime time.Time) error {
+	accounts, err := GetAllExpiredAccounts(expiredTime)
+	if err != nil {
+		utils.LogIfError(err, nil)
+		return err
+	}
+
+	for _, account := range accounts {
+		s := ExpiredAccount{
+			AccountID:  account.AccountID,
+			ExpiredAt:  account.ExpiredAt,
+			EthAddress: account.EthAddress,
+			DeletedAt:  time.Now(),
+		}
+		err := DB.Create(&s).Error
+		utils.LogIfError(err, nil)
+		err = DB.Delete(&account).Error
+		utils.LogIfError(err, nil)
+	}
+	return err
+}
+
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the
 terminal*/
 func (account *Account) PrettyString() {
@@ -615,6 +650,9 @@ func (account *Account) PrettyString() {
 
 	fmt.Print("UpdatedAt:                      ")
 	fmt.Println(account.UpdatedAt)
+
+	fmt.Print("ExpiredAt:                      ")
+	fmt.Println(account.ExpiredAt)
 
 	fmt.Print("ExpirationDate:                 ")
 	fmt.Println(account.ExpirationDate())

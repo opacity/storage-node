@@ -32,7 +32,7 @@ func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 	s = models.CompletedFile{
 		FileID:       s2FileID,
 		ModifierHash: utils.GenerateFileHandle(),
-		ExpiredAt:    time.Date(2010, 1, 1, 12, 0, 0, 0, time.UTC), // past
+		ExpiredAt:    time.Now().Add(-24 * time.Hour * 61), // past
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
 	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s2FileID), "foo2"))
@@ -40,7 +40,7 @@ func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 	s = models.CompletedFile{
 		FileID:       s3FileID,
 		ModifierHash: utils.GenerateFileHandle(),
-		ExpiredAt:    time.Now().AddDate(0, 1, 0), // future
+		ExpiredAt:    time.Now().Add(-24 * time.Hour * 59), // past, but not old enough to be deleted
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
 	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s3FileID), "foo3"))

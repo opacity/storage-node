@@ -27,13 +27,13 @@ func returnValidUpgrade() (Upgrade, Account) {
 	//	12)
 
 	return Upgrade{
-		AccountID:        account.AccountID,
-		NewStorageLimit:  ProfessionalStorageLimit,
-		OldStorageLimit:  account.StorageLimit,
-		EthAddress:       ethAddress.String(),
-		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
-		PaymentStatus:    InitialPaymentInProgress,
-		OpqCost:          upgradeCostInOPQ,
+		AccountID:       account.AccountID,
+		NewStorageLimit: ProfessionalStorageLimit,
+		OldStorageLimit: account.StorageLimit,
+		EthAddress:      ethAddress.String(),
+		EthPrivateKey:   hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
+		PaymentStatus:   InitialPaymentInProgress,
+		OpqCost:         upgradeCostInOPQ,
 		//UsdCost:          upgradeCostInUSD,
 		DurationInMonths: 12,
 	}, account
