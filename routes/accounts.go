@@ -161,6 +161,7 @@ func createAccount(c *gin.Context) error {
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:        models.InitialPaymentInProgress,
 		MonthsInSubscription: request.accountCreateObj.DurationInMonths,
+		ExpiredAt:            time.Now().AddDate(0, request.accountCreateObj.DurationInMonths, 0),
 	}
 
 	// Add account to DB

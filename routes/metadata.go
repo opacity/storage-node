@@ -7,6 +7,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -183,8 +184,15 @@ func getMetadata(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyIfPaidWithContext(account, c); err != nil {
-		return err
+	if paid := verifyIfPaid(account); !paid {
+		cost, _ := account.Cost()
+		return AccountNotPaidResponse(c, accountCreateRes{
+			Invoice: models.Invoice{
+				Cost:       cost,
+				EthAddress: account.EthAddress,
+			},
+			ExpirationDate: account.ExpirationDate(),
+		})
 	}
 
 	requestBodyParsed := metadataKeyObject{}
@@ -238,8 +246,15 @@ func getMetadataHistory(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyIfPaidWithContext(account, c); err != nil {
-		return err
+	if paid := verifyIfPaid(account); !paid {
+		cost, _ := account.Cost()
+		return AccountNotPaidResponse(c, accountCreateRes{
+			Invoice: models.Invoice{
+				Cost:       cost,
+				EthAddress: account.EthAddress,
+			},
+			ExpirationDate: account.ExpirationDate(),
+		})
 	}
 
 	requestBodyParsed := metadataKeyObject{}

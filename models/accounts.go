@@ -139,11 +139,13 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	if utils.FreeModeEnabled() || utils.Env.Plans[int(account.StorageLimit)].Name == "Free" {
 		account.PaymentStatus = PaymentRetrievalComplete
 	}
+	account.ExpiredAt = time.Now().AddDate(0, account.MonthsInSubscription, 0)
 	return utils.Validator.Struct(account)
 }
 
 /*BeforeUpdate - callback called before the row is updated*/
 func (account *Account) BeforeUpdate(scope *gorm.Scope) error {
+	account.ExpiredAt = time.Now().AddDate(0, account.MonthsInSubscription, 0)
 	return utils.Validator.Struct(account)
 }
 
@@ -390,7 +392,7 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 func (account *Account) RenewAccount() error {
 	return DB.Model(account).Updates(map[string]interface{}{
 		"months_in_subscription": account.MonthsInSubscription + 12,
-		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription + 12, 0),
+		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription+12, 0),
 		"updated_at":             time.Now(),
 	}).Error
 }
@@ -644,7 +646,7 @@ func DeleteExpiredAccounts(expiredTime time.Time) error {
 /*SetAccountsToLowerPaymentStatusByUpdateTime sets accounts to a lower payment status if the account has a certain payment
 status and the updated_at time is older than the cutoff argument*/
 func SetAccountsToLowerPaymentStatusByUpdateTime(paymentStatus PaymentStatusType, updatedAtCutoffTime time.Time) error {
-	return DB.Exec("UPDATE accounts set payment_status = ? WHERE payment_status = ? AND updated_at < ?", paymentStatus - 1, paymentStatus, updatedAtCutoffTime).Error
+	return DB.Exec("UPDATE accounts set payment_status = ? WHERE payment_status = ? AND updated_at < ?", paymentStatus-1, paymentStatus, updatedAtCutoffTime).Error
 }
 
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the

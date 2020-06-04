@@ -1311,16 +1311,16 @@ func Test_handleAccountWithCollectionInProgress_balance_found(t *testing.T) {
 func Test_GetAllExpiredAccounts(t *testing.T) {
 	DeleteAccountsForTest(t)
 	accountExpired := returnValidAccount()
-	accountExpired.ExpiredAt = time.Now().Add(-1 * time.Hour * 24)
 	if err := DB.Create(&accountExpired).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
+	DB.Model(&accountExpired).UpdateColumn("expired_at", time.Now().Add(-1*time.Hour*24))
 
 	accountNotExpired := returnValidAccount()
-	accountExpired.ExpiredAt = time.Now().Add(1 * time.Hour * 24)
 	if err := DB.Create(&accountNotExpired).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
+	DB.Model(&accountNotExpired).UpdateColumn("expired_at", time.Now().Add(1*time.Hour*24))
 
 	accounts, err := GetAllExpiredAccounts(time.Now())
 
@@ -1334,16 +1334,16 @@ func Test_DeleteExpiredAccounts(t *testing.T) {
 	DeleteAccountsForTest(t)
 	DeleteExpiredAccountsForTest(t)
 	accountExpired := returnValidAccount()
-	accountExpired.ExpiredAt = time.Now().Add(-1 * time.Hour * 24)
 	if err := DB.Create(&accountExpired).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
+	DB.Model(&accountExpired).UpdateColumn("expired_at", time.Now().Add(-1*time.Hour*24))
 
 	accountNotExpired := returnValidAccount()
-	accountExpired.ExpiredAt = time.Now().Add(1 * time.Hour * 24)
 	if err := DB.Create(&accountNotExpired).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
+	DB.Model(&accountNotExpired).UpdateColumn("expired_at", time.Now().Add(1*time.Hour*24))
 
 	err := DeleteExpiredAccounts(time.Now())
 	assert.Nil(t, err)
@@ -1381,12 +1381,12 @@ func Test_SetAccountsToLowerPaymentStatusByUpdateTime(t *testing.T) {
 
 	// after cutoff time
 	// should NOT get set to lower status
-	DB.Exec("UPDATE accounts set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1 * 1 * 24 * time.Hour), accounts[0].AccountID)
+	DB.Exec("UPDATE accounts set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1*1*24*time.Hour), accounts[0].AccountID)
 	// before cutoff time
 	// should get set to lower status
-	DB.Exec("UPDATE accounts set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1 * 3 * 24 * time.Hour), accounts[1].AccountID)
+	DB.Exec("UPDATE accounts set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1*3*24*time.Hour), accounts[1].AccountID)
 
-	err := SetAccountsToLowerPaymentStatusByUpdateTime(GasTransferInProgress, time.Now().Add(-1 * 2 * 24 * time.Hour))
+	err := SetAccountsToLowerPaymentStatusByUpdateTime(GasTransferInProgress, time.Now().Add(-1*2*24*time.Hour))
 	assert.Nil(t, err)
 
 	accountsFromDB := []Account{}

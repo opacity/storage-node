@@ -51,6 +51,7 @@ func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.Priva
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
+		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
 	}, privateKeyToSignWith
 }
 

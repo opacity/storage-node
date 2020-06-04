@@ -299,12 +299,12 @@ func Test_SetRenewalsToLowerPaymentStatusByUpdateTime(t *testing.T) {
 
 	// after cutoff time
 	// should NOT get set to lower status
-	DB.Exec("UPDATE renewals set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1 * 1 * 24 * time.Hour), renewals[0].AccountID)
+	DB.Exec("UPDATE renewals set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1*1*24*time.Hour), renewals[0].AccountID)
 	// before cutoff time
 	// should get set to lower status
-	DB.Exec("UPDATE renewals set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1 * 3 * 24 * time.Hour), renewals[1].AccountID)
+	DB.Exec("UPDATE renewals set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1*3*24*time.Hour), renewals[1].AccountID)
 
-	err := SetRenewalsToLowerPaymentStatusByUpdateTime(GasTransferInProgress, time.Now().Add(-1 * 2 * 24 * time.Hour))
+	err := SetRenewalsToLowerPaymentStatusByUpdateTime(GasTransferInProgress, time.Now().Add(-1*2*24*time.Hour))
 	assert.Nil(t, err)
 
 	renewalsFromDB := []Renewal{}

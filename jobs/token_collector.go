@@ -33,13 +33,13 @@ func (t tokenCollector) Run() {
 	}
 
 	for paymentStatus := models.GasTransferInProgress; paymentStatus < models.PaymentRetrievalComplete; paymentStatus++ {
-		err := models.SetAccountsToLowerPaymentStatusByUpdateTime(paymentStatus, time.Now().Add(-1 * hoursToWaitForReset * time.Hour))
+		err := models.SetAccountsToLowerPaymentStatusByUpdateTime(paymentStatus, time.Now().Add(-1*hoursToWaitForReset*time.Hour))
 		utils.LogIfError(err, nil)
 
-		err = models.SetUpgradesToLowerPaymentStatusByUpdateTime(paymentStatus, time.Now().Add(-1 * hoursToWaitForReset * time.Hour))
+		err = models.SetUpgradesToLowerPaymentStatusByUpdateTime(paymentStatus, time.Now().Add(-1*hoursToWaitForReset*time.Hour))
 		utils.LogIfError(err, nil)
 
-		err = models.SetRenewalsToLowerPaymentStatusByUpdateTime(paymentStatus, time.Now().Add(-1 * hoursToWaitForReset * time.Hour))
+		err = models.SetRenewalsToLowerPaymentStatusByUpdateTime(paymentStatus, time.Now().Add(-1*hoursToWaitForReset*time.Hour))
 		utils.LogIfError(err, nil)
 	}
 }
