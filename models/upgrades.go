@@ -235,3 +235,10 @@ func PurgeOldUpgrades(hoursToRetain int) error {
 
 	return err
 }
+
+
+/*SetUpgradesToLowerPaymentStatusByUpdateTime sets upgrades to a lower payment status if the account has a certain payment
+status and the updated_at time is older than the cutoff argument*/
+func SetUpgradesToLowerPaymentStatusByUpdateTime(paymentStatus PaymentStatusType, updatedAtCutoffTime time.Time) error {
+	return DB.Exec("UPDATE upgrades set payment_status = ? WHERE payment_status = ? AND updated_at < ?", paymentStatus-1, paymentStatus, updatedAtCutoffTime).Error
+}

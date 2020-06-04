@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
-	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -15,7 +14,7 @@ type ExpiredAccount struct {
 	UpdatedAt  time.Time `json:"updatedAt"`
 	EthAddress string    `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	ExpiredAt  time.Time `json:"expiredAt"`
-	DeletedAt  time.Time `json:"deletedAt"`
+	RemovedAt  time.Time `json:"removedAt"`
 }
 
 /*BeforeCreate - callback called before the row is created*/

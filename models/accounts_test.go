@@ -469,6 +469,7 @@ func Test_CreateAndGet_Account(t *testing.T) {
 	// Time maybe different since one is before saved. Just ignore the time field difference.
 	account.CreatedAt = savedAccount.CreatedAt
 	account.UpdatedAt = savedAccount.UpdatedAt
+	account.ExpiredAt = savedAccount.ExpiredAt
 	assert.Equal(t, account, savedAccount)
 }
 
@@ -1356,6 +1357,56 @@ func Test_DeleteExpiredAccounts(t *testing.T) {
 	DB.Find(&expiredAccounts)
 	assert.Equal(t, 1, len(expiredAccounts))
 	assert.Equal(t, accountExpired.AccountID, expiredAccounts[0].AccountID)
+}
+
+func Test_SetAccountsToLowerPaymentStatusByUpdateTime(t *testing.T) {
+	DeleteAccountsForTest(t)
+
+	for i := 0; i < 2; i++ {
+		account := returnValidAccount()
+		if err := DB.Create(&account).Error; err != nil {
+			t.Fatalf("should have created account but didn't: " + err.Error())
+		}
+	}
+
+	accounts := []Account{}
+	DB.Find(&accounts)
+	assert.Equal(t, 2, len(accounts))
+
+	accounts[0].PaymentStatus = GasTransferInProgress
+	accounts[1].PaymentStatus = GasTransferInProgress
+
+	DB.Save(&accounts[0])
+	DB.Save(&accounts[1])
+
+	// after cutoff time
+	// should NOT get set to lower status
+	DB.Exec("UPDATE accounts set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1 * 1 * 24 * time.Hour), accounts[0].AccountID)
+	// before cutoff time
+	// should get set to lower status
+	DB.Exec("UPDATE accounts set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1 * 3 * 24 * time.Hour), accounts[1].AccountID)
+
+	err := SetAccountsToLowerPaymentStatusByUpdateTime(GasTransferInProgress, time.Now().Add(-1 * 2 * 24 * time.Hour))
+	assert.Nil(t, err)
+
+	accountsFromDB := []Account{}
+	DB.Find(&accountsFromDB)
+
+	if accountsFromDB[0].AccountID == accounts[0].AccountID {
+		assert.Equal(t, GasTransferInProgress, accountsFromDB[0].PaymentStatus)
+	}
+
+	if accountsFromDB[0].AccountID == accounts[1].AccountID {
+		assert.Equal(t, InitialPaymentReceived, accountsFromDB[0].PaymentStatus)
+	}
+
+	if accountsFromDB[1].AccountID == accounts[0].AccountID {
+		assert.Equal(t, GasTransferInProgress, accountsFromDB[1].PaymentStatus)
+	}
+
+	if accountsFromDB[1].AccountID == accounts[1].AccountID {
+		assert.Equal(t, InitialPaymentReceived, accountsFromDB[1].PaymentStatus)
+	}
 }
 
 func verifyPaymentStatusExpectations(t *testing.T,

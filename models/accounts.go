@@ -382,6 +382,7 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 	return DB.Model(account).Updates(map[string]interface{}{
 		"months_in_subscription": account.MonthsInSubscription,
 		"storage_limit":          account.StorageLimit,
+		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0),
 		"updated_at":             time.Now(),
 	}).Error
 }
@@ -389,6 +390,7 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 func (account *Account) RenewAccount() error {
 	return DB.Model(account).Updates(map[string]interface{}{
 		"months_in_subscription": account.MonthsInSubscription + 12,
+		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription + 12, 0),
 		"updated_at":             time.Now(),
 	}).Error
 }
@@ -629,7 +631,7 @@ func DeleteExpiredAccounts(expiredTime time.Time) error {
 			AccountID:  account.AccountID,
 			ExpiredAt:  account.ExpiredAt,
 			EthAddress: account.EthAddress,
-			DeletedAt:  time.Now(),
+			RemovedAt:  time.Now(),
 		}
 		err := DB.Create(&s).Error
 		utils.LogIfError(err, nil)
@@ -637,6 +639,12 @@ func DeleteExpiredAccounts(expiredTime time.Time) error {
 		utils.LogIfError(err, nil)
 	}
 	return err
+}
+
+/*SetAccountsToLowerPaymentStatusByUpdateTime sets accounts to a lower payment status if the account has a certain payment
+status and the updated_at time is older than the cutoff argument*/
+func SetAccountsToLowerPaymentStatusByUpdateTime(paymentStatus PaymentStatusType, updatedAtCutoffTime time.Time) error {
+	return DB.Exec("UPDATE accounts set payment_status = ? WHERE payment_status = ? AND updated_at < ?", paymentStatus - 1, paymentStatus, updatedAtCutoffTime).Error
 }
 
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the

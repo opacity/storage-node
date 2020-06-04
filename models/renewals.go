@@ -218,3 +218,9 @@ func PurgeOldRenewals(hoursToRetain int) error {
 
 	return err
 }
+
+/*SetRenewalsToLowerPaymentStatusByUpdateTime sets renewals to a lower payment status if the account has a certain payment
+status and the updated_at time is older than the cutoff argument*/
+func SetRenewalsToLowerPaymentStatusByUpdateTime(paymentStatus PaymentStatusType, updatedAtCutoffTime time.Time) error {
+	return DB.Exec("UPDATE renewals set payment_status = ? WHERE payment_status = ? AND updated_at < ?", paymentStatus-1, paymentStatus, updatedAtCutoffTime).Error
+}

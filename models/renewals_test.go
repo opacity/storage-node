@@ -10,6 +10,7 @@ import (
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
+	"time"
 )
 
 func returnValidRenewal() (Renewal, Account) {
@@ -274,4 +275,54 @@ func Test_Renewal_GetTotalCostInWei(t *testing.T) {
 	costInWei := renewal.GetTotalCostInWei()
 
 	assert.Equal(t, "2000000000000000000", costInWei.String())
+}
+
+func Test_SetRenewalsToLowerPaymentStatusByUpdateTime(t *testing.T) {
+	DeleteRenewalsForTest(t)
+
+	for i := 0; i < 2; i++ {
+		renewal, _ := returnValidRenewal()
+		if err := DB.Create(&renewal).Error; err != nil {
+			t.Fatalf("should have created renewal but didn't: " + err.Error())
+		}
+	}
+
+	renewals := []Renewal{}
+	DB.Find(&renewals)
+	assert.Equal(t, 2, len(renewals))
+
+	renewals[0].PaymentStatus = GasTransferInProgress
+	renewals[1].PaymentStatus = GasTransferInProgress
+
+	DB.Save(&renewals[0])
+	DB.Save(&renewals[1])
+
+	// after cutoff time
+	// should NOT get set to lower status
+	DB.Exec("UPDATE renewals set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1 * 1 * 24 * time.Hour), renewals[0].AccountID)
+	// before cutoff time
+	// should get set to lower status
+	DB.Exec("UPDATE renewals set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1 * 3 * 24 * time.Hour), renewals[1].AccountID)
+
+	err := SetRenewalsToLowerPaymentStatusByUpdateTime(GasTransferInProgress, time.Now().Add(-1 * 2 * 24 * time.Hour))
+	assert.Nil(t, err)
+
+	renewalsFromDB := []Renewal{}
+	DB.Find(&renewalsFromDB)
+
+	if renewalsFromDB[0].AccountID == renewals[0].AccountID {
+		assert.Equal(t, GasTransferInProgress, renewalsFromDB[0].PaymentStatus)
+	}
+
+	if renewalsFromDB[0].AccountID == renewals[1].AccountID {
+		assert.Equal(t, InitialPaymentReceived, renewalsFromDB[0].PaymentStatus)
+	}
+
+	if renewalsFromDB[1].AccountID == renewals[0].AccountID {
+		assert.Equal(t, GasTransferInProgress, renewalsFromDB[1].PaymentStatus)
+	}
+
+	if renewalsFromDB[1].AccountID == renewals[1].AccountID {
+		assert.Equal(t, InitialPaymentReceived, renewalsFromDB[1].PaymentStatus)
+	}
 }
