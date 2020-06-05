@@ -604,6 +604,12 @@ func handleAccountAlreadyCollected(account Account) error {
 	return nil
 }
 
+/*SetAccountsToLowerPaymentStatusByUpdateTime sets accounts to a lower payment status if the account has a certain payment
+status and the updated_at time is older than the cutoff argument*/
+func SetAccountsToLowerPaymentStatusByUpdateTime(paymentStatus PaymentStatusType, updatedAtCutoffTime time.Time) error {
+	return DB.Exec("UPDATE accounts set payment_status = ? WHERE payment_status = ? AND updated_at < ?", paymentStatus-1, paymentStatus, updatedAtCutoffTime).Error
+}
+
 /*PrettyString - print the account in a friendly way.  Not used for external logging, just for watching in the
 terminal*/
 func (account *Account) PrettyString() {

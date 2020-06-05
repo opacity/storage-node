@@ -12,19 +12,19 @@ import (
 
 type Upgrade struct {
 	/*AccountID associates an entry in the upgrades table with an entry in the accounts table*/
-	AccountID        string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"`
-	NewStorageLimit  StorageLimitType  `gorm:"primary_key;auto_increment:false" json:"newStorageLimit" binding:"required,gte=128" example:"100"` // how much storage they are allowed, in GB.  This will be the new StorageLimit of the account
-	OldStorageLimit  StorageLimitType  `json:"oldStorageLimit" binding:"required,gte=10" example:"10"`                                           // how much storage they are allowed, in GB.  This will be the new StorageLimit of the account
-	CreatedAt        time.Time         `json:"createdAt"`
-	UpdatedAt        time.Time         `json:"updatedAt"`
-	EthAddress       string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	EthPrivateKey    string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
-	PaymentStatus    PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
-	ApiVersion       int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
-	PaymentMethod    PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
-	OpqCost          float64           `json:"opqCost" binding:"omitempty,gte=0" example:"1.56"`
+	AccountID       string            `gorm:"primary_key" json:"accountID" binding:"required,len=64"`
+	NewStorageLimit StorageLimitType  `gorm:"primary_key;auto_increment:false" json:"newStorageLimit" binding:"required,gte=128" example:"100"` // how much storage they are allowed, in GB.  This will be the new StorageLimit of the account
+	OldStorageLimit StorageLimitType  `json:"oldStorageLimit" binding:"required,gte=10" example:"10"`                                           // how much storage they are allowed, in GB.  This will be the new StorageLimit of the account
+	CreatedAt       time.Time         `json:"createdAt"`
+	UpdatedAt       time.Time         `json:"updatedAt"`
+	EthAddress      string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	EthPrivateKey   string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
+	PaymentStatus   PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
+	ApiVersion      int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+	PaymentMethod   PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
+	OpqCost         float64           `json:"opqCost" binding:"omitempty,gte=0" example:"1.56"`
 	//UsdCost          float64           `json:"usdcost" binding:"omitempty,gte=0" example:"39.99"`
-	DurationInMonths int               `json:"durationInMonths" gorm:"default:12" binding:"required,gte=1" minimum:"1" example:"12"`
+	DurationInMonths int `json:"durationInMonths" gorm:"default:12" binding:"required,gte=1" minimum:"1" example:"12"`
 }
 
 /*UpgradeCollectionFunctions maps a PaymentStatus to the method that should be run
@@ -234,4 +234,10 @@ func PurgeOldUpgrades(hoursToRetain int) error {
 		time.Now().Add(-1*time.Hour*time.Duration(hoursToRetain))).Delete(&Upgrade{}).Error
 
 	return err
+}
+
+/*SetUpgradesToLowerPaymentStatusByUpdateTime sets upgrades to a lower payment status if the account has a certain payment
+status and the updated_at time is older than the cutoff argument*/
+func SetUpgradesToLowerPaymentStatusByUpdateTime(paymentStatus PaymentStatusType, updatedAtCutoffTime time.Time) error {
+	return DB.Exec("UPDATE upgrades set payment_status = ? WHERE payment_status = ? AND updated_at < ?", paymentStatus-1, paymentStatus, updatedAtCutoffTime).Error
 }

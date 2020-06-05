@@ -21,7 +21,7 @@ func (e s3Deleter) ScheduleInterval() string {
 func (e s3Deleter) Run() {
 	utils.SlackLog("running " + e.Name())
 
-	fileIDs, err := models.GetAllExpiredCompletedFiles(time.Now())
+	fileIDs, err := models.GetAllExpiredCompletedFiles(time.Now().Add(-24 * time.Hour * 60))
 	if err != nil {
 		utils.LogIfError(err, nil)
 		return

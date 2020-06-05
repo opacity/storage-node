@@ -4,6 +4,7 @@ import (
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
+	"time"
 )
 
 type tokenCollector struct{}
@@ -16,6 +17,8 @@ func (t tokenCollector) ScheduleInterval() string {
 	return "@every 30m"
 }
 
+const hoursToWaitForReset = 48
+
 func (t tokenCollector) Run() {
 	utils.SlackLog("running " + t.Name())
 	for paymentStatus := models.InitialPaymentInProgress; paymentStatus < models.PaymentRetrievalComplete; paymentStatus++ {
@@ -27,6 +30,17 @@ func (t tokenCollector) Run() {
 
 		renewals := models.GetRenewalsByPaymentStatus(paymentStatus)
 		runRenewalsCollectionSequence(renewals)
+	}
+
+	for paymentStatus := models.GasTransferInProgress; paymentStatus < models.PaymentRetrievalComplete; paymentStatus++ {
+		err := models.SetAccountsToLowerPaymentStatusByUpdateTime(paymentStatus, time.Now().Add(-1*hoursToWaitForReset*time.Hour))
+		utils.LogIfError(err, nil)
+
+		err = models.SetUpgradesToLowerPaymentStatusByUpdateTime(paymentStatus, time.Now().Add(-1*hoursToWaitForReset*time.Hour))
+		utils.LogIfError(err, nil)
+
+		err = models.SetRenewalsToLowerPaymentStatusByUpdateTime(paymentStatus, time.Now().Add(-1*hoursToWaitForReset*time.Hour))
+		utils.LogIfError(err, nil)
 	}
 }
 
