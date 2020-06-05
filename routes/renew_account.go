@@ -213,7 +213,7 @@ func renewalAccountAndUpdateExpireDates(account models.Account, request checkRen
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
 	metadatasErr := updateMetadataExpiration(request.checkRenewalStatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate().Add(24 * time.Hour * 60), c)
+		request.verification.PublicKey, account.ExpirationDate().Add(24*time.Hour*60), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }

@@ -1,14 +1,14 @@
 package routes
 
 import (
-	"testing"
-	"time"
-	"github.com/stretchr/testify/assert"
 	"github.com/ethereum/go-ethereum/common"
-	"math/big"
-	"net/http"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
+	"github.com/stretchr/testify/assert"
+	"math/big"
+	"net/http"
+	"testing"
+	"time"
 )
 
 func Test_Init_Renew_And_Upgrade_Accounts(t *testing.T) {
@@ -84,7 +84,6 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentReceived, renewals[0].PaymentStatus)
 
-
 	/*
 
 		Now do an upgrade and check that the expiration date is at least as far in the future
@@ -98,7 +97,7 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	newStorageLimit := 1024
 
 	checkUpgradeStatusObj := checkUpgradeStatusObject{
-		StorageLimit:     newStorageLimit,
+		StorageLimit: newStorageLimit,
 		//DurationInMonths: models.DefaultMonthsPerSubscription,
 		DurationInMonths: account.MonthsInSubscription,
 		MetadataKeys:     checkRenewalStatusObj.MetadataKeys,

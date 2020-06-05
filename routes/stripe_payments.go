@@ -90,7 +90,6 @@ func createStripePayment(c *gin.Context) error {
 		// TODO remove if / when we decide to support Stripe for upgrade
 		return BadRequestResponse(c, errors.New("stripe not supported for upgrades"))
 
-
 		if err := verifyValidStorageLimit(request.createStripePaymentObject.StorageLimit, c); err != nil {
 			return err
 		}

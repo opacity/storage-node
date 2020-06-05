@@ -27,13 +27,13 @@ func returnValidUpgrade() (Upgrade, Account) {
 	//	12)
 
 	return Upgrade{
-		AccountID:        account.AccountID,
-		NewStorageLimit:  ProfessionalStorageLimit,
-		OldStorageLimit:  account.StorageLimit,
-		EthAddress:       ethAddress.String(),
-		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
-		PaymentStatus:    InitialPaymentInProgress,
-		OpqCost:          upgradeCostInOPQ,
+		AccountID:       account.AccountID,
+		NewStorageLimit: ProfessionalStorageLimit,
+		OldStorageLimit: account.StorageLimit,
+		EthAddress:      ethAddress.String(),
+		EthPrivateKey:   hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
+		PaymentStatus:   InitialPaymentInProgress,
+		OpqCost:         upgradeCostInOPQ,
 		//UsdCost:          upgradeCostInUSD,
 		DurationInMonths: 12,
 	}, account
@@ -330,4 +330,54 @@ func Test_Upgrade_GetTotalCostInWei(t *testing.T) {
 	costInWei := upgrade.GetTotalCostInWei()
 
 	assert.Equal(t, "15000000000000000000", costInWei.String())
+}
+
+func Test_SetUpgradesToLowerPaymentStatusByUpdateTime(t *testing.T) {
+	DeleteUpgradesForTest(t)
+
+	for i := 0; i < 2; i++ {
+		upgrade, _ := returnValidUpgrade()
+		if err := DB.Create(&upgrade).Error; err != nil {
+			t.Fatalf("should have created upgrade but didn't: " + err.Error())
+		}
+	}
+
+	upgrades := []Upgrade{}
+	DB.Find(&upgrades)
+	assert.Equal(t, 2, len(upgrades))
+
+	upgrades[0].PaymentStatus = GasTransferInProgress
+	upgrades[1].PaymentStatus = GasTransferInProgress
+
+	DB.Save(&upgrades[0])
+	DB.Save(&upgrades[1])
+
+	// after cutoff time
+	// should NOT get set to lower status
+	DB.Exec("UPDATE upgrades set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1*1*24*time.Hour), upgrades[0].AccountID)
+	// before cutoff time
+	// should get set to lower status
+	DB.Exec("UPDATE upgrades set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1*3*24*time.Hour), upgrades[1].AccountID)
+
+	err := SetUpgradesToLowerPaymentStatusByUpdateTime(GasTransferInProgress, time.Now().Add(-1*2*24*time.Hour))
+	assert.Nil(t, err)
+
+	upgradesFromDB := []Upgrade{}
+	DB.Find(&upgradesFromDB)
+
+	if upgradesFromDB[0].AccountID == upgrades[0].AccountID {
+		assert.Equal(t, GasTransferInProgress, upgradesFromDB[0].PaymentStatus)
+	}
+
+	if upgradesFromDB[0].AccountID == upgrades[1].AccountID {
+		assert.Equal(t, InitialPaymentReceived, upgradesFromDB[0].PaymentStatus)
+	}
+
+	if upgradesFromDB[1].AccountID == upgrades[0].AccountID {
+		assert.Equal(t, GasTransferInProgress, upgradesFromDB[1].PaymentStatus)
+	}
+
+	if upgradesFromDB[1].AccountID == upgrades[1].AccountID {
+		assert.Equal(t, InitialPaymentReceived, upgradesFromDB[1].PaymentStatus)
+	}
 }

@@ -36,7 +36,7 @@ type checkUpgradeStatusReq struct {
 }
 
 type getUpgradeAccountInvoiceRes struct {
-	OpqInvoice models.Invoice  `json:"opqInvoice"`
+	OpqInvoice models.Invoice `json:"opqInvoice"`
 	// TODO: uncomment out if we decide to support stripe for upgrades
 	// UsdInvoice float64        `json:"usdInvoice,omitempty"`
 }
@@ -130,13 +130,13 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 	}
 
 	upgrade := models.Upgrade{
-		AccountID:        account.AccountID,
-		NewStorageLimit:  models.StorageLimitType(request.getUpgradeAccountInvoiceObject.StorageLimit),
-		OldStorageLimit:  account.StorageLimit,
-		EthAddress:       ethAddr.String(),
-		EthPrivateKey:    hex.EncodeToString(encryptedKeyInBytes),
-		PaymentStatus:    models.InitialPaymentInProgress,
-		OpqCost:          upgradeCostInOPQ,
+		AccountID:       account.AccountID,
+		NewStorageLimit: models.StorageLimitType(request.getUpgradeAccountInvoiceObject.StorageLimit),
+		OldStorageLimit: account.StorageLimit,
+		EthAddress:      ethAddr.String(),
+		EthPrivateKey:   hex.EncodeToString(encryptedKeyInBytes),
+		PaymentStatus:   models.InitialPaymentInProgress,
+		OpqCost:         upgradeCostInOPQ,
 		//UsdCost:          upgradeCostInUSD,
 		//DurationInMonths: request.getUpgradeAccountInvoiceObject.DurationInMonths,
 		DurationInMonths: account.MonthsInSubscription,
@@ -238,7 +238,7 @@ func upgradeAccountAndUpdateExpireDates(account models.Account, request checkUpg
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
 	metadatasErr := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate().Add(24 * time.Hour * 60), c)
+		request.verification.PublicKey, account.ExpirationDate().Add(24*time.Hour*60), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }

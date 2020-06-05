@@ -399,7 +399,7 @@ func returnUpgradeForTest(t *testing.T, account models.Account, newStorageLimit 
 		PaymentStatus:    models.InitialPaymentInProgress,
 		OpqCost:          upgradeCostInOPQ,
 		//UsdCost:          upgradeCostInUSD,
-		EthAddress:       ethAddress.String(),
-		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
+		EthAddress:    ethAddress.String(),
+		EthPrivateKey: hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
 	}
 }
