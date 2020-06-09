@@ -14,6 +14,14 @@ func DeleteAccountsForTest(t *testing.T) {
 	}
 }
 
+func DeleteExpiredAccountsForTest(t *testing.T) {
+	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
+		t.Fatalf("should only be calling DeleteExpiredAccountsForTest method on test database")
+	} else {
+		DB.Exec("DELETE from expired_accounts;")
+	}
+}
+
 func DeleteUpgradesForTest(t *testing.T) {
 	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
 		t.Fatalf("should only be calling DeleteUpgradesForTest method on test database")

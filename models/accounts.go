@@ -40,6 +40,7 @@ type Account struct {
 	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
 	PaymentMethod            PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	Upgrades                 []Upgrade         `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
+	ExpiredAt                time.Time         `json:"expiredAt"`
 }
 
 /*SpaceReport defines a model for capturing the space allotted compared to space used*/
@@ -138,11 +139,13 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	if utils.FreeModeEnabled() || utils.Env.Plans[int(account.StorageLimit)].Name == "Free" {
 		account.PaymentStatus = PaymentRetrievalComplete
 	}
+	account.ExpiredAt = time.Now().AddDate(0, account.MonthsInSubscription, 0)
 	return utils.Validator.Struct(account)
 }
 
 /*BeforeUpdate - callback called before the row is updated*/
 func (account *Account) BeforeUpdate(scope *gorm.Scope) error {
+	account.ExpiredAt = time.Now().AddDate(0, account.MonthsInSubscription, 0)
 	return utils.Validator.Struct(account)
 }
 
@@ -154,6 +157,9 @@ func (account *Account) BeforeDelete(scope *gorm.Scope) error {
 
 /*ExpirationDate returns the date the account expires*/
 func (account *Account) ExpirationDate() time.Time {
+	account.ExpiredAt = account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
+	err := DB.Model(&account).Update("expired_at", account.ExpiredAt).Error
+	utils.LogIfError(err, nil)
 	return account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
 }
 
@@ -378,6 +384,7 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 	return DB.Model(account).Updates(map[string]interface{}{
 		"months_in_subscription": account.MonthsInSubscription,
 		"storage_limit":          account.StorageLimit,
+		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0),
 		"updated_at":             time.Now(),
 	}).Error
 }
@@ -385,6 +392,7 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 func (account *Account) RenewAccount() error {
 	return DB.Model(account).Updates(map[string]interface{}{
 		"months_in_subscription": account.MonthsInSubscription + 12,
+		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription+12, 0),
 		"updated_at":             time.Now(),
 	}).Error
 }
@@ -604,6 +612,37 @@ func handleAccountAlreadyCollected(account Account) error {
 	return nil
 }
 
+func GetAllExpiredAccounts(expiredTime time.Time) ([]Account, error) {
+	accounts := []Account{}
+	if err := DB.Where("expired_at < ?", expiredTime).Find(&accounts).Error; err != nil {
+		utils.LogIfError(err, nil)
+		return nil, err
+	}
+	return accounts, nil
+}
+
+func DeleteExpiredAccounts(expiredTime time.Time) error {
+	accounts, err := GetAllExpiredAccounts(expiredTime)
+	if err != nil {
+		utils.LogIfError(err, nil)
+		return err
+	}
+
+	for _, account := range accounts {
+		s := ExpiredAccount{
+			AccountID:  account.AccountID,
+			ExpiredAt:  account.ExpiredAt,
+			EthAddress: account.EthAddress,
+			RemovedAt:  time.Now(),
+		}
+		err := DB.Create(&s).Error
+		utils.LogIfError(err, nil)
+		err = DB.Delete(&account).Error
+		utils.LogIfError(err, nil)
+	}
+	return err
+}
+
 /*SetAccountsToLowerPaymentStatusByUpdateTime sets accounts to a lower payment status if the account has a certain payment
 status and the updated_at time is older than the cutoff argument*/
 func SetAccountsToLowerPaymentStatusByUpdateTime(paymentStatus PaymentStatusType, updatedAtCutoffTime time.Time) error {
@@ -621,6 +660,9 @@ func (account *Account) PrettyString() {
 
 	fmt.Print("UpdatedAt:                      ")
 	fmt.Println(account.UpdatedAt)
+
+	fmt.Print("ExpiredAt:                      ")
+	fmt.Println(account.ExpiredAt)
 
 	fmt.Print("ExpirationDate:                 ")
 	fmt.Println(account.ExpirationDate())
