@@ -25,4 +25,3 @@ func (b badgerGarbageCollectionRunner) Run() {
 func (b badgerGarbageCollectionRunner) Runnable() bool {
 	return utils.GetBadgerDb() != nil
 }
-

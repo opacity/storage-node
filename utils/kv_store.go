@@ -275,16 +275,20 @@ func RunGarbageCollection() error {
 		return dbNoInitError
 	}
 
+	stopTime := time.Now().Add(30 * time.Minute)
+
+	var err error
+
 	for {
 		// One call would only result in removal of at max one log file. As an optimization,
 		// you could also immediately re-run it whenever it returns nil error.
 		// According BadgerDB GoDoc, it is recommended to be 0.5.
-		err := badgerDB.RunValueLogGC(0.5)
-		if err != nil {
+		err = badgerDB.RunValueLogGC(0.5)
+		if err != nil || time.Now().After(stopTime) {
 			break
 		}
 	}
-	return nil
+	return err
 }
 
 func getTTL(ttl time.Duration) time.Duration {
