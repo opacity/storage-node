@@ -57,6 +57,7 @@ func ScheduleBackgroundJobs() {
 		upgradeDeleter{},
 		renewalDeleter{},
 		expiredAccountDeleter{},
+		badgerGarbageCollectionRunner{},
 	}
 
 	for _, s := range jobs {

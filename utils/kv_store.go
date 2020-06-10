@@ -270,6 +270,23 @@ func BatchDelete(ks *KVKeys) error {
 	return err
 }
 
+func RunGarbageCollection() error {
+	if badgerDB == nil {
+		return dbNoInitError
+	}
+
+	for {
+		// One call would only result in removal of at max one log file. As an optimization,
+		// you could also immediately re-run it whenever it returns nil error.
+		// According BadgerDB GoDoc, it is recommended to be 0.5.
+		err := badgerDB.RunValueLogGC(0.5)
+		if err != nil {
+			break
+		}
+	}
+	return nil
+}
+
 func getTTL(ttl time.Duration) time.Duration {
 	if !IsTestEnv() {
 		return ttl
