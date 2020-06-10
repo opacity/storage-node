@@ -116,7 +116,7 @@ func CreateRoutes() {
 
 	router := returnEngine()
 
-	setupV1Paths(returnV1Group(router))
+	//setupV1Paths(returnV1Group(router))
 	setupAdminPaths(router)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

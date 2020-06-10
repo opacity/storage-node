@@ -6,7 +6,6 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/opacity/storage-node/jobs"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/routes"
 	"github.com/opacity/storage-node/services"
@@ -28,10 +27,12 @@ func main() {
 		models.Connect(utils.Env.DatabaseURL)
 	}
 
-	jobs.StartupJobs()
-	if utils.Env.EnableJobs {
-		jobs.ScheduleBackgroundJobs()
-	}
+	//jobs.StartupJobs()
+	//if utils.Env.EnableJobs {
+	//	jobs.ScheduleBackgroundJobs()
+	//}
+
+	utils.Iterate()
 
 	routes.CreateRoutes()
 }

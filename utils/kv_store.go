@@ -84,11 +84,6 @@ func RemoveAllKvStoreData() error {
 	return err
 }
 
-/*GetBadgerDb returns the underlying the database. If not call InitKvStore(), it will return nil*/
-func GetBadgerDb() *badger.DB {
-	return badgerDB
-}
-
 /*GetValueFromKV gets a single value from the provided key*/
 func GetValueFromKV(key string) (value string, expirationTime time.Time, err error) {
 	expirationTime = time.Now()
@@ -202,7 +197,7 @@ func BatchSet(kvs *KVPairs, ttl time.Duration) error {
 			break
 		}
 
-		e := txn.SetEntry(badger.NewEntry([]byte(k), []byte(v)).WithTTL(ttl))
+		e := txn.SetEntry(badger.NewEntry([]byte(k), []byte(v)).WithTTL(ttl).WithDiscard())
 		if e == nil {
 			continue
 		}
@@ -267,6 +262,41 @@ func BatchDelete(ks *KVKeys) error {
 	}
 
 	LogIfError(err, map[string]interface{}{"batchSize": len(*ks)})
+	return err
+}
+
+func Iterate() error {
+	err := badgerDB.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			item := it.Item()
+			k := item.Key()
+
+			var valCopy []byte
+			err := item.Value(func(val []byte) error {
+				fmt.Printf("key=%s\n", k)
+				valCopy = append([]byte{}, val...)
+				return nil
+			})
+
+			if err != nil {
+				return err
+			}
+
+			expirationTime := time.Unix(int64(item.ExpiresAt()), 0)
+
+			newExpirationTime := expirationTime.Add(24 * time.Hour * 60)
+
+			err = BatchSet(&KVPairs{string(k): string(valCopy)}, time.Until(newExpirationTime))
+
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	return err
 }
 
