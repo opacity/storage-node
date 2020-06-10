@@ -41,6 +41,7 @@ func StartupJobs() {
 	// TODO:  change BackgroundRunnable job's Run() methods to also return an error, so that we can have jobs
 	// that we run both at startup and on a schedule
 	metricCollector{}.Run()
+	badgerGarbageCollectionRunner{}.Run()
 }
 
 func ScheduleBackgroundJobs() {
