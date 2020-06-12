@@ -268,11 +268,22 @@ func BatchDelete(ks *KVKeys) error {
 func Iterate() error {
 	err := badgerDB.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
+		opts.AllVersions = true
 		it := txn.NewIterator(opts)
 		defer it.Close()
 		for it.Rewind(); it.Valid(); it.Next() {
 			item := it.Item()
 			k := item.Key()
+
+			if !item.IsDeletedOrExpired() {
+				continue
+			}
+
+			expirationTime := time.Unix(int64(item.ExpiresAt()), 0)
+
+			if !expirationTime.Before(time.Now()) {
+				continue
+			}
 
 			var valCopy []byte
 			err := item.Value(func(val []byte) error {
@@ -284,8 +295,6 @@ func Iterate() error {
 			if err != nil {
 				return err
 			}
-
-			expirationTime := time.Unix(int64(item.ExpiresAt()), 0)
 
 			newExpirationTime := expirationTime.Add(24 * time.Hour * 60)
 
