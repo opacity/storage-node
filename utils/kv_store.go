@@ -8,8 +8,9 @@ import (
 	"fmt"
 
 	"os"
-
+	"context"
 	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/pb"
 )
 
 const badgerDirProd = "/var/lib/badger/prod"
@@ -319,6 +320,72 @@ func Iterate() error {
 		return nil
 	})
 	return err
+}
+
+func Stream() error {
+	stream := badgerDB.NewStream()
+	// db.NewStreamAt(readTs) for managed mode.
+
+	// -- Optional settings
+	stream.NumGo = 16                     // Set number of goroutines to use for iteration.
+	stream.Prefix = nil 				   // Leave nil for iteration over the whole DB.
+	stream.LogPrefix = "Badger.Streaming" // For identifying stream logs. Outputs to Logger.
+
+	// ChooseKey is called concurrently for every key. If left nil, assumes true by default.
+	stream.ChooseKey = nil
+
+	// KeyToList is called concurrently for chosen keys. This can be used to convert
+	// Badger data into custom key-values. If nil, uses stream.ToList, a default
+	// implementation, which picks all valid key-values.
+	stream.KeyToList = nil
+
+	// -- End of optional settings.
+
+	// Send is called serially, while Stream.Orchestrate is running.
+	stream.Send = func(list *pb.KVList) error {
+		for _, value := range list.Kv {
+			expirationTime := time.Unix(int64(value.ExpiresAt), 0)
+			fmt.Println(expirationTime.Format(time.RFC822))
+
+			timeStringToParse := "17 Oct 21 15:04 MST"
+			newExpirationTime, _ := time.Parse(time.RFC822, timeStringToParse)
+
+			//if !item.IsDeletedOrExpired() {
+			//	continue
+			//}
+
+			//if !expirationTime.Before(time.Now()) {
+			//	continue
+			//}
+
+			if !expirationTime.Before(newExpirationTime) {
+				fmt.Println("skip")
+				continue
+			}
+
+			if string(value.Key) == "" {
+				continue
+			}
+
+			var valCopy []byte
+			valCopy = append([]byte{}, value.Value...)
+
+			err := BatchSet(&KVPairs{string(value.Key): string(valCopy)}, time.Until(newExpirationTime))
+
+			if err != nil {
+				fmt.Println(err)
+				return err
+			}
+		}
+		return nil
+	}
+
+	// Run the stream
+	if err := stream.Orchestrate(context.Background()); err != nil {
+		return err
+	}
+	// Done.
+	return nil
 }
 
 func getTTL(ttl time.Duration) time.Duration {
