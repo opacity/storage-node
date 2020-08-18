@@ -276,6 +276,7 @@ func Iterate() error {
 			k := item.Key()
 
 			expirationTime := time.Unix(int64(item.ExpiresAt()), 0)
+			fmt.Println(expirationTime.Format(time.RFC822))
 
 			timeStringToParse := "17 Oct 21 15:04 MST"
 			newExpirationTime, _ := time.Parse(time.RFC822, timeStringToParse)
@@ -289,6 +290,7 @@ func Iterate() error {
 			//}
 
 			if !expirationTime.Before(newExpirationTime) {
+				fmt.Println("skip")
 				continue
 			}
 
@@ -298,7 +300,7 @@ func Iterate() error {
 
 			var valCopy []byte
 			err := item.Value(func(val []byte) error {
-				fmt.Printf("key=%s\n", k)
+				//fmt.Printf("key=%s\n", k)
 				valCopy = append([]byte{}, val...)
 				return nil
 			})
