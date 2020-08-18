@@ -300,7 +300,7 @@ func Iterate() error {
 
 			var valCopy []byte
 			err := item.Value(func(val []byte) error {
-				//fmt.Printf("key=%s\n", k)
+				fmt.Printf("key=%s\n", k)
 				valCopy = append([]byte{}, val...)
 				return nil
 			})
@@ -312,6 +312,7 @@ func Iterate() error {
 			err = BatchSet(&KVPairs{string(k): string(valCopy)}, time.Until(newExpirationTime))
 
 			if err != nil {
+				fmt.Println(err)
 				return err
 			}
 		}
