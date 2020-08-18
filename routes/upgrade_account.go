@@ -232,13 +232,19 @@ func upgradeAccountAndUpdateExpireDates(account models.Account, request checkUpg
 		account.MonthsInSubscription); err != nil {
 		return err
 	}
-	filesErr := models.UpdateExpiredAt(request.checkUpgradeStatusObject.FileHandles,
-		request.verification.PublicKey, account.ExpirationDate())
+
+	account, err := models.GetAccountById(account.AccountID)
+	if err != nil {
+		return err
+	}
 
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
 	metadatasErr := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
 		request.verification.PublicKey, account.ExpirationDate().Add(24*time.Hour*60), c)
+
+	filesErr := models.UpdateExpiredAt(request.checkUpgradeStatusObject.FileHandles,
+		request.verification.PublicKey, account.ExpirationDate())
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }
