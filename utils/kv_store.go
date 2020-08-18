@@ -275,13 +275,24 @@ func Iterate() error {
 			item := it.Item()
 			k := item.Key()
 
-			if !item.IsDeletedOrExpired() {
+			expirationTime := time.Unix(int64(item.ExpiresAt()), 0)
+
+			timeStringToParse := "17 Oct 21 15:04 MST"
+			newExpirationTime, _ := time.Parse(time.RFC822, timeStringToParse)
+
+			//if !item.IsDeletedOrExpired() {
+			//	continue
+			//}
+
+			//if !expirationTime.Before(time.Now()) {
+			//	continue
+			//}
+
+			if !expirationTime.Before(newExpirationTime) {
 				continue
 			}
 
-			expirationTime := time.Unix(int64(item.ExpiresAt()), 0)
-
-			if !expirationTime.Before(time.Now()) {
+			if string(k) == "" {
 				continue
 			}
 
@@ -295,8 +306,6 @@ func Iterate() error {
 			if err != nil {
 				return err
 			}
-
-			newExpirationTime := expirationTime.Add(24 * time.Hour * 60)
 
 			err = BatchSet(&KVPairs{string(k): string(valCopy)}, time.Until(newExpirationTime))
 
