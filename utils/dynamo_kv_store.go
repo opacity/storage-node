@@ -33,6 +33,7 @@ func GetValueFromDynamoKv(key string) (value string, expirationTime time.Time, e
 				S: aws.String(key),
 			},
 		},
+		ConsistentRead: aws.Bool(true),
 		TableName: aws.String(Env.DynamoTable),
 	}
 
@@ -107,6 +108,8 @@ func BatchGetFromDynamoKv(ks *KVKeys) (*KVPairs, error) {
 	//	// of a table name, along with a map of attribute data consisting of the data
 	//	// type and attribute value.
 	//	Responses map[string][]map[string]*AttributeValue
+
+	// If there are a bunch of problems with this method just use GetValueFromDynamoKv in succession
 
 	return &kvs, nil
 }
