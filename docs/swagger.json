@@ -1655,7 +1655,7 @@
         "routes.getRenewalAccountInvoiceRes": {
             "type": "object",
             "properties": {
-                "opqInvoice": {
+                "opctInvoice": {
                     "type": "object",
                     "$ref": "#/definitions/models.Invoice"
                 }
@@ -1714,12 +1714,9 @@
         "routes.getUpgradeAccountInvoiceRes": {
             "type": "object",
             "properties": {
-                "opqInvoice": {
+                "opctInvoice": {
                     "type": "object",
                     "$ref": "#/definitions/models.Invoice"
-                },
-                "usdInvoice": {
-                    "type": "number"
                 }
             }
         },
@@ -1782,7 +1779,7 @@
                 "chargePaid": {
                     "type": "boolean"
                 },
-                "opqTxStatus": {
+                "opctTxStatus": {
                     "type": "string"
                 },
                 "stripePaymentExists": {
@@ -1805,7 +1802,7 @@
                 "chargePaid": {
                     "type": "boolean"
                 },
-                "opqTxStatus": {
+                "opctTxStatus": {
                     "type": "string"
                 },
                 "status": {
