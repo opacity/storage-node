@@ -29,7 +29,7 @@ func Test_verifyIfPaidWithContext_account_status_already_paid(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func Test_verifyIfPaidWithContext_account_opq_balance_has_arrived(t *testing.T) {
+func Test_verifyIfPaidWithContext_account_opct_balance_has_arrived(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)

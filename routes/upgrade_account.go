@@ -36,7 +36,7 @@ type checkUpgradeStatusReq struct {
 }
 
 type getUpgradeAccountInvoiceRes struct {
-	OpqInvoice models.Invoice `json:"opqInvoice"`
+	OpctInvoice models.Invoice `json:"opctInvoice"`
 	// TODO: uncomment out if we decide to support stripe for upgrades
 	// UsdInvoice float64        `json:"usdInvoice,omitempty"`
 }
@@ -109,7 +109,7 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 		return err
 	}
 
-	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(request.getUpgradeAccountInvoiceObject.StorageLimit,
+	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(request.getUpgradeAccountInvoiceObject.StorageLimit,
 		//request.getUpgradeAccountInvoiceObject.DurationInMonths)
 		account.MonthsInSubscription)
 
@@ -136,7 +136,7 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 		EthAddress:      ethAddr.String(),
 		EthPrivateKey:   hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:   models.InitialPaymentInProgress,
-		OpqCost:         upgradeCostInOPQ,
+		OpctCost:        upgradeCostInOPCT,
 		//UsdCost:          upgradeCostInUSD,
 		//DurationInMonths: request.getUpgradeAccountInvoiceObject.DurationInMonths,
 		DurationInMonths: account.MonthsInSubscription,
@@ -149,8 +149,8 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 	}
 
 	return OkResponse(c, getUpgradeAccountInvoiceRes{
-		OpqInvoice: models.Invoice{
-			Cost:       upgradeCostInOPQ,
+		OpctInvoice: models.Invoice{
+			Cost:       upgradeCostInOPCT,
 			EthAddress: upgradeInDB.EthAddress,
 		},
 		//UsdInvoice: upgradeCostInUSD,
@@ -190,7 +190,7 @@ func checkUpgradeStatus(c *gin.Context) error {
 	//			Status: "Incomplete",
 	//		})
 	//	}
-	//	stripePayment.CheckUpgradeOPQTransaction(account, request.checkUpgradeStatusObject.StorageLimit)
+	//	stripePayment.CheckUpgradeOPCTTransaction(account, request.checkUpgradeStatusObject.StorageLimit)
 	//	amount, err := checkChargeAmount(c, stripePayment.ChargeID)
 	//	if err != nil {
 	//		return InternalErrorResponse(c, err)
@@ -206,7 +206,7 @@ func checkUpgradeStatus(c *gin.Context) error {
 	//}
 
 	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgrade.EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpqCost)))
+		utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -222,7 +222,7 @@ func checkUpgradeStatus(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 	return OkResponse(c, StatusRes{
-		Status: "Success with OPQ",
+		Status: "Success with OPCT",
 	})
 }
 

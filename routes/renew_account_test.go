@@ -44,7 +44,7 @@ func Test_GetAccountRenewInvoiceHandler_Returns_Invoice(t *testing.T) {
 
 	// TODO: uncomment out if we decide to support stripe for renewals
 	// assert.Contains(t, w.Body.String(), `"usdInvoice":100`)
-	assert.Contains(t, w.Body.String(), `"opqInvoice":{"cost":16,`)
+	assert.Contains(t, w.Body.String(), `"opctInvoice":{"cost":16,`)
 }
 
 func Test_GetAccountRenewInvoiceHandler_ReturnsErrorIfExpirationDateTooFarInFuture(t *testing.T) {
@@ -73,7 +73,7 @@ func Test_GetAccountRenewInvoiceHandler_ReturnsErrorIfExpirationDateTooFarInFutu
 	assert.Contains(t, w.Body.String(), `account has too much time left to renew`)
 }
 
-func Test_CheckRenewalStatusHandler_Returns_Status_OPQ_Renew_Success(t *testing.T) {
+func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Success(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	models.DeleteRenewalsForTest(t)
 
@@ -129,14 +129,14 @@ func Test_CheckRenewalStatusHandler_Returns_Status_OPQ_Renew_Success(t *testing.
 
 	assert.Equal(t, originalMonthsInSubscription+12, account.MonthsInSubscription)
 	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
-	assert.Contains(t, w.Body.String(), `Success with OPQ`)
+	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
 	renewals, err = models.GetRenewalsFromAccountID(account.AccountID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentReceived, renewals[0].PaymentStatus)
 }
 
-func Test_CheckRenewalStatusHandler_Returns_Status_OPQ_Renew_Still_Pending(t *testing.T) {
+func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Still_Pending(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	models.DeleteRenewalsForTest(t)
 	models.DeleteStripePaymentsForTest(t)
@@ -203,13 +203,13 @@ func returnRenewalForTest(t *testing.T, account models.Account) models.Renewal {
 
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
-	renewalCostInOPQ, _ := account.Cost()
+	renewalCostInOPCT, _ := account.Cost()
 
 	return models.Renewal{
 		AccountID:        account.AccountID,
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		PaymentStatus:    models.InitialPaymentInProgress,
-		OpqCost:          renewalCostInOPQ,
+		OpctCost:         renewalCostInOPCT,
 		EthAddress:       ethAddress.String(),
 		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
 	}

@@ -39,7 +39,7 @@ type stripeDataObj struct {
 	StripePaymentExists bool    `json:"stripePaymentExists"`
 	ChargePaid          bool    `json:"chargePaid"`
 	StripeToken         string  `json:"stripeToken"`
-	OpqTxStatus         string  `json:"opqTxStatus"`
+	OpctTxStatus        string  `json:"opctTxStatus"`
 	ChargeID            string  `json:"chargeID"`
 	Amount              float64 `json:"amount" binding:"omitempty,gte=0"`
 }
@@ -114,7 +114,7 @@ func createStripePayment(c *gin.Context) error {
 	}
 
 	if !request.createStripePaymentObject.UpgradeAccount {
-		if err := stripePayment.SendAccountOPQ(); err != nil {
+		if err := stripePayment.SendAccountOPCT(); err != nil {
 			return InternalErrorResponse(c, err)
 		}
 	} else {
@@ -128,13 +128,13 @@ func createStripePayment(c *gin.Context) error {
 
 	return OkResponse(c, stripeDataRes{
 		StatusRes: StatusRes{
-			Status: "successfully charged card, now sending OPQ to payment address",
+			Status: "successfully charged card, now sending OPCT to payment address",
 		},
 		stripeDataObj: stripeDataObj{
 			StripePaymentExists: true,
 			ChargePaid:          charge.Paid,
 			StripeToken:         stripePayment.StripeToken,
-			OpqTxStatus:         models.OpqTxStatusMap[stripePayment.OpqTxStatus],
+			OpctTxStatus:        models.OpctTxStatusMap[stripePayment.OpctTxStatus],
 			ChargeID:            charge.ID,
 			Amount:              float64(charge.Amount) / 100.00,
 		},
@@ -171,7 +171,7 @@ func createChargeAndStripePayment(c *gin.Context, costInDollars float64, account
 }
 
 func payUpgradeCostWithStripe(c *gin.Context, stripePayment models.StripePayment, account models.Account, createStripePaymentObject createStripePaymentObject) error {
-	if err := stripePayment.SendUpgradeOPQ(account, createStripePaymentObject.StorageLimit); err != nil {
+	if err := stripePayment.SendUpgradeOPCT(account, createStripePaymentObject.StorageLimit); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	var paid bool

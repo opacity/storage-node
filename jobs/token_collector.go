@@ -72,7 +72,7 @@ func runUpgradesCollectionSequence(upgrades []models.Upgrade) {
 			"eth_address":    upgrade.EthAddress,
 			"account_id":     upgrade.AccountID,
 			"payment_status": models.PaymentStatusMap[upgrade.PaymentStatus],
-			"cost":           upgrade.OpqCost,
+			"cost":           upgrade.OpctCost,
 		})
 	}
 }
@@ -85,7 +85,7 @@ func runRenewalsCollectionSequence(renewals []models.Renewal) {
 			"eth_address":    renewal.EthAddress,
 			"account_id":     renewal.AccountID,
 			"payment_status": models.PaymentStatusMap[renewal.PaymentStatus],
-			"cost":           renewal.OpqCost,
+			"cost":           renewal.OpctCost,
 		})
 	}
 }
