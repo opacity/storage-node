@@ -47,10 +47,10 @@ func Test_GetAccountUpgradeInvoiceHandler_Returns_Invoice(t *testing.T) {
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	//assert.Contains(t, w.Body.String(), `"usdInvoice":100`)
-	assert.Contains(t, w.Body.String(), `"opqInvoice":{"cost":24,`)
+	assert.Contains(t, w.Body.String(), `"opctInvoice":{"cost":24,`)
 }
 
-func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Success(t *testing.T) {
+func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Success(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	models.DeleteUpgradesForTest(t)
 
@@ -110,14 +110,14 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Success(t *testin
 
 	assert.Equal(t, newStorageLimit, int(account.StorageLimit))
 	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
-	assert.Contains(t, w.Body.String(), `Success with OPQ`)
+	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
 	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentReceived, upgrade.PaymentStatus)
 }
 
-func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Still_Pending(t *testing.T) {
+func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Still_Pending(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	models.DeleteUpgradesForTest(t)
 	models.DeleteStripePaymentsForTest(t)
@@ -216,7 +216,7 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPQ_Upgrade_Still_Pending(t *
 //	assert.Nil(t, err)
 //
 //	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-//		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+//		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 //		return true, "", 1
 //	}
 //	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
@@ -300,12 +300,12 @@ func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 	upgrade2 := returnUpgradeForTest(t, account, newStorageLimit2)
 	upgrade2.NewStorageLimit = models.StorageLimitType(newStorageLimit2)
 
-	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(utils.Env.Plans[newStorageLimit2].StorageInGB,
+	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(utils.Env.Plans[newStorageLimit2].StorageInGB,
 		models.DefaultMonthsPerSubscription)
 	//upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[newStorageLimit2].StorageInGB,
 	//	models.DefaultMonthsPerSubscription)
 
-	upgrade2.OpqCost = upgradeCostInOPQ
+	upgrade2.OpctCost = upgradeCostInOPCT
 	//upgrade2.UsdCost = upgradeCostInUSD
 
 	err = models.DB.Create(&upgrade2).Error
@@ -336,7 +336,7 @@ func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 
 	assert.Equal(t, newStorageLimit2, int(account.StorageLimit))
 	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
-	assert.Contains(t, w.Body.String(), `Success with OPQ`)
+	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
 	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)
@@ -386,7 +386,7 @@ func returnUpgradeForTest(t *testing.T, account models.Account, newStorageLimit 
 
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
-	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(utils.Env.Plans[newStorageLimit].StorageInGB,
+	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(utils.Env.Plans[newStorageLimit].StorageInGB,
 		models.DefaultMonthsPerSubscription)
 	//upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[newStorageLimit].StorageInGB,
 	//	models.DefaultMonthsPerSubscription)
@@ -397,7 +397,7 @@ func returnUpgradeForTest(t *testing.T, account models.Account, newStorageLimit 
 		OldStorageLimit:  account.StorageLimit,
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		PaymentStatus:    models.InitialPaymentInProgress,
-		OpqCost:          upgradeCostInOPQ,
+		OpctCost:         upgradeCostInOPCT,
 		//UsdCost:          upgradeCostInUSD,
 		EthAddress:    ethAddress.String(),
 		EthPrivateKey: hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),

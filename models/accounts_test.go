@@ -186,28 +186,28 @@ func Test_Cost_Returns_Cost(t *testing.T) {
 	assert.Equal(t, BasicSubscriptionDefaultCost, cost)
 }
 
-func Test_UpgradeCostInOPQ_Basic_To_Professional_None_Of_Subscription_Has_Passed(t *testing.T) {
+func Test_UpgradeCostInOPCT_Basic_To_Professional_None_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
 
 	DB.Create(&account)
 
-	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[1024].StorageInGB, 12)
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[1024].StorageInGB, 12)
 	assert.Nil(t, err)
-	assert.Equal(t, 15.00, math.Ceil(upgradeCostInOPQ))
+	assert.Equal(t, 15.00, math.Ceil(upgradeCostInOPCT))
 }
 
-func Test_UpgradeCostInOPQ_None_Of_Subscription_Has_Passed(t *testing.T) {
+func Test_UpgradeCostInOPCT_None_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
 	account.StorageLimit = StorageLimitType(1024)
 
 	DB.Create(&account)
 
-	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
 	assert.Nil(t, err)
-	assert.Equal(t, 17.00, math.Ceil(upgradeCostInOPQ))
+	assert.Equal(t, 17.00, math.Ceil(upgradeCostInOPCT))
 }
 
-func Test_UpgradeCostInOPQ_Fourth_Of_Subscription_Has_Passed(t *testing.T) {
+func Test_UpgradeCostInOPCT_Fourth_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
 	account.StorageLimit = StorageLimitType(1024)
 
@@ -216,12 +216,12 @@ func Test_UpgradeCostInOPQ_Fourth_Of_Subscription_Has_Passed(t *testing.T) {
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
 	assert.Nil(t, err)
-	assert.Equal(t, 20.00, math.Ceil(upgradeCostInOPQ))
+	assert.Equal(t, 20.00, math.Ceil(upgradeCostInOPCT))
 }
 
-func Test_UpgradeCostInOPQ_Half_Of_Subscription_Has_Passed(t *testing.T) {
+func Test_UpgradeCostInOPCT_Half_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
 	account.StorageLimit = StorageLimitType(1024)
 
@@ -230,12 +230,12 @@ func Test_UpgradeCostInOPQ_Half_Of_Subscription_Has_Passed(t *testing.T) {
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
 	assert.Nil(t, err)
-	assert.Equal(t, 24.00, math.Ceil(upgradeCostInOPQ))
+	assert.Equal(t, 24.00, math.Ceil(upgradeCostInOPCT))
 }
 
-func Test_UpgradeCostInOPQ_Three_Fourths_Of_Subscription_Has_Passed(t *testing.T) {
+func Test_UpgradeCostInOPCT_Three_Fourths_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
 	account.StorageLimit = StorageLimitType(1024)
 
@@ -244,12 +244,12 @@ func Test_UpgradeCostInOPQ_Three_Fourths_Of_Subscription_Has_Passed(t *testing.T
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
 	assert.Nil(t, err)
-	assert.Equal(t, 28.00, math.Ceil(upgradeCostInOPQ))
+	assert.Equal(t, 28.00, math.Ceil(upgradeCostInOPCT))
 }
 
-func Test_UpgradeCostInOPQ_Subscription_Expired(t *testing.T) {
+func Test_UpgradeCostInOPCT_Subscription_Expired(t *testing.T) {
 	account := returnValidAccount()
 	account.StorageLimit = StorageLimitType(1024)
 
@@ -258,12 +258,12 @@ func Test_UpgradeCostInOPQ_Subscription_Expired(t *testing.T) {
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
 	assert.Nil(t, err)
-	assert.Equal(t, 32.00, math.Ceil(upgradeCostInOPQ))
+	assert.Equal(t, 32.00, math.Ceil(upgradeCostInOPCT))
 }
 
-func Test_UpgradeCostInOPQ_Upgrade_From_Free_Plan_Half_Of_Subscription_Has_Passed(t *testing.T) {
+func Test_UpgradeCostInOPCT_Upgrade_From_Free_Plan_Half_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
 	account.StorageLimit = StorageLimitType(10)
 
@@ -272,9 +272,9 @@ func Test_UpgradeCostInOPQ_Upgrade_From_Free_Plan_Half_Of_Subscription_Has_Passe
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInOPQ, err := account.UpgradeCostInOPQ(utils.Env.Plans[2048].StorageInGB, 12)
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
 	assert.Nil(t, err)
-	assert.Equal(t, 32.00, math.Ceil(upgradeCostInOPQ))
+	assert.Equal(t, 32.00, math.Ceil(upgradeCostInOPCT))
 }
 
 func Test_UpgradeCostInUSD_Half_Of_Subscription_Has_Passed(t *testing.T) {
@@ -1246,7 +1246,7 @@ func Test_handleAccountReadyForCollection_transfer_success(t *testing.T) {
 		return big.NewInt(1)
 	}
 	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		// all that handleAccountReadyForCollection cares about is the first return value
 		return true, "", 1
 	}
@@ -1269,7 +1269,7 @@ func Test_handleAccountReadyForCollection_transfer_failed(t *testing.T) {
 		return big.NewInt(1)
 	}
 	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		// all that handleAccountReadyForCollection cares about is the first return value
 		return false, "", 1
 	}

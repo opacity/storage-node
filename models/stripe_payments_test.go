@@ -168,7 +168,7 @@ func Test_CheckChargePaid(t *testing.T) {
 	assert.True(t, stripePayment.ChargePaid)
 }
 
-func Test_SendAccountOPQ(t *testing.T) {
+func Test_SendAccountOPCT(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _ := returnValidStripePaymentForTest()
 
@@ -177,17 +177,17 @@ func Test_SendAccountOPQ(t *testing.T) {
 	}
 
 	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return true, "", 1
 	}
 
-	assert.Equal(t, OpqTxNotStarted, stripePayment.OpqTxStatus)
-	err := stripePayment.SendAccountOPQ()
+	assert.Equal(t, OpctTxNotStarted, stripePayment.OpctTxStatus)
+	err := stripePayment.SendAccountOPCT()
 	assert.Nil(t, err)
-	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
 }
 
-func Test_SendUpgradeOPQ(t *testing.T) {
+func Test_SendUpgradeOPCT(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
 
@@ -196,20 +196,20 @@ func Test_SendUpgradeOPQ(t *testing.T) {
 	}
 
 	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return true, "", 1
 	}
 
-	assert.Equal(t, OpqTxNotStarted, stripePayment.OpqTxStatus)
-	err := stripePayment.SendUpgradeOPQ(account, int(ProfessionalStorageLimit))
+	assert.Equal(t, OpctTxNotStarted, stripePayment.OpctTxStatus)
+	err := stripePayment.SendUpgradeOPCT(account, int(ProfessionalStorageLimit))
 	assert.Nil(t, err)
-	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
 }
 
-func Test_CheckAccountCreationOPQTransaction_transaction_complete(t *testing.T) {
+func Test_CheckAccountCreationOPCTTransaction_transaction_complete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _ := returnValidStripePaymentForTest()
-	stripePayment.OpqTxStatus = OpqTxInProgress
+	stripePayment.OpctTxStatus = OpctTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -219,18 +219,18 @@ func Test_CheckAccountCreationOPQTransaction_transaction_complete(t *testing.T) 
 		return true, nil
 	}
 
-	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
-	txSuccess, err := stripePayment.CheckAccountCreationOPQTransaction()
+	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
+	txSuccess, err := stripePayment.CheckAccountCreationOPCTTransaction()
 	assert.True(t, txSuccess)
 	assert.Nil(t, err)
-	assert.Equal(t, OpqTxSuccess, stripePayment.OpqTxStatus)
+	assert.Equal(t, OpctTxSuccess, stripePayment.OpctTxStatus)
 
 }
 
-func Test_CheckAccountCreationOPQTransaction_transaction_incomplete(t *testing.T) {
+func Test_CheckAccountCreationOPCTTransaction_transaction_incomplete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _ := returnValidStripePaymentForTest()
-	stripePayment.OpqTxStatus = OpqTxInProgress
+	stripePayment.OpctTxStatus = OpctTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -240,17 +240,17 @@ func Test_CheckAccountCreationOPQTransaction_transaction_incomplete(t *testing.T
 		return false, nil
 	}
 
-	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
-	success, err := stripePayment.CheckAccountCreationOPQTransaction()
+	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
+	success, err := stripePayment.CheckAccountCreationOPCTTransaction()
 	assert.Nil(t, err)
 	assert.False(t, success)
-	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
 }
 
-func Test_CheckUpgradeOPQTransaction_transaction_complete(t *testing.T) {
+func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
-	stripePayment.OpqTxStatus = OpqTxInProgress
+	stripePayment.OpctTxStatus = OpctTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -260,18 +260,18 @@ func Test_CheckUpgradeOPQTransaction_transaction_complete(t *testing.T) {
 		return true, nil
 	}
 
-	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
-	success, err := stripePayment.CheckUpgradeOPQTransaction(account, int(ProfessionalStorageLimit))
+	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
+	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit))
 	assert.True(t, success)
 	assert.Nil(t, err)
-	assert.Equal(t, OpqTxSuccess, stripePayment.OpqTxStatus)
+	assert.Equal(t, OpctTxSuccess, stripePayment.OpctTxStatus)
 
 }
 
-func Test_CheckUpgradeOPQTransaction_transaction_incomplete(t *testing.T) {
+func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
-	stripePayment.OpqTxStatus = OpqTxInProgress
+	stripePayment.OpctTxStatus = OpctTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -281,17 +281,17 @@ func Test_CheckUpgradeOPQTransaction_transaction_incomplete(t *testing.T) {
 		return false, nil
 	}
 
-	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
-	success, err := stripePayment.CheckUpgradeOPQTransaction(account, int(ProfessionalStorageLimit))
+	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
+	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit))
 	assert.Nil(t, err)
 	assert.False(t, success)
-	assert.Equal(t, OpqTxInProgress, stripePayment.OpqTxStatus)
+	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
 }
 
 func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _ := returnValidStripePaymentForTest()
-	stripePayment.OpqTxStatus = OpqTxInProgress
+	stripePayment.OpctTxStatus = OpctTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -300,7 +300,7 @@ func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
 	retryOccurred := false
 
 	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		retryOccurred = true
 		return true, "", 1
 	}
@@ -313,7 +313,7 @@ func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
 func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _ := returnValidStripePaymentForTest()
-	stripePayment.OpqTxStatus = OpqTxInProgress
+	stripePayment.OpctTxStatus = OpctTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
 		t.Fatalf("should have created row but didn't: " + err.Error())
@@ -324,7 +324,7 @@ func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
 	retryOccurred := false
 
 	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		retryOccurred = true
 		return true, "", 1
 	}
@@ -354,7 +354,7 @@ func Test_PurgeOldStripePayments(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePaymentNew, _ := returnValidStripePaymentForTest()
 	DB.Create(&stripePaymentNew)
-	stripePaymentNew.OpqTxStatus = OpqTxSuccess
+	stripePaymentNew.OpctTxStatus = OpctTxSuccess
 	DB.Save(&stripePaymentNew)
 
 	stripePaymentOld, _ := returnValidStripePaymentForTest()
@@ -365,7 +365,7 @@ func Test_PurgeOldStripePayments(t *testing.T) {
 		stripePaymentOld, _ = returnValidStripePaymentForTest()
 	}
 	DB.Create(&stripePaymentOld)
-	stripePaymentOld.OpqTxStatus = OpqTxSuccess
+	stripePaymentOld.OpctTxStatus = OpctTxSuccess
 	DB.Save(&stripePaymentOld)
 
 	var stripePayments []StripePayment

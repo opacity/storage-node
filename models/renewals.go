@@ -20,7 +20,7 @@ type Renewal struct {
 	PaymentStatus PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
 	ApiVersion    int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 	PaymentMethod PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
-	OpqCost       float64           `json:"opqCost" binding:"omitempty,gte=0" example:"1.56"`
+	OpctCost      float64           `json:"opctCost" binding:"omitempty,gte=0" example:"1.56"`
 	//UsdCost          float64           `json:"usdcost" binding:"omitempty,gte=0" example:"39.99"`
 	DurationInMonths int `json:"durationInMonths" gorm:"default:12" binding:"required,gte=1" minimum:"1" example:"12"`
 }
@@ -58,7 +58,7 @@ func (renewal *Renewal) BeforeDelete(scope *gorm.Scope) error {
 	return nil
 }
 
-/*GetOrCreateRenewal will either get or create an renewal.  If the renewal already existed it will update the OpqCost
+/*GetOrCreateRenewal will either get or create an renewal.  If the renewal already existed it will update the OpctCost
 but will not update the EthAddress and EthPrivateKey*/
 func GetOrCreateRenewal(renewal Renewal) (*Renewal, error) {
 	renewalsFromDB, err := GetRenewalsFromAccountID(renewal.AccountID)
@@ -109,7 +109,7 @@ func (renewal *Renewal) CheckIfPaid() (bool, error) {
 
 /*GetTotalCostInWei gets the total cost in wei for an renewal*/
 func (renewal *Renewal) GetTotalCostInWei() *big.Int {
-	return utils.ConvertToWeiUnit(big.NewFloat(renewal.OpqCost))
+	return utils.ConvertToWeiUnit(big.NewFloat(renewal.OpctCost))
 }
 
 /*GetRenewalsByPaymentStatus gets renewals based on the payment status passed in*/

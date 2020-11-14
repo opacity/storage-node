@@ -21,14 +21,14 @@ func returnValidRenewal() (Renewal, Account) {
 
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
-	renewalCostInOPQ, _ := account.Cost()
+	renewalCostInOPCT, _ := account.Cost()
 
 	return Renewal{
 		AccountID:     account.AccountID,
 		EthAddress:    ethAddress.String(),
 		EthPrivateKey: hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
 		PaymentStatus: InitialPaymentInProgress,
-		OpqCost:       renewalCostInOPQ,
+		OpctCost:      renewalCostInOPCT,
 		//UsdCost:          utils.Env.Plans[int(account.StorageLimit)].CostInUSD,
 		DurationInMonths: 12,
 	}, account
@@ -133,14 +133,14 @@ func Test_Renewal_GetOrCreateRenewal(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, uPtr.AccountID, renewal.AccountID)
 	assert.Equal(t, uPtr.EthAddress, renewal.EthAddress)
-	assert.Equal(t, uPtr.OpqCost, renewal.OpqCost)
+	assert.Equal(t, uPtr.OpctCost, renewal.OpctCost)
 	//assert.Equal(t, uPtr.UsdCost, renewal.UsdCost)
 
 	// simulate generating a new update with the same AccountID
 	// although another renewal already exists--price should not change
 	renewal2, _ := returnValidRenewal()
 	renewal2.AccountID = renewal.AccountID
-	renewal2.OpqCost = 1337.00
+	renewal2.OpctCost = 1337.00
 	uPtr, err = GetOrCreateRenewal(renewal2)
 	assert.Nil(t, err)
 
@@ -149,9 +149,9 @@ func Test_Renewal_GetOrCreateRenewal(t *testing.T) {
 	assert.Equal(t, uPtr.EthAddress, renewal.EthAddress)
 	assert.Equal(t, uPtr.EthPrivateKey, renewal.EthPrivateKey)
 
-	// verify OpqCost has NOT changed -- there was already a renewal in the DB so we returned the one we already had
-	assert.NotEqual(t, renewal2.OpqCost, uPtr.OpqCost)
-	assert.Equal(t, renewal.OpqCost, uPtr.OpqCost)
+	// verify OpctCost has NOT changed -- there was already a renewal in the DB so we returned the one we already had
+	assert.NotEqual(t, renewal2.OpctCost, uPtr.OpctCost)
+	assert.Equal(t, renewal.OpctCost, uPtr.OpctCost)
 }
 
 func Test_Renewal_GetRenewalsFromAccountID(t *testing.T) {

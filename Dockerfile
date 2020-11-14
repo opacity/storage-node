@@ -1,6 +1,5 @@
-FROM golang:1.11
+FROM golang:1.15
 ENV ADDR=0.0.0.0
-ENV GO111MODULE=on
 
 RUN go version
 

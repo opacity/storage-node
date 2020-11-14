@@ -40,7 +40,7 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 		return false, nil
 	}
 	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return true, "", 1
 	}
 
@@ -159,7 +159,7 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 		return false, nil
 	}
 	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return false, "", 1
 	}
 
@@ -205,7 +205,7 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 //		return false, nil
 //	}
 //	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-//		opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+//		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 //		return true, "", 1
 //	}
 //

@@ -169,8 +169,8 @@ func (account *Account) Cost() (float64, error) {
 		float64(account.MonthsInSubscription/DefaultMonthsPerSubscription), nil
 }
 
-/*UpgradeCostInOPQ returns the cost to upgrade in OPQ*/
-func (account *Account) UpgradeCostInOPQ(upgradeStorageLimit int, monthsForNewPlan int) (float64, error) {
+/*UpgradeCostInOPCT returns the cost to upgrade in OPCT*/
+func (account *Account) UpgradeCostInOPCT(upgradeStorageLimit int, monthsForNewPlan int) (float64, error) {
 	baseCostOfHigherPlan := utils.Env.Plans[int(upgradeStorageLimit)].Cost *
 		float64(monthsForNewPlan/DefaultMonthsPerSubscription)
 	costOfCurrentPlan, _ := account.Cost()

@@ -214,7 +214,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		if err != nil {
 			return err
 		}
-		_, err = stripePayment.CheckAccountCreationOPQTransaction()
+		_, err = stripePayment.CheckAccountCreationOPCTTransaction()
 		if err != nil {
 			return InternalErrorResponse(c, err)
 		}
@@ -224,7 +224,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		}
 		res.StripeData = stripeDataObj{
 			StripeToken:         stripePayment.StripeToken,
-			OpqTxStatus:         models.OpqTxStatusMap[stripePayment.OpqTxStatus],
+			OpctTxStatus:        models.OpctTxStatusMap[stripePayment.OpctTxStatus],
 			StripePaymentExists: true,
 			ChargePaid:          chargePaid,
 			ChargeID:            stripePayment.ChargeID,

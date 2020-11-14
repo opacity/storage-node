@@ -23,13 +23,13 @@ func Test_ConvertToWeiUnit_ConsiderAsZero(t *testing.T) {
 	AssertTrue(v.Cmp(big.NewInt(0)) == 0, t, "")
 }
 
-func Test_ConvertToOpqUnit(t *testing.T) {
+func Test_ConvertToOpctUnit(t *testing.T) {
 	v := ConvertFromWeiUnit(big.NewInt(200000000000000000))
 
 	AssertTrue(v.String() == big.NewFloat(.2).String(), t, "")
 }
 
-func Test_ConvertToOpqUnit_SmallValue(t *testing.T) {
+func Test_ConvertToOpctUnit_SmallValue(t *testing.T) {
 	v := ConvertFromWeiUnit(big.NewInt(2))
 
 	AssertTrue(v.String() == big.NewFloat(.000000000000000002).String(), t, "")

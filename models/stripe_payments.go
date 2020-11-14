@@ -12,44 +12,44 @@ import (
 
 /*StripePayment defines a model for managing a credit card payment*/
 type StripePayment struct {
-	StripeToken    string          `gorm:"primary_key" json:"stripeToken" binding:"required"`
-	AccountID      string          `json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
-	ChargeID       string          `json:"chargeID" binding:"omitempty"`
-	ApiVersion     int             `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
-	OpqTxStatus    OpqTxStatusType `json:"opqTxStatus" binding:"required" gorm:"default:1"`
-	ChargePaid     bool            `json:"chargePaid"`
-	CreatedAt      time.Time       `json:"createdAt"`
-	UpdatedAt      time.Time       `json:"updatedAt"`
-	UpgradePayment bool            `json:"upgradePayment" gorm:"default:false"`
+	StripeToken    string           `gorm:"primary_key" json:"stripeToken" binding:"required"`
+	AccountID      string           `json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
+	ChargeID       string           `json:"chargeID" binding:"omitempty"`
+	ApiVersion     int              `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+	OpctTxStatus   OpctTxStatusType `json:"opctTxStatus" binding:"required" gorm:"default:1"`
+	ChargePaid     bool             `json:"chargePaid"`
+	CreatedAt      time.Time        `json:"createdAt"`
+	UpdatedAt      time.Time        `json:"updatedAt"`
+	UpgradePayment bool             `json:"upgradePayment" gorm:"default:false"`
 }
 
-/*OpqTxStatusType defines a type for the OPQ tx statuses*/
-type OpqTxStatusType int
+/*OpctTxStatusType defines a type for the OPCT tx statuses*/
+type OpctTxStatusType int
 
 const (
-	/*OpqTxNotStarted - the opq transaction has not been started*/
-	OpqTxNotStarted OpqTxStatusType = iota + 1
-	/*OpqTxInProgress - the opq transaction is in progress*/
-	OpqTxInProgress
-	/*OpqTxSuccess - the opq transaction has finished*/
-	OpqTxSuccess
+	/*OpctTxNotStarted - the opct transaction has not been started*/
+	OpctTxNotStarted OpctTxStatusType = iota + 1
+	/*OpctTxInProgress - the opct transaction is in progress*/
+	OpctTxInProgress
+	/*OpctTxSuccess - the opct transaction has finished*/
+	OpctTxSuccess
 )
 
 const MinutesBeforeRetry = 360
 
-/*OpqTxStatus is for pretty printing the OpqTxStatus*/
-var OpqTxStatusMap = make(map[OpqTxStatusType]string)
+/*OpctTxStatus is for pretty printing the OpctTxStatus*/
+var OpctTxStatusMap = make(map[OpctTxStatusType]string)
 
 func init() {
-	OpqTxStatusMap[OpqTxNotStarted] = "OpqTxNotStarted"
-	OpqTxStatusMap[OpqTxInProgress] = "OpqTxInProgress"
-	OpqTxStatusMap[OpqTxSuccess] = "OpqTxSuccess"
+	OpctTxStatusMap[OpctTxNotStarted] = "OpctTxNotStarted"
+	OpctTxStatusMap[OpctTxInProgress] = "OpctTxInProgress"
+	OpctTxStatusMap[OpctTxSuccess] = "OpctTxSuccess"
 }
 
 /*BeforeCreate - callback called before the row is created*/
 func (stripePayment *StripePayment) BeforeCreate(scope *gorm.Scope) error {
-	if stripePayment.OpqTxStatus < OpqTxNotStarted {
-		stripePayment.OpqTxStatus = OpqTxNotStarted
+	if stripePayment.OpctTxStatus < OpctTxNotStarted {
+		stripePayment.OpctTxStatus = OpctTxNotStarted
 	}
 
 	account, err := GetAccountById(stripePayment.AccountID)
@@ -105,8 +105,8 @@ func (stripePayment *StripePayment) CheckChargePaid() (bool, error) {
 	return paid, utils.ReturnFirstError([]error{errStripe, errDB, errMeta})
 }
 
-/*SendAccountOPQ sends OPQ to the account associated with a stripe payment. */
-func (stripePayment *StripePayment) SendAccountOPQ() error {
+/*SendAccountOPCT sends OPCT to the account associated with a stripe payment. */
+func (stripePayment *StripePayment) SendAccountOPCT() error {
 	account, err := GetAccountById(stripePayment.AccountID)
 	if err != nil {
 		return err
@@ -122,21 +122,21 @@ func (stripePayment *StripePayment) SendAccountOPQ() error {
 		services.SlowGasPrice)
 
 	if !success {
-		return errors.New("OPQ transaction failed")
+		return errors.New("OPCT transaction failed")
 	}
 
-	if err := DB.Model(&stripePayment).Update("opq_tx_status", OpqTxInProgress).Error; err != nil {
+	if err := DB.Model(&stripePayment).Update("opct_tx_status", OpctTxInProgress).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-/*SendUpgradeOPQ sends OPQ to the account being upgraded, associated with a stripe payment. */
-func (stripePayment *StripePayment) SendUpgradeOPQ(account Account, newStorageLimit int) error {
+/*SendUpgradeOPCT sends OPCT to the account being upgraded, associated with a stripe payment. */
+func (stripePayment *StripePayment) SendUpgradeOPCT(account Account, newStorageLimit int) error {
 	upgrade, _ := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
 
-	costInWei := utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpqCost))
+	costInWei := utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost))
 
 	success, _, _ := EthWrapper.TransferToken(
 		services.MainWalletAddress,
@@ -146,18 +146,18 @@ func (stripePayment *StripePayment) SendUpgradeOPQ(account Account, newStorageLi
 		services.SlowGasPrice)
 
 	if !success {
-		return errors.New("OPQ transaction failed")
+		return errors.New("OPCT transaction failed")
 	}
 
-	if err := DB.Model(&stripePayment).Update("opq_tx_status", OpqTxInProgress).Error; err != nil {
+	if err := DB.Model(&stripePayment).Update("opct_tx_status", OpctTxInProgress).Error; err != nil {
 		return err
 	}
 
 	return nil
 }
 
-/*CheckAccountCreationOPQTransaction checks the status of an OPQ payment to an account. */
-func (stripePayment *StripePayment) CheckAccountCreationOPQTransaction() (bool, error) {
+/*CheckAccountCreationOPCTTransaction checks the status of an OPCT payment to an account. */
+func (stripePayment *StripePayment) CheckAccountCreationOPCTTransaction() (bool, error) {
 	account, err := GetAccountById(stripePayment.AccountID)
 	if err != nil {
 		return false, err
@@ -169,7 +169,7 @@ func (stripePayment *StripePayment) CheckAccountCreationOPQTransaction() (bool, 
 	}
 
 	if paid {
-		if err := DB.Model(&stripePayment).Update("opq_tx_status", OpqTxSuccess).Error; err != nil {
+		if err := DB.Model(&stripePayment).Update("opct_tx_status", OpctTxSuccess).Error; err != nil {
 			return false, err
 		}
 		return true, err
@@ -180,8 +180,8 @@ func (stripePayment *StripePayment) CheckAccountCreationOPQTransaction() (bool, 
 	return false, err
 }
 
-/*CheckUpgradeOPQTransaction checks the status of an OPQ payment to an upgrade. */
-func (stripePayment *StripePayment) CheckUpgradeOPQTransaction(account Account, newStorageLimit int) (bool, error) {
+/*CheckUpgradeOPCTTransaction checks the status of an OPCT payment to an upgrade. */
+func (stripePayment *StripePayment) CheckUpgradeOPCTTransaction(account Account, newStorageLimit int) (bool, error) {
 	upgrade, err := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
 	if err != nil {
 		return false, err
@@ -193,7 +193,7 @@ func (stripePayment *StripePayment) CheckUpgradeOPQTransaction(account Account, 
 	}
 
 	if paid {
-		if err := DB.Model(&stripePayment).Update("opq_tx_status", OpqTxSuccess).Error; err != nil {
+		if err := DB.Model(&stripePayment).Update("opct_tx_status", OpctTxSuccess).Error; err != nil {
 			return false, err
 		}
 		return true, err
@@ -204,12 +204,12 @@ func (stripePayment *StripePayment) CheckUpgradeOPQTransaction(account Account, 
 	return false, err
 }
 
-/*RetryIfTimedOut retries an OPQ payment to an account if the transaction is timed out. */
+/*RetryIfTimedOut retries an OPCT payment to an account if the transaction is timed out. */
 func (stripePayment *StripePayment) RetryIfTimedOut() error {
 	targetTime := time.Now().Add(-1 * MinutesBeforeRetry * time.Minute)
 
 	if targetTime.After(stripePayment.UpdatedAt) {
-		return stripePayment.SendAccountOPQ()
+		return stripePayment.SendAccountOPCT()
 	}
 	return nil
 }
@@ -225,9 +225,9 @@ func DeleteStripePaymentIfExists(accountID string) error {
 
 /*PurgeOldStripePayments deletes stripe payments past a certain age*/
 func PurgeOldStripePayments(daysToRetainStripePayment int) error {
-	err := DB.Where("updated_at < ? AND opq_tx_status = ?",
+	err := DB.Where("updated_at < ? AND opct_tx_status = ?",
 		time.Now().Add(-1*time.Hour*24*time.Duration(daysToRetainStripePayment)),
-		OpqTxSuccess).Delete(&StripePayment{}).Error
+		OpctTxSuccess).Delete(&StripePayment{}).Error
 
 	return err
 }

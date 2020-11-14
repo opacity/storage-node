@@ -12,8 +12,8 @@ const (
 )
 
 /*ConvertToWeiUnit converts token unit to wei unit. */
-func ConvertToWeiUnit(opq *big.Float) *big.Int {
-	f := new(big.Float).Mul(opq, big.NewFloat(float64(TokenInWeiUnit)))
+func ConvertToWeiUnit(opct *big.Float) *big.Int {
+	f := new(big.Float).Mul(opct, big.NewFloat(float64(TokenInWeiUnit)))
 	wei, _ := f.Int(new(big.Int)) // ignore the accuracy
 	return wei
 }

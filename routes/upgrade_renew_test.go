@@ -78,7 +78,7 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 
 	assert.Equal(t, originalMonthsInSubscription+12, account.MonthsInSubscription)
 	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
-	assert.Contains(t, w.Body.String(), `Success with OPQ`)
+	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
 	renewals, err = models.GetRenewalsFromAccountID(account.AccountID)
 	assert.Nil(t, err)
@@ -138,7 +138,7 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	assert.Equal(t, newStorageLimit, int(account.StorageLimit))
 	assert.True(t, account.MonthsInSubscription >= afterRenewMonthsInSubscription)
 	assert.True(t, account.ExpirationDate().Unix() >= afterRenewExpirationDate.Unix())
-	assert.Contains(t, w.Body.String(), `Success with OPQ`)
+	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
 	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
 	assert.Nil(t, err)

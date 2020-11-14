@@ -34,7 +34,7 @@ type checkRenewalStatusReq struct {
 }
 
 type getRenewalAccountInvoiceRes struct {
-	OpqInvoice models.Invoice `json:"opqInvoice"`
+	OpctInvoice models.Invoice `json:"opctInvoice"`
 	// TODO: uncomment out if we decide to support stripe for renewals
 	// UsdInvoice float64        `json:"usdInvoice"`
 }
@@ -103,7 +103,7 @@ func getAccountRenewalInvoice(c *gin.Context) error {
 		return err
 	}
 
-	renewalCostInOPQ, err := account.Cost()
+	renewalCostInOPCT, err := account.Cost()
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -131,7 +131,7 @@ func getAccountRenewalInvoice(c *gin.Context) error {
 		EthAddress:       ethAddr.String(),
 		EthPrivateKey:    hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:    models.InitialPaymentInProgress,
-		OpqCost:          renewalCostInOPQ,
+		OpctCost:         renewalCostInOPCT,
 		DurationInMonths: 12,
 	}
 
@@ -142,8 +142,8 @@ func getAccountRenewalInvoice(c *gin.Context) error {
 	}
 
 	return OkResponse(c, getRenewalAccountInvoiceRes{
-		OpqInvoice: models.Invoice{
-			Cost:       renewalCostInOPQ,
+		OpctInvoice: models.Invoice{
+			Cost:       renewalCostInOPCT,
 			EthAddress: renewalInDB.EthAddress,
 		},
 		// TODO: uncomment out if we decide to support stripe for renewals
@@ -176,7 +176,7 @@ func checkRenewalStatus(c *gin.Context) error {
 	}
 
 	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewals[0].EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(renewals[0].OpqCost)))
+		utils.ConvertToWeiUnit(big.NewFloat(renewals[0].OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -188,7 +188,7 @@ func checkRenewalStatus(c *gin.Context) error {
 
 	if renewals[0].PaymentStatus >= models.InitialPaymentReceived {
 		return OkResponse(c, StatusRes{
-			Status: "Success with OPQ",
+			Status: "Success with OPCT",
 		})
 	}
 
@@ -199,7 +199,7 @@ func checkRenewalStatus(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 	return OkResponse(c, StatusRes{
-		Status: "Success with OPQ",
+		Status: "Success with OPCT",
 	})
 }
 

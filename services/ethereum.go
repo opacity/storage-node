@@ -44,7 +44,7 @@ type GetTokenBalance func(common.Address) /*In Wei Unit*/ *big.Int
 type GetETHBalance func(common.Address) /*In Wei Unit*/ *big.Int
 
 /*TransferToken - send Token from one account to another*/
-type TransferToken func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, opqAmount big.Int, gasPrice *big.Int) (bool, string, int64)
+type TransferToken func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, opctAmount big.Int, gasPrice *big.Int) (bool, string, int64)
 
 /*TransferETH - send ETH to an ethereum address*/
 type TransferETH func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error)
@@ -196,11 +196,11 @@ func getETHBalance(addr common.Address) *big.Int {
 	return balance
 }
 
-func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address, opqAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address, opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 	msg := TokenCallMsg{
 		From:       from,
 		To:         to,
-		Amount:     opqAmount,
+		Amount:     opctAmount,
 		Gas:        GasLimitTokenSend,
 		PrivateKey: *privateKey,
 	}

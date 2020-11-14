@@ -21,7 +21,7 @@ func returnValidUpgrade() (Upgrade, Account) {
 
 	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
 
-	upgradeCostInOPQ, _ := account.UpgradeCostInOPQ(utils.Env.Plans[1024].StorageInGB,
+	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(utils.Env.Plans[1024].StorageInGB,
 		12)
 	//upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[1024].StorageInGB,
 	//	12)
@@ -33,7 +33,7 @@ func returnValidUpgrade() (Upgrade, Account) {
 		EthAddress:      ethAddress.String(),
 		EthPrivateKey:   hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
 		PaymentStatus:   InitialPaymentInProgress,
-		OpqCost:         upgradeCostInOPQ,
+		OpctCost:        upgradeCostInOPCT,
 		//UsdCost:          upgradeCostInUSD,
 		DurationInMonths: 12,
 	}, account
@@ -148,7 +148,7 @@ func Test_Upgrade_GetOrCreateUpgrade(t *testing.T) {
 	assert.Equal(t, uPtr.AccountID, upgrade.AccountID)
 	assert.Equal(t, uPtr.EthAddress, upgrade.EthAddress)
 	assert.Equal(t, uPtr.NewStorageLimit, upgrade.NewStorageLimit)
-	assert.Equal(t, uPtr.OpqCost, upgrade.OpqCost)
+	assert.Equal(t, uPtr.OpctCost, upgrade.OpctCost)
 	//assert.Equal(t, uPtr.UsdCost, upgrade.UsdCost)
 
 	// simulate generating a new update with the same AccountID and NewStorageLimit
@@ -157,7 +157,7 @@ func Test_Upgrade_GetOrCreateUpgrade(t *testing.T) {
 	upgrade2, _ := returnValidUpgrade()
 	upgrade2.AccountID = upgrade.AccountID
 	upgrade2.NewStorageLimit = upgrade.NewStorageLimit
-	upgrade2.OpqCost = 1337.00
+	upgrade2.OpctCost = 1337.00
 	uPtr, err = GetOrCreateUpgrade(upgrade2)
 	assert.Nil(t, err)
 
@@ -166,9 +166,9 @@ func Test_Upgrade_GetOrCreateUpgrade(t *testing.T) {
 	assert.Equal(t, uPtr.EthAddress, upgrade.EthAddress)
 	assert.Equal(t, uPtr.EthPrivateKey, upgrade.EthPrivateKey)
 
-	// verify OpqCost has NOT changed -- price locking keeps the price the same for an hour
-	assert.NotEqual(t, upgrade2.OpqCost, uPtr.OpqCost)
-	assert.Equal(t, upgrade.OpqCost, uPtr.OpqCost)
+	// verify OpctCost has NOT changed -- price locking keeps the price the same for an hour
+	assert.NotEqual(t, upgrade2.OpctCost, uPtr.OpctCost)
+	assert.Equal(t, upgrade.OpctCost, uPtr.OpctCost)
 
 	// set the original upgrade's UpgradedAt time to be over an hour old.
 	DB.Model(uPtr).UpdateColumn("updated_at", time.Now().Add(-61*time.Minute))
@@ -180,9 +180,9 @@ func Test_Upgrade_GetOrCreateUpgrade(t *testing.T) {
 	assert.Equal(t, uPtr.EthAddress, upgrade.EthAddress)
 	assert.Equal(t, uPtr.EthPrivateKey, upgrade.EthPrivateKey)
 
-	// verify OpqCost has changed
-	assert.Equal(t, upgrade2.OpqCost, uPtr.OpqCost)
-	assert.NotEqual(t, upgrade.OpqCost, uPtr.OpqCost)
+	// verify OpctCost has changed
+	assert.Equal(t, upgrade2.OpctCost, uPtr.OpctCost)
+	assert.NotEqual(t, upgrade.OpctCost, uPtr.OpctCost)
 }
 
 func Test_Upgrade_GetUpgradeFromAccountIDAndStorageLimits(t *testing.T) {

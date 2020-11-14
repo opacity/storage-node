@@ -593,7 +593,7 @@ definitions:
     type: object
   routes.getRenewalAccountInvoiceRes:
     properties:
-      opqInvoice:
+      opctInvoice:
         $ref: '#/definitions/models.Invoice'
         type: object
     type: object
@@ -641,11 +641,9 @@ definitions:
     type: object
   routes.getUpgradeAccountInvoiceRes:
     properties:
-      opqInvoice:
+      opctInvoice:
         $ref: '#/definitions/models.Invoice'
         type: object
-      usdInvoice:
-        type: number
     type: object
   routes.metadataKeyObject:
     properties:
@@ -695,7 +693,7 @@ definitions:
         type: string
       chargePaid:
         type: boolean
-      opqTxStatus:
+      opctTxStatus:
         type: string
       stripePaymentExists:
         type: boolean
@@ -710,7 +708,7 @@ definitions:
         type: string
       chargePaid:
         type: boolean
-      opqTxStatus:
+      opctTxStatus:
         type: string
       status:
         example: status of the request
