@@ -1,179 +1,148 @@
 package routes
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/dgraph-io/badger"
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/dag"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
 // must be sorted alphabetically for JSON marshaling/stringifying
-type updateMetadataObject struct {
-	Metadata    string `json:"metadata" binding:"required" example:"your (updated) account metadata"`
-	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
-	Timestamp   int64  `json:"timestamp" binding:"required"`
+type updateMetadataV2Object struct {
+	MetadataV2Key    string   `json:"metadataV2Key" binding:"required" example:"public key for the metadataV2 encoded to base64"`
+	MetadataV2Vertex string   `json:"metadataV2Vertex" binding:"required" example:"the vertex to add to your account metadataV2 encoded to base64"`
+	MetadataV2Edges  []string `json:"metadataV2Edges" binding:"required" example:"the edges to add to your account metadataV2 encoded to base64"`
+	MetadataV2Sig    string   `json:"metadataV2Sig" binding:"required" example:"a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2"`
+	Timestamp        int64    `json:"timestamp" binding:"required"`
 }
 
-type updateMetadataReq struct {
+type updateMetadataV2Req struct {
 	verification
 	requestBody
-	updateMetadataObject updateMetadataObject
+	updateMetadataV2Object updateMetadataV2Object
 }
 
-type updateMetadataRes struct {
-	MetadataKey    string    `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
-	Metadata       string    `json:"metadata" binding:"required" example:"your (updated) account metadata"`
+type updateMetadataV2Res struct {
+	MetadataV2Key  string    `json:"metadataV2Key" binding:"required,len=64" example:"public key for the metadataV2 encoded to base64"`
+	MetadataV2     string    `json:"metadataV2" binding:"required" example:"your (updated) account metadataV2"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
 }
 
-type metadataKeyObject struct {
-	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
-	Timestamp   int64  `json:"timestamp" binding:"required"`
+type metadataV2KeyObject struct {
+	MetadataV2Key string `json:"metadataV2Key" binding:"required,len=64" example:"public key for the metadataV2 encoded to base64"`
+	Timestamp     int64  `json:"timestamp" binding:"required"`
 }
 
-type metadataKeyReq struct {
+type metadataV2KeyReq struct {
 	verification
 	requestBody
-	metadataKeyObject metadataKeyObject
+	metadataV2KeyObject metadataV2KeyObject
 }
 
-type getMetadataRes struct {
-	Metadata       string    `json:"metadata" binding:"exists" example:"your account metadata"`
+type getMetadataV2Res struct {
+	MetadataV2     string    `json:"metadataV2" binding:"exists" example:"your account metadataV2"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
 }
 
-type getMetadataHistoryRes struct {
-	Metadata        string    `json:"metadata" binding:"exists" example:"your account metadata"`
-	MetadataHistory []string  `json:"metadataHistory" binding:"exists" example:"your account metadata"`
-	ExpirationDate  time.Time `json:"expirationDate" binding:"required"`
-}
-
-type createMetadataRes struct {
+type createMetadataV2Res struct {
 	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
 }
 
-var metadataDeletedRes = StatusRes{
-	Status: "metadata successfully deleted",
+var metadataV2DeletedRes = StatusRes{
+	Status: "metadataV2 successfully deleted",
 }
 
-func (v *updateMetadataReq) getObjectRef() interface{} {
-	return &v.updateMetadataObject
+func (v *updateMetadataV2Req) getObjectRef() interface{} {
+	return &v.updateMetadataV2Object
 }
 
-const numMetadatasToRetain = 5
+const numMetadataV2sToRetain = 5
 
-func (v *metadataKeyReq) getObjectRef() interface{} {
-	return &v.metadataKeyObject
+func (v *metadataV2KeyReq) getObjectRef() interface{} {
+	return &v.metadataV2KeyObject
 }
 
-// GetMetadataHandler godoc
-// @Summary Retrieve account metadata
+// GetMetadataV2Handler godoc
+// @Summary Retrieve account metadataV2
 // @Accept  json
 // @Produce  json
-// @Param metadataKeyReq body routes.metadataKeyReq true "object for endpoints that only need metadataKey and timestamp"
+// @Param metadataV2KeyReq body routes.metadataV2KeyReq true "object for endpoints that only need metadataV2Key and timestamp"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
+// @description 	"metadataV2Key": "public key for the metadataV2 encoded to base64",
 // @description 	"timestamp": 1557346389
 // @description }
-// @Success 200 {object} routes.getMetadataRes
+// @Success 200 {object} routes.getMetadataV2Res
 // @Failure 404 {string} string "no value found for that key, or account not found"
 // @Failure 403 {string} string "subscription expired, or the invoice resonse"
-// @Router /api/v1/metadata/get [post]
-/*GetMetadataHandler is a handler for getting the file metadata*/
-func GetMetadataHandler() gin.HandlerFunc {
-	return ginHandlerFunc(getMetadata)
+// @Failure 400 {string} string "bad request, unable to parse b64: (with the error)"
+// @Failure 400 {string} string "bad request, incorrect key length"
+// @Router /api/v2/metadata/get [post]
+/*GetMetadataV2Handler is a handler for getting the file metadataV2*/
+func GetMetadataV2Handler() gin.HandlerFunc {
+	return ginHandlerFunc(getMetadataV2)
 }
 
-// GetMetadataHistoryHandler godoc
-// @Summary Retrieve metadata history
+// UpdateMetadataV2Handler godoc
+// @Summary Update metadataV2
 // @Accept  json
 // @Produce  json
-// @Param metadataKeyReq body routes.metadataKeyReq true "object for endpoints that only need metadataKey and timestamp"
+// @Param updateMetadataV2Req body routes.updateMetadataV2Req true "update metadataV2 object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
+// @description 	"metadataV2Key": "public key for the metadataV2 encoded to base64",
+// @description 	"metadataV2Vertex": "the vertex to add to your account metadataV2 encoded to base64",
+// @description 	"metadataV2Edges": "the edges to add to your account metadataV2 encoded to base64",
+// @description 	"metadataV2Sig": "a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2",
 // @description 	"timestamp": 1557346389
 // @description }
-// @Success 200 {object} routes.getMetadataHistoryRes
-// @Failure 404 {string} string "no value found for that key, or account not found"
-// @Failure 403 {string} string "subscription expired, or the invoice resonse"
-// @Router /api/v1/metadata/history [post]
-/*GetMetadataHistoryHandler is a handler for getting the file metadata history*/
-func GetMetadataHistoryHandler() gin.HandlerFunc {
-	return ginHandlerFunc(getMetadataHistory)
-}
-
-// UpdateMetadataHandler godoc
-// @Summary Update metadata
-// @Accept  json
-// @Produce  json
-// @Param updateMetadataReq body routes.updateMetadataReq true "update metadata object"
-// @description requestBody should be a stringified version of (values are just examples):
-// @description {
-// @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
-// @description 	"metadata": "your (updated) account metadata",
-// @description 	"timestamp": 1557346389
-// @description }
-// @Success 200 {object} routes.updateMetadataRes
+// @Success 200 {object} routes.updateMetadataV2Res
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 400 {string} string "bad request, unable to parse vertex: (with the error)"
+// @Failure 400 {string} string "bad request, unable to parse edge: (with the error)"
+// @Failure 400 {string} string "bad request, unable to add edge to dag: (with the error)"
+// @Failure 400 {string} string "bad request, can't verify signature: (with the error)"
 // @Failure 404 {string} string "no value found for that key, or account not found"
 // @Failure 403 {string} string "subscription expired, or the invoice response"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/metadata/set [post]
-/*UpdateMetadataHandler is a handler for updating the file metadata*/
-func UpdateMetadataHandler() gin.HandlerFunc {
-	return ginHandlerFunc(setMetadata)
+// @Router /api/v2/metadata/add [post]
+/*UpdateMetadataV2Handler is a handler for updating the file metadataV2*/
+func UpdateMetadataV2Handler() gin.HandlerFunc {
+	return ginHandlerFunc(updateMetadataV2)
 }
 
-// CreateMetadataHandler godoc
-// @Summary create a new metadata
+// DeleteMetadataV2Handler godoc
+// @Summary delete a metadataV2
 // @Accept  json
 // @Produce  json
-// @Param metadataKeyReq body routes.metadataKeyReq true "object for endpoints that only need metadataKey and timestamp"
+// @Param metadataV2KeyReq body routes.metadataV2KeyReq true "object for endpoints that only need metadataV2Key and timestamp"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
-// @description 	"timestamp": 1557346389
-// @description }
-// @Success 200 {object} routes.createMetadataRes
-// @Failure 404 {string} string "account not found"
-// @Failure 403 {string} string "subscription expired, or the invoice resonse"
-// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
-// @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/metadata/create [post]
-/*CreateMetadataHandler is a handler for creating a metadata*/
-func CreateMetadataHandler() gin.HandlerFunc {
-	return ginHandlerFunc(createMetadata)
-}
-
-// DeleteMetadataHandler godoc
-// @Summary delete a metadata
-// @Accept  json
-// @Produce  json
-// @Param metadataKeyReq body routes.metadataKeyReq true "object for endpoints that only need metadataKey and timestamp"
-// @description requestBody should be a stringified version of (values are just examples):
-// @description {
-// @description 	"metadataKey": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders",
+// @description 	"metadataV2Key": "public key for the metadataV2 encoded to base64",
 // @description 	"timestamp": 1557346389
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 404 {string} string "account not found"
 // @Failure 403 {string} string "subscription expired, or the invoice resonse"
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 400 {string} string "bad request, unable to parse b64: (with the error)"
+// @Failure 400 {string} string "bad request, incorrect key length"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/metadata/delete [post]
-/*DeleteMetadataHandler is a handler for deleting a metadata*/
-func DeleteMetadataHandler() gin.HandlerFunc {
-	return ginHandlerFunc(deleteMetadata)
+// @Router /api/v2/metadata/delete [post]
+/*DeleteMetadataV2Handler is a handler for deleting a metadataV2*/
+func DeleteMetadataV2Handler() gin.HandlerFunc {
+	return ginHandlerFunc(deleteMetadataV2)
 }
 
-func getMetadata(c *gin.Context) error {
-	request := metadataKeyReq{}
+func getMetadataV2(c *gin.Context) error {
+	request := metadataV2KeyReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
@@ -195,105 +164,57 @@ func getMetadata(c *gin.Context) error {
 		})
 	}
 
-	requestBodyParsed := metadataKeyObject{}
+	requestBodyParsed := metadataV2KeyObject{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return err
 	}
 
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	metadataV2KeyBin, err := base64.RawStdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	if len(metadataV2KeyBin) != 32 {
+		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
+	}
+
+	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataV2Key)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
 		// TODO: Enable this after everyone should have migrated.
-		// cannot enable it now since many users already created metadatas without permission hashes
+		// cannot enable it now since many users already created metadataV2s without permission hashes
 		// being stored
 		//
 		//return NotFoundResponse(c, err)
 	}
 
 	// TODO remove this if block wrapping the other if after everyone should have migrated
-	// This is only in effect for a limited time because many users already created metadatas without
+	// This is only in effect for a limited time because many users already created metadataV2s without
 	// permission hashes being stored
 	if permissionHashInBadger != "" {
-		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
+		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataV2Key,
 			permissionHashInBadger, c); err != nil {
 			return err
 		}
 	}
 
-	metadata, expirationTime, err := utils.GetValueFromKV(request.metadataKeyObject.MetadataKey)
+	metadataV2, expirationTime, err := utils.GetValueFromKV(request.metadataV2KeyObject.MetadataV2Key)
 
 	if err != nil {
 		return NotFoundResponse(c, err)
 	}
 
-	return OkResponse(c, getMetadataRes{
-		Metadata:       metadata,
+	return OkResponse(c, getMetadataV2Res{
+		MetadataV2:     metadataV2,
 		ExpirationDate: expirationTime,
 	})
 }
 
-func getMetadataHistory(c *gin.Context) error {
-	request := metadataKeyReq{}
-
-	if err := verifyAndParseBodyRequest(&request, c); err != nil {
-		return err
-	}
-
-	account, err := request.getAccount(c)
-	if err != nil {
-		return err
-	}
-
-	if paid := verifyIfPaid(account); !paid {
-		cost, _ := account.Cost()
-		return AccountNotPaidResponse(c, accountCreateRes{
-			Invoice: models.Invoice{
-				Cost:       cost,
-				EthAddress: account.EthAddress,
-			},
-			ExpirationDate: account.ExpirationDate(),
-		})
-	}
-
-	requestBodyParsed := metadataKeyObject{}
-
-	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
-		return err
-	}
-
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
-	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
-
-	if err != nil {
-		return NotFoundResponse(c, err)
-	}
-
-	if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
-		permissionHashInBadger, c); err != nil {
-		return err
-	}
-
-	currentMetadata, expirationTime, err := utils.GetValueFromKV(request.metadataKeyObject.MetadataKey)
-	if err != nil {
-		return NotFoundResponse(c, err)
-	}
-
-	metadataHistory, err := getMetadataHistoryWithoutContext(request.metadataKeyObject.MetadataKey)
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
-
-	return OkResponse(c, getMetadataHistoryRes{
-		Metadata:        currentMetadata,
-		MetadataHistory: metadataHistory,
-		ExpirationDate:  expirationTime,
-	})
-}
-
-func setMetadata(c *gin.Context) error {
-	request := updateMetadataReq{}
+func updateMetadataV2(c *gin.Context) error {
+	request := updateMetadataV2Req{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
@@ -308,55 +229,151 @@ func setMetadata(c *gin.Context) error {
 		return err
 	}
 
-	requestBodyParsed := updateMetadataObject{}
+	requestBodyParsed := updateMetadataV2Object{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return err
 	}
 
-	oldMetadata, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+	oldMetadataV2, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
 
 	if err != nil {
-		return NotFoundResponse(c, err)
+		if err = account.IncrementMetadataCount(); err != nil {
+			return ForbiddenResponse(c, err)
+		}
+
+		ttl := time.Until(account.ExpirationDate())
+
+		permissionHash, err := getPermissionHash(request.PublicKey, requestBodyParsed.MetadataV2Key, c)
+		if err != nil {
+			return err
+		}
+
+		permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataV2Key)
+
+		if err = utils.BatchSet(&utils.KVPairs{
+			requestBodyParsed.MetadataV2Key: "",
+			permissionHashKey:               permissionHash,
+		}, ttl); err != nil {
+			account.DecrementMetadataCount()
+			return InternalErrorResponse(c, err)
+		}
+
+		oldMetadataV2 = base64.RawStdEncoding.EncodeToString(dag.NewDAG().Binary())
+	}
+
+	dBin, err := base64.StdEncoding.DecodeString(oldMetadataV2)
+
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	d, err := dag.NewDAGFromBinary(dBin)
+
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	vBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Vertex)
+
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	vert, err := dag.NewDAGVertexFromBinary(vBin)
+
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse vertex: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	d.Add(*vert)
+
+	for _, eB64 := range requestBodyParsed.MetadataV2Edges {
+		eBin, err := base64.StdEncoding.DecodeString(eB64)
+
+		if err != nil {
+			err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+			return BadRequestResponse(c, err)
+		}
+
+		edge, err := dag.NewDAGEdgeFromBinary(eBin)
+
+		if err != nil {
+			err = fmt.Errorf("bad request, unable to parse edge: %v", err)
+			return BadRequestResponse(c, err)
+		}
+
+		err = d.AddEdge(*edge)
+
+		if err != nil {
+			err = fmt.Errorf("bad request, unable to add edge to dag: %v", err)
+			return BadRequestResponse(c, err)
+		}
+	}
+
+	vDigest, err := d.Digest(vert.ID, func(b []byte) []byte { s := sha256.Sum256(b); return s[:] })
+
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	metadataV2SigBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Sig)
+
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	metadataV2KeyBin, err := base64.RawStdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	if secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) == false {
+		err = fmt.Errorf("bad request, can't verify signature: %v", err)
+		return BadRequestResponse(c, err)
 	}
 
 	if account.ExpirationDate().Before(time.Now()) {
 		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataV2Key)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
-	if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
+	newMetadataV2 := base64.StdEncoding.EncodeToString(d.Binary())
+
+	if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataV2Key,
 		permissionHashInBadger, c); err != nil {
 		return err
 	}
-	if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadata)), int64(len(requestBodyParsed.Metadata))); err != nil {
+	if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadataV2)), int64(len(newMetadataV2))); err != nil {
 		return ForbiddenResponse(c, err)
 	}
 
 	ttl := time.Until(account.ExpirationDate())
 
 	if err := utils.BatchSet(&utils.KVPairs{
-		requestBodyParsed.MetadataKey: requestBodyParsed.Metadata,
-		permissionHashKey:             permissionHashInBadger,
+		requestBodyParsed.MetadataV2Key: newMetadataV2,
+		permissionHashKey:               permissionHashInBadger,
 	}, ttl); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := storeMetadataHistory(requestBodyParsed.MetadataKey, oldMetadata, ttl, c); err != nil {
-		return err
-	}
-
-	return OkResponse(c, updateMetadataRes{
-		MetadataKey:    request.updateMetadataObject.MetadataKey,
-		Metadata:       request.updateMetadataObject.Metadata,
+	return OkResponse(c, updateMetadataV2Res{
+		MetadataV2Key:  request.updateMetadataV2Object.MetadataV2Key,
+		MetadataV2:     newMetadataV2,
 		ExpirationDate: account.ExpirationDate(),
 	})
 }
 
-func createMetadata(c *gin.Context) error {
-	request := metadataKeyReq{}
+func deleteMetadataV2(c *gin.Context) error {
+	request := metadataV2KeyReq{}
 
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
 		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
@@ -372,148 +389,60 @@ func createMetadata(c *gin.Context) error {
 		return err
 	}
 
-	requestBodyParsed := metadataKeyObject{}
+	requestBodyParsed := metadataV2KeyObject{}
 
 	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
 		return err
 	}
 
-	ttl := time.Until(account.ExpirationDate())
-
-	permissionHash, err := getPermissionHash(request.PublicKey, requestBodyParsed.MetadataKey, c)
+	metadataV2KeyBin, err := base64.RawStdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
 	if err != nil {
-		return err
-	}
-
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
-
-	_, _, err = utils.GetValueFromKV(requestBodyParsed.MetadataKey)
-
-	if err == nil {
-		return ForbiddenResponse(c, errors.New("that metadata already exists"))
-	}
-
-	if err = account.IncrementMetadataCount(); err != nil {
-		return ForbiddenResponse(c, err)
-	}
-
-	if err = utils.BatchSet(&utils.KVPairs{
-		requestBodyParsed.MetadataKey: "",
-		permissionHashKey:             permissionHash,
-	}, ttl); err != nil {
-		account.DecrementMetadataCount()
-		return InternalErrorResponse(c, err)
-	}
-
-	return OkResponse(c, createMetadataRes{
-		ExpirationDate: account.ExpirationDate(),
-	})
-}
-
-func deleteMetadata(c *gin.Context) error {
-	request := metadataKeyReq{}
-
-	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
-		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
 		return BadRequestResponse(c, err)
 	}
 
-	account, err := request.getAccount(c)
-	if err != nil {
-		return err
+	if len(metadataV2KeyBin) != 32 {
+		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
 	}
 
-	if err := verifyIfPaidWithContext(account, c); err != nil {
-		return err
-	}
-
-	requestBodyParsed := metadataKeyObject{}
-
-	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
-		return err
-	}
-
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataV2Key)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
 		// TODO: Enable this after everyone should have migrated.
-		// cannot enable it now since many users already created metadatas without permission hashes
+		// cannot enable it now since many users already created metadataV2s without permission hashes
 		// being stored
 		//
 		//return NotFoundResponse(c, err)
 	}
 
 	// TODO remove this if block wrapping the other if after everyone should have migrated
-	// This is only in effect for a limited time because many users already created metadatas without
+	// This is only in effect for a limited time because many users already created metadataV2s without
 	// permission hashes being stored
 	if permissionHashInBadger != "" {
-		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
+		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataV2Key,
 			permissionHashInBadger, c); err != nil {
 			return err
 		}
 	}
 
-	oldMetadata, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataKey)
+	oldMetadataV2, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
 
 	// TODO remove this if block wrapping the other if after everyone should have migrated
-	// This is only in effect for a limited time because many users already created metadatas without
+	// This is only in effect for a limited time because many users already created metadataV2s without
 	// permission hashes being stored
 	if permissionHashInBadger != "" {
-		if err := account.RemoveMetadata(int64(len(oldMetadata))); err != nil {
+		if err := account.RemoveMetadata(int64(len(oldMetadataV2))); err != nil {
 			return InternalErrorResponse(c, err)
 		}
 	}
 
 	if err = utils.BatchDelete(&utils.KVKeys{
-		requestBodyParsed.MetadataKey,
+		requestBodyParsed.MetadataV2Key,
 		permissionHashKey,
 	}); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
-	return OkResponse(c, metadataDeletedRes)
-}
-
-func storeMetadataHistory(metadataKey string, oldMetadata string, ttl time.Duration, c *gin.Context) error {
-	newValue := oldMetadata
-	stopOnNextKey := false
-	for i := 0; i < numMetadatasToRetain; i++ {
-		if stopOnNextKey {
-			break
-		}
-		badgerKey := getVersionKeyForBadger(metadataKey, i)
-		oldValue, _, err := utils.GetValueFromKV(badgerKey)
-		if err := utils.BatchSet(&utils.KVPairs{
-			badgerKey: newValue,
-		}, ttl); err != nil {
-			return InternalErrorResponse(c, err)
-		}
-		if err == badger.ErrKeyNotFound {
-			stopOnNextKey = true
-		}
-		newValue = oldValue
-	}
-	return nil
-}
-
-func getMetadataHistoryWithoutContext(metadataKey string) ([]string, error) {
-	metadataHistory := []string{}
-	for i := 0; i < numMetadatasToRetain; i++ {
-		oldMetadata, _, err := utils.GetValueFromKV(getVersionKeyForBadger(metadataKey, i))
-		if err == badger.ErrKeyNotFound {
-			break
-		}
-		if err != nil {
-			return metadataHistory, err
-		}
-		metadataHistory = append(metadataHistory, oldMetadata)
-	}
-	return metadataHistory, nil
-}
-
-func getCurrentMetadata() {
-	// TODO:  After everyone has migrated, consolidate the first parts of getMetadata and
-	// getMetadataHistory since they are very similar except for the exceptions for accounts
-	// that haven't been migrated
+	return OkResponse(c, metadataV2DeletedRes)
 }

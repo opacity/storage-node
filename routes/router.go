@@ -52,10 +52,10 @@ const (
 	/*AccountUpgradePath is the path for checking the upgrade status of an account*/
 	AccountUpgradePath = "/upgrade"
 
-	/*AccountUpgradeInvoicePath is the path for getting an invoice to renew an account*/
+	/*AccountRenewInvoicePath is the path for getting an invoice to renew an account*/
 	AccountRenewInvoicePath = "/renew/invoice"
 
-	/*AccountUpgradePath is the path for checking the renew status of an account*/
+	/*AccountRenewPath is the path for checking the renew status of an account*/
 	AccountRenewPath = "/renew"
 
 	/*AdminPath is a router group for admin task. */
@@ -95,6 +95,20 @@ const (
 	StripeCreatePath = "/stripe/create"
 )
 
+const (
+	/*V2Path is a router group for the v1 version of storage node*/
+	V2Path = "/api/v2"
+
+	/*MetadataV2GetPath is the path for getting metadata*/
+	MetadataV2GetPath = "/metadata/get"
+
+	/*MetadataV2AddPath is the path for setting metadata*/
+	MetadataV2AddPath = "/metadata/add"
+
+	/*MetadataV2DeletePath is the path for deleting a metadata*/
+	MetadataV2DeletePath = "/metadata/delete"
+)
+
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
 
 var maintenanceError = errors.New("maintenance in progress, currently rejecting writes")
@@ -117,6 +131,7 @@ func CreateRoutes() {
 	router := returnEngine()
 
 	setupV1Paths(returnV1Group(router))
+	setupV2Paths(returnV2Group(router))
 	setupAdminPaths(router)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -151,6 +166,10 @@ func returnV1Group(router *gin.Engine) *gin.RouterGroup {
 	return router.Group(V1Path)
 }
 
+func returnV2Group(router *gin.Engine) *gin.RouterGroup {
+	return router.Group(V2Path)
+}
+
 func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(AccountsPath, CreateAccountHandler())
 	v1Router.POST(AccountDataPath, CheckAccountPaymentStatusHandler())
@@ -177,6 +196,12 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 
 	// Stripe endpoints
 	v1Router.POST(StripeCreatePath, CreateStripePaymentHandler())
+}
+
+func setupV2Paths(v2Router *gin.RouterGroup) {
+	v2Router.POST(MetadataV2AddPath, UpdateMetadataV2Handler())
+	v2Router.POST(MetadataV2GetPath, GetMetadataV2Handler())
+	v2Router.POST(MetadataV2DeletePath, DeleteMetadataV2Handler())
 }
 
 func setupAdminPaths(router *gin.Engine) {

@@ -13,6 +13,13 @@ func GenerateFileHandle() string {
 	return RandHexString(64)
 }
 
+func RandByteSlice(length int) []byte {
+	b := make([]byte, length)
+	rand.Read(b)
+
+	return b
+}
+
 /*RandHexString generates a random hex string of the length passed in*/
 func RandHexString(length int) string {
 	return RandSeqFromRunes(length, []rune("abcdef01234567890"))
