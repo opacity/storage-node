@@ -11,6 +11,21 @@ import (
 	"strings"
 )
 
+type dagBinaryType uint8
+
+const (
+	DAGBinaryTypeDAG    dagBinaryType = iota
+	DAGBinaryTypeVertex dagBinaryType = iota
+	DAGBinaryTypeEdge   dagBinaryType = iota
+)
+
+type dagDigestType uint8
+
+const (
+	DAGDigestTypeLeaf   = iota
+	DAGDigestTypeBranch = iota
+)
+
 type DAG struct {
 	Nodes []DAGVertex
 	Edges []DAGEdge
@@ -232,13 +247,6 @@ func (dag *DAG) Dependencies(id uint32, seen []uint32) ([]uint32, error) {
 	return parents, nil
 }
 
-type dagDigestType uint8
-
-const (
-	DAGDigestTypeLeaf   = iota
-	DAGDigestTypeBranch = iota
-)
-
 func (dag *DAG) Digest(id uint32, hash func([]byte) []byte) ([]byte, error) {
 	if id == 0 {
 		parents := dag.sinks
@@ -294,14 +302,6 @@ func (dag *DAG) Digest(id uint32, hash func([]byte) []byte) ([]byte, error) {
 
 	return nil, errors.New("DAG: Vertex + " + strconv.FormatUint(uint64(id), 10) + " not found in in [" + strings.Join(nodesStr, ", ") + "]")
 }
-
-type dagBinaryType uint8
-
-const (
-	DAGBinaryTypeDAG    dagBinaryType = iota
-	DAGBinaryTypeVertex dagBinaryType = iota
-	DAGBinaryTypeEdge   dagBinaryType = iota
-)
 
 type DAGEdge struct {
 	Child  uint32
