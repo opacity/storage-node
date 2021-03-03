@@ -4,6 +4,7 @@ import (
 	/*blank import to make drivers available*/
 	_ "database/sql"
 	"fmt"
+
 	/*blank import to make drivers available*/
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
@@ -36,7 +37,7 @@ func Connect(dbURL string) {
 
 	// List all the schema
 	DB.AutoMigrate(&Account{})
-	DB.AutoMigrate(&File{})
+	DB.AutoMigrate(&File{}).ModifyColumn("aws_object_key", "text")
 	DB.AutoMigrate(&S3ObjectLifeCycle{})
 	DB.AutoMigrate(&CompletedFile{})
 	DB.AutoMigrate(&CompletedUploadIndex{})

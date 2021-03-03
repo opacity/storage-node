@@ -3,9 +3,10 @@ package models
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
-	"time"
 )
 
 type CompletedFile struct {
@@ -15,6 +16,7 @@ type CompletedFile struct {
 	ExpiredAt      time.Time `json:"expiredAt"`
 	FileSizeInByte int64     `json:"fileSizeInByte"`
 	ModifierHash   string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
+	PublicID       string    `json:"publicId" gorm:"nullable"`
 	ApiVersion     int       `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 }
 

@@ -21,7 +21,7 @@ type File struct {
 	UpdatedAt        time.Time `json:"updatedAt"`
 	ExpiredAt        time.Time `json:"expiredAt"`
 	AwsUploadID      *string   `json:"awsUploadID"`
-	AwsObjectKey     *string   `json:"awsObjectKey"`
+	AwsObjectKey     *string   `json:"awsObjectKey" gorm:"type:text"`
 	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
 	CompletedIndexes *string   `json:"completedIndexes" gorm:"type:mediumtext"`
 	ModifierHash     string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
