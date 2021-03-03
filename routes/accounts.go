@@ -34,7 +34,7 @@ type accountCreateRes struct {
 
 type accountDataRes struct {
 	PaymentStatus string        `json:"paymentStatus" example:"paid"`
-	Error         error         `json:"error" example:"the error encountered while checking"`
+	Error         error         `json:"error" swaggertype:"string" example:"the error encountered while checking"`
 	Account       accountGetObj `json:"account" binding:"required"`
 	StripeData    stripeDataObj `json:"stripeData"`
 }
