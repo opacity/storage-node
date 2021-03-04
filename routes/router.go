@@ -40,6 +40,9 @@ const (
 	/*V1Path is a router group for the v1 version of storage node*/
 	V1Path = "/api/v1"
 
+	/*V2Path is a router group for the v2 version of storage node*/
+	V2Path = "/api/v2"
+
 	/*AccountsPath is the path for dealing with accounts*/
 	AccountsPath = "/accounts"
 
@@ -82,8 +85,17 @@ const (
 	/*UploadPath is the path for uploading files to paid accounts*/
 	UploadPath = "/upload"
 
+	/*InitUploadPublicPath is the path for initiating the upload of files for public sharing*/
+	InitUploadPublicPath = "/init-upload-public"
+
+	/*UploadPublicPath is the path for uploading files for public sharing*/
+	UploadPublicPath = "/upload-public"
+
 	/*UploadStatusPath is the path for checking upload status*/
 	UploadStatusPath = "/upload-status"
+
+	/*UploadStatusPath is the path for checking upload status*/
+	UploadStatusPublicPath = "/upload-status-public"
 
 	/*DeletePath is the path for deleting files*/
 	DeletePath = "/delete"
@@ -117,6 +129,7 @@ func CreateRoutes() {
 	router := returnEngine()
 
 	setupV1Paths(returnV1Group(router))
+	setupV2Paths(returnV2Group(router))
 	setupAdminPaths(router)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -151,6 +164,10 @@ func returnV1Group(router *gin.Engine) *gin.RouterGroup {
 	return router.Group(V1Path)
 }
 
+func returnV2Group(router *gin.Engine) *gin.RouterGroup {
+	return router.Group(V2Path)
+}
+
 func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(AccountsPath, CreateAccountHandler())
 	v1Router.POST(AccountDataPath, CheckAccountPaymentStatusHandler())
@@ -177,6 +194,12 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 
 	// Stripe endpoints
 	v1Router.POST(StripeCreatePath, CreateStripePaymentHandler())
+}
+
+func setupV2Paths(v1Router *gin.RouterGroup) {
+	v1Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())
+	v1Router.POST(UploadPublicPath, UploadFilePublicHandler())
+	v1Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {

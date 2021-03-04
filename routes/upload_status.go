@@ -44,10 +44,19 @@ func (v *UploadStatusReq) getObjectRef() interface{} {
 // @Router /api/v1/upload-status [post]
 /*CheckUploadStatusHandler is a handler for checking upload statuses*/
 func CheckUploadStatusHandler() gin.HandlerFunc {
-	return ginHandlerFunc(checkUploadStatus)
+	return ginHandlerFunc(checkUploadStatusInit)
 }
 
-func checkUploadStatus(c *gin.Context) error {
+func checkUploadStatusInit(c *gin.Context) error {
+	err := checkUploadStatus(c, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkUploadStatus(c *gin.Context, isPublic bool) error {
 	request := UploadStatusReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
@@ -75,7 +84,7 @@ func checkUploadStatus(c *gin.Context) error {
 		return err
 	}
 
-	completedFile, err = file.FinishUpload()
+	completedFile, err = file.FinishUpload(isPublic)
 	if err != nil {
 		if err == models.IncompleteUploadErr {
 			incompleteIndexes, err := models.GetIncompleteIndexesAsArray(file.FileID, file.EndIndex)

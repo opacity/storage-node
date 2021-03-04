@@ -6,26 +6,7 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type InitFileUploadObj struct {
-	FileHandle     string `form:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-	FileSizeInByte int64  `form:"fileSizeInByte" binding:"required" example:"200000000000006"`
-	EndIndex       int    `form:"endIndex" binding:"required" example:"2"`
-	FileName       string `form: "fileName`
-}
-
-type InitFileUploadReq struct {
-	verification
-	requestBody
-	Metadata          string `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
-	MetadataAsFile    string `formFile:"metadata"`
-	initFileUploadObj InitFileUploadObj
-}
-
-func (v *InitFileUploadReq) getObjectRef() interface{} {
-	return &v.initFileUploadObj
-}
-
-// InitFileUploadHandler godoc
+// InitFileUploadPublicHandler godoc
 // @Summary start an upload
 // @Description start an upload
 // @Accept  mpfd
@@ -43,11 +24,11 @@ func (v *InitFileUploadReq) getObjectRef() interface{} {
 // @Failure 403 {string} string "signature did not match"
 // @Router /api/v1/init-upload [post]
 /*InitFileUploadHandler is a handler for the user to start uploads*/
-func InitFileUploadHandler() gin.HandlerFunc {
-	return ginHandlerFunc(initFileUploadWithContext)
+func InitFileUploadPublicHandler() gin.HandlerFunc {
+	return ginHandlerFunc(initFileUploadPublicWithContext)
 }
 
-func initFileUploadWithContext(c *gin.Context) error {
+func initFileUploadPublicWithContext(c *gin.Context) error {
 	if !utils.WritesEnabled() {
 		return ServiceUnavailableResponse(c, maintenanceError)
 	}
@@ -61,7 +42,7 @@ func initFileUploadWithContext(c *gin.Context) error {
 	return initFileUploadWithRequest(request, c)
 }
 
-func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error {
+func initFileUploadPublicWithRequest(request InitFileUploadReq, c *gin.Context) error {
 	account, err := request.getAccount(c)
 	if err != nil {
 		return err
@@ -71,16 +52,8 @@ func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error 
 		return err
 	}
 
-	if err := checkHaveEnoughStorageSpace(account, request.initFileUploadObj.FileSizeInByte, c); err != nil {
-		return err
-	}
-
-	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataKey(request.initFileUploadObj.FileHandle))
+	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileNameKey(request.initFileUploadObj.FileHandle, request.initFileUploadObj.FileName))
 	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
-
-	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(request.initFileUploadObj.FileHandle), request.MetadataAsFile); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
@@ -103,14 +76,6 @@ func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error 
 	}
 
 	return OkResponse(c, StatusRes{
-		Status: "File is init. Please continue to upload",
+		Status: "Public file is init. Please continue to upload",
 	})
-}
-
-func checkHaveEnoughStorageSpace(account models.Account, fileSizeInByte int64, c *gin.Context) error {
-	plannedInGB := (float64(fileSizeInByte) + float64(account.StorageUsedInByte)) / 1e9
-	if plannedInGB > float64(account.StorageLimit) {
-		return AccountNotEnoughSpaceResponse(c)
-	}
-	return nil
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
+	"github.com/teris-io/shortid"
 )
 
 /*File defines a model for managing a user subscription for uploads*/
@@ -104,6 +105,10 @@ func GetFileMetadataKey(fileID string) string {
 
 func GetFileDataKey(fileID string) string {
 	return fileID + "/file"
+}
+
+func GetFileNameKey(fileID, fileName string) string {
+	return fmt.Sprintf("%s/%s", fileID, fileName)
 }
 
 /*Return File object(first one) if there is not any error. If not found, return nil without error. */
@@ -222,7 +227,7 @@ func (file *File) UploadCompleted() bool {
 }
 
 /*FinishUpload - finishes the upload*/
-func (file *File) FinishUpload() (CompletedFile, error) {
+func (file *File) FinishUpload(isPublic bool) (CompletedFile, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
 		return CompletedFile{}, IncompleteUploadErr
@@ -244,6 +249,13 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 		ExpiredAt:      file.ExpiredAt,
 		FileSizeInByte: objectSize,
 		ModifierHash:   file.ModifierHash,
+	}
+	if isPublic == true {
+		completedFile.FileSizeInByte = 0
+		shortID, err := shortid.Generate()
+		if err != nil {
+			completedFile.PublicID = shortID
+		}
 	}
 	if err := DB.Save(&completedFile).Error; err != nil {
 		return CompletedFile{}, err
