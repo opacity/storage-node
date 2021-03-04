@@ -118,7 +118,7 @@ type StatusRes struct {
 }
 
 type PlanResponse struct {
-	Plans utils.PlanResponseType `json:"plans" example:"an object of the plans we offer"`
+	Plans utils.PlanResponseType `json:"plans"`
 }
 
 func init() {

@@ -16,10 +16,10 @@ import (
 
 // must be sorted alphabetically for JSON marshaling/stringifying
 type updateMetadataV2Object struct {
-	MetadataV2Key    string   `json:"metadataV2Key" binding:"required" example:"public key for the metadataV2 encoded to base64"`
-	MetadataV2Vertex string   `json:"metadataV2Vertex" binding:"required" example:"the vertex to add to your account metadataV2 encoded to base64"`
 	MetadataV2Edges  []string `json:"metadataV2Edges" binding:"required" example:"the edges to add to your account metadataV2 encoded to base64"`
+	MetadataV2Key    string   `json:"metadataV2Key" binding:"required" example:"public key for the metadataV2 encoded to base64"`
 	MetadataV2Sig    string   `json:"metadataV2Sig" binding:"required" example:"a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2"`
+	MetadataV2Vertex string   `json:"metadataV2Vertex" binding:"required" example:"the vertex to add to your account metadataV2 encoded to base64"`
 	Timestamp        int64    `json:"timestamp" binding:"required"`
 }
 
@@ -30,13 +30,13 @@ type updateMetadataV2Req struct {
 }
 
 type updateMetadataV2Res struct {
-	MetadataV2Key  string    `json:"metadataV2Key" binding:"required,len=64" example:"public key for the metadataV2 encoded to base64"`
+	MetadataV2Key  string    `json:"metadataV2Key" binding:"required" example:"public key for the metadataV2 encoded to base64"`
 	MetadataV2     string    `json:"metadataV2" binding:"required" example:"your (updated) account metadataV2"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
 }
 
 type metadataV2KeyObject struct {
-	MetadataV2Key string `json:"metadataV2Key" binding:"required,len=64" example:"public key for the metadataV2 encoded to base64"`
+	MetadataV2Key string `json:"metadataV2Key" binding:"required" example:"public key for the metadataV2 encoded to base64"`
 	Timestamp     int64  `json:"timestamp" binding:"required"`
 }
 
