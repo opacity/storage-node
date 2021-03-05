@@ -16,9 +16,9 @@ import (
 
 // must be sorted alphabetically for JSON marshaling/stringifying
 type updateMetadataV2Object struct {
-	MetadataV2Edges  []string `json:"metadataV2Edges" binding:"required,base64" example:"the edges to add to your account metadataV2 encoded to base64"`
+	MetadataV2Edges  []string `json:"metadataV2Edges" binding:"required,dive,required,base64,len=12" example:"the edges to add to your account metadataV2 encoded to base64"`
 	MetadataV2Key    string   `json:"metadataV2Key" binding:"required,base64,len=44" example:"public key for the metadataV2 encoded to base64"`
-	MetadataV2Sig    string   `json:"metadataV2Sig" binding:"required,base64" example:"a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2"`
+	MetadataV2Sig    string   `json:"metadataV2Sig" binding:"required,base64,len=88" example:"a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2"`
 	MetadataV2Vertex string   `json:"metadataV2Vertex" binding:"required,base64" example:"the vertex to add to your account metadataV2 encoded to base64"`
 	Timestamp        int64    `json:"timestamp" binding:"required"`
 }
