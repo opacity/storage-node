@@ -171,7 +171,7 @@ func getMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	metadataV2KeyBin, err := base64.RawStdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+	metadataV2KeyBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
 		return BadRequestResponse(c, err)
@@ -241,7 +241,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	metadataV2KeyBin, err := base64.RawStdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+	metadataV2KeyBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
 		return BadRequestResponse(c, err)
@@ -278,7 +278,11 @@ func updateMetadataV2(c *gin.Context) error {
 			return InternalErrorResponse(c, err)
 		}
 
-		oldMetadataV2 = base64.RawStdEncoding.EncodeToString(dag.NewDAG().Binary())
+		oldMetadataV2 = base64.StdEncoding.EncodeToString(dag.NewDAG().Binary())
+	}
+
+	if oldMetadataV2 == "" {
+		oldMetadataV2 = base64.StdEncoding.EncodeToString(dag.NewDAG().Binary())
 	}
 
 	dBin, err := base64.StdEncoding.DecodeString(oldMetadataV2)
@@ -407,7 +411,7 @@ func deleteMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	metadataV2KeyBin, err := base64.RawStdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+	metadataV2KeyBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
 		return BadRequestResponse(c, err)
