@@ -176,7 +176,7 @@ func getMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	if len(metadataV2KeyBin) != 32 {
+	if len(metadataV2KeyBin) != 33 {
 		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
 	}
 
@@ -401,7 +401,7 @@ func deleteMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	if len(metadataV2KeyBin) != 32 {
+	if len(metadataV2KeyBin) != 33 {
 		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
 	}
 
