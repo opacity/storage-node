@@ -48,7 +48,7 @@ type metadataV2KeyReq struct {
 }
 
 type getMetadataV2Res struct {
-	MetadataV2     string    `json:"metadataV2" binding:"exists,base64" example:"your account metadataV2"`
+	MetadataV2     string    `json:"metadataV2" binding:"exists,base64,omitempty" example:"your account metadataV2"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
 }
 
