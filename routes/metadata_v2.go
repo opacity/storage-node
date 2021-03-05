@@ -192,12 +192,17 @@ func getMetadataV2(c *gin.Context) error {
 		//return NotFoundResponse(c, err)
 	}
 
+	publicKeyBin, err := hex.DecodeString(request.PublicKey)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse hex: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
 	// TODO remove this if block wrapping the other if after everyone should have migrated
 	// This is only in effect for a limited time because many users already created metadataV2s without
 	// permission hashes being stored
 	if permissionHashInBadger != "" {
-		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataV2Key,
-			permissionHashInBadger, c); err != nil {
+		if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin, permissionHashInBadger, c); err != nil {
 			return err
 		}
 	}
@@ -248,15 +253,18 @@ func updateMetadataV2(c *gin.Context) error {
 
 	oldMetadataV2, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
 
+	publicKeyBin, err := hex.DecodeString(request.PublicKey)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse hex: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
 	if err != nil {
 		if err = account.IncrementMetadataCount(); err != nil {
 			return ForbiddenResponse(c, err)
 		}
 
 		ttl := time.Until(account.ExpirationDate())
-
-		// verification should already handle this error case
-		publicKeyBin, _ := hex.DecodeString(request.PublicKey)
 
 		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin, c)
 
@@ -352,7 +360,7 @@ func updateMetadataV2(c *gin.Context) error {
 
 	newMetadataV2 := base64.StdEncoding.EncodeToString(d.Binary())
 
-	if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataV2Key,
+	if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin,
 		permissionHashInBadger, c); err != nil {
 		return err
 	}
@@ -409,6 +417,12 @@ func deleteMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
 	}
 
+	publicKeyBin, err := hex.DecodeString(request.PublicKey)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse hex: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
 	permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
@@ -424,8 +438,7 @@ func deleteMetadataV2(c *gin.Context) error {
 	// This is only in effect for a limited time because many users already created metadataV2s without
 	// permission hashes being stored
 	if permissionHashInBadger != "" {
-		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataV2Key,
-			permissionHashInBadger, c); err != nil {
+		if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin, permissionHashInBadger, c); err != nil {
 			return err
 		}
 	}

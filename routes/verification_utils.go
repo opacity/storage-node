@@ -316,3 +316,15 @@ func verifyPermissions(publicKey, key, expectedPermissionHash string, c *gin.Con
 	}
 	return nil
 }
+
+func verifyPermissionsV2(publicKey []byte, key []byte, expectedPermissionHash string, c *gin.Context) error {
+	if expectedPermissionHash == "" {
+		return ForbiddenResponse(c, errors.New("resource is ineligible for modification"))
+	}
+	permissionHash := getPermissionHashV2(publicKey, key, c)
+
+	if permissionHash != expectedPermissionHash {
+		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))
+	}
+	return nil
+}
