@@ -3,6 +3,7 @@ package routes
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"time"
@@ -180,7 +181,7 @@ func getMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
 	}
 
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataV2Key)
+	permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
@@ -235,6 +236,16 @@ func updateMetadataV2(c *gin.Context) error {
 		return err
 	}
 
+	metadataV2KeyBin, err := base64.RawStdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	if len(metadataV2KeyBin) != 33 {
+		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
+	}
+
 	oldMetadataV2, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
 
 	if err != nil {
@@ -244,12 +255,12 @@ func updateMetadataV2(c *gin.Context) error {
 
 		ttl := time.Until(account.ExpirationDate())
 
-		permissionHash, err := getPermissionHash(request.PublicKey, requestBodyParsed.MetadataV2Key, c)
-		if err != nil {
-			return err
-		}
+		// verification should already handle this error case
+		publicKeyBin, _ := hex.DecodeString(request.PublicKey)
 
-		permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataV2Key)
+		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin, c)
+
+		permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
 
 		if err = utils.BatchSet(&utils.KVPairs{
 			requestBodyParsed.MetadataV2Key: "",
@@ -327,13 +338,6 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	metadataV2KeyBin, err := base64.RawStdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
-
-	if err != nil {
-		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-		return BadRequestResponse(c, err)
-	}
-
 	if secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) == false {
 		err = fmt.Errorf("bad request, can't verify signature: %v", err)
 		return BadRequestResponse(c, err)
@@ -343,7 +347,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataV2Key)
+	permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	newMetadataV2 := base64.StdEncoding.EncodeToString(d.Binary())
@@ -405,7 +409,7 @@ func deleteMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
 	}
 
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataV2Key)
+	permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {

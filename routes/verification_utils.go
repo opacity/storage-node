@@ -9,12 +9,12 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
-	"strconv"
 )
 
 const (
@@ -286,7 +286,16 @@ func getPermissionHash(publicKey, key string, c *gin.Context) (string, error) {
 	return permissionHash, nil
 }
 
+func getPermissionHashV2(publicKey, key []byte, c *gin.Context) string {
+	permissionHash := utils.HashStringV2(append(publicKey, key...))
+	return permissionHash
+}
+
 func getPermissionHashKeyForBadger(prefix string) string {
+	return prefix + "_permissionHash"
+}
+
+func getPermissionHashV2KeyForBadger(prefix string) string {
 	return prefix + "_permissionHash"
 }
 
