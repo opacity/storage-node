@@ -259,7 +259,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	if err != nil {
+	if err != nil || oldMetadataV2 == "" {
 		if err = account.IncrementMetadataCount(); err != nil {
 			return ForbiddenResponse(c, err)
 		}
@@ -278,10 +278,6 @@ func updateMetadataV2(c *gin.Context) error {
 			return InternalErrorResponse(c, err)
 		}
 
-		oldMetadataV2 = base64.StdEncoding.EncodeToString(dag.NewDAG().Binary())
-	}
-
-	if oldMetadataV2 == "" {
 		oldMetadataV2 = base64.StdEncoding.EncodeToString(dag.NewDAG().Binary())
 	}
 
