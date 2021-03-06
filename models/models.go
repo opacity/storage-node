@@ -37,7 +37,7 @@ func Connect(dbURL string) {
 
 	// List all the schema
 	DB.AutoMigrate(&Account{})
-	DB.AutoMigrate(&File{}).ModifyColumn("aws_object_key", "text")
+	DB.AutoMigrate(&File{})
 	DB.AutoMigrate(&S3ObjectLifeCycle{})
 	DB.AutoMigrate(&CompletedFile{})
 	DB.AutoMigrate(&CompletedUploadIndex{})
