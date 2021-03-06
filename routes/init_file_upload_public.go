@@ -39,7 +39,7 @@ func initFileUploadPublicWithContext(c *gin.Context) error {
 		return err
 	}
 
-	return initFileUploadWithRequest(request, c)
+	return initFileUploadPublicWithRequest(request, c)
 }
 
 func initFileUploadPublicWithRequest(request InitFileUploadReq, c *gin.Context) error {

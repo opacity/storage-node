@@ -251,14 +251,17 @@ func (file *File) FinishUpload(isPublic bool) (CompletedFile, error) {
 		ModifierHash:   file.ModifierHash,
 	}
 	if isPublic == true {
-		completedFile.FileSizeInByte = 0
 		shortID, err := shortid.Generate()
 		if err != nil {
-			completedFile.PublicID = shortID
+			return CompletedFile{}, err
 		}
-	}
-	if err := DB.Save(&completedFile).Error; err != nil {
-		return CompletedFile{}, err
+		if err = DB.Model(&completedFile).UpdateColumn("public_id", shortID).Error; err != nil {
+			return CompletedFile{}, err
+		}
+	} else {
+		if err := DB.Save(&completedFile).Error; err != nil {
+			return CompletedFile{}, err
+		}
 	}
 
 	if err := DeleteCompletedUploadIndexes(file.FileID); err != nil {

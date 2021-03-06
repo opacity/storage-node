@@ -10,7 +10,7 @@ type InitFileUploadObj struct {
 	FileHandle     string `form:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
 	FileSizeInByte int64  `form:"fileSizeInByte" binding:"required" example:"200000000000006"`
 	EndIndex       int    `form:"endIndex" binding:"required" example:"2"`
-	FileName       string `form: "fileName`
+	FileName       string `form:"fileName" example:"abcdefgh.jpg"`
 }
 
 type InitFileUploadReq struct {

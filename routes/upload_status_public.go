@@ -20,7 +20,7 @@ import "github.com/gin-gonic/gin"
 // @Router /api/v2/upload-status-public [post]
 /*CheckUploadStatusPublicHandler is a handler for checking upload statuses*/
 func CheckUploadStatusPublicHandler() gin.HandlerFunc {
-	return ginHandlerFunc(checkUploadStatusInit)
+	return ginHandlerFunc(checkUploadStatusPublicInit)
 }
 
 func checkUploadStatusPublicInit(c *gin.Context) error {
