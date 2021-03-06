@@ -73,13 +73,12 @@ func checkUploadStatus(c *gin.Context, isPublic bool) error {
 	completedFile, completedErr := models.GetCompletedFileByFileID(fileID)
 	if completedErr == nil && len(completedFile.FileID) != 0 {
 		if isPublic {
-			if utils.DoesDefaultBucketObjectExist(models.GetFileNameKey(fileID, request.uploadStatusObj.FileName)) {
+			if utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(fileID)) {
 				return OkResponse(c, fileUploadCompletedRes)
 			}
 		} else {
 			if utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)) {
 				return OkResponse(c, fileUploadCompletedRes)
-
 			}
 		}
 	}
@@ -121,7 +120,7 @@ func checkUploadStatus(c *gin.Context, isPublic bool) error {
 	}
 
 	if isPublic {
-		if err := utils.SetDefaultObjectCannedAcl(models.GetFileNameKey(completedFile.FileID, "test.jpg"), utils.CannedAcl_PublicRead); err != nil {
+		if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataPublicKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
 			return InternalErrorResponse(c, err)
 		}
 	} else {

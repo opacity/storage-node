@@ -22,7 +22,7 @@ type File struct {
 	UpdatedAt        time.Time `json:"updatedAt"`
 	ExpiredAt        time.Time `json:"expiredAt"`
 	AwsUploadID      *string   `json:"awsUploadID"`
-	AwsObjectKey     *string   `json:"awsObjectKey" gorm:"type:text"`
+	AwsObjectKey     *string   `json:"awsObjectKey"`
 	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
 	CompletedIndexes *string   `json:"completedIndexes" gorm:"type:mediumtext"`
 	ModifierHash     string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
@@ -107,8 +107,8 @@ func GetFileDataKey(fileID string) string {
 	return fileID + "/file"
 }
 
-func GetFileNameKey(fileID, fileName string) string {
-	return fmt.Sprintf("%s/%s", fileID, fileName)
+func GetFileDataPublicKey(fileID string) string {
+	return fileID + "/public"
 }
 
 /*Return File object(first one) if there is not any error. If not found, return nil without error. */

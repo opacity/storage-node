@@ -52,7 +52,7 @@ func initFileUploadPublicWithRequest(request InitFileUploadReq, c *gin.Context) 
 		return err
 	}
 
-	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileNameKey(request.initFileUploadObj.FileHandle, request.initFileUploadObj.FileName))
+	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataPublicKey(request.initFileUploadObj.FileHandle))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}

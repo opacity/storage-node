@@ -203,7 +203,7 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	v2Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())
 	v2Router.POST(UploadPublicPath, UploadFilePublicHandler())
 	v2Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
-	v2Router.POST(PublicShareURL, ShortlinkFileHandler())
+	v2Router.GET(PublicShareURL, ShortlinkFileHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {
