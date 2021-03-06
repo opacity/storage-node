@@ -70,6 +70,13 @@ func GetCompletedFileByFileID(fileID string) (CompletedFile, error) {
 	return completedFile, err
 }
 
+/*GetFileByShortlink returns the completed file object(first one) if there is not any error. If not found, return nil without error. */
+func GetFileByShortlink(shortlink string) (CompletedFile, error) {
+	completedFile := CompletedFile{}
+	err := DB.Where("public_id = ?", shortlink).First(&completedFile).Error
+	return completedFile, err
+}
+
 /*UpdateExpiredAt receives an array of file handles and updates the ExpiredAt times of any file that matches
 one of the file handles*/
 func UpdateExpiredAt(fileHandles []string, key string, newExpiredAtTime time.Time) error {

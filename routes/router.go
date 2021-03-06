@@ -94,8 +94,11 @@ const (
 	/*UploadStatusPath is the path for checking upload status*/
 	UploadStatusPath = "/upload-status"
 
-	/*UploadStatusPath is the path for checking upload status*/
+	/*UploadStatusPublicPath is the path for checking upload status*/
 	UploadStatusPublicPath = "/upload-status-public"
+
+	/*PublicShareURL is the path for getting the shortlink of a public shared filed*/
+	PublicShareURL = "public-share/:shortlink"
 
 	/*DeletePath is the path for deleting files*/
 	DeletePath = "/delete"
@@ -196,10 +199,11 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(StripeCreatePath, CreateStripePaymentHandler())
 }
 
-func setupV2Paths(v1Router *gin.RouterGroup) {
-	v1Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())
-	v1Router.POST(UploadPublicPath, UploadFilePublicHandler())
-	v1Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
+func setupV2Paths(v2Router *gin.RouterGroup) {
+	v2Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())
+	v2Router.POST(UploadPublicPath, UploadFilePublicHandler())
+	v2Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
+	v2Router.POST(PublicShareURL, ShortlinkFileHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {
