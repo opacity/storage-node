@@ -45,19 +45,10 @@ func (v *UploadStatusReq) getObjectRef() interface{} {
 // @Router /api/v1/upload-status [post]
 /*CheckUploadStatusHandler is a handler for checking upload statuses*/
 func CheckUploadStatusHandler() gin.HandlerFunc {
-	return ginHandlerFunc(checkUploadStatusInit)
+	return ginHandlerFunc(checkUploadStatus)
 }
 
-func checkUploadStatusInit(c *gin.Context) error {
-	err := checkUploadStatus(c, false)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func checkUploadStatus(c *gin.Context, isPublic bool) error {
+func checkUploadStatus(c *gin.Context) error {
 	request := UploadStatusReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
@@ -71,16 +62,9 @@ func checkUploadStatus(c *gin.Context, isPublic bool) error {
 
 	fileID := request.uploadStatusObj.FileHandle
 	completedFile, completedErr := models.GetCompletedFileByFileID(fileID)
-	if completedErr == nil && len(completedFile.FileID) != 0 {
-		if isPublic {
-			if utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(fileID)) {
-				return OkResponse(c, fileUploadCompletedRes)
-			}
-		} else {
-			if utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)) {
-				return OkResponse(c, fileUploadCompletedRes)
-			}
-		}
+	if completedErr == nil && len(completedFile.FileID) != 0 &&
+		utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)) {
+		return OkResponse(c, fileUploadCompletedRes)
 	}
 
 	file, err := models.GetFileById(fileID)
@@ -92,7 +76,7 @@ func checkUploadStatus(c *gin.Context, isPublic bool) error {
 		return err
 	}
 
-	completedFile, err = file.FinishUpload(isPublic)
+	completedFile, err = file.FinishUpload()
 	if err != nil {
 		if err == models.IncompleteUploadErr {
 			incompleteIndexes, err := models.GetIncompleteIndexesAsArray(file.FileID, file.EndIndex)
@@ -119,18 +103,12 @@ func checkUploadStatus(c *gin.Context, isPublic bool) error {
 		return InternalErrorResponse(c, utils.CollectErrors([]error{err, errS3, errSql}))
 	}
 
-	if isPublic {
-		if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataPublicKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
-			return InternalErrorResponse(c, err)
-		}
-	} else {
-		if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
-			return InternalErrorResponse(c, err)
-		}
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
+		return InternalErrorResponse(c, err)
+	}
 
-		if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
-			return InternalErrorResponse(c, err)
-		}
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
+		return InternalErrorResponse(c, err)
 	}
 
 	return OkResponse(c, fileUploadCompletedRes)

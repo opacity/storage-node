@@ -227,7 +227,7 @@ func (file *File) UploadCompleted() bool {
 }
 
 /*FinishUpload - finishes the upload*/
-func (file *File) FinishUpload(isPublic bool) (CompletedFile, error) {
+func (file *File) FinishUpload() (CompletedFile, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
 		return CompletedFile{}, IncompleteUploadErr
@@ -250,18 +250,8 @@ func (file *File) FinishUpload(isPublic bool) (CompletedFile, error) {
 		FileSizeInByte: objectSize,
 		ModifierHash:   file.ModifierHash,
 	}
-	if isPublic == true {
-		shortID, err := shortid.Generate()
-		if err != nil {
-			return CompletedFile{}, err
-		}
-		if err = DB.Model(&completedFile).UpdateColumn("public_id", shortID).Error; err != nil {
-			return CompletedFile{}, err
-		}
-	} else {
-		if err := DB.Save(&completedFile).Error; err != nil {
-			return CompletedFile{}, err
-		}
+	if err := DB.Save(&completedFile).Error; err != nil {
+		return CompletedFile{}, err
 	}
 
 	if err := DeleteCompletedUploadIndexes(file.FileID); err != nil {
@@ -269,6 +259,47 @@ func (file *File) FinishUpload(isPublic bool) (CompletedFile, error) {
 	}
 
 	return completedFile, DB.Delete(file).Error
+}
+
+/*FinishUploadPublic - finishes the public upload*/
+func (file *File) FinishUploadPublic() (PublicShare, error) {
+	allChunksUploaded := file.UploadCompleted()
+	if !allChunksUploaded {
+		return PublicShare{}, IncompleteUploadErr
+	}
+
+	completedParts, err := GetCompletedPartsAsArray(file.FileID)
+	if err != nil {
+		return PublicShare{}, err
+	}
+
+	objectKey := aws.StringValue(file.AwsObjectKey)
+	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
+		return PublicShare{}, err
+	}
+
+	shortID, err := shortid.Generate()
+	if err != nil {
+		return PublicShare{}, err
+	}
+	completedFile, err := GetCompletedFileByFileID(file.FileID)
+	if err != nil {
+		return PublicShare{}, err
+	}
+	publicShare := PublicShare{
+		PublicID:   shortID,
+		ViewsCount: 0,
+		FileID:     completedFile.FileID,
+	}
+	if err := DB.Save(&publicShare).Error; err != nil {
+		return PublicShare{}, err
+	}
+
+	if err := DeleteCompletedUploadIndexes(file.FileID); err != nil {
+		return publicShare, err
+	}
+
+	return publicShare, DB.Delete(file).Error
 }
 
 /*DeleteUploadsOlderThan will delete files older than the time provided.  If a file still isn't complete by the
