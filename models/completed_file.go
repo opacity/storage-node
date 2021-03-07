@@ -16,7 +16,6 @@ type CompletedFile struct {
 	ExpiredAt      time.Time `json:"expiredAt"`
 	FileSizeInByte int64     `json:"fileSizeInByte"`
 	ModifierHash   string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
-	PublicID       string    `json:"publicId" gorm:"nullable"`
 	ApiVersion     int       `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
 }
 
@@ -67,13 +66,6 @@ func GetTotalFileSizeInByte() (int64, error) {
 func GetCompletedFileByFileID(fileID string) (CompletedFile, error) {
 	completedFile := CompletedFile{}
 	err := DB.Where("file_id = ?", fileID).First(&completedFile).Error
-	return completedFile, err
-}
-
-/*GetFileByShortlink returns the completed file object(first one) if there is not any error. If not found, return nil without error. */
-func GetFileByShortlink(shortlink string) (CompletedFile, error) {
-	completedFile := CompletedFile{}
-	err := DB.Where("public_id = ?", shortlink).First(&completedFile).Error
 	return completedFile, err
 }
 
