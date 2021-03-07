@@ -29,9 +29,9 @@ func ShortlinkFileHandler() gin.HandlerFunc {
 
 func shortlinkFile(c *gin.Context) error {
 	shortlink := c.Param("shortlink")
-	file, err := models.GetFileByShortlink(shortlink)
+	publicShare, err := models.GetPublicShareByID(shortlink)
 
-	fileDataPublicKey := models.GetFileDataPublicKey(file.FileID)
+	fileDataPublicKey := models.GetFileDataPublicKey(publicShare.FileID)
 	if err != nil || !utils.DoesDefaultBucketObjectExist(fileDataPublicKey) {
 		return NotFoundResponse(c, errors.New("file does not exist"))
 	}

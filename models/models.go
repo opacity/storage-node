@@ -45,6 +45,7 @@ func Connect(dbURL string) {
 	DB.AutoMigrate(&Upgrade{})
 	DB.AutoMigrate(&Renewal{})
 	DB.AutoMigrate(&ExpiredAccount{})
+	DB.AutoMigrate(&PublicShare{})
 }
 
 /*Close a database connection*/
