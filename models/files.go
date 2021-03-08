@@ -292,7 +292,7 @@ func (file *File) FinishUploadPublic() (PublicShare, error) {
 		FileID:     completedFile.FileID,
 	}
 	if err := DB.Save(&publicShare).Error; err != nil {
-		return PublicShare{}, err
+		return PublicShare{}, errors.New("could not save public share to database, possible duplicate")
 	}
 
 	if err := DeleteCompletedUploadIndexes(file.FileID); err != nil {
