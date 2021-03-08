@@ -8,7 +8,6 @@ import (
 
 type UploadStatusObj struct {
 	FileHandle string `json:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-	FileName   string `json:"fileName"`
 }
 
 type UploadStatusReq struct {
