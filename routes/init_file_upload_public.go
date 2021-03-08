@@ -7,21 +7,21 @@ import (
 )
 
 // InitFileUploadPublicHandler godoc
-// @Summary start an upload
-// @Description start an upload
-// @Accept  mpfd
-// @Produce  json
-// @Param InitFileUploadReq body routes.InitFileUploadReq true "an object to start a file upload"
+// @Summary start a public upload
+// @Description start a public upload.
+// @Accept mpfd
+// @Produce json
+// @Param InitFileUploadReq body routes.InitFileUploadReq true "an object to start a public file upload"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"fileHandle": "a deterministically created file handle",
-// @description 	"fileSizeInByte": "200000000000006",
+// @description 	"fileHandle": "the file ID for which the public file should be created",
+// @description 	"fileSizeInByte": "55600008877",
 // @description 	"endIndex": 2
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 403 {string} string "signature did not match / account does not exist"
 // @Failure 500 {string} string "some information about the internal error"
-// @Failure 403 {string} string "signature did not match"
 // @Router /api/v2/init-upload-public [post]
 /*InitFileUploadPublicHandler is a handler for the user to start uploads*/
 func InitFileUploadPublicHandler() gin.HandlerFunc {

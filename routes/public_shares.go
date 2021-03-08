@@ -32,13 +32,14 @@ func (v *publicShareOpsReq) getObjectRef() interface{} {
 }
 
 // ShortlinkFileHandler godoc
-// @Summary get S3 url for a file
+// @Summary get S3 url for a publicly shared file
 // @Description get the S3 URL for a publicly shared file
 // @Accept  json
 // @Produce  json
+// @Param shortlink path string true "shortlink ID"
 // @Success 200 {object} shortlinkFileResp
-// @Failure 400 {string} string "bad request, unable to update views count, with the error"
 // @Failure 404 {string} string "file does not exist"
+// @Failure 500 {string} string "there was an error parsing your request"
 // @Router /api/v2/public-share/:shortlink [get]
 /*ShortlinkFileHandler is a handler for the user get the S3 url of a public file*/
 func ShortlinkFileHandler() gin.HandlerFunc {
@@ -54,9 +55,11 @@ func ShortlinkFileHandler() gin.HandlerFunc {
 // @description {
 // @description 	"shortlink": "the shortlink of the completed file",
 // @description }
-// @Success 200 {object} viewsCountResp
+// @Param publicShareOpsReq body publicShareOpsReq true "an object to do operations on a public share"
+// @Success 200 {object} routes.viewsCountResp
 // @Failure 400 {string} string "bad request, unable to get views count"
-// @Failure 404 {string} string "file does not exist"
+// @Failure 403 {string} string "signature did not match"
+// @Failure 404 {string} string "public share or file does not exist"
 // @Router /api/v2/public-share/views-count [post]
 /*ViewsCountHandler is a handler for the user get the views count a public file*/
 func ViewsCountHandler() gin.HandlerFunc {
@@ -72,10 +75,12 @@ func ViewsCountHandler() gin.HandlerFunc {
 // @description {
 // @description 	"shortlink": "the shortlink of the completed file",
 // @description }
-// @Success 200 {object} viewsCountResp
-// @Failure 400 {string} string "bad request, unable to get views count"
+// @Param publicShareOpsReq body publicShareOpsReq true "an object to do operations on a public share"
+// @Success 200 {object} routes.StatusRes
+// @Failure 400 {string} string "bad request, unable to revoke public share"
+// @Failure 403 {string} string "signature did not match"
 // @Failure 404 {string} string "file does not exist"
-// @Failure 500 {string} string "public file could not be deleted"
+// @Failure 500 {string} string "public file could not be deleted from databse or S3"
 // @Router /api/v2/public-share/revoke [post]
 /*RevokePublicShareHandler is a handler for the user get the views count a public file*/
 func RevokePublicShareHandler() gin.HandlerFunc {
@@ -93,7 +98,7 @@ func shortlinkURL(c *gin.Context) error {
 
 	err = publicShare.UpdateViewsCount()
 	if err != nil {
-		return BadRequestResponse(c, err)
+		return InternalErrorResponse(c, errors.New("there was an error parsing your request"))
 	}
 	return OkResponse(c, shortlinkFileResp{
 		URL: fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, fileDataPublicKey),
