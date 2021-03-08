@@ -9,13 +9,13 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type viewsCountReq struct {
+type publicShareOpsReq struct {
 	verification
 	requestBody
-	viewsCountObj viewsCountObj
+	publicShareObj publicShareObj
 }
 
-type viewsCountObj struct {
+type publicShareObj struct {
 	Shortlink string `json:"shortlink" binding:"required" example:"the short link of the completed file"`
 }
 
@@ -27,8 +27,8 @@ type viewsCountResp struct {
 	Count int `json:"count"`
 }
 
-func (v *viewsCountReq) getObjectRef() interface{} {
-	return &v.viewsCountObj
+func (v *publicShareOpsReq) getObjectRef() interface{} {
+	return &v.publicShareObj
 }
 
 // ShortlinkFileHandler godoc
@@ -65,6 +65,26 @@ func ViewsCountHandler() gin.HandlerFunc {
 	return ginHandlerFunc(viewsCount)
 }
 
+// RevokePublicShareHandler godoc
+// @Summary revokes public share
+// @Description remove a public share entry, revoke the share
+// @Accept json
+// @Produce json
+// @Param viewsCountResp
+// @description requestBody should be a stringified version of):
+// @description {
+// @description 	"shortlink": "the shortlink of the completed file",
+// @description }
+// @Success 200 {object} viewsCountResp
+// @Failure 400 {string} string "bad request, unable to get views count"
+// @Failure 404 {string} string "file does not exist"
+// @Failure 500 {string} string "public file could not be deleted"
+// @Router /api/v2/public-share/views-count [post]
+/*RevokePublicShareHandler is a handler for the user get the views count a public file*/
+func RevokePublicShareHandler() gin.HandlerFunc {
+	return ginHandlerFunc(revokePublicShare)
+}
+
 func shortlinkURL(c *gin.Context) error {
 	shortlink := c.Param("shortlink")
 	publicShare, err := models.GetPublicShareByID(shortlink)
@@ -84,15 +104,15 @@ func shortlinkURL(c *gin.Context) error {
 }
 
 func viewsCount(c *gin.Context) error {
-	request := viewsCountReq{}
+	request := publicShareOpsReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
 	}
 
-	publicShare, err := models.GetPublicShareByID(request.viewsCountObj.Shortlink)
+	publicShare, err := models.GetPublicShareByID(request.publicShareObj.Shortlink)
 	if err != nil {
-		return NotFoundResponse(c, errors.New("shortlink does not exist"))
+		return NotFoundResponse(c, errors.New("public share does not exist"))
 	}
 
 	completedFile, err := models.GetCompletedFileByFileID(publicShare.FileID)
@@ -109,5 +129,26 @@ func viewsCount(c *gin.Context) error {
 
 	return OkResponse(c, viewsCountResp{
 		Count: publicShare.ViewsCount,
+	})
+}
+
+func revokePublicShare(c *gin.Context) error {
+	request := publicShareOpsReq{}
+
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
+	}
+
+	publicShare, err := models.GetPublicShareByID(request.publicShareObj.Shortlink)
+	if err != nil {
+		return NotFoundResponse(c, errors.New("public share does not exist"))
+	}
+
+	if err = publicShare.RemovePublicShare(); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	return OkResponse(c, StatusRes{
+		Status: "Public share revoked",
 	})
 }

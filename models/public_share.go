@@ -21,3 +21,8 @@ func GetPublicShareByID(publicID string) (PublicShare, error) {
 func (publicShare *PublicShare) UpdateViewsCount() error {
 	return DB.Model(&publicShare).Update("views_count", publicShare.ViewsCount+1).Error
 }
+
+// RemovePublicShare removes a public share (revokes it)
+func (publicShare *PublicShare) RemovePublicShare() error {
+	return DB.Delete(&publicShare).Error
+}
