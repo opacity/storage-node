@@ -104,7 +104,7 @@ const (
 	PublicShareViewsCountPath = "public-share/views-count"
 
 	/*PublicShareRevokePath is the path for revoking the share of a public file*/
-	PublicShareRevokePath = "public-share/views-count"
+	PublicShareRevokePath = "public-share/revoke"
 
 	/*DeletePath is the path for deleting files*/
 	DeletePath = "/delete"
