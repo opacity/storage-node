@@ -84,10 +84,10 @@ var (
 	addressNonceMap                AddressToNonceMap
 	MainWalletAddress              common.Address
 	MainWalletPrivateKey           *ecdsa.PrivateKey
-	DefaultGasPrice                = utils.ConvertGweiToWei(big.NewInt(20))
+	DefaultGasPrice                = utils.ConvertGweiToWei(big.NewInt(80))
 	DefaultGasForPaymentCollection = new(big.Int).Mul(DefaultGasPrice, big.NewInt(int64(GasLimitTokenSend)))
-	SlowGasPrice                   = utils.ConvertGweiToWei(big.NewInt(20))
-	FastGasPrice                   = utils.ConvertGweiToWei(big.NewInt(25))
+	SlowGasPrice                   = utils.ConvertGweiToWei(big.NewInt(80))
+	FastGasPrice                   = utils.ConvertGweiToWei(big.NewInt(145))
 )
 
 func init() {
