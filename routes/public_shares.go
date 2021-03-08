@@ -36,7 +36,6 @@ func (v *publicShareOpsReq) getObjectRef() interface{} {
 // @Description get the S3 URL for a publicly shared file
 // @Accept  json
 // @Produce  json
-// @Param shortlinkFileReq
 // @Success 200 {object} shortlinkFileResp
 // @Failure 400 {string} string "bad request, unable to update views count, with the error"
 // @Failure 404 {string} string "file does not exist"
@@ -51,7 +50,6 @@ func ShortlinkFileHandler() gin.HandlerFunc {
 // @Description get the views count for a publicly shared file
 // @Accept json
 // @Produce json
-// @Param viewsCountResp
 // @description requestBody should be a stringified version of):
 // @description {
 // @description 	"shortlink": "the shortlink of the completed file",
@@ -70,7 +68,6 @@ func ViewsCountHandler() gin.HandlerFunc {
 // @Description remove a public share entry, revoke the share
 // @Accept json
 // @Produce json
-// @Param viewsCountResp
 // @description requestBody should be a stringified version of):
 // @description {
 // @description 	"shortlink": "the shortlink of the completed file",
@@ -116,9 +113,6 @@ func viewsCount(c *gin.Context) error {
 	}
 
 	completedFile, err := models.GetCompletedFileByFileID(publicShare.FileID)
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
 	if err != nil {
 		return NotFoundResponse(c, errors.New("file does not exist"))
 	}
