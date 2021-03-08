@@ -97,14 +97,17 @@ const (
 	/*UploadStatusPublicPath is the path for checking upload status*/
 	UploadStatusPublicPath = "/upload-status-public"
 
-	/*PublicSharePath is the path for getting the shortlink of a public shared filed*/
-	PublicSharePath = "public-share/:shortlink"
+	/*PublicSharePathPrefix is the base path public shared files*/
+	PublicSharePathPrefix = "public-share"
+
+	/*PublicShareShortlinkPath is the path for getting the shortlink of a public shared files*/
+	PublicShareShortlinkPath = "/:shortlink"
 
 	/*PublicShareViewsCountPath is the path for getting the shortlink of a public shared file*/
-	PublicShareViewsCountPath = "public-share/views-count"
+	PublicShareViewsCountPath = "/views-count"
 
 	/*PublicShareRevokePath is the path for revoking the share of a public file*/
-	PublicShareRevokePath = "public-share/revoke"
+	PublicShareRevokePath = "/revoke"
 
 	/*DeletePath is the path for deleting files*/
 	DeletePath = "/delete"
@@ -211,9 +214,11 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	v2Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())
 	v2Router.POST(UploadPublicPath, UploadFilePublicHandler())
 	v2Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
-	v2Router.GET(PublicSharePath, ShortlinkFileHandler())
-	v2Router.POST(PublicShareViewsCountPath, ViewsCountHandler())
-	v2Router.POST(PublicShareRevokePath, RevokePublicShareHandler())
+
+	publicShareRouterGroup := v2Router.Group(PublicSharePathPrefix)
+	publicShareRouterGroup.GET(PublicShareShortlinkPath, ShortlinkFileHandler())
+	publicShareRouterGroup.POST(PublicShareViewsCountPath, ViewsCountHandler())
+	publicShareRouterGroup.POST(PublicShareRevokePath, RevokePublicShareHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {
