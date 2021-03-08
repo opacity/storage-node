@@ -50,7 +50,7 @@ func ShortlinkFileHandler() gin.HandlerFunc {
 // @Description get the views count for a publicly shared file
 // @Accept json
 // @Produce json
-// @description requestBody should be a stringified version of):
+// @description requestBody should be a stringified version of:
 // @description {
 // @description 	"shortlink": "the shortlink of the completed file",
 // @description }
@@ -76,7 +76,7 @@ func ViewsCountHandler() gin.HandlerFunc {
 // @Failure 400 {string} string "bad request, unable to get views count"
 // @Failure 404 {string} string "file does not exist"
 // @Failure 500 {string} string "public file could not be deleted"
-// @Router /api/v2/public-share/views-count [post]
+// @Router /api/v2/public-share/revoke [post]
 /*RevokePublicShareHandler is a handler for the user get the views count a public file*/
 func RevokePublicShareHandler() gin.HandlerFunc {
 	return ginHandlerFunc(revokePublicShare)

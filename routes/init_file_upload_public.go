@@ -22,8 +22,8 @@ import (
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 500 {string} string "some information about the internal error"
 // @Failure 403 {string} string "signature did not match"
-// @Router /api/v1/init-upload [post]
-/*InitFileUploadHandler is a handler for the user to start uploads*/
+// @Router /api/v2/init-upload-public [post]
+/*InitFileUploadPublicHandler is a handler for the user to start uploads*/
 func InitFileUploadPublicHandler() gin.HandlerFunc {
 	return ginHandlerFunc(initFileUploadPublicWithContext)
 }

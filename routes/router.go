@@ -55,10 +55,10 @@ const (
 	/*AccountUpgradePath is the path for checking the upgrade status of an account*/
 	AccountUpgradePath = "/upgrade"
 
-	/*AccountUpgradeInvoicePath is the path for getting an invoice to renew an account*/
+	/*AccountRenewInvoicePath is the path for getting an invoice to renew an account*/
 	AccountRenewInvoicePath = "/renew/invoice"
 
-	/*AccountUpgradePath is the path for checking the renew status of an account*/
+	/*AccountRenewPath is the path for checking the renew status of an account*/
 	AccountRenewPath = "/renew"
 
 	/*AdminPath is a router group for admin task. */
@@ -120,12 +120,14 @@ const MaxRequestSize = utils.MaxMultiPartSize + 1000
 
 var maintenanceError = errors.New("maintenance in progress, currently rejecting writes")
 
+// StatusRes ...
 type StatusRes struct {
 	Status string `json:"status" example:"status of the request"`
 }
 
+// PlanResponse ...
 type PlanResponse struct {
-	Plans utils.PlanResponseType `json:"plans" example:"an object of the plans we offer"`
+	Plans utils.PlanResponseType `json:"plans"`
 }
 
 func init() {
