@@ -144,6 +144,10 @@ func revokePublicShare(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("public share does not exist"))
 	}
 
+	if err := utils.DeleteDefaultBucketObjectKeys(models.GetFileDataPublicKey(publicShare.FileID)); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
 	if err = publicShare.RemovePublicShare(); err != nil {
 		return InternalErrorResponse(c, err)
 	}
