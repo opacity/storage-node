@@ -20,6 +20,7 @@ type shortlinkFileResp struct {
 // @Produce  json
 // @Param shortlinkFileReq
 // @Success 200 {object} shortlinkFileResp
+// @Failure 400 {string} string "bad request, unable to update views count, with the error"
 // @Failure 404 {string} string "file does not exist"
 // @Router /api/v2/public-share/:shortlink [get]
 /*ShortlinkFileHandler is a handler for the user get the S3 url of a public file*/
@@ -36,6 +37,10 @@ func shortlinkFile(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("file does not exist"))
 	}
 
+	err = publicShare.UpdateViewsCount()
+	if err != nil {
+		return BadRequestResponse(c, err)
+	}
 	return OkResponse(c, shortlinkFileResp{
 		URL: fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, fileDataPublicKey),
 	})
