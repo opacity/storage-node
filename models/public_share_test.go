@@ -5,7 +5,6 @@ import (
 
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/teris-io/shortid"
 )
 
 func Test_Init_PublicShare(t *testing.T) {
@@ -15,11 +14,10 @@ func Test_Init_PublicShare(t *testing.T) {
 
 func Test_Get_PublicShare_By_ID(t *testing.T) {
 	DeletePublicSharesForTest(t)
-	s := createTestPublicShare()
-	assert.Nil(t, DB.Create(&s).Error)
+	ps := CreateTestPublicShare(t)
 
-	publicShare, err := GetPublicShareByID(s.PublicID)
-	assert.True(t, publicShare.FileID == s.FileID)
+	publicShare, err := GetPublicShareByID(ps.PublicID)
+	assert.True(t, publicShare.FileID == ps.FileID)
 	assert.Nil(t, err)
 
 	t.Cleanup(func() {
@@ -29,35 +27,30 @@ func Test_Get_PublicShare_By_ID(t *testing.T) {
 
 func Test_Public_Share_FileID_Unique(t *testing.T) {
 	DeletePublicSharesForTest(t)
-	s1 := createTestPublicShare()
-	s2 := createTestPublicShare()
-	assert.Nil(t, DB.Create(&s1).Error)
+	ps1 := CreateTestPublicShare(t)
+	ps2 := CreatePublicShareObj()
 
-	s2.FileID = s1.FileID
-	err := DB.Create(&s2).Error
+	ps2.FileID = ps1.FileID
+	err := DB.Create(&ps2).Error
 	if err == nil {
 		t.Fatalf("two shortlinks for the same FileID is not allowed")
 	}
 
 	t.Cleanup(func() {
-		s1.RemovePublicShare()
+		ps1.RemovePublicShare()
 	})
 }
 
 func Test_Public_Share_Empty_FileID_Fails(t *testing.T) {
-	s := createTestPublicShare()
-	s.FileID = ""
+	DeletePublicSharesForTest(t)
+	ps := CreatePublicShareObj()
+	ps.FileID = ""
 
-	if err := utils.Validator.Struct(s); err == nil {
+	if err := utils.Validator.Struct(ps); err == nil {
 		t.Fatalf("public share with an empty FileID is not allowed")
 	}
-}
 
-func createTestPublicShare() PublicShare {
-	shortID, _ := shortid.Generate()
-	return PublicShare{
-		PublicID:   shortID,
-		ViewsCount: 0,
-		FileID:     utils.GenerateFileHandle(),
-	}
+	t.Cleanup(func() {
+		ps.RemovePublicShare()
+	})
 }

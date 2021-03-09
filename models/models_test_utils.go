@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/opacity/storage-node/utils"
+	"github.com/stretchr/testify/assert"
+	"github.com/teris-io/shortid"
 )
 
 func DeleteAccountsForTest(t *testing.T) {
@@ -75,5 +77,20 @@ func DeletePublicSharesForTest(t *testing.T) {
 		t.Fatalf("should only be calling DeletePublicSharesForTest method on test database")
 	} else {
 		DB.Exec("DELETE from public_shares;")
+	}
+}
+
+func CreateTestPublicShare(t *testing.T) PublicShare {
+	ps := CreatePublicShareObj()
+	assert.Nil(t, DB.Create(&ps).Error)
+	return ps
+}
+
+func CreatePublicShareObj() PublicShare {
+	shortID, _ := shortid.Generate()
+	return PublicShare{
+		PublicID:   shortID,
+		ViewsCount: 0,
+		FileID:     utils.GenerateFileHandle(),
 	}
 }
