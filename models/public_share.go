@@ -6,8 +6,8 @@ import "time"
 type PublicShare struct {
 	PublicID   string    `gorm:"primary_key;autoIncrement:false" json:"public_id" binding:"required"`
 	CreatedAt  time.Time `json:"createdAt"`
-	ViewsCount int       `json:"views_count"`
-	FileID     string    `gorm:"UNIQUE_INDEX:idx_publicshare;" json:"file_id"`
+	ViewsCount int       `gorm:"not null" json:"views_count"`
+	FileID     string    `gorm:"UNIQUE_INDEX:idx_publicshare;not null" json:"file_id"`
 }
 
 // GetPublicShareByID returns the public share. If not found, return nil without error.
