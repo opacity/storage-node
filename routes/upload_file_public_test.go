@@ -49,6 +49,10 @@ func Test_UploadFilePublicStorageDoesNotCount(t *testing.T) {
 
 	updatedAccount, _ := models.GetAccountById(account.AccountID)
 	assert.Equal(t, updatedAccount.StorageUsedInByte, account.StorageUsedInByte)
+
+	t.Cleanup(func() {
+		cleanUpBeforeTest(t)
+	})
 }
 
 func initFileUploadPublic(t *testing.T, endIndex int, privateKey *ecdsa.PrivateKey) InitFileUploadObj {

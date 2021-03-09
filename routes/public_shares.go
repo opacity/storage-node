@@ -9,13 +9,13 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type publicShareOpsReq struct {
+type PublicShareOpsReq struct {
 	verification
 	requestBody
-	publicShareObj publicShareObj
+	publicShareObj PublicShareObj
 }
 
-type publicShareObj struct {
+type PublicShareObj struct {
 	Shortlink string `json:"shortlink" binding:"required" example:"the short link of the completed file"`
 }
 
@@ -27,7 +27,7 @@ type viewsCountResp struct {
 	Count int `json:"count"`
 }
 
-func (v *publicShareOpsReq) getObjectRef() interface{} {
+func (v *PublicShareOpsReq) getObjectRef() interface{} {
 	return &v.publicShareObj
 }
 
@@ -106,7 +106,7 @@ func shortlinkURL(c *gin.Context) error {
 }
 
 func viewsCount(c *gin.Context) error {
-	request := publicShareOpsReq{}
+	request := PublicShareOpsReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
@@ -132,7 +132,7 @@ func viewsCount(c *gin.Context) error {
 }
 
 func revokePublicShare(c *gin.Context) error {
-	request := publicShareOpsReq{}
+	request := PublicShareOpsReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
@@ -143,9 +143,7 @@ func revokePublicShare(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("public share does not exist"))
 	}
 
-	if err := utils.DeleteDefaultBucketObjectKeys(models.GetFileDataPublicKey(publicShare.FileID)); err != nil {
-		return InternalErrorResponse(c, err)
-	}
+	utils.DeleteDefaultBucketObjectKeys(models.GetFileDataPublicKey(publicShare.FileID))
 
 	if err = publicShare.RemovePublicShare(); err != nil {
 		return InternalErrorResponse(c, err)
