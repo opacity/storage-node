@@ -44,7 +44,7 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 		return true, "", 1
 	}
 
-	w := httpPostRequestHelperForTest(t, StripeCreatePath, post)
+	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -72,7 +72,7 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 		return false, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, StripeCreatePath, post)
+	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.Contains(t, w.Body.String(), noAccountWithThatID)
@@ -100,7 +100,7 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 		return true, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, StripeCreatePath, post)
+	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), "account is already paid for")
@@ -131,7 +131,7 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 		return false, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, StripeCreatePath, post)
+	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), "cannot create stripe charge for less than $0.50")
@@ -163,7 +163,7 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 		return false, "", 1
 	}
 
-	w := httpPostRequestHelperForTest(t, StripeCreatePath, post)
+	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
 
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
 }

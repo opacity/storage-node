@@ -40,6 +40,9 @@ const (
 	/*V1Path is a router group for the v1 version of storage node*/
 	V1Path = "/api/v1"
 
+	/*V2Path is a router group for the v2 version of storage node*/
+	V2Path = "/api/v2"
+
 	/*AccountsPath is the path for dealing with accounts*/
 	AccountsPath = "/accounts"
 
@@ -52,10 +55,10 @@ const (
 	/*AccountUpgradePath is the path for checking the upgrade status of an account*/
 	AccountUpgradePath = "/upgrade"
 
-	/*AccountUpgradeInvoicePath is the path for getting an invoice to renew an account*/
+	/*AccountRenewInvoicePath is the path for getting an invoice to renew an account*/
 	AccountRenewInvoicePath = "/renew/invoice"
 
-	/*AccountUpgradePath is the path for checking the renew status of an account*/
+	/*AccountRenewPath is the path for checking the renew status of an account*/
 	AccountRenewPath = "/renew"
 
 	/*AdminPath is a router group for admin task. */
@@ -82,8 +85,29 @@ const (
 	/*UploadPath is the path for uploading files to paid accounts*/
 	UploadPath = "/upload"
 
+	/*InitUploadPublicPath is the path for initiating the upload of files for public sharing*/
+	InitUploadPublicPath = "/init-upload-public"
+
+	/*UploadPublicPath is the path for uploading files for public sharing*/
+	UploadPublicPath = "/upload-public"
+
 	/*UploadStatusPath is the path for checking upload status*/
 	UploadStatusPath = "/upload-status"
+
+	/*UploadStatusPublicPath is the path for checking upload status*/
+	UploadStatusPublicPath = "/upload-status-public"
+
+	/*PublicSharePathPrefix is the base path public shared files*/
+	PublicSharePathPrefix = "public-share"
+
+	/*PublicShareShortlinkPath is the path for getting the shortlink of a public shared files*/
+	PublicShareShortlinkPath = "/:shortlink"
+
+	/*PublicShareViewsCountPath is the path for getting the shortlink of a public shared file*/
+	PublicShareViewsCountPath = "/views-count"
+
+	/*PublicShareRevokePath is the path for revoking the share of a public file*/
+	PublicShareRevokePath = "/revoke"
 
 	/*DeletePath is the path for deleting files*/
 	DeletePath = "/delete"
@@ -99,12 +123,14 @@ const MaxRequestSize = utils.MaxMultiPartSize + 1000
 
 var maintenanceError = errors.New("maintenance in progress, currently rejecting writes")
 
+// StatusRes ...
 type StatusRes struct {
 	Status string `json:"status" example:"status of the request"`
 }
 
+// PlanResponse ...
 type PlanResponse struct {
-	Plans utils.PlanResponseType `json:"plans" example:"an object of the plans we offer"`
+	Plans utils.PlanResponseType `json:"plans"`
 }
 
 func init() {
@@ -117,6 +143,7 @@ func CreateRoutes() {
 	router := returnEngine()
 
 	setupV1Paths(returnV1Group(router))
+	setupV2Paths(returnV2Group(router))
 	setupAdminPaths(router)
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -151,6 +178,10 @@ func returnV1Group(router *gin.Engine) *gin.RouterGroup {
 	return router.Group(V1Path)
 }
 
+func returnV2Group(router *gin.Engine) *gin.RouterGroup {
+	return router.Group(V2Path)
+}
+
 func setupV1Paths(v1Router *gin.RouterGroup) {
 	v1Router.POST(AccountsPath, CreateAccountHandler())
 	v1Router.POST(AccountDataPath, CheckAccountPaymentStatusHandler())
@@ -177,6 +208,17 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 
 	// Stripe endpoints
 	v1Router.POST(StripeCreatePath, CreateStripePaymentHandler())
+}
+
+func setupV2Paths(v2Router *gin.RouterGroup) {
+	v2Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())
+	v2Router.POST(UploadPublicPath, UploadFilePublicHandler())
+	v2Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
+
+	publicShareRouterGroup := v2Router.Group(PublicSharePathPrefix)
+	publicShareRouterGroup.GET(PublicShareShortlinkPath, ShortlinkFileHandler())
+	publicShareRouterGroup.POST(PublicShareViewsCountPath, ViewsCountHandler())
+	publicShareRouterGroup.POST(PublicShareRevokePath, RevokePublicShareHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {

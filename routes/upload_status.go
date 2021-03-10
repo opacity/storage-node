@@ -59,16 +59,16 @@ func checkUploadStatus(c *gin.Context) error {
 		return err
 	}
 
-	fileId := request.uploadStatusObj.FileHandle
-	completedFile, completedErr := models.GetCompletedFileByFileID(fileId)
+	fileID := request.uploadStatusObj.FileHandle
+	completedFile, completedErr := models.GetCompletedFileByFileID(fileID)
 	if completedErr == nil && len(completedFile.FileID) != 0 &&
-		utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileId)) {
+		utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)) {
 		return OkResponse(c, fileUploadCompletedRes)
 	}
 
-	file, err := models.GetFileById(fileId)
+	file, err := models.GetFileById(fileID)
 	if err != nil || len(file.FileID) == 0 {
-		return FileNotFoundResponse(c, fileId)
+		return FileNotFoundResponse(c, fileID)
 	}
 
 	if err := verifyPermissions(request.PublicKey, request.uploadStatusObj.FileHandle, file.ModifierHash, c); err != nil {

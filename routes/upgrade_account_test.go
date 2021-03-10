@@ -43,7 +43,7 @@ func Test_GetAccountUpgradeInvoiceHandler_Returns_Invoice(t *testing.T) {
 	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
 	models.DB.Save(&account)
 
-	w := httpPostRequestHelperForTest(t, AccountUpgradeInvoicePath, getInvoiceReq)
+	w := httpPostRequestHelperForTest(t, AccountUpgradeInvoicePath, "v1", getInvoiceReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	//assert.Contains(t, w.Body.String(), `"usdInvoice":100`)
@@ -95,7 +95,7 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Success(t *testi
 		return true, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, AccountUpgradePath, checkUpgradeStatusReq)
+	w := httpPostRequestHelperForTest(t, AccountUpgradePath, "v1", checkUpgradeStatusReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -157,7 +157,7 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Still_Pending(t 
 		return false, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, AccountUpgradePath, checkUpgradeStatusReq)
+	w := httpPostRequestHelperForTest(t, AccountUpgradePath, "v1", checkUpgradeStatusReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -321,7 +321,7 @@ func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 		return true, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, AccountUpgradePath, checkUpgradeStatusReq)
+	w := httpPostRequestHelperForTest(t, AccountUpgradePath, "v1", checkUpgradeStatusReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 

@@ -44,7 +44,7 @@ func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataGetPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataGetPath, "v1", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), testMetadataValue)
@@ -75,7 +75,7 @@ func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreateUnpaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataGetPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataGetPath, "v1", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
@@ -99,7 +99,7 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataGetPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataGetPath, "v1", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
@@ -144,7 +144,7 @@ func Test_GetMetadataHistoryHandler_Returns_Metadata_History(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, "v1", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), testMetadataValue)
@@ -188,7 +188,7 @@ func Test_GetMetadataHistoryHandler_Returns_Metadata_History_If_Not_Maxed_Out(t 
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, "v1", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), testMetadataValue)
@@ -214,7 +214,7 @@ func Test_GetMetadataHistoryHandler_Error_If_Not_Paid(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreateUnpaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, "v1", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
@@ -238,7 +238,7 @@ func Test_GetMetadataHistoryHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataHistoryPath, "v1", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
@@ -284,7 +284,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), newValue)
@@ -354,7 +354,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata_History(t *testing.T) {
 	assert.Equal(t, expectedStartingMetadataHistory, metadataHistory)
 	assert.Nil(t, err)
 
-	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), newCurrentMetadataValue)
@@ -423,7 +423,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata_History_If_Not_Maxed_Out(t *
 	assert.Equal(t, expectedStartingMetadataHistory, metadataHistory)
 	assert.Nil(t, err)
 
-	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), newCurrentMetadataValue)
@@ -465,7 +465,7 @@ func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreateUnpaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
@@ -491,7 +491,7 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
@@ -516,7 +516,7 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataSetPath, post)
+	w := httpPostRequestHelperForTest(t, MetadataSetPath, "v1", post)
 
 	confirmVerifyFailedForTest(t, w)
 }
@@ -544,7 +544,7 @@ func Test_Create_Metadata_Creates_Metadata(t *testing.T) {
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	w := httpPostRequestHelperForTest(t, MetadataCreatePath, post)
+	w := httpPostRequestHelperForTest(t, MetadataCreatePath, "v1", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -591,7 +591,7 @@ func Test_Create_Metadata_Error_If_Unpaid_Account(t *testing.T) {
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	w := httpPostRequestHelperForTest(t, MetadataCreatePath, post)
+	w := httpPostRequestHelperForTest(t, MetadataCreatePath, "v1", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
@@ -621,7 +621,7 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	w := httpPostRequestHelperForTest(t, MetadataCreatePath, post)
+	w := httpPostRequestHelperForTest(t, MetadataCreatePath, "v1", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
@@ -655,7 +655,7 @@ func Test_Create_Metadata_Error_If_Duplicate_Metadata(t *testing.T) {
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	w := httpPostRequestHelperForTest(t, MetadataCreatePath, post)
+	w := httpPostRequestHelperForTest(t, MetadataCreatePath, "v1", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -679,7 +679,7 @@ func Test_Create_Metadata_Error_If_Duplicate_Metadata(t *testing.T) {
 		},
 	}
 
-	w = httpPostRequestHelperForTest(t, MetadataCreatePath, post)
+	w = httpPostRequestHelperForTest(t, MetadataCreatePath, "v1", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
@@ -715,7 +715,7 @@ func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	w := httpPostRequestHelperForTest(t, MetadataDeletePath, post)
+	w := httpPostRequestHelperForTest(t, MetadataDeletePath, "v1", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
@@ -758,7 +758,7 @@ func Test_Delete_Metadata_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T) 
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := httpPostRequestHelperForTest(t, MetadataDeletePath, post)
+	w := httpPostRequestHelperForTest(t, MetadataDeletePath, "v1", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
@@ -808,7 +808,7 @@ func Test_Delete_Metadata_Success(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := httpPostRequestHelperForTest(t, MetadataDeletePath, post)
+	w := httpPostRequestHelperForTest(t, MetadataDeletePath, "v1", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)

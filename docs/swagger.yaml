@@ -1,4 +1,3 @@
-basePath: '{{.BasePath}}'
 definitions:
   models.Invoice:
     properties:
@@ -67,6 +66,10 @@ definitions:
     - signature
     type: object
   routes.PlanResponse:
+    properties:
+      plans:
+        $ref: '#/definitions/utils.PlanResponseType'
+        type: object
     type: object
   routes.StatusRes:
     properties:
@@ -216,12 +219,16 @@ definitions:
       account:
         $ref: '#/definitions/routes.accountGetObj'
         type: object
+      error:
+        type: error
       paymentStatus:
         example: paid
         type: string
       stripeData:
         $ref: '#/definitions/routes.stripeDataObj'
         type: object
+    required:
+    - account
     type: object
   routes.accountGetObj:
     properties:
@@ -285,6 +292,8 @@ definitions:
       account:
         $ref: '#/definitions/routes.accountGetObj'
         type: object
+      error:
+        type: error
       invoice:
         $ref: '#/definitions/models.Invoice'
         type: object
@@ -294,6 +303,8 @@ definitions:
       stripeData:
         $ref: '#/definitions/routes.stripeDataObj'
         type: object
+    required:
+    - account
     type: object
   routes.checkRenewalStatusObject:
     properties:
@@ -685,6 +696,47 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.publicShareObj:
+    properties:
+      shortlink:
+        example: the short link of the completed file
+        type: string
+    required:
+    - shortlink
+    type: object
+  routes.publicShareOpsReq:
+    properties:
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      publicShareObj:
+        $ref: '#/definitions/routes.publicShareObj'
+        type: object
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
+  routes.shortlinkFileResp:
+    properties:
+      url:
+        type: string
+    type: object
   routes.stripeDataObj:
     properties:
       amount:
@@ -778,6 +830,11 @@ definitions:
     - metadata
     - metadataKey
     type: object
+  routes.viewsCountResp:
+    properties:
+      count:
+        type: integer
+    type: object
   utils.PlanInfo:
     properties:
       cost:
@@ -802,29 +859,8 @@ definitions:
     type: object
   utils.PlanResponseType:
     additionalProperties:
-      properties:
-        cost:
-          type: number
-        costInUSD:
-          type: number
-        maxFolders:
-          type: integer
-        maxMetadataSizeInMB:
-          type: integer
-        name:
-          type: string
-        storageInGB:
-          type: integer
-      required:
-      - cost
-      - costInUSD
-      - maxFolders
-      - maxMetadataSizeInMB
-      - name
-      - storageInGB
-      type: object
+      $ref: '#/definitions/utils.PlanInfo'
     type: object
-host: '{{.Host}}'
 info:
   contact:
     name: Opacity Staff
@@ -853,7 +889,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.getAccountDataReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -861,7 +896,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.accountUnpaidRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -889,7 +923,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.accountCreateReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -897,7 +930,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.accountCreateRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -924,7 +956,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.deleteFileReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -932,7 +963,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.deleteFileRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -954,7 +984,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.downloadFileObj'
-          type: object
       produces:
       - application/json
       responses:
@@ -962,7 +991,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.downloadFileRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -995,7 +1023,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.InitFileUploadReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1003,7 +1030,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.StatusRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1034,7 +1060,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.metadataKeyReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1042,7 +1067,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.createMetadataRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1077,7 +1101,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.metadataKeyReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1085,7 +1108,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.StatusRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1120,7 +1142,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.metadataKeyReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1128,7 +1149,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.getMetadataRes'
-            type: object
         "403":
           description: subscription expired, or the invoice resonse
           schema:
@@ -1155,7 +1175,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.metadataKeyReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1163,7 +1182,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.getMetadataHistoryRes'
-            type: object
         "403":
           description: subscription expired, or the invoice resonse
           schema:
@@ -1191,7 +1209,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.updateMetadataReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1199,7 +1216,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.updateMetadataRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1235,7 +1251,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.checkRenewalStatusReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1243,7 +1258,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.StatusRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1273,7 +1287,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.getRenewalAccountInvoiceReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1281,7 +1294,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.getRenewalAccountInvoiceRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1312,7 +1324,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.createStripePaymentReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1320,7 +1331,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.stripeDataRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1358,7 +1368,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.checkUpgradeStatusReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1366,7 +1375,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.StatusRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1398,7 +1406,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.getUpgradeAccountInvoiceReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1406,7 +1413,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.getUpgradeAccountInvoiceRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1438,7 +1444,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.UploadFileReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1446,7 +1451,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.StatusRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1455,7 +1459,6 @@ paths:
           description: Forbidden
           schema:
             $ref: '#/definitions/routes.accountCreateRes'
-            type: object
         "500":
           description: some information about the internal error
           schema:
@@ -1478,7 +1481,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/routes.UploadStatusReq'
-          type: object
       produces:
       - application/json
       responses:
@@ -1486,7 +1488,6 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.StatusRes'
-            type: object
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -1504,6 +1505,227 @@ paths:
           schema:
             type: string
       summary: check status of an upload
+  /api/v2/init-upload-public:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        start a public upload.
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "the file ID for which the public file should be created",
+        "fileSizeInByte": "55600008877",
+        "endIndex": 2
+        }
+      parameters:
+      - description: an object to start a public file upload
+        in: body
+        name: InitFileUploadReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.InitFileUploadReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match / account does not exist
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: start a public upload
+  /api/v2/public-share/:shortlink:
+    get:
+      consumes:
+      - application/json
+      description: get the S3 URL for a publicly shared file
+      parameters:
+      - description: shortlink ID
+        in: path
+        name: shortlink
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.shortlinkFileResp'
+        "404":
+          description: file does not exist
+          schema:
+            type: string
+        "500":
+          description: there was an error parsing your request
+          schema:
+            type: string
+      summary: get S3 url for a publicly shared file
+  /api/v2/public-share/revoke:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        remove a public share entry, revoke the share
+        requestBody should be a stringified version of):
+        {
+        "shortlink": "the shortlink of the completed file",
+        }
+      parameters:
+      - description: an object to do operations on a public share
+        in: body
+        name: publicShareOpsReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.publicShareOpsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: bad request, unable to revoke public share
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: file does not exist
+          schema:
+            type: string
+        "500":
+          description: public file could not be deleted from databse or S3
+          schema:
+            type: string
+      summary: revokes public share
+  /api/v2/public-share/views-count:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        get the views count for a publicly shared file
+        requestBody should be a stringified version of:
+        {
+        "shortlink": "the shortlink of the completed file",
+        }
+      parameters:
+      - description: an object to do operations on a public share
+        in: body
+        name: publicShareOpsReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.publicShareOpsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.viewsCountResp'
+        "400":
+          description: bad request, unable to get views count
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: public share or file does not exist
+          schema:
+            type: string
+      summary: get views count
+  /api/v2/upload-public:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        upload a chunk of a file. The first partIndex must be 1. The storage for this file does not count
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        "partIndex": 1,
+        }
+      parameters:
+      - description: an object to upload a chunk of an unencrypted file (the storage
+          for this file does no count)
+        in: body
+        name: UploadFileReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UploadFileReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: bad request, unable to parse request body
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: file or account not found
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: upload a chunk of a file
+  /api/v2/upload-status-public:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        check status of a public upload
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        }
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: file not found
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: check status of a public upload
   /plans:
     get:
       consumes:
@@ -1516,6 +1738,5 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/routes.PlanResponse'
-            type: object
       summary: get the plans we sell
 swagger: "2.0"
