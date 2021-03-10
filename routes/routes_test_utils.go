@@ -339,6 +339,47 @@ func httpPostRequestHelperForTest(t *testing.T, path, routerVersion string, post
 	return w
 }
 
+func httpGetRequestHelperForTest(t *testing.T, path, routerVersion string, params map[string]string) *httptest.ResponseRecorder {
+	abortIfNotTesting(t)
+
+	router := returnEngine()
+	basePath := ""
+	switch routerVersion {
+	case "v1":
+		v1 := returnV1Group(router)
+		setupV1Paths(v1)
+		basePath = v1.BasePath()
+	case "v2":
+		v2 := returnV2Group(router)
+		setupV2Paths(v2)
+		basePath = v2.BasePath()
+	default:
+		assert.Fail(t, "could not init router")
+	}
+
+	// Create the mock request you'd like to test. Make sure the second argument
+	// here is the same as one of the routes you defined in the router setup
+	// block!
+	basePath = basePath + path
+	for paramLabel, paramValue := range params {
+		basePath = strings.Replace(basePath, paramLabel, paramValue, 1)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, basePath, nil)
+
+	if err != nil {
+		assert.Fail(t, "Couldn't create request: %v\n", err)
+	}
+
+	// Create a response recorder so you can inspect the response
+	w := httptest.NewRecorder()
+
+	// Perform the request
+	router.ServeHTTP(w, req)
+
+	return w
+}
+
 func abortIfNotTesting(t *testing.T) {
 	if !utils.IsTestEnv() {
 		assert.Fail(t, "should only be calling this method while testing")
