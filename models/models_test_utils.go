@@ -2,7 +2,7 @@ package models
 
 import (
 	"os"
-	"strings"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -121,8 +121,7 @@ func returnCompletedPart(partNumber int) *s3.CompletedPart {
 
 func MultipartUploadOfSingleChunk(t *testing.T, f *File) (*s3.CompletedPart, error) {
 	workingDir, _ := os.Getwd()
-	testDir := strings.Replace(workingDir, "/models", "", -1)
-	testDir = strings.Replace(workingDir, "/routes", "", -1)
+	testDir := filepath.Dir(workingDir)
 	testDir = testDir + "/test_files"
 	localFilePath := testDir + string(os.PathSeparator) + "lorem.txt"
 
