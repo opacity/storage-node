@@ -4,6 +4,7 @@ import (
 	/*blank import to make drivers available*/
 	_ "database/sql"
 	"fmt"
+
 	/*blank import to make drivers available*/
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
@@ -44,6 +45,7 @@ func Connect(dbURL string) {
 	DB.AutoMigrate(&Upgrade{})
 	DB.AutoMigrate(&Renewal{})
 	DB.AutoMigrate(&ExpiredAccount{})
+	DB.AutoMigrate(&PublicShare{})
 }
 
 /*Close a database connection*/

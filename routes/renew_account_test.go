@@ -38,7 +38,7 @@ func Test_GetAccountRenewInvoiceHandler_Returns_Invoice(t *testing.T) {
 	account.CreatedAt = time.Now().Add(time.Hour * 24 * 360 * -1)
 	models.DB.Save(&account)
 
-	w := httpPostRequestHelperForTest(t, AccountRenewInvoicePath, getInvoiceReq)
+	w := httpPostRequestHelperForTest(t, AccountRenewInvoicePath, "v1", getInvoiceReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -67,7 +67,7 @@ func Test_GetAccountRenewInvoiceHandler_ReturnsErrorIfExpirationDateTooFarInFutu
 	account.MonthsInSubscription = 13
 	models.DB.Save(&account)
 
-	w := httpPostRequestHelperForTest(t, AccountRenewInvoicePath, getInvoiceReq)
+	w := httpPostRequestHelperForTest(t, AccountRenewInvoicePath, "v1", getInvoiceReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `account has too much time left to renew`)
@@ -114,7 +114,7 @@ func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Success(t *testing
 		return true, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, AccountRenewPath, checkRenewalStatusReq)
+	w := httpPostRequestHelperForTest(t, AccountRenewPath, "v1", checkRenewalStatusReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -172,7 +172,7 @@ func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Still_Pending(t *t
 		return false, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, AccountRenewPath, checkRenewalStatusReq)
+	w := httpPostRequestHelperForTest(t, AccountRenewPath, "v1", checkRenewalStatusReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 

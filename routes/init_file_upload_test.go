@@ -27,7 +27,7 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 	formFile := map[string]string{
 		"metadata": "abc_file",
 	}
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile, "v1")
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
@@ -46,7 +46,7 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	formFile := map[string]string{
 		"metadata": "abc_file",
 	}
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile, "v1")
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -66,7 +66,7 @@ func Test_initFileUploadWithPaidAccount_MissingFormAndFormFile(t *testing.T) {
 
 	req, _ := createValidInitFileUploadRequest(t, 123, 1, privateKey)
 
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, nil, nil)
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, nil, nil, "v1")
 
 	assert.Equal(t, http.StatusOK, w.Code)
 }
@@ -84,7 +84,7 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	formFile := map[string]string{
 		"metadata": "abc_file",
 	}
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile, "v1")
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "Account does not have enough space")

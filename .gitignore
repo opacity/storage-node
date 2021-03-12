@@ -21,6 +21,7 @@ vendor/*
 
 # IDE-generated files
 .idea
+.vscode
 
 # Docker stuff
 data/

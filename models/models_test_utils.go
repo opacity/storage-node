@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/opacity/storage-node/utils"
+	"github.com/stretchr/testify/assert"
+	"github.com/teris-io/shortid"
 )
 
 func DeleteAccountsForTest(t *testing.T) {
@@ -67,5 +69,28 @@ func DeleteStripePaymentsForTest(t *testing.T) {
 		t.Fatalf("should only be calling DeleteStripePaymentsForTest method on test database")
 	} else {
 		DB.Exec("DELETE from stripe_payments;")
+	}
+}
+
+func DeletePublicSharesForTest(t *testing.T) {
+	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
+		t.Fatalf("should only be calling DeletePublicSharesForTest method on test database")
+	} else {
+		DB.Exec("DELETE from public_shares;")
+	}
+}
+
+func CreateTestPublicShare(t *testing.T) PublicShare {
+	ps := CreatePublicShareObj()
+	assert.Nil(t, DB.Create(&ps).Error)
+	return ps
+}
+
+func CreatePublicShareObj() PublicShare {
+	shortID, _ := shortid.Generate()
+	return PublicShare{
+		PublicID:   shortID,
+		ViewsCount: 0,
+		FileID:     utils.GenerateFileHandle(),
 	}
 }

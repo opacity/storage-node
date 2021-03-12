@@ -521,6 +521,36 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.publicShareOpsReq:
+    properties:
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
+  routes.shortlinkFileResp:
+    properties:
+      url:
+        type: string
+    type: object
   routes.stripeDataObj:
     properties:
       amount:
@@ -634,6 +664,11 @@ definitions:
     - expirationDate
     - metadataV2
     - metadataV2Key
+    type: object
+  routes.viewsCountResp:
+    properties:
+      count:
+        type: integer
     type: object
   utils.PlanInfo:
     properties:
@@ -1305,6 +1340,45 @@ paths:
           schema:
             type: string
       summary: check status of an upload
+  /api/v2/init-upload-public:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        start a public upload.
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "the file ID for which the public file should be created",
+        "fileSizeInByte": "55600008877",
+        "endIndex": 2
+        }
+      parameters:
+      - description: an object to start a public file upload
+        in: body
+        name: InitFileUploadReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.InitFileUploadReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match / account does not exist
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: start a public upload
   /api/v2/metadata/add:
     post:
       consumes:
@@ -1427,6 +1501,188 @@ paths:
           schema:
             type: string
       summary: Retrieve account metadataV2
+  /api/v2/public-share/:shortlink:
+    get:
+      consumes:
+      - application/json
+      description: get the S3 URL for a publicly shared file
+      parameters:
+      - description: shortlink ID
+        in: path
+        name: shortlink
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.shortlinkFileResp'
+        "404":
+          description: file does not exist
+          schema:
+            type: string
+        "500":
+          description: there was an error parsing your request
+          schema:
+            type: string
+      summary: get S3 url for a publicly shared file
+  /api/v2/public-share/revoke:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        remove a public share entry, revoke the share
+        requestBody should be a stringified version of):
+        {
+        "shortlink": "the shortlink of the completed file",
+        }
+      parameters:
+      - description: an object to do operations on a public share
+        in: body
+        name: publicShareOpsReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.publicShareOpsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: bad request, unable to revoke public share
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: file does not exist
+          schema:
+            type: string
+        "500":
+          description: public file could not be deleted from databse or S3
+          schema:
+            type: string
+      summary: revokes public share
+  /api/v2/public-share/views-count:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        get the views count for a publicly shared file
+        requestBody should be a stringified version of:
+        {
+        "shortlink": "the shortlink of the completed file",
+        }
+      parameters:
+      - description: an object to do operations on a public share
+        in: body
+        name: publicShareOpsReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.publicShareOpsReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.viewsCountResp'
+        "400":
+          description: bad request, unable to get views count
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: public share or file does not exist
+          schema:
+            type: string
+      summary: get views count
+  /api/v2/upload-public:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        upload a chunk of a file. The first partIndex must be 1. The storage for this file does not count
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        "partIndex": 1,
+        }
+      parameters:
+      - description: an object to upload a chunk of an unencrypted file (the storage
+          for this file does no count)
+        in: body
+        name: UploadFileReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UploadFileReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: bad request, unable to parse request body
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: file or account not found
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: upload a chunk of a file
+  /api/v2/upload-status-public:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        check status of a public upload
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        }
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: file not found
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: check status of a public upload
   /plans:
     get:
       consumes:

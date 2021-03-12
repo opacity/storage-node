@@ -71,7 +71,7 @@ func Test_Init_Accounts(t *testing.T) {
 func Test_NoErrorsWithValidPost(t *testing.T) {
 	post := returnValidCreateAccountReq(t, returnValidCreateAccountBody())
 
-	w := httpPostRequestHelperForTest(t, AccountsPath, post)
+	w := httpPostRequestHelperForTest(t, AccountsPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 }
@@ -80,7 +80,7 @@ func Test_ExpectErrorWithInvalidSignature(t *testing.T) {
 	post := returnValidCreateAccountReq(t, returnValidCreateAccountBody())
 	post.Signature = "abcdef"
 
-	w := httpPostRequestHelperForTest(t, AccountsPath, post)
+	w := httpPostRequestHelperForTest(t, AccountsPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
@@ -88,7 +88,7 @@ func Test_ExpectErrorWithInvalidSignature(t *testing.T) {
 func Test_ExpectErrorIfVerificationFails(t *testing.T) {
 	post := returnFailedVerificationCreateAccountReq(t, returnValidCreateAccountBody())
 
-	w := httpPostRequestHelperForTest(t, AccountsPath, post)
+	w := httpPostRequestHelperForTest(t, AccountsPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
 }
@@ -98,7 +98,7 @@ func Test_ExpectErrorWithInvalidStorageLimit(t *testing.T) {
 	body.StorageLimit = 9
 	post := returnValidCreateAccountReq(t, body)
 
-	w := httpPostRequestHelperForTest(t, AccountsPath, post)
+	w := httpPostRequestHelperForTest(t, AccountsPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
@@ -108,7 +108,7 @@ func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
 	body.DurationInMonths = 0
 	post := returnValidCreateAccountReq(t, body)
 
-	w := httpPostRequestHelperForTest(t, AccountsPath, post)
+	w := httpPostRequestHelperForTest(t, AccountsPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
@@ -119,7 +119,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) 
 		Timestamp: time.Now().Unix(),
 	}, privateKey)
 
-	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
+	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.Contains(t, w.Body.String(), noAccountWithThatID)
@@ -139,7 +139,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 		return true, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
+	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"paymentStatus":"paid"`)
@@ -160,7 +160,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 		return false, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
+	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"paymentStatus":"unpaid"`)
@@ -186,7 +186,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsExpi
 		return false, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
+	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"paymentStatus":"expired"`)
@@ -220,7 +220,7 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 
 	models.DB.Create(&stripePayment)
 
-	w := httpPostRequestHelperForTest(t, AccountDataPath, validReq)
+	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), `"stripePaymentExists":true`)

@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
+	"github.com/teris-io/shortid"
 )
 
 /*File defines a model for managing a user subscription for uploads*/
@@ -104,6 +105,10 @@ func GetFileMetadataKey(fileID string) string {
 
 func GetFileDataKey(fileID string) string {
 	return fileID + "/file"
+}
+
+func GetFileDataPublicKey(fileID string) string {
+	return fileID + "/public"
 }
 
 /*Return File object(first one) if there is not any error. If not found, return nil without error. */
@@ -254,6 +259,47 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 	}
 
 	return completedFile, DB.Delete(file).Error
+}
+
+/*FinishUploadPublic - finishes the public upload*/
+func (file *File) FinishUploadPublic() (PublicShare, error) {
+	allChunksUploaded := file.UploadCompleted()
+	if !allChunksUploaded {
+		return PublicShare{}, IncompleteUploadErr
+	}
+
+	completedParts, err := GetCompletedPartsAsArray(file.FileID)
+	if err != nil {
+		return PublicShare{}, err
+	}
+
+	objectKey := aws.StringValue(file.AwsObjectKey)
+	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
+		return PublicShare{}, err
+	}
+
+	shortID, err := shortid.Generate()
+	if err != nil {
+		return PublicShare{}, err
+	}
+	completedFile, err := GetCompletedFileByFileID(file.FileID)
+	if err != nil {
+		return PublicShare{}, err
+	}
+	publicShare := PublicShare{
+		PublicID:   shortID,
+		ViewsCount: 0,
+		FileID:     completedFile.FileID,
+	}
+	if err := DB.Save(&publicShare).Error; err != nil {
+		return PublicShare{}, errors.New("could not save public share to database, possible duplicate")
+	}
+
+	if err := DeleteCompletedUploadIndexes(file.FileID); err != nil {
+		return publicShare, err
+	}
+
+	return publicShare, DB.Delete(file).Error
 }
 
 /*DeleteUploadsOlderThan will delete files older than the time provided.  If a file still isn't complete by the

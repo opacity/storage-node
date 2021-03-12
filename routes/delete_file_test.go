@@ -33,7 +33,7 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 		requestBody:  b,
 	}
 
-	w := httpPostRequestHelperForTest(t, DeletePath, request)
+	w := httpPostRequestHelperForTest(t, DeletePath, "v1", request)
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
@@ -96,7 +96,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 	request.ChunkData = string(chunkData)
 	request.uploadFileObj = uploadBody
 
-	w := UploadFileHelperForTest(t, request)
+	w := UploadFileHelperForTest(t, request, UploadPath, "v1")
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	uploadStatusObj := UploadStatusObj{
@@ -109,7 +109,7 @@ func createAccountAndUploadFile(t *testing.T) (models.Account, string, *ecdsa.Pr
 		requestBody:  b,
 	}
 
-	w = httpPostRequestHelperForTest(t, UploadStatusPath, uploadStatusReq)
+	w = httpPostRequestHelperForTest(t, UploadStatusPath, "v1", uploadStatusReq)
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)

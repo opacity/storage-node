@@ -24,7 +24,7 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 	body.PartIndex = 0
 	request := ReturnValidUploadFileReqForTest(t, body, privateKey)
 
-	w := UploadFileHelperForTest(t, request)
+	w := UploadFileHelperForTest(t, request, UploadPath, "v1")
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
@@ -34,7 +34,7 @@ func Test_Upload_File_Without_Init(t *testing.T) {
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
 	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 
-	w := UploadFileHelperForTest(t, request)
+	w := UploadFileHelperForTest(t, request, UploadPath, "v1")
 
 	assert.Equal(t, http.StatusNotFound, w.Code)
 	assert.Contains(t, w.Body.String(), fmt.Sprintf("no file with that id: %s", uploadObj.FileHandle))
@@ -53,7 +53,7 @@ func Test_UploadFileLessThanMinSize(t *testing.T) {
 	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 	request.ChunkData = "Hello world!!"
 
-	w := UploadFileHelperForTest(t, request)
+	w := UploadFileHelperForTest(t, request, UploadPath, "v1")
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 	assert.Contains(t, w.Body.String(), "does not meet min fileSize")
@@ -75,7 +75,7 @@ func Test_Upload_Part_Of_File(t *testing.T) {
 	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 	request.ChunkData = utils.RandHexString(int(utils.MinMultiPartSize))
 
-	w := UploadFileHelperForTest(t, request)
+	w := UploadFileHelperForTest(t, request, UploadPath, "v1")
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "Chunk is uploaded")
@@ -102,7 +102,7 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 
 	requests := []UploadFileReq{request1, request2}
 	for _, r := range requests {
-		w := UploadFileHelperForTest(t, r)
+		w := UploadFileHelperForTest(t, r, UploadPath, "v1")
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "Chunk is uploaded")
 	}
@@ -111,7 +111,7 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 	assert.Equal(t, 2, count)
 
 	checkStatusReq, _ := createUploadStatusRequest(t, fileId, privateKey)
-	w := httpPostRequestHelperForTest(t, UploadStatusPath, checkStatusReq)
+	w := httpPostRequestHelperForTest(t, UploadStatusPath, "v1", checkStatusReq)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "File is uploaded")
 
@@ -151,7 +151,7 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 
 	requests := []UploadFileReq{request3, request1, request2}
 	for _, r := range requests {
-		w := UploadFileHelperForTest(t, r)
+		w := UploadFileHelperForTest(t, r, UploadPath, "v1")
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "Chunk is uploaded")
 	}
@@ -160,7 +160,7 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 	assert.Equal(t, 3, count)
 
 	checkStatusReq, _ := createUploadStatusRequest(t, fileId, privateKey)
-	w := httpPostRequestHelperForTest(t, UploadStatusPath, checkStatusReq)
+	w := httpPostRequestHelperForTest(t, UploadStatusPath, "v1", checkStatusReq)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "File is uploaded")
 
@@ -181,7 +181,7 @@ func initFileUpload(t *testing.T, endIndex int, privateKey *ecdsa.PrivateKey) st
 		"metadata": "abc_file",
 	}
 
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile)
+	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile, "v1")
 
 	assert.Equal(t, http.StatusOK, w.Code)
 

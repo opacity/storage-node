@@ -121,7 +121,7 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 			routes.InitUploadFileForTest(t, request.PublicKey, uploadBody.FileHandle, len(arrayOfChunkDataBuffers))
 
 			// perform the first request and verify the expected status
-			w := routes.UploadFileHelperForTest(t, request)
+			w := routes.UploadFileHelperForTest(t, request, routes.UploadPath, "v1")
 			assert.Equal(t, http.StatusOK, w.Code)
 
 			// perform the requests for subsequent chunks
@@ -131,7 +131,7 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 				uploadBody.PartIndex = index + 2
 				request := routes.ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
 				request.ChunkData = string(buffer)
-				w := routes.UploadFileHelperForTest(t, request)
+				w := routes.UploadFileHelperForTest(t, request, routes.UploadPath, "v1")
 				assert.Equal(t, http.StatusOK, w.Code)
 				//}()
 			}

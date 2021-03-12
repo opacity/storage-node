@@ -133,12 +133,12 @@ func InitUploadFileForTest(t *testing.T, publicKey, fileID string, endIndx int) 
 	return *objectKey
 }
 
-func UploadFileHelperForTest(t *testing.T, post UploadFileReq) *httptest.ResponseRecorder {
+func UploadFileHelperForTest(t *testing.T, post UploadFileReq, UploadPath, routerVersion string) *httptest.ResponseRecorder {
 	form := map[string]string{}
 	formFile := map[string]string{
 		"chunkData": post.ChunkData,
 	}
-	return httpPostFormRequestHelperForTest(t, UploadPath, &post, form, formFile)
+	return httpPostFormRequestHelperForTest(t, UploadPath, &post, form, formFile, routerVersion)
 }
 
 func setupTests(t *testing.T) {
@@ -235,7 +235,7 @@ func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
 	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
 }
 
-func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{}, form map[string]string, formFile map[string]string) *httptest.ResponseRecorder {
+func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{}, form map[string]string, formFile map[string]string, routerVersion string) *httptest.ResponseRecorder {
 	abortIfNotTesting(t)
 
 	body := new(bytes.Buffer)
@@ -269,10 +269,22 @@ func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{
 	mw.Close()
 
 	router := returnEngine()
-	v1 := returnV1Group(router)
-	setupV1Paths(v1)
 
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+path, body)
+	basePath := ""
+	switch routerVersion {
+	case "v1":
+		v1 := returnV1Group(router)
+		setupV1Paths(v1)
+		basePath = v1.BasePath()
+	case "v2":
+		v2 := returnV2Group(router)
+		setupV2Paths(v2)
+		basePath = v2.BasePath()
+	default:
+		assert.Fail(t, "could not init router")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, basePath+path, body)
 	if err != nil {
 		assert.Fail(t, "Couldn't create request: ", err)
 	}
@@ -288,12 +300,23 @@ func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{
 	return w
 }
 
-func httpPostRequestHelperForTest(t *testing.T, path string, post interface{}) *httptest.ResponseRecorder {
+func httpPostRequestHelperForTest(t *testing.T, path, routerVersion string, post interface{}) *httptest.ResponseRecorder {
 	abortIfNotTesting(t)
 
 	router := returnEngine()
-	v1 := returnV1Group(router)
-	setupV1Paths(v1)
+	basePath := ""
+	switch routerVersion {
+	case "v1":
+		v1 := returnV1Group(router)
+		setupV1Paths(v1)
+		basePath = v1.BasePath()
+	case "v2":
+		v2 := returnV2Group(router)
+		setupV2Paths(v2)
+		basePath = v2.BasePath()
+	default:
+		assert.Fail(t, "could not init router")
+	}
 
 	marshalledReq, _ := json.Marshal(post)
 	reqBody := bytes.NewBuffer(marshalledReq)
@@ -301,7 +324,7 @@ func httpPostRequestHelperForTest(t *testing.T, path string, post interface{}) *
 	// Create the mock request you'd like to test. Make sure the second argument
 	// here is the same as one of the routes you defined in the router setup
 	// block!
-	req, err := http.NewRequest(http.MethodPost, v1.BasePath()+path, reqBody)
+	req, err := http.NewRequest(http.MethodPost, basePath+path, reqBody)
 
 	if err != nil {
 		assert.Fail(t, "Couldn't create request: %v\n", err)

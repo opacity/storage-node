@@ -1,14 +1,15 @@
 package routes
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/opacity/storage-node/models"
-	"github.com/opacity/storage-node/utils"
-	"github.com/stretchr/testify/assert"
 	"math/big"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/opacity/storage-node/models"
+	"github.com/opacity/storage-node/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_Init_Renew_And_Upgrade_Accounts(t *testing.T) {
@@ -63,7 +64,7 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 		return true, nil
 	}
 
-	w := httpPostRequestHelperForTest(t, AccountRenewPath, checkRenewalStatusReq)
+	w := httpPostRequestHelperForTest(t, AccountRenewPath, "v1", checkRenewalStatusReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 
@@ -122,7 +123,7 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	completedFileStart, err = models.GetCompletedFileByFileID(checkUpgradeStatusObj.FileHandles[0])
 	assert.Nil(t, err)
 
-	w = httpPostRequestHelperForTest(t, AccountUpgradePath, checkUpgradeStatusReq)
+	w = httpPostRequestHelperForTest(t, AccountUpgradePath, "v1", checkUpgradeStatusReq)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 

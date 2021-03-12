@@ -864,6 +864,55 @@ var doc = `{
                 }
             }
         },
+        "/api/v2/init-upload-public": {
+            "post": {
+                "description": "start a public upload.\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"the file ID for which the public file should be created\",\n\"fileSizeInByte\": \"55600008877\",\n\"endIndex\": 2\n}",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "start a public upload",
+                "parameters": [
+                    {
+                        "description": "an object to start a public file upload",
+                        "name": "InitFileUploadReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.InitFileUploadReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match / account does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/metadata/add": {
             "post": {
                 "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataV2Key\": \"public key for the metadataV2 encoded to base64\",\n\"metadataV2Vertex\": \"the vertex to add to your account metadataV2 encoded to base64\",\n\"metadataV2Edges\": \"the edges to add to your account metadataV2 encoded to base64\",\n\"metadataV2Sig\": \"a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2\",\n\"timestamp\": 1557346389\n}",
@@ -1016,6 +1065,250 @@ var doc = `{
                     },
                     "404": {
                         "description": "no value found for that key, or account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/public-share/:shortlink": {
+            "get": {
+                "description": "get the S3 URL for a publicly shared file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get S3 url for a publicly shared file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "shortlink ID",
+                        "name": "shortlink",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.shortlinkFileResp"
+                        }
+                    },
+                    "404": {
+                        "description": "file does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "there was an error parsing your request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/public-share/revoke": {
+            "post": {
+                "description": "remove a public share entry, revoke the share\nrequestBody should be a stringified version of):\n{\n\"shortlink\": \"the shortlink of the completed file\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "revokes public share",
+                "parameters": [
+                    {
+                        "description": "an object to do operations on a public share",
+                        "name": "publicShareOpsReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.publicShareOpsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to revoke public share",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "file does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "public file could not be deleted from databse or S3",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/public-share/views-count": {
+            "post": {
+                "description": "get the views count for a publicly shared file\nrequestBody should be a stringified version of:\n{\n\"shortlink\": \"the shortlink of the completed file\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get views count",
+                "parameters": [
+                    {
+                        "description": "an object to do operations on a public share",
+                        "name": "publicShareOpsReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.publicShareOpsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.viewsCountResp"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to get views count",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "public share or file does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/upload-public": {
+            "post": {
+                "description": "upload a chunk of a file. The first partIndex must be 1. The storage for this file does not count\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"partIndex\": 1,\n}",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "upload a chunk of a file",
+                "parameters": [
+                    {
+                        "description": "an object to upload a chunk of an unencrypted file (the storage for this file does no count)",
+                        "name": "UploadFileReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.UploadFileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "file or account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/upload-status-public": {
+            "post": {
+                "description": "check status of a public upload\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "check status of a public upload",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "file not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
                         "schema": {
                             "type": "string"
                         }
@@ -1677,6 +1970,41 @@ var doc = `{
                 }
             }
         },
+        "routes.publicShareOpsReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.shortlinkFileResp": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "routes.stripeDataObj": {
             "type": "object",
             "properties": {
@@ -1820,6 +2148,14 @@ var doc = `{
                 "metadataV2Key": {
                     "type": "string",
                     "example": "public key for the metadataV2 encoded to base64"
+                }
+            }
+        },
+        "routes.viewsCountResp": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
                 }
             }
         },

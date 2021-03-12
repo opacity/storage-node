@@ -82,9 +82,6 @@ const (
 	/*UploadPath is the path for uploading files to paid accounts*/
 	UploadPath = "/upload"
 
-	/*UploadStatusPath is the path for checking upload status*/
-	UploadStatusPath = "/upload-status"
-
 	/*DeletePath is the path for deleting files*/
 	DeletePath = "/delete"
 
@@ -107,16 +104,42 @@ const (
 
 	/*MetadataV2DeletePath is the path for deleting a metadata*/
 	MetadataV2DeletePath = "/metadata/delete"
+
+	/*InitUploadPublicPath is the path for initiating the upload of files for public sharing*/
+	InitUploadPublicPath = "/init-upload-public"
+
+	/*UploadPublicPath is the path for uploading files for public sharing*/
+	UploadPublicPath = "/upload-public"
+
+	/*UploadStatusPath is the path for checking upload status*/
+	UploadStatusPath = "/upload-status"
+
+	/*UploadStatusPublicPath is the path for checking upload status*/
+	UploadStatusPublicPath = "/upload-status-public"
+
+	/*PublicSharePathPrefix is the base path public shared files*/
+	PublicSharePathPrefix = "public-share"
+
+	/*PublicShareShortlinkPath is the path for getting the shortlink of a public shared files*/
+	PublicShareShortlinkPath = "/:shortlink"
+
+	/*PublicShareViewsCountPath is the path for getting the shortlink of a public shared file*/
+	PublicShareViewsCountPath = "/views-count"
+
+	/*PublicShareRevokePath is the path for revoking the share of a public file*/
+	PublicShareRevokePath = "/revoke"
 )
 
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
 
 var maintenanceError = errors.New("maintenance in progress, currently rejecting writes")
 
+// StatusRes ...
 type StatusRes struct {
 	Status string `json:"status" example:"status of the request"`
 }
 
+// PlanResponse ...
 type PlanResponse struct {
 	Plans utils.PlanResponseType `json:"plans"`
 }
@@ -202,6 +225,15 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	v2Router.POST(MetadataV2AddPath, UpdateMetadataV2Handler())
 	v2Router.POST(MetadataV2GetPath, GetMetadataV2Handler())
 	v2Router.POST(MetadataV2DeletePath, DeleteMetadataV2Handler())
+
+	v2Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())
+	v2Router.POST(UploadPublicPath, UploadFilePublicHandler())
+	v2Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
+
+	publicShareRouterGroup := v2Router.Group(PublicSharePathPrefix)
+	publicShareRouterGroup.GET(PublicShareShortlinkPath, ShortlinkFileHandler())
+	publicShareRouterGroup.POST(PublicShareViewsCountPath, ViewsCountHandler())
+	publicShareRouterGroup.POST(PublicShareRevokePath, RevokePublicShareHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {

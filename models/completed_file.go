@@ -3,9 +3,10 @@ package models
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
-	"time"
 )
 
 type CompletedFile struct {
