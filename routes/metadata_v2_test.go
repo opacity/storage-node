@@ -50,7 +50,7 @@ func Test_GetMetadataV2Handler_Returns_MetadataV2(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataGetPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataGetPath, "v2", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), testMetadataV2Value)
@@ -81,7 +81,7 @@ func Test_GetMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreateUnpaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataV2GetPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataV2GetPath, "v2", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
@@ -105,7 +105,7 @@ func Test_GetMetadataV2Handler_Error_If_Not_In_KV_Store(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataV2GetPath, get)
+	w := httpPostRequestHelperForTest(t, MetadataV2GetPath, "v2", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
@@ -162,7 +162,7 @@ func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := httpPostRequestHelperForTest(t, MetadataV2AddPath, post)
+	w := httpPostRequestHelperForTest(t, MetadataV2AddPath, "v2", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), newVertex)
@@ -212,7 +212,7 @@ func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreateUnpaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataV2AddPath, post)
+	w := httpPostRequestHelperForTest(t, MetadataV2AddPath, "v2", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	assert.Contains(t, w.Body.String(), `"invoice"`)
@@ -249,7 +249,7 @@ func Test_UpdateMetadataV2Handler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataV2AddPath, post)
+	w := httpPostRequestHelperForTest(t, MetadataV2AddPath, "v2", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
@@ -285,7 +285,7 @@ func Test_UpdateMetadataV2Handler_Error_If_Verification_Fails(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataV2AddPath, post)
+	w := httpPostRequestHelperForTest(t, MetadataV2AddPath, "v2", post)
 
 	confirmVerifyFailedForTest(t, w)
 }
@@ -317,7 +317,7 @@ func Test_Delete_MetadataV2_Fails_If_Unpaid(t *testing.T) {
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	w := httpPostRequestHelperForTest(t, MetadataV2DeletePath, post)
+	w := httpPostRequestHelperForTest(t, MetadataV2DeletePath, "v2", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
@@ -360,7 +360,7 @@ func Test_Delete_MetadataV2_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := httpPostRequestHelperForTest(t, MetadataV2DeletePath, post)
+	w := httpPostRequestHelperForTest(t, MetadataV2DeletePath, "v2", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
@@ -410,7 +410,7 @@ func Test_Delete_MetadataV2_Success(t *testing.T) {
 		t.Fatalf("there should not have been an error")
 	}
 
-	w := httpPostRequestHelperForTest(t, MetadataV2DeletePath, post)
+	w := httpPostRequestHelperForTest(t, MetadataV2DeletePath, "v2", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
