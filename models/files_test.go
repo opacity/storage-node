@@ -3,9 +3,6 @@ package models
 import (
 	"testing"
 
-	"os"
-	"strings"
-
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -14,60 +11,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func returnValidFile() File {
-	return File{
-		FileID:           utils.GenerateFileHandle(),
-		AwsUploadID:      aws.String(utils.GenerateFileHandle()),
-		AwsObjectKey:     aws.String(utils.GenerateFileHandle()),
-		EndIndex:         10,
-		CompletedIndexes: nil,
-		ExpiredAt:        time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC),
-		ModifierHash:     utils.GenerateFileHandle(),
-	}
-}
-
-func returnCompletedPart(partNumber int) *s3.CompletedPart {
-	return &s3.CompletedPart{
-		ETag:       aws.String(utils.RandSeqFromRunes(32, []rune("abcdef01234567890"))),
-		PartNumber: aws.Int64(int64(partNumber)),
-	}
-}
-
-func multipartUploadOfSingleChunk(t *testing.T, f *File) (*s3.CompletedPart, error) {
-	workingDir, _ := os.Getwd()
-	testDir := strings.Replace(workingDir, "/models", "", -1)
-	testDir = testDir + "/test_files"
-	localFilePath := testDir + string(os.PathSeparator) + "lorem.txt"
-
-	file, err := os.Open(localFilePath)
-	assert.Nil(t, err)
-	defer file.Close()
-	fileInfo, _ := file.Stat()
-	size := fileInfo.Size()
-	buffer := make([]byte, size)
-	file.Read(buffer)
-
-	key, uploadID, err := utils.CreateMultiPartUpload(f.FileID)
-	if err != nil {
-		return nil, err
-	}
-	err = f.UpdateKeyAndUploadID(key, uploadID)
-	if err != nil {
-		return nil, err
-	}
-
-	completedPart, err := utils.UploadMultiPartPart(aws.StringValue(f.AwsObjectKey), aws.StringValue(f.AwsUploadID),
-		buffer, FirstChunkIndex)
-	return completedPart, err
-}
-
 func Test_Init_Files(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
 }
 
 func Test_Valid_File_Passes(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 
 	if err := utils.Validator.Struct(file); err != nil {
 		t.Fatalf("file should have passed validation but didn't: " + err.Error())
@@ -117,7 +67,7 @@ func Test_Valid_File_Passes(t *testing.T) {
 //}
 
 func Test_Empty_FileID_Fails(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 	file.FileID = ""
 
 	if err := utils.Validator.Struct(file); err == nil {
@@ -126,7 +76,7 @@ func Test_Empty_FileID_Fails(t *testing.T) {
 }
 
 func Test_EndIndex_Too_Low_Fails(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 	file.EndIndex = -1
 
 	if err := utils.Validator.Struct(file); err == nil {
@@ -135,7 +85,7 @@ func Test_EndIndex_Too_Low_Fails(t *testing.T) {
 }
 
 func Test_GetOrCreateFile_file_exists(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 
 	// Add file to DB
 	if err := DB.Create(&file).Error; err != nil {
@@ -157,7 +107,7 @@ func Test_GetOrCreateFile_file_exists(t *testing.T) {
 }
 
 func Test_GetOrCreateFile_file_does_not_exist(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 
 	shouldBeTheUploadKey := aws.String("some dumb string")
 	file.AwsObjectKey = shouldBeTheUploadKey
@@ -174,7 +124,7 @@ func Test_GetOrCreateFile_file_does_not_exist(t *testing.T) {
 }
 
 func Test_GetFileById(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 
 	// Add file to DB
 	if err := DB.Create(&file).Error; err != nil {
@@ -188,7 +138,7 @@ func Test_GetFileById(t *testing.T) {
 }
 
 func Test_UpdateCompletedIndexes(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 
 	// Add file to DB
 	if err := DB.Create(&file).Error; err != nil {
@@ -215,7 +165,7 @@ func Test_UpdateCompletedIndexes(t *testing.T) {
 }
 
 func Test_GetCompletedIndexesAsMap(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 
 	// Add file to DB
 	if err := DB.Create(&file).Error; err != nil {
@@ -245,7 +195,7 @@ func Test_GetCompletedIndexesAsMap(t *testing.T) {
 }
 
 func Test_Files_GetIncompleteIndexesAsArray(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 
 	// Add file to DB
 	if err := DB.Create(&file).Error; err != nil {
@@ -282,7 +232,7 @@ func Test_Files_GetIncompleteIndexesAsArray(t *testing.T) {
 }
 
 func Test_SaveCompletedIndexesAsString(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 
 	// Add file to DB
 	if err := DB.Create(&file).Error; err != nil {
@@ -306,7 +256,7 @@ func Test_SaveCompletedIndexesAsString(t *testing.T) {
 }
 
 func Test_UploadCompleted(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 
 	// Add file to DB
 	if err := DB.Create(&file).Error; err != nil {
@@ -339,7 +289,7 @@ func Test_UploadCompleted(t *testing.T) {
 }
 
 func Test_FileGetCompletedPartsAsArray(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 
 	// Add file to DB
 	if err := DB.Create(&file).Error; err != nil {
@@ -376,7 +326,7 @@ func Test_FileGetCompletedPartsAsArray(t *testing.T) {
 }
 
 func Test_FinishUpload(t *testing.T) {
-	file := returnValidFile()
+	file := ReturnValidFile()
 	file.EndIndex = 1
 
 	// Add file to DB
@@ -384,7 +334,7 @@ func Test_FinishUpload(t *testing.T) {
 		t.Fatalf("should have created file but didn't: " + err.Error())
 	}
 
-	completedPartIndex1, err := multipartUploadOfSingleChunk(t, &file)
+	completedPartIndex1, err := MultipartUploadOfSingleChunk(t, &file)
 	assert.Nil(t, err)
 
 	err = file.UpdateCompletedIndexes(completedPartIndex1)
@@ -416,7 +366,7 @@ func Test_FinishUpload(t *testing.T) {
 
 func Test_DeleteUploadsOlderThan(t *testing.T) {
 	DeleteFilesForTest(t)
-	file := returnValidFile()
+	file := ReturnValidFile()
 	file.EndIndex = 1
 
 	// Add file to DB
