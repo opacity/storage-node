@@ -185,11 +185,7 @@ func getMetadataV2(c *gin.Context) error {
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
-		// TODO: Enable this after everyone should have migrated.
-		// cannot enable it now since many users already created metadataV2s without permission hashes
-		// being stored
-		//
-		//return NotFoundResponse(c, err)
+		return NotFoundResponse(c, err)
 	}
 
 	publicKeyBin, err := hex.DecodeString(request.PublicKey)
@@ -198,13 +194,8 @@ func getMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	// TODO remove this if block wrapping the other if after everyone should have migrated
-	// This is only in effect for a limited time because many users already created metadataV2s without
-	// permission hashes being stored
-	if permissionHashInBadger != "" {
-		if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin, permissionHashInBadger, c); err != nil {
-			return err
-		}
+	if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin, permissionHashInBadger, c); err != nil {
+		return err
 	}
 
 	metadataV2, expirationTime, err := utils.GetValueFromKV(request.metadataV2KeyObject.MetadataV2Key)
@@ -427,31 +418,17 @@ func deleteMetadataV2(c *gin.Context) error {
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
-		// TODO: Enable this after everyone should have migrated.
-		// cannot enable it now since many users already created metadataV2s without permission hashes
-		// being stored
-		//
-		//return NotFoundResponse(c, err)
+		return NotFoundResponse(c, err)
 	}
 
-	// TODO remove this if block wrapping the other if after everyone should have migrated
-	// This is only in effect for a limited time because many users already created metadataV2s without
-	// permission hashes being stored
-	if permissionHashInBadger != "" {
-		if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin, permissionHashInBadger, c); err != nil {
-			return err
-		}
+	if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin, permissionHashInBadger, c); err != nil {
+		return err
 	}
 
 	oldMetadataV2, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
 
-	// TODO remove this if block wrapping the other if after everyone should have migrated
-	// This is only in effect for a limited time because many users already created metadataV2s without
-	// permission hashes being stored
-	if permissionHashInBadger != "" {
-		if err := account.RemoveMetadata(int64(len(oldMetadataV2))); err != nil {
-			return InternalErrorResponse(c, err)
-		}
+	if err := account.RemoveMetadata(int64(len(oldMetadataV2))); err != nil {
+		return InternalErrorResponse(c, err)
 	}
 
 	if err = utils.BatchDelete(&utils.KVKeys{
