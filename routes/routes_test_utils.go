@@ -211,6 +211,18 @@ func returnValidVerificationAndRequestBody(t *testing.T, body interface{}, priva
 	return v, b
 }
 
+func returnValidRequestBodyWithoutVerification(t *testing.T, body interface{}) requestBody {
+	abortIfNotTesting(t)
+
+	bodyJson, _ := json.Marshal(body)
+	bodyBuf := bytes.NewBuffer(bodyJson)
+	b := requestBody{
+		RequestBody: bodyBuf.String(),
+	}
+
+	return b
+}
+
 func setupVerificationWithPrivateKeyForTest(t *testing.T, reqBody string, privateKey *ecdsa.PrivateKey) verification {
 	abortIfNotTesting(t)
 

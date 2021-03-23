@@ -299,6 +299,10 @@ func getPermissionHashV2KeyForBadger(prefix string) string {
 	return prefix + "_permissionHash"
 }
 
+func getIsPublicV2KeyForBadger(prefix string) string {
+	return prefix + "_isPublic"
+}
+
 func getVersionKeyForBadger(prefix string, index int) string {
 	return prefix + "_" + strconv.Itoa(index)
 }

@@ -99,6 +99,9 @@ const (
 	/*MetadataV2GetPath is the path for getting metadata*/
 	MetadataV2GetPath = "/metadata/get"
 
+	/*MetadataV2GetPublicPath is the path for getting metadata*/
+	MetadataV2GetPublicPath = "/metadata/get-public"
+
 	/*MetadataV2AddPath is the path for setting metadata*/
 	MetadataV2AddPath = "/metadata/add"
 
@@ -224,6 +227,7 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 func setupV2Paths(v2Router *gin.RouterGroup) {
 	v2Router.POST(MetadataV2AddPath, UpdateMetadataV2Handler())
 	v2Router.POST(MetadataV2GetPath, GetMetadataV2Handler())
+	v2Router.POST(MetadataV2GetPublicPath, GetMetadataV2PublicHandler())
 	v2Router.POST(MetadataV2DeletePath, DeleteMetadataV2Handler())
 
 	v2Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())

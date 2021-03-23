@@ -50,7 +50,7 @@ func Test_GetMetadataV2Handler_Returns_MetadataV2(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
-	w := httpPostRequestHelperForTest(t, MetadataGetPath, "v2", get)
+	w := httpPostRequestHelperForTest(t, MetadataV2GetPath, "v2", get)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), testMetadataV2Value)
@@ -104,6 +104,59 @@ func Test_GetMetadataV2Handler_Error_If_Not_In_KV_Store(t *testing.T) {
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
+
+	w := httpPostRequestHelperForTest(t, MetadataV2GetPath, "v2", get)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func Test_GetMetadataV2PublicHandler_Returns_MetadataV2(t *testing.T) {
+	ttl := utils.TestValueTimeToLive
+
+	testMetadataV2Key := utils.GenerateFileHandle()
+	testMetadataV2Value := utils.GenerateFileHandle()
+
+	testMetadataV2IsPublicKey := getIsPublicV2KeyForBadger(testMetadataV2Key)
+
+	if err := utils.BatchSet(&utils.KVPairs{
+		testMetadataV2Key:         testMetadataV2Value,
+		testMetadataV2IsPublicKey: "true",
+	}, ttl); err != nil {
+		t.Fatalf("there should not have been an error")
+	}
+
+	getMetadataV2 := metadataV2KeyObject{
+		MetadataV2Key: testMetadataV2Key,
+		Timestamp:     time.Now().Unix(),
+	}
+
+	b := returnValidRequestBodyWithoutVerification(t, getMetadataV2)
+
+	get := metadataV2KeyReq{
+		metadataV2KeyObject: getMetadataV2,
+		requestBody:         b,
+	}
+
+	w := httpPostRequestHelperForTest(t, MetadataV2GetPublicPath, "v2", get)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), testMetadataV2Value)
+}
+
+func Test_GetMetadataV2PublicHandler_Error_If_Not_In_KV_Store(t *testing.T) {
+	testMetadataV2Key := utils.GenerateFileHandle()
+
+	getMetadataV2 := metadataV2KeyObject{
+		MetadataV2Key: testMetadataV2Key,
+		Timestamp:     time.Now().Unix(),
+	}
+
+	b := returnValidRequestBodyWithoutVerification(t, getMetadataV2)
+
+	get := metadataV2KeyReq{
+		metadataV2KeyObject: getMetadataV2,
+		requestBody:         b,
+	}
 
 	w := httpPostRequestHelperForTest(t, MetadataV2GetPath, "v2", get)
 	// Check to see if the response was what you expected

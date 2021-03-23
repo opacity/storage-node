@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
@@ -21,6 +22,7 @@ type updateMetadataV2Object struct {
 	MetadataV2Key    string   `json:"metadataV2Key" binding:"required,base64,len=44" example:"public key for the metadataV2 encoded to base64"`
 	MetadataV2Sig    string   `json:"metadataV2Sig" binding:"required,base64,len=88" example:"a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2"`
 	MetadataV2Vertex string   `json:"metadataV2Vertex" binding:"required,base64" example:"the vertex to add to your account metadataV2 encoded to base64"`
+	IsPublic         bool     `json:"isPublic" binding:"required"`
 	Timestamp        int64    `json:"timestamp" binding:"required"`
 }
 
@@ -47,6 +49,11 @@ type metadataV2KeyReq struct {
 	metadataV2KeyObject metadataV2KeyObject
 }
 
+type metadataV2PublicKeyReq struct {
+	requestBody
+	metadataV2KeyObject metadataV2KeyObject
+}
+
 type getMetadataV2Res struct {
 	MetadataV2     string    `json:"metadataV2" binding:"exists,base64,omitempty" example:"your account metadataV2"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
@@ -63,8 +70,6 @@ var metadataV2DeletedRes = StatusRes{
 func (v *updateMetadataV2Req) getObjectRef() interface{} {
 	return &v.updateMetadataV2Object
 }
-
-const numMetadataV2sToRetain = 5
 
 func (v *metadataV2KeyReq) getObjectRef() interface{} {
 	return &v.metadataV2KeyObject
@@ -88,6 +93,27 @@ func (v *metadataV2KeyReq) getObjectRef() interface{} {
 // @Router /api/v2/metadata/get [post]
 /*GetMetadataV2Handler is a handler for getting the file metadataV2*/
 func GetMetadataV2Handler() gin.HandlerFunc {
+	return ginHandlerFunc(getMetadataV2)
+}
+
+// GetMetadataV2PublicHandler godoc
+// @Summary Retrieve account metadataV2
+// @Accept  json
+// @Produce  json
+// @Param metadataV2PublicKeyReq body routes.metadataV2PublicKeyReq true "object for endpoints that only need metadataV2Key and timestamp"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"metadataV2Key": "public key for the metadataV2 encoded to base64",
+// @description 	"timestamp": 1557346389
+// @description }
+// @Success 200 {object} routes.getMetadataV2Res
+// @Failure 404 {string} string "no value found for that key, or account not found"
+// @Failure 403 {string} string "subscription expired, or the invoice resonse"
+// @Failure 400 {string} string "bad request, unable to parse b64: (with the error)"
+// @Failure 400 {string} string "bad request, incorrect key length"
+// @Router /api/v2/metadata/get-public [post]
+/*GetMetadataV2PublicHandler is a handler for getting the public file metadataV2*/
+func GetMetadataV2PublicHandler() gin.HandlerFunc {
 	return ginHandlerFunc(getMetadataV2)
 }
 
@@ -210,6 +236,48 @@ func getMetadataV2(c *gin.Context) error {
 	})
 }
 
+func getMetadataV2Public(c *gin.Context) error {
+	request := metadataV2PublicKeyReq{}
+
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
+	}
+
+	requestBodyParsed := metadataV2KeyObject{}
+
+	metadataV2KeyBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	if len(metadataV2KeyBin) != 33 {
+		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
+	}
+
+	isPublicKey := getIsPublicV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+	isPublicInBadger, _, err := utils.GetValueFromKV(isPublicKey)
+
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	if isPublicInBadger != "true" {
+		return NotFoundResponse(c, errors.New("Key not found"))
+	}
+
+	metadataV2, expirationTime, err := utils.GetValueFromKV(request.metadataV2KeyObject.MetadataV2Key)
+
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	return OkResponse(c, getMetadataV2Res{
+		MetadataV2:     metadataV2,
+		ExpirationDate: expirationTime,
+	})
+}
+
 func updateMetadataV2(c *gin.Context) error {
 	request := updateMetadataV2Req{}
 
@@ -250,7 +318,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	if err != nil || oldMetadataV2 == "" {
+	if err != nil {
 		if err = account.IncrementMetadataCount(); err != nil {
 			return ForbiddenResponse(c, err)
 		}
@@ -258,18 +326,45 @@ func updateMetadataV2(c *gin.Context) error {
 		ttl := time.Until(account.ExpirationDate())
 
 		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin, c)
-
 		permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
 
+		isPublicKey := getIsPublicV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+
+		d := dag.NewDAG()
+
 		if err = utils.BatchSet(&utils.KVPairs{
-			requestBodyParsed.MetadataV2Key: "",
+			requestBodyParsed.MetadataV2Key: base64.StdEncoding.EncodeToString(d.Binary()),
 			permissionHashKey:               permissionHash,
+			isPublicKey:                     strconv.FormatBool(requestBodyParsed.IsPublic),
 		}, ttl); err != nil {
 			account.DecrementMetadataCount()
 			return InternalErrorResponse(c, err)
 		}
 
-		oldMetadataV2 = base64.StdEncoding.EncodeToString(dag.NewDAG().Binary())
+		oldMetadataV2 = base64.StdEncoding.EncodeToString(d.Binary())
+	}
+
+	permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin,
+		permissionHashInBadger, c); err != nil {
+		return err
+	}
+
+	isPublicKey := getIsPublicV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+	isPublicInBadger, _, err := utils.GetValueFromKV(isPublicKey)
+
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	if isPublicInBadger != strconv.FormatBool(requestBodyParsed.IsPublic) {
+		return BadRequestResponse(c, errors.New("bad request, isPublic does not match"))
 	}
 
 	dBin, err := base64.StdEncoding.DecodeString(oldMetadataV2)
@@ -346,15 +441,8 @@ func updateMetadataV2(c *gin.Context) error {
 		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
-	permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
-	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
-
 	newMetadataV2 := base64.StdEncoding.EncodeToString(d.Binary())
 
-	if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin,
-		permissionHashInBadger, c); err != nil {
-		return err
-	}
 	if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadataV2)), int64(len(newMetadataV2))); err != nil {
 		return ForbiddenResponse(c, err)
 	}
