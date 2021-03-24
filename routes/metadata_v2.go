@@ -270,7 +270,7 @@ func getMetadataV2Public(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("Key not found"))
 	}
 
-	metadataV2, expirationTime, err := utils.GetValueFromKV(request.metadataV2KeyObject.MetadataV2Key)
+	metadataV2, expirationTime, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
 
 	if err != nil {
 		return NotFoundResponse(c, err)
