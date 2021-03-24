@@ -114,7 +114,7 @@ func GetMetadataV2Handler() gin.HandlerFunc {
 // @Router /api/v2/metadata/get-public [post]
 /*GetMetadataV2PublicHandler is a handler for getting the public file metadataV2*/
 func GetMetadataV2PublicHandler() gin.HandlerFunc {
-	return ginHandlerFunc(getMetadataV2)
+	return ginHandlerFunc(getMetadataV2Public)
 }
 
 // UpdateMetadataV2Handler godoc
