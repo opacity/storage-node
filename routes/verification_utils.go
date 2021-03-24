@@ -204,6 +204,14 @@ func verifyAndParseStringRequest(reqAsString string, dest interface{}, verificat
 	return nil
 }
 
+func parseStringRequest(reqAsString string, dest interface{}, c *gin.Context) error {
+	if err := utils.ParseStringifiedRequest(reqAsString, dest); err != nil {
+		return BadRequestResponse(c, fmt.Errorf("bad request, unable to parse request body: %v", err))
+	}
+
+	return nil
+}
+
 func verifyParsedRequest(reqBody interface{}, verificationData verification, c *gin.Context) error {
 	hash, err := hashRequestBody(reqBody, c)
 	if err != nil {

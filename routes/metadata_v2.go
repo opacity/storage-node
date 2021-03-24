@@ -245,6 +245,10 @@ func getMetadataV2Public(c *gin.Context) error {
 
 	requestBodyParsed := metadataV2KeyObject{}
 
+	if err := parseStringRequest(request.RequestBody, &requestBodyParsed, c); err != nil {
+		return err
+	}
+
 	metadataV2KeyBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
