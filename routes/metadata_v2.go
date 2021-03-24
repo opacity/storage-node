@@ -310,13 +310,13 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
 	}
 
-	oldMetadataV2, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
-
 	publicKeyBin, err := hex.DecodeString(request.PublicKey)
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse hex: %v", err)
 		return BadRequestResponse(c, err)
 	}
+
+	oldMetadataV2, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
 
 	if err != nil {
 		if err = account.IncrementMetadataCount(); err != nil {
