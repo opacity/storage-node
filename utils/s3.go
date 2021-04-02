@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -10,7 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/meirf/gopart"
-	"github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map"
 )
 
 type s3Wrapper struct {
@@ -100,10 +101,10 @@ func getObjectSizeInByte(bucketName string, objectKey string) int64 {
 	return aws.Int64Value(r.ContentLength)
 }
 
-func getObject(bucketName string, objectKey string, cached bool) (string, error) {
+func getObject(bucketName string, objectKey string, cached bool) (*s3.GetObjectOutput, string, error) {
 	if cached {
 		if value, ok := cachedData.Get(getKey(bucketName, objectKey)); ok {
-			return value.(string), nil
+			return nil, value.(string), nil
 		}
 	}
 
@@ -111,11 +112,37 @@ func getObject(bucketName string, objectKey string, cached bool) (string, error)
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(objectKey),
 	}
-	data, err := svc.GetObjectAsString(input)
+
+	output, err := svc.s3.GetObject(input)
+	outputString := ""
+
 	if err == nil && shouldCachedData {
-		cachedData.Set(getKey(bucketName, objectKey), data)
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(output.Body)
+		outputString = buf.String()
+
+		cachedData.Set(getKey(bucketName, objectKey), outputString)
 	}
-	return data, err
+
+	return output, outputString, err
+}
+
+func getObjectAsByteArray(bucketName string, objectKey string, cached bool) ([]byte, error) {
+	output, _, err := getObject(bucketName, objectKey, cached)
+	if err != nil {
+		return nil, err
+	}
+
+	return io.ReadAll(output.Body)
+}
+
+func getObjectAsString(bucketName string, objectKey string, cached bool) (string, error) {
+	_, outputString, err := getObject(bucketName, objectKey, cached)
+	if err != nil {
+		return "", err
+	}
+
+	return outputString, nil
 }
 
 func setObject(bucketName string, objectKey string, data string) error {
@@ -276,7 +303,11 @@ func DoesDefaultBucketObjectExist(objectKey string) bool {
 
 // Get Object operation on defaultBucketName
 func GetDefaultBucketObject(objectKey string, cached bool) (string, error) {
-	return getObject(Env.BucketName, objectKey, cached)
+	return getObjectAsString(Env.BucketName, objectKey, cached)
+}
+
+func GetBucketObject(objectKey string, cached bool) ([]byte, error) {
+	return getObjectAsByteArray(Env.BucketName, objectKey, cached)
 }
 
 func GetDefaultBucketObjectSize(objectKey string) int64 {
@@ -385,22 +416,6 @@ func (svc *s3Wrapper) PutObject(input *s3.PutObjectInput) error {
 
 	_, err := svc.s3.PutObject(input)
 	return err
-}
-
-func (svc *s3Wrapper) GetObjectAsString(input *s3.GetObjectInput) (string, error) {
-	if svc.s3 == nil {
-		return "", nil
-	}
-
-	output, err := svc.s3.GetObject(input)
-
-	if err != nil {
-		return "", err
-	}
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(output.Body)
-	return buf.String(), nil
 }
 
 func (svc *s3Wrapper) ListObjectPages(input *s3.ListObjectsV2Input, it ObjectIterator) error {
