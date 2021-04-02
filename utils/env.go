@@ -62,6 +62,7 @@ type StorageNodeEnv struct {
 	AwsRegion          string `env:"AWS_REGION" envDefault:""`
 	AwsAccessKeyID     string `env:"AWS_ACCESS_KEY_ID" envDefault:""`
 	AwsSecretAccessKey string `env:"AWS_SECRET_ACCESS_KEY" envDefault:""`
+	AwsSqsQueueName    string `env:"AWS_SQS_QUEUE_NAME" envDefault:""`
 
 	// How long the user has to pay for their account before we delete it
 	AccountRetentionDays int `env:"ACCOUNT_RETENTION_DAYS" envDefault:"7"`
@@ -140,6 +141,7 @@ func SetTesting(filenames ...string) {
 func runInitializations() {
 	InitKvStore()
 	newS3Session()
+	newSqsSession()
 
 	Env.Plans = make(PlanResponseType)
 	err := json.Unmarshal([]byte(Env.PlansJson), &Env.Plans)
@@ -179,6 +181,7 @@ func tryLookUp() error {
 	awsRegion := AppendLookupErrors("AWS_REGION", &collectedErrors)
 	awsAccessKeyID := AppendLookupErrors("AWS_ACCESS_KEY_ID", &collectedErrors)
 	awsSecretAccessKey := AppendLookupErrors("AWS_SECRET_ACCESS_KEY", &collectedErrors)
+	awsSqsQueueName := AppendLookupErrors("AWS_SQS_QUEUE_NAME", &collectedErrors)
 	adminUser := AppendLookupErrors("ADMIN_USER", &collectedErrors)
 	adminPassword := AppendLookupErrors("ADMIN_PASSWORD", &collectedErrors)
 	stripeKeyTest := AppendLookupErrors("STRIPE_KEY_TEST", &collectedErrors)
@@ -222,6 +225,7 @@ func tryLookUp() error {
 		BucketName:           bucketName,
 		AwsAccessKeyID:       awsAccessKeyID,
 		AwsSecretAccessKey:   awsSecretAccessKey,
+		AwsSqsQueueName:      awsSqsQueueName,
 		AdminUser:            adminUser,
 		AdminPassword:        adminPassword,
 		PlansJson:            plansJson,
