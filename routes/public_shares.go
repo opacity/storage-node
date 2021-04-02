@@ -101,7 +101,7 @@ func shortlinkURL(c *gin.Context) error {
 		return InternalErrorResponse(c, errors.New("there was an error parsing your request"))
 	}
 	return OkResponse(c, shortlinkFileResp{
-		URL: fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, fileDataPublicKey),
+		URL: GetS3FileUrl(fileDataPublicKey),
 	})
 }
 
@@ -152,4 +152,8 @@ func revokePublicShare(c *gin.Context) error {
 	return OkResponse(c, StatusRes{
 		Status: "Public share revoked",
 	})
+}
+
+func GetS3FileUrl(key string) string {
+	return fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, key)
 }
