@@ -111,6 +111,10 @@ func GetFileDataPublicKey(fileID string) string {
 	return fileID + "/public"
 }
 
+func GetPublicThumbnailKey(fileID string) string {
+	return fileID + "/thumbnail"
+}
+
 /*Return File object(first one) if there is not any error. If not found, return nil without error. */
 func GetFileById(fileID string) (File, error) {
 	file := File{}

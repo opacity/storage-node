@@ -2,7 +2,6 @@ package routes
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -20,7 +19,8 @@ type PublicShareObj struct {
 }
 
 type shortlinkFileResp struct {
-	URL string `json:"url"`
+	URL          string `json:"url"`
+	ThumbnailURL string `json:"thumbnailUrl"`
 }
 
 type viewsCountResp struct {
@@ -100,8 +100,10 @@ func shortlinkURL(c *gin.Context) error {
 	if err != nil {
 		return InternalErrorResponse(c, errors.New("there was an error parsing your request"))
 	}
+	bucketURL := models.GetBucketUrl()
 	return OkResponse(c, shortlinkFileResp{
-		URL: fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, fileDataPublicKey),
+		URL:          bucketURL + fileDataPublicKey,
+		ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(publicShare.FileID),
 	})
 }
 

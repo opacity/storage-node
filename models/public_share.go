@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -40,4 +41,9 @@ func (publicShare *PublicShare) UpdateViewsCount() error {
 // RemovePublicShare removes a public share (revokes it)
 func (publicShare *PublicShare) RemovePublicShare() error {
 	return DB.Delete(&publicShare).Error
+}
+
+// Gets S3 bucket URL
+func GetBucketUrl() string {
+	return fmt.Sprintf("https://s3.%s.amazonaws.com/%s", utils.Env.AwsRegion, utils.Env.BucketName)
 }
