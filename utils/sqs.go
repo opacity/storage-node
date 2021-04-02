@@ -22,7 +22,7 @@ func newSqsSession() {
 }
 
 // Sends a message to AWS SQS
-func SendMessage(messageBody string) error {
+func SendSqsMessage(messageBody string) error {
 	sqsUrl, err := getQueueURL()
 	if err != nil {
 		return err
