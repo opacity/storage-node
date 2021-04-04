@@ -8,12 +8,14 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
+// PublicShareOpsReq...
 type PublicShareOpsReq struct {
 	verification
 	requestBody
 	publicShareObj PublicShareObj
 }
 
+// PublicShareObj...
 type PublicShareObj struct {
 	Shortlink string `json:"shortlink" binding:"required" example:"the short link of the completed file"`
 }
