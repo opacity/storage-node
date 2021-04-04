@@ -104,20 +104,17 @@ func GeneratePublicThumbnail(fileID string) error {
 	}
 
 	image, err := imaging.Decode(publicFileObj)
-
 	if err != nil {
 		return err
 	}
 
 	thumbnailImage := imaging.Thumbnail(image, 1200, 628, imaging.Lanczos)
 	distThumbnailWriter := bytes.NewBufferString("")
-	err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.JPEG)
-	if err != nil {
+	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.JPEG); err != nil {
 		return err
 	}
 
 	distThumbnailString := distThumbnailWriter.String()
-	err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString)
 
-	return err
+	return utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString)
 }
