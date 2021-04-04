@@ -2,6 +2,7 @@ package routes
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
@@ -15,14 +16,27 @@ type FileUploadCompletedPublicRes struct {
 	ThumbnailURL string `json:"thumbnailUrl"`
 }
 
+type UploadStatusPublicObj struct {
+	FileHandle string `json:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
+	MimeType   string `json:"mimeType" example:"image/jpeg"`
+}
+
+type UploadStatusPublicReq struct {
+	verification
+	requestBody
+	uploadStatusPublicObj UploadStatusPublicObj
+}
+
 // CheckUploadStatusPublicHandler godoc
 // @Summary check status of a public upload
-// @Description check status of a public upload
+// @Description check status of a public upload and creates a thumbnail in case the file is an image
+// @Description "jpg" (or "jpeg"), "png", "gif", "tif" (or "tiff") and "bmp" are supported
 // @Accept json
 // @Produce json
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
+// @description   "mimeType": "the mime type of the file"
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 404 {string} string "file not found"
@@ -36,13 +50,13 @@ func CheckUploadStatusPublicHandler() gin.HandlerFunc {
 }
 
 func checkUploadStatusPublic(c *gin.Context) error {
-	request := UploadStatusReq{}
+	request := UploadStatusPublicReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
 	}
 
-	fileID := request.uploadStatusObj.FileHandle
+	fileID := request.uploadStatusPublicObj.FileHandle
 	completedFile, completedErr := models.GetCompletedFileByFileID(fileID)
 	if completedErr == nil && len(completedFile.FileID) != 0 {
 		if utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(fileID)) {
@@ -55,7 +69,7 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return FileNotFoundResponse(c, fileID)
 	}
 
-	if err := verifyPermissions(request.PublicKey, request.uploadStatusObj.FileHandle, file.ModifierHash, c); err != nil {
+	if err := verifyPermissions(request.PublicKey, request.uploadStatusPublicObj.FileHandle, file.ModifierHash, c); err != nil {
 		return err
 	}
 
@@ -84,7 +98,7 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := GeneratePublicThumbnail(completedFile.FileID); err != nil {
+	if err := GeneratePublicThumbnail(completedFile.FileID, request.uploadStatusPublicObj.MimeType); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
@@ -94,27 +108,37 @@ func checkUploadStatusPublic(c *gin.Context) error {
 	})
 }
 
-func GeneratePublicThumbnail(fileID string) error {
+func GeneratePublicThumbnail(fileID string, mimeType string) error {
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
 	fileDataPublicKey := models.GetFileDataPublicKey(fileID)
 	publicFileObj, err := utils.GetBucketObject(fileDataPublicKey, true)
-
 	if err != nil {
 		return err
 	}
+	defer publicFileObj.Close()
 
 	image, err := imaging.Decode(publicFileObj)
 	if err != nil {
 		return err
 	}
 
-	thumbnailImage := imaging.Thumbnail(image, 1200, 628, imaging.Lanczos)
-	distThumbnailWriter := bytes.NewBufferString("")
-	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.JPEG); err != nil {
+	_, extension := splitMime(mimeType)
+	thumbnailFormat, _ := imaging.FormatFromExtension(extension)
+	thumbnailImage := imaging.Thumbnail(image, 1200, 628, imaging.CatmullRom)
+	distThumbnailWriter := new(bytes.Buffer)
+	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, thumbnailFormat); err != nil {
 		return err
 	}
 
 	distThumbnailString := distThumbnailWriter.String()
 
 	return utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString)
+}
+
+func splitMime(s string) (string, string) {
+	x := strings.Split(s, "/")
+	if len(x) > 1 {
+		return x[0], x[1]
+	}
+	return x[0], ""
 }
