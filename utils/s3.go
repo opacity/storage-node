@@ -127,13 +127,9 @@ func getObject(bucketName string, objectKey string, cached bool) (*s3.GetObjectO
 	return output, outputString, err
 }
 
-func getObjectAsByteArray(bucketName string, objectKey string, cached bool) ([]byte, error) {
+func getObjectAsReadCloser(bucketName string, objectKey string, cached bool) (io.ReadCloser, error) {
 	output, _, err := getObject(bucketName, objectKey, cached)
-	if err != nil {
-		return nil, err
-	}
-
-	return io.ReadAll(output.Body)
+	return output.Body, err
 }
 
 func getObjectAsString(bucketName string, objectKey string, cached bool) (string, error) {
@@ -306,8 +302,8 @@ func GetDefaultBucketObject(objectKey string, cached bool) (string, error) {
 	return getObjectAsString(Env.BucketName, objectKey, cached)
 }
 
-func GetBucketObject(objectKey string, cached bool) ([]byte, error) {
-	return getObjectAsByteArray(Env.BucketName, objectKey, cached)
+func GetBucketObject(objectKey string, cached bool) (io.ReadCloser, error) {
+	return getObjectAsReadCloser(Env.BucketName, objectKey, cached)
 }
 
 func GetDefaultBucketObjectSize(objectKey string) int64 {

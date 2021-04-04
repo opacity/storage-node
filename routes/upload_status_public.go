@@ -1,6 +1,9 @@
 package routes
 
 import (
+	"bytes"
+
+	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -8,7 +11,8 @@ import (
 
 // FileUploadCompletedPublicRes ...
 type FileUploadCompletedPublicRes struct {
-	Shortlink string `json:"shortlink"`
+	Shortlink    string `json:"shortlink"`
+	ThumbnailURL string `json:"thumbnailUrl"`
 }
 
 // CheckUploadStatusPublicHandler godoc
@@ -80,7 +84,40 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
+	if err := GeneratePublicThumbnail(completedFile.FileID); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
 	return OkResponse(c, FileUploadCompletedPublicRes{
-		Shortlink: publicShare.PublicID,
+		Shortlink:    publicShare.PublicID,
+		ThumbnailURL: models.GetPublicThumbnailKey(publicShare.PublicID),
 	})
+}
+
+func GeneratePublicThumbnail(fileID string) error {
+	thumbnailKey := models.GetPublicThumbnailKey(fileID)
+	fileDataPublicKey := models.GetFileDataPublicKey(fileID)
+	publicFileObj, err := utils.GetBucketObject(fileDataPublicKey, true)
+
+	if err != nil {
+		return err
+	}
+
+	image, err := imaging.Decode(publicFileObj)
+
+	if err != nil {
+		return err
+	}
+
+	thumbnailImage := imaging.Thumbnail(image, 1200, 628, imaging.Lanczos)
+	distThumbnailWriter := bytes.NewBufferString("")
+	err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.JPEG)
+	if err != nil {
+		return err
+	}
+
+	distThumbnailString := distThumbnailWriter.String()
+	err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString)
+
+	return err
 }
