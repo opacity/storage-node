@@ -51,13 +51,13 @@ func ShortlinkFileHandler() gin.HandlerFunc {
 // ViewsCountHandler godoc
 // @Summary get views count
 // @Description get the views count for a publicly shared file
-// @Accept json
-// @Produce json
+// @Accept  json
+// @Produce  json
+// @Param PublicShareOpsReq body routes.PublicShareOpsReq true "an object to do operations on a public share"
 // @description requestBody should be a stringified version of:
 // @description {
 // @description 	"shortlink": "the shortlink of the completed file",
 // @description }
-// @Param publicShareOpsReq body publicShareOpsReq true "an object to do operations on a public share"
 // @Success 200 {object} routes.viewsCountResp
 // @Failure 400 {string} string "bad request, unable to get views count"
 // @Failure 403 {string} string "signature did not match"
@@ -71,13 +71,13 @@ func ViewsCountHandler() gin.HandlerFunc {
 // RevokePublicShareHandler godoc
 // @Summary revokes public share
 // @Description remove a public share entry, revoke the share
-// @Accept json
-// @Produce json
+// @Accept  json
+// @Produce  json
+// @Param PublicShareOpsReq body routes.PublicShareOpsReq true "an object to do operations on a public share"
 // @description requestBody should be a stringified version of):
 // @description {
 // @description 	"shortlink": "the shortlink of the completed file",
 // @description }
-// @Param publicShareOpsReq body publicShareOpsReq true "an object to do operations on a public share"
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to revoke public share"
 // @Failure 403 {string} string "signature did not match"

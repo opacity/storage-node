@@ -71,6 +71,42 @@ definitions:
         $ref: '#/definitions/utils.PlanResponseType'
         type: object
     type: object
+  routes.PublicShareObj:
+    properties:
+      shortlink:
+        example: the short link of the completed file
+        type: string
+    required:
+    - shortlink
+    type: object
+  routes.PublicShareOpsReq:
+    properties:
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      publicShareObj:
+        $ref: '#/definitions/routes.PublicShareObj'
+        type: object
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.StatusRes:
     properties:
       status:
@@ -696,44 +732,10 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.publicShareObj:
-    properties:
-      shortlink:
-        example: the short link of the completed file
-        type: string
-    required:
-    - shortlink
-    type: object
-  routes.publicShareOpsReq:
-    properties:
-      publicKey:
-        example: a 66-character public key
-        maxLength: 66
-        minLength: 66
-        type: string
-      publicShareObj:
-        $ref: '#/definitions/routes.publicShareObj'
-        type: object
-      requestBody:
-        example: look at description for example
-        type: string
-      signature:
-        description: |-
-          signature without 0x prefix is broken into
-          R: sig[0:63]
-          S: sig[64:127]
-        example: a 128 character string created when you signed the request with your
-          private key or account handle
-        maxLength: 128
-        minLength: 128
-        type: string
-    required:
-    - publicKey
-    - requestBody
-    - signature
-    type: object
   routes.shortlinkFileResp:
     properties:
+      thumbnailUrl:
+        type: string
       url:
         type: string
     type: object
@@ -1584,10 +1586,10 @@ paths:
       parameters:
       - description: an object to do operations on a public share
         in: body
-        name: publicShareOpsReq
+        name: PublicShareOpsReq
         required: true
         schema:
-          $ref: '#/definitions/routes.publicShareOpsReq'
+          $ref: '#/definitions/routes.PublicShareOpsReq'
       produces:
       - application/json
       responses:
@@ -1625,10 +1627,10 @@ paths:
       parameters:
       - description: an object to do operations on a public share
         in: body
-        name: publicShareOpsReq
+        name: PublicShareOpsReq
         required: true
         schema:
-          $ref: '#/definitions/routes.publicShareOpsReq'
+          $ref: '#/definitions/routes.PublicShareOpsReq'
       produces:
       - application/json
       responses:
@@ -1697,10 +1699,12 @@ paths:
       consumes:
       - application/json
       description: |-
-        check status of a public upload
+        check status of a public upload and creates a thumbnail in case the file is an image
+        "jpg" (or "jpeg"), "png", "gif", "tif" (or "tiff") and "bmp" are supported
         requestBody should be a stringified version of (values are just examples):
         {
         "fileHandle": "a deterministically created file handle",
+        "mimeType": "the mime type of the file"
         }
       produces:
       - application/json
