@@ -29,7 +29,7 @@ type UploadStatusPublicReq struct {
 
 // CheckUploadStatusPublicHandler godoc
 // @Summary check status of a public upload
-// @Description check status of a public upload and creates a thumbnail in case the file is an image
+// @Description check status of a public upload and creates a thumbnail in case the file is an image. If the mimeType is send, the API will not create the thumbnail
 // @Description "jpg" (or "jpeg"), "png", "gif", "tif" (or "tiff") and "bmp" are supported
 // @Accept json
 // @Produce json
@@ -98,8 +98,10 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := GeneratePublicThumbnail(completedFile.FileID, request.uploadStatusPublicObj.MimeType); err != nil {
-		return InternalErrorResponse(c, err)
+	if request.uploadStatusPublicObj.MimeType != "" {
+		if err := GeneratePublicThumbnail(completedFile.FileID, request.uploadStatusPublicObj.MimeType); err != nil {
+			return InternalErrorResponse(c, err)
+		}
 	}
 
 	return OkResponse(c, FileUploadCompletedPublicRes{
