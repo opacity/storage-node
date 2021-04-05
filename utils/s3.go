@@ -103,8 +103,10 @@ func getObjectSizeInByte(bucketName string, objectKey string) int64 {
 
 func getObject(bucketName string, objectKey string, cached bool) (*s3.GetObjectOutput, string, error) {
 	if cached {
-		if value, ok := cachedData.Get(getKey(bucketName, objectKey)); ok {
-			return nil, value.(string), nil
+		valueS, okS := cachedData.Get(getKey(bucketName, objectKey))
+		valueR, okR := cachedData.Get(getKey(bucketName, objectKey+"_object"))
+		if okS && okR {
+			return valueR.(*s3.GetObjectOutput), valueS.(string), nil
 		}
 	}
 
@@ -121,6 +123,7 @@ func getObject(bucketName string, objectKey string, cached bool) (*s3.GetObjectO
 
 	if err == nil && shouldCachedData {
 		cachedData.Set(getKey(bucketName, objectKey), outputString)
+		cachedData.Set(getKey(bucketName, objectKey+"_object"), output)
 	}
 
 	return output, outputString, err
