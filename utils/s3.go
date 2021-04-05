@@ -114,13 +114,12 @@ func getObject(bucketName string, objectKey string, cached bool) (*s3.GetObjectO
 	}
 
 	output, err := svc.s3.GetObject(input)
-	outputString := ""
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(output.Body)
+	outputString := buf.String()
 
 	if err == nil && shouldCachedData {
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(output.Body)
-		outputString = buf.String()
-
 		cachedData.Set(getKey(bucketName, objectKey), outputString)
 	}
 
