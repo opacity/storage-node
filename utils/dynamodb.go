@@ -9,29 +9,29 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
-type dynamodbWrapper struct {
+type DynamodbWrapper struct {
 	dynamodb  *dynamodb.DynamoDB
 	tableName string
 }
 
-func newDynamoDBSession(test bool, tableName string) *dynamodbWrapper {
+func NewDynamoDBSession(testOrDebug bool, tableName string, region string, endpoint string) *DynamodbWrapper {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
 
-	awsConfig := aws.NewConfig().WithRegion(Env.AwsRegion).WithEndpoint(Env.AwsDynamoDBEndpoint)
+	awsConfig := aws.NewConfig()
 
-	if test {
-		awsConfig = awsConfig.WithLogLevel(aws.LogDebugWithHTTPBody)
+	if testOrDebug {
+		awsConfig = awsConfig.WithEndpoint(endpoint).WithLogLevel(aws.LogDebugWithHTTPBody)
 	}
 
-	return &dynamodbWrapper{
+	return &DynamodbWrapper{
 		dynamodb:  dynamodb.New(sess, awsConfig),
 		tableName: tableName,
 	}
 }
 
-func (dynamodbSvc *dynamodbWrapper) Set(item interface{}) error {
+func (dynamodbSvc *DynamodbWrapper) Set(item interface{}) error {
 
 	av, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
@@ -50,3 +50,9 @@ func (dynamodbSvc *dynamodbWrapper) Set(item interface{}) error {
 
 	return nil
 }
+
+// func (dynamodbSvc *DynamodbWrapper) SetBatch(item []interface{}) error {
+// 	dynamodbSvc.dynamodb.BatchWri
+
+// 	return nil
+// }

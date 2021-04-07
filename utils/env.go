@@ -47,7 +47,7 @@ type StorageNodeEnv struct {
 	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:""`
 
 	// Go environment
-	GoEnv string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
+	GoEnv string `env:"GO_ENV" envDefault:"live"`
 
 	// Payment stuff
 	ContractAddress      string `env:"TOKEN_CONTRACT_ADDRESS" envDefault:""`
@@ -63,7 +63,7 @@ type StorageNodeEnv struct {
 	AwsRegion           string `env:"AWS_REGION" envDefault:""`
 	AwsAccessKeyID      string `env:"AWS_ACCESS_KEY_ID" envDefault:""`
 	AwsSecretAccessKey  string `env:"AWS_SECRET_ACCESS_KEY" envDefault:""`
-	AwsDynamoDBEndpoint string `env:"AWS_DYNAMODB_ENDPOINT" envDefault:""`
+	AwsDynamoDBEndpoint string `env:"AWS_DYNAMODB_ENDPOINT" envDefault:"http://localhost:8000"`
 
 	// How long the user has to pay for their account before we delete it
 	AccountRetentionDays int `env:"ACCOUNT_RETENTION_DAYS" envDefault:"7"`
@@ -94,7 +94,7 @@ type StorageNodeEnv struct {
 
 /*Env is the environment for a particular node while the application is running*/
 var Env StorageNodeEnv
-var DynamodbSvc *dynamodbWrapper
+var DynamodbSvc *DynamodbWrapper
 
 func initEnv(filenames ...string) {
 	// Load ENV variables
@@ -124,7 +124,6 @@ func initEnv(filenames ...string) {
 /*SetLive sets the live environment*/
 func SetLive() {
 	initEnv()
-	Env.GoEnv = "live"
 	Env.DatabaseURL = Env.ProdDatabaseURL
 	Env.StripeKey = Env.StripeKeyProd
 	runInitializations()
@@ -137,14 +136,13 @@ func SetTesting(filenames ...string) {
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
 	Env.StripeKey = Env.StripeKeyTest
-	Env.AwsDynamoDBEndpoint = "http://localhost:8000"
 	runInitializations()
 }
 
 func runInitializations() {
 	InitKvStore()
 	newS3Session()
-	DynamodbSvc = newDynamoDBSession(IsTestEnv(), defaultDynamoDbTable)
+	DynamodbSvc = NewDynamoDBSession(IsTestEnv() || IsDebugEnv(), defaultDynamoDbTable, Env.AwsRegion, Env.AwsDynamoDBEndpoint)
 
 	Env.Plans = make(PlanResponseType)
 	err := json.Unmarshal([]byte(Env.PlansJson), &Env.Plans)
@@ -155,6 +153,11 @@ func runInitializations() {
 /*IsTestEnv returns whether we are in the test environment*/
 func IsTestEnv() bool {
 	return Env.GoEnv == "test"
+}
+
+/*IsDebugEnv returns whether we are in the debug/localhost environment*/
+func IsDebugEnv() bool {
+	return Env.GoEnv == "debug"
 }
 
 /*FreeModeEnabled returns whether we are running in free mode.  Not storing this as
