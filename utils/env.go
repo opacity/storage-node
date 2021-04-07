@@ -16,6 +16,7 @@ import (
 
 const defaultAccountRetentionDays = 7
 const defaultStripeRetentionDays = 30
+const defaultDynamoDbTable = "metadata"
 
 const defaultPlansJson = `{
 "10": {"name":"Free","cost":0,"costInUSD":0.00,"storageInGB":10,"maxFolders":200,"maxMetadataSizeInMB":20},
@@ -58,10 +59,11 @@ type StorageNodeEnv struct {
 	EnableJobs bool `env:"ENABLE_JOB" envDefault:"false"`
 
 	// Aws configuration
-	BucketName         string `env:"AWS_BUCKET_NAME" envDefault:""`
-	AwsRegion          string `env:"AWS_REGION" envDefault:""`
-	AwsAccessKeyID     string `env:"AWS_ACCESS_KEY_ID" envDefault:""`
-	AwsSecretAccessKey string `env:"AWS_SECRET_ACCESS_KEY" envDefault:""`
+	BucketName          string `env:"AWS_BUCKET_NAME" envDefault:""`
+	AwsRegion           string `env:"AWS_REGION" envDefault:""`
+	AwsAccessKeyID      string `env:"AWS_ACCESS_KEY_ID" envDefault:""`
+	AwsSecretAccessKey  string `env:"AWS_SECRET_ACCESS_KEY" envDefault:""`
+	AwsDynamoDBEndpoint string `env:"AWS_DYNAMODB_ENDPOINT" envDefault:""`
 
 	// How long the user has to pay for their account before we delete it
 	AccountRetentionDays int `env:"ACCOUNT_RETENTION_DAYS" envDefault:"7"`
@@ -92,6 +94,7 @@ type StorageNodeEnv struct {
 
 /*Env is the environment for a particular node while the application is running*/
 var Env StorageNodeEnv
+var DynamodbSvc *dynamodbWrapper
 
 func initEnv(filenames ...string) {
 	// Load ENV variables
@@ -134,12 +137,14 @@ func SetTesting(filenames ...string) {
 	Env.GoEnv = "test"
 	Env.DatabaseURL = Env.TestDatabaseURL
 	Env.StripeKey = Env.StripeKeyTest
+	Env.AwsDynamoDBEndpoint = "http://localhost:8000"
 	runInitializations()
 }
 
 func runInitializations() {
 	InitKvStore()
 	newS3Session()
+	DynamodbSvc = newDynamoDBSession(IsTestEnv(), defaultDynamoDbTable)
 
 	Env.Plans = make(PlanResponseType)
 	err := json.Unmarshal([]byte(Env.PlansJson), &Env.Plans)
@@ -179,6 +184,7 @@ func tryLookUp() error {
 	awsRegion := AppendLookupErrors("AWS_REGION", &collectedErrors)
 	awsAccessKeyID := AppendLookupErrors("AWS_ACCESS_KEY_ID", &collectedErrors)
 	awsSecretAccessKey := AppendLookupErrors("AWS_SECRET_ACCESS_KEY", &collectedErrors)
+	awsDynamoDBEndpoint := AppendLookupErrors("AWS_DYNAMODB_ENDPOINT", &collectedErrors)
 	adminUser := AppendLookupErrors("ADMIN_USER", &collectedErrors)
 	adminPassword := AppendLookupErrors("ADMIN_PASSWORD", &collectedErrors)
 	stripeKeyTest := AppendLookupErrors("STRIPE_KEY_TEST", &collectedErrors)
@@ -222,6 +228,7 @@ func tryLookUp() error {
 		BucketName:           bucketName,
 		AwsAccessKeyID:       awsAccessKeyID,
 		AwsSecretAccessKey:   awsSecretAccessKey,
+		AwsDynamoDBEndpoint:  awsDynamoDBEndpoint,
 		AdminUser:            adminUser,
 		AdminPassword:        adminPassword,
 		PlansJson:            plansJson,
