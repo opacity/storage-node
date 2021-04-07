@@ -31,6 +31,17 @@ func NewDynamoDBSession(testOrDebug bool, tableName string, region string, endpo
 	}
 }
 
+func (dynamodbSvc *DynamodbWrapper) Get(keyName string, keyValue string) (*dynamodb.GetItemOutput, error) {
+	return dynamodbSvc.dynamodb.GetItem(&dynamodb.GetItemInput{
+		TableName: aws.String(dynamodbSvc.tableName),
+		Key: map[string]*dynamodb.AttributeValue{
+			keyName: {
+				S: aws.String(keyValue),
+			},
+		},
+	})
+}
+
 func (dynamodbSvc *DynamodbWrapper) Set(item interface{}) error {
 
 	av, err := dynamodbattribute.MarshalMap(item)
