@@ -51,8 +51,28 @@ func (dynamodbSvc *DynamodbWrapper) Set(item interface{}) error {
 	return nil
 }
 
-// func (dynamodbSvc *DynamodbWrapper) SetBatch(item []interface{}) error {
-// 	dynamodbSvc.dynamodb.BatchWri
+func (dynamodbSvc *DynamodbWrapper) SetBatch(request []*dynamodb.WriteRequest) error {
+	input := &dynamodb.BatchWriteItemInput{
+		RequestItems: map[string][]*dynamodb.WriteRequest{
+			dynamodbSvc.tableName: request,
+		},
+	}
 
-// 	return nil
-// }
+	result, err := dynamodbSvc.dynamodb.BatchWriteItem(input)
+	if err != nil {
+		return err
+	}
+
+	if len(result.UnprocessedItems[dynamodbSvc.tableName]) > 0 {
+		retryInput := &dynamodb.BatchWriteItemInput{
+			RequestItems: map[string][]*dynamodb.WriteRequest{
+				dynamodbSvc.tableName: result.UnprocessedItems[dynamodbSvc.tableName],
+			},
+		}
+		_, err := dynamodbSvc.dynamodb.BatchWriteItem(retryInput)
+
+		return err
+	}
+
+	return nil
+}
