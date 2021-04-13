@@ -9,6 +9,8 @@ import (
 
 	"os"
 
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/dgraph-io/badger"
 )
 
@@ -28,6 +30,12 @@ type KVPairs map[string]string
 
 /*KVKeys is a type.  An array of key strings*/
 type KVKeys []string
+
+type DynamoMetadata struct {
+	MetadataKey string `json:"MetadataKey" binding:"omitempty"`
+	Value       string `json:"Value" binding:"omitempty"`
+	TTL         int64  `json:"TTL" binding:"omitempty"`
+}
 
 func init() {
 	dbNoInitError = errors.New("badgerDB not initialized, Call InitKvStore() first")
@@ -96,40 +104,22 @@ func GetValueFromKV(key string) (value string, expirationTime time.Time, err err
 		return value, expirationTime, dbNoInitError
 	}
 
-	err = badgerDB.View(func(txn *badger.Txn) error {
-		if key == "" {
-			return errors.New("no key specified")
-		}
-
-		item, err := txn.Get([]byte(key))
-		if err != nil {
-			return err
-		}
-
-		value = ""
-		if item != nil {
-			var valBytes []byte
-			err := item.Value(func(val []byte) error {
-				if val == nil {
-					valBytes = nil
-				} else {
-					valBytes = append([]byte{}, val...)
-				}
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-
-			value = string(valBytes)
-			expirationTime = time.Unix(int64(item.ExpiresAt()), 0)
-		}
-
-		return nil
-	})
-	if err != badger.ErrKeyNotFound {
-		LogIfError(err, nil)
+	if key == "" {
+		return value, expirationTime, errors.New("no key specified")
 	}
+
+	result := DynamoMetadata{}
+	output, err := DynamodbSvc.Get("MetadataKey", key)
+	if err != nil {
+		return
+	}
+
+	err = dynamodbattribute.UnmarshalMap(output.Item, &result)
+	if err != nil {
+		return
+	}
+	value = result.Value
+	expirationTime = time.Unix(int64(result.TTL), 0)
 
 	return
 }
@@ -193,42 +183,32 @@ func BatchSet(kvs *KVPairs, ttl time.Duration) error {
 	if badgerDB == nil {
 		return dbNoInitError
 	}
+	requests := []*dynamodb.WriteRequest{}
 
-	var err error
-	txn := badgerDB.NewTransaction(true)
 	for k, v := range *kvs {
 		if k == "" {
-			err = errors.New("BatchSet does not accept key as empty string")
-			break
+			return errors.New("object key empty")
 		}
 
-		e := txn.SetEntry(badger.NewEntry([]byte(k), []byte(v)).WithTTL(ttl))
-		if e == nil {
-			continue
+		dynamoItem := DynamoMetadata{
+			MetadataKey: k,
+			Value:       v,
+			TTL:         time.Now().Add(ttl).Unix(),
+		}
+		item, err := dynamodbattribute.MarshalMap(dynamoItem)
+		if err != nil {
+			return errors.New("object could not be created")
+		}
+		wr := dynamodb.WriteRequest{
+			PutRequest: &dynamodb.PutRequest{
+				Item: item,
+			},
 		}
 
-		if e == badger.ErrTxnTooBig {
-			e = nil
-			if commitErr := txn.Commit(); commitErr != nil {
-				e = commitErr
-			} else {
-				txn = badgerDB.NewTransaction(true)
-				e = txn.SetEntry(badger.NewEntry([]byte(k), []byte(v)).WithTTL(ttl))
-			}
-		}
-
-		if e != nil {
-			err = e
-			break
-		}
+		requests = append(requests, &wr)
 	}
 
-	defer txn.Discard()
-	if err == nil {
-		err = txn.Commit()
-	}
-	LogIfError(err, map[string]interface{}{"batchSize": len(*kvs)})
-	return err
+	return DynamodbSvc.SetBatch(requests)
 }
 
 /*BatchDelete deletes a set of KVKeys, Return error if any fails.*/

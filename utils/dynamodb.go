@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -31,8 +32,8 @@ func NewDynamoDBSession(testOrDebug bool, tableName string, region string, endpo
 	}
 }
 
-func (dynamodbSvc *DynamodbWrapper) Get(keyName string, keyValue string) (*dynamodb.GetItemOutput, error) {
-	return dynamodbSvc.dynamodb.GetItem(&dynamodb.GetItemInput{
+func (dynamodbSvc *DynamodbWrapper) Get(keyName string, keyValue string) (itemOutput *dynamodb.GetItemOutput, err error) {
+	itemOutput, err = dynamodbSvc.dynamodb.GetItem(&dynamodb.GetItemInput{
 		TableName: aws.String(dynamodbSvc.tableName),
 		Key: map[string]*dynamodb.AttributeValue{
 			keyName: {
@@ -40,10 +41,18 @@ func (dynamodbSvc *DynamodbWrapper) Get(keyName string, keyValue string) (*dynam
 			},
 		},
 	})
+	if err != nil {
+		return
+	}
+
+	if itemOutput.Item == nil {
+		err = errors.New("item does not exist")
+	}
+
+	return
 }
 
 func (dynamodbSvc *DynamodbWrapper) Set(item interface{}) error {
-
 	av, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
 		log.Fatalf("got error marshalling dynamodb item: %s", err)
@@ -56,7 +65,7 @@ func (dynamodbSvc *DynamodbWrapper) Set(item interface{}) error {
 
 	_, err = dynamodbSvc.dynamodb.PutItem(input)
 	if err != nil {
-		log.Fatalf("Got error calling PutItem: %s", err)
+		log.Fatalf("got error calling PutItem: %s", err)
 	}
 
 	return nil
@@ -86,4 +95,9 @@ func (dynamodbSvc *DynamodbWrapper) SetBatch(request []*dynamodb.WriteRequest) e
 	}
 
 	return nil
+}
+
+func (dynamodbSvc *DynamodbWrapper) Update(input dynamodb.UpdateItemInput) error {
+	_, err := dynamodbSvc.dynamodb.UpdateItem(&input)
+	return err
 }
