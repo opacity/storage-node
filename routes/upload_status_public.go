@@ -17,8 +17,10 @@ type FileUploadCompletedPublicRes struct {
 }
 
 type UploadStatusPublicObj struct {
-	FileHandle string `json:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-	MimeType   string `json:"mimeType" example:"image/jpeg"`
+	FileHandle  string `json:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
+	MimeType    string `json:"mimeType" example:"image/jpeg"`
+	Title       string `json:"title" binding:"required" minLength:"1" maxLength:"255" example:"LoremIpsum"`
+	Description string `json:"description" binding:"required" minLength:"1" maxLength:"255" example:"lorem ipsum"`
 }
 
 type UploadStatusPublicReq struct {
@@ -36,7 +38,9 @@ type UploadStatusPublicReq struct {
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
-// @description   "mimeType": "the mime type of the file"
+// @description   "mimeType": "the mime type of the file",
+// @description   "title": "file title",
+// @description   "description": "a description to be used as metatags value"
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 404 {string} string "file not found"
