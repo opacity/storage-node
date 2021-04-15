@@ -19,8 +19,8 @@ type FileUploadCompletedPublicRes struct {
 type UploadStatusPublicObj struct {
 	FileHandle  string `json:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
 	MimeType    string `json:"mimeType" example:"image/jpeg"`
-	Title       string `json:"title" binding:"required" minLength:"1" maxLength:"255" example:"LoremIpsum"`
-	Description string `json:"description" binding:"required" minLength:"1" maxLength:"255" example:"lorem ipsum"`
+	Title       string `json:"title" binding:"required" minLength:"1" maxLength:"65535" example:"LoremIpsum"`
+	Description string `json:"description" binding:"required" minLength:"1" maxLength:"65535" example:"lorem ipsum"`
 }
 
 type UploadStatusPublicReq struct {
@@ -77,7 +77,7 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return err
 	}
 
-	publicShare, err := file.FinishUploadPublic()
+	publicShare, err := file.FinishUploadPublic(request.uploadStatusPublicObj.Title, request.uploadStatusPublicObj.Description)
 	if err != nil {
 		if err == models.IncompleteUploadErr {
 			incompleteIndexes, err := models.GetIncompleteIndexesAsArray(file.FileID, file.EndIndex)

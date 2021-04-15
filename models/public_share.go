@@ -10,10 +10,12 @@ import (
 
 // PublicShare ...
 type PublicShare struct {
-	PublicID   string    `gorm:"primary_key;autoIncrement:false" json:"public_id" binding:"required"`
-	CreatedAt  time.Time `json:"createdAt"`
-	ViewsCount int       `gorm:"not null" json:"views_count"`
-	FileID     string    `gorm:"UNIQUE_INDEX:idx_publicshare;not null" json:"file_id" binding:"required,len=64" minLength:"64" maxLength:"64"`
+	PublicID    string    `gorm:"primary_key;autoIncrement:false" json:"public_id" binding:"required"`
+	CreatedAt   time.Time `json:"createdAt"`
+	ViewsCount  int       `gorm:"not null" json:"views_count"`
+	Title       string    `gorm:"not null;size:65535" json:"title"`
+	Description string    `gorm:"not null;size:65535" json:"description"`
+	FileID      string    `gorm:"UNIQUE_INDEX:idx_publicshare;not null" json:"file_id" binding:"required,len=64" minLength:"64" maxLength:"64"`
 }
 
 /*BeforeCreate - callback called before the row is created*/

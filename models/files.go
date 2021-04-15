@@ -266,7 +266,7 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 }
 
 /*FinishUploadPublic - finishes the public upload*/
-func (file *File) FinishUploadPublic() (PublicShare, error) {
+func (file *File) FinishUploadPublic(title, description string) (PublicShare, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
 		return PublicShare{}, IncompleteUploadErr
@@ -291,9 +291,11 @@ func (file *File) FinishUploadPublic() (PublicShare, error) {
 		return PublicShare{}, err
 	}
 	publicShare := PublicShare{
-		PublicID:   shortID,
-		ViewsCount: 0,
-		FileID:     completedFile.FileID,
+		PublicID:    shortID,
+		ViewsCount:  0,
+		Title:       title,
+		Description: description,
+		FileID:      completedFile.FileID,
 	}
 	if err := DB.Save(&publicShare).Error; err != nil {
 		return PublicShare{}, errors.New("could not save public share to database, possible duplicate")
