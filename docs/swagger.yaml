@@ -1704,7 +1704,9 @@ paths:
         requestBody should be a stringified version of (values are just examples):
         {
         "fileHandle": "a deterministically created file handle",
-        "mimeType": "the mime type of the file"
+        "mimeType": "the mime type of the file",
+        "title": "file title",
+        "description": "a description to be used as metatags value"
         }
       produces:
       - application/json
