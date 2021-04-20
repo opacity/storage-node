@@ -92,7 +92,7 @@ func HashString(dataString string) (string, error) {
 
 /*HashStringV2 hashes input string arguments and outputs a hash encoded as a base64 string*/
 func HashStringV2(data []byte) string {
-	return base64.StdEncoding.EncodeToString(crypto.Keccak256(data))
+	return base64.URLEncoding.EncodeToString(crypto.Keccak256(data))
 }
 
 /*Hash hashes input byte arguments*/

@@ -197,7 +197,7 @@ func getMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	metadataV2KeyBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+	metadataV2KeyBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
 		return BadRequestResponse(c, err)
@@ -249,7 +249,7 @@ func getMetadataV2Public(c *gin.Context) error {
 		return err
 	}
 
-	metadataV2KeyBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+	metadataV2KeyBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
 		return BadRequestResponse(c, err)
@@ -304,7 +304,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	metadataV2KeyBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+	metadataV2KeyBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
 		return BadRequestResponse(c, err)
@@ -337,7 +337,7 @@ func updateMetadataV2(c *gin.Context) error {
 		d := dag.NewDAG()
 
 		if err = utils.BatchSet(&utils.KVPairs{
-			requestBodyParsed.MetadataV2Key: base64.StdEncoding.EncodeToString(d.Binary()),
+			requestBodyParsed.MetadataV2Key: base64.URLEncoding.EncodeToString(d.Binary()),
 			permissionHashKey:               permissionHash,
 			isPublicKey:                     strconv.FormatBool(requestBodyParsed.IsPublic),
 		}, ttl); err != nil {
@@ -345,7 +345,7 @@ func updateMetadataV2(c *gin.Context) error {
 			return InternalErrorResponse(c, err)
 		}
 
-		oldMetadataV2 = base64.StdEncoding.EncodeToString(d.Binary())
+		oldMetadataV2 = base64.URLEncoding.EncodeToString(d.Binary())
 	}
 
 	permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
@@ -371,7 +371,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, errors.New("bad request, isPublic does not match"))
 	}
 
-	dBin, err := base64.StdEncoding.DecodeString(oldMetadataV2)
+	dBin, err := base64.URLEncoding.DecodeString(oldMetadataV2)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
@@ -384,7 +384,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	vBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Vertex)
+	vBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Vertex)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
@@ -401,7 +401,7 @@ func updateMetadataV2(c *gin.Context) error {
 	d.Add(*vert)
 
 	for _, eB64 := range requestBodyParsed.MetadataV2Edges {
-		eBin, err := base64.StdEncoding.DecodeString(eB64)
+		eBin, err := base64.URLEncoding.DecodeString(eB64)
 
 		if err != nil {
 			err = fmt.Errorf("bad request, unable to parse b64: %v", err)
@@ -429,7 +429,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	metadataV2SigBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Sig)
+	metadataV2SigBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Sig)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
@@ -445,7 +445,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
-	newMetadataV2 := base64.StdEncoding.EncodeToString(d.Binary())
+	newMetadataV2 := base64.URLEncoding.EncodeToString(d.Binary())
 
 	if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadataV2)), int64(len(newMetadataV2))); err != nil {
 		return ForbiddenResponse(c, err)
@@ -490,7 +490,7 @@ func deleteMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	metadataV2KeyBin, err := base64.StdEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
+	metadataV2KeyBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
 		return BadRequestResponse(c, err)

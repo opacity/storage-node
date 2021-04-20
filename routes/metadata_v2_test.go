@@ -28,8 +28,8 @@ func Test_Init_MetadataV2(t *testing.T) {
 func Test_GetMetadataV2Handler_Returns_MetadataV2(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataV2Key := utils.GenerateFileHandle()
-	testMetadataV2Value := utils.GenerateFileHandle()
+	testMetadataV2Key := utils.GenerateMetadataV2Key()
+	testMetadataV2Value := utils.GenerateMetadataV2Key()
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataV2Key: testMetadataV2Value}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -59,8 +59,8 @@ func Test_GetMetadataV2Handler_Returns_MetadataV2(t *testing.T) {
 func Test_GetMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataV2Key := utils.GenerateFileHandle()
-	testMetadataV2Value := utils.GenerateFileHandle()
+	testMetadataV2Key := utils.GenerateMetadataV2Key()
+	testMetadataV2Value := utils.GenerateMetadataV2Key()
 
 	if err := utils.BatchSet(&utils.KVPairs{testMetadataV2Key: testMetadataV2Value}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -88,7 +88,7 @@ func Test_GetMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_GetMetadataV2Handler_Error_If_Not_In_KV_Store(t *testing.T) {
-	testMetadataV2Key := utils.GenerateFileHandle()
+	testMetadataV2Key := utils.GenerateMetadataV2Key()
 
 	getMetadataV2 := metadataV2KeyObject{
 		MetadataV2Key: testMetadataV2Key,
@@ -113,8 +113,8 @@ func Test_GetMetadataV2Handler_Error_If_Not_In_KV_Store(t *testing.T) {
 func Test_GetMetadataV2PublicHandler_Returns_MetadataV2(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 
-	testMetadataV2Key := utils.GenerateFileHandle()
-	testMetadataV2Value := utils.GenerateFileHandle()
+	testMetadataV2Key := utils.GenerateMetadataV2Key()
+	testMetadataV2Value := utils.GenerateMetadataV2Key()
 
 	testMetadataV2IsPublicKey := getIsPublicV2KeyForBadger(testMetadataV2Key)
 
@@ -144,7 +144,7 @@ func Test_GetMetadataV2PublicHandler_Returns_MetadataV2(t *testing.T) {
 }
 
 func Test_GetMetadataV2PublicHandler_Error_If_Not_In_KV_Store(t *testing.T) {
-	testMetadataV2Key := utils.GenerateFileHandle()
+	testMetadataV2Key := utils.GenerateMetadataV2Key()
 
 	getMetadataV2 := metadataV2KeyObject{
 		MetadataV2Key: testMetadataV2Key,
@@ -171,9 +171,9 @@ func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
 
 	d.AddReduced(*vert)
 
-	testMetadataV2Key := utils.GenerateFileHandle()
-	testMetadataV2Value := utils.GenerateFileHandle()
-	newVertex := base64.StdEncoding.EncodeToString(vert.Binary())
+	testMetadataV2Key := utils.GenerateMetadataV2Key()
+	testMetadataV2Value := utils.GenerateMetadataV2Key()
+	newVertex := base64.URLEncoding.EncodeToString(vert.Binary())
 
 	digest, _ := d.Digest(vert.ID, func(b []byte) []byte { s := sha256.Sum256(b); return s[:] })
 	testKey, _ := ecdsa.GenerateKey(secp256k1.S256(), rand.Reader)
@@ -183,7 +183,7 @@ func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
 		MetadataV2Key:    testMetadataV2Key,
 		MetadataV2Vertex: newVertex,
 		MetadataV2Edges:  []string{},
-		MetadataV2Sig:    base64.StdEncoding.EncodeToString(testSig),
+		MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
 		Timestamp:        time.Now().Unix(),
 	}
 
@@ -221,7 +221,7 @@ func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
 	assert.Contains(t, w.Body.String(), newVertex)
 
 	metadataV2, _, _ := utils.GetValueFromKV(testMetadataV2Key)
-	assert.Equal(t, base64.RawStdEncoding.EncodeToString(d.Binary()), metadataV2)
+	assert.Equal(t, base64.RawURLEncoding.EncodeToString(d.Binary()), metadataV2)
 
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
 	assert.Equal(t, int64(len(d.Binary())), accountFromDB.TotalMetadataSizeInBytes)
@@ -235,9 +235,9 @@ func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 
 	d.AddReduced(*vert)
 
-	testMetadataV2Key := utils.GenerateFileHandle()
-	testMetadataV2Value := utils.GenerateFileHandle()
-	newVertex := base64.StdEncoding.EncodeToString(vert.Binary())
+	testMetadataV2Key := utils.GenerateMetadataV2Key()
+	testMetadataV2Value := utils.GenerateMetadataV2Key()
+	newVertex := base64.URLEncoding.EncodeToString(vert.Binary())
 
 	digest, _ := d.Digest(vert.ID, func(b []byte) []byte { s := sha256.Sum256(b); return s[:] })
 	testKey, _ := ecdsa.GenerateKey(secp256k1.S256(), rand.Reader)
@@ -251,7 +251,7 @@ func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 		MetadataV2Key:    testMetadataV2Key,
 		MetadataV2Vertex: newVertex,
 		MetadataV2Edges:  []string{},
-		MetadataV2Sig:    base64.StdEncoding.EncodeToString(testSig),
+		MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
 		Timestamp:        time.Now().Unix(),
 	}
 
@@ -277,8 +277,8 @@ func Test_UpdateMetadataV2Handler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 
 	d.AddReduced(*vert)
 
-	testMetadataV2Key := utils.GenerateFileHandle()
-	newVertex := base64.StdEncoding.EncodeToString(vert.Binary())
+	testMetadataV2Key := utils.GenerateMetadataV2Key()
+	newVertex := base64.URLEncoding.EncodeToString(vert.Binary())
 
 	digest, _ := d.Digest(vert.ID, func(b []byte) []byte { s := sha256.Sum256(b); return s[:] })
 	testKey, _ := ecdsa.GenerateKey(secp256k1.S256(), rand.Reader)
@@ -288,7 +288,7 @@ func Test_UpdateMetadataV2Handler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 		MetadataV2Key:    testMetadataV2Key,
 		MetadataV2Vertex: newVertex,
 		MetadataV2Edges:  []string{},
-		MetadataV2Sig:    base64.StdEncoding.EncodeToString(testSig),
+		MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
 		Timestamp:        time.Now().Unix(),
 	}
 
@@ -313,8 +313,8 @@ func Test_UpdateMetadataV2Handler_Error_If_Verification_Fails(t *testing.T) {
 
 	d.AddReduced(*vert)
 
-	testMetadataV2Key := utils.GenerateFileHandle()
-	newVertex := base64.StdEncoding.EncodeToString(vert.Binary())
+	testMetadataV2Key := utils.GenerateMetadataV2Key()
+	newVertex := base64.URLEncoding.EncodeToString(vert.Binary())
 
 	digest, _ := d.Digest(vert.ID, func(b []byte) []byte { s := sha256.Sum256(b); return s[:] })
 	testKey, _ := ecdsa.GenerateKey(secp256k1.S256(), rand.Reader)
@@ -324,7 +324,7 @@ func Test_UpdateMetadataV2Handler_Error_If_Verification_Fails(t *testing.T) {
 		MetadataV2Key:    testMetadataV2Key,
 		MetadataV2Vertex: newVertex,
 		MetadataV2Edges:  []string{},
-		MetadataV2Sig:    base64.StdEncoding.EncodeToString(testSig),
+		MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
 		Timestamp:        time.Now().Unix(),
 	}
 
