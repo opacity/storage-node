@@ -1,15 +1,12 @@
 package models
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
-	"time"
-
-	"math/big"
-
-	"encoding/hex"
-
 	"math"
+	"math/big"
+	"time"
 
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
@@ -32,7 +29,7 @@ type Account struct {
 	MonthsInSubscription     int               `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription
 	StorageLocation          string            `json:"storageLocation" validate:"omitempty,url"`                                                                           // where their files live, on S3 or elsewhere
 	StorageLimit             StorageLimitType  `json:"storageLimit" validate:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
-	StorageUsedInByte        int64             `json:"storageUsedInByte" validate:"required,gte=0" example:"30"`                                                           // how much storage they have used, in B
+	StorageUsedInByte        int64             `json:"storageUsedInByte" validate:"gte=0" example:"30"`                                                                    // how much storage they have used, in B
 	EthAddress               string            `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	EthPrivateKey            string            `json:"ethPrivateKey" validate:"required,len=96"`                                                                           // the private key of the eth address
 	PaymentStatus            PaymentStatusType `json:"paymentStatus" validate:"required"`                                                                                  // the status of their payment
