@@ -255,13 +255,13 @@ func updateMetadataExpirationV2(metadataKeys []string, key string, newExpiredAtT
 	}
 
 	for _, metadataKey := range metadataKeys {
-		permissionHashKey := getPermissionHashKeyForBadger(metadataKey)
-		permissionHashValue, _, err := utils.GetValueFromKV(permissionHashKey)
+		metadataKeyBytes, err := base64.RawURLEncoding.DecodeString(metadataKey)
 		if err != nil {
 			return err
 		}
 
-		metadataKeyBytes, err := base64.RawURLEncoding.DecodeString(metadataKey)
+		permissionHashKey := getPermissionHashKeyForBadger(string(metadataKeyBytes))
+		permissionHashValue, _, err := utils.GetValueFromKV(permissionHashKey)
 		if err != nil {
 			return err
 		}
@@ -271,7 +271,7 @@ func updateMetadataExpirationV2(metadataKeys []string, key string, newExpiredAtT
 			return err
 		}
 		kvPairs[permissionHashKey] = permissionHashValue
-		kvKeys = append(kvKeys, metadataKey)
+		kvKeys = append(kvKeys, string(metadataKeyBytes))
 	}
 
 	kvs, err := utils.BatchGet(&kvKeys)
