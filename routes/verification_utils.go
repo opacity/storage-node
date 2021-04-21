@@ -42,8 +42,8 @@ type verification struct {
 	// signature without 0x prefix is broken into
 	// R: sig[0:63]
 	// S: sig[64:127]
-	Signature string `json:"signature" form:"signature" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a 128 character string created when you signed the request with your private key or account handle"`
-	PublicKey string `json:"publicKey" form:"publicKey" binding:"required,len=66" minLength:"66" maxLength:"66" example:"a 66-character public key"`
+	Signature string `json:"signature" form:"signature" validate:"required,len=128" minLength:"128" maxLength:"128" example:"a 128 character string created when you signed the request with your private key or account handle"`
+	PublicKey string `json:"publicKey" form:"publicKey" validate:"required,len=66" minLength:"66" maxLength:"66" example:"a 66-character public key"`
 }
 
 func (v verification) getVerification() verification {
@@ -74,7 +74,7 @@ func (v verification) getAccount(c *gin.Context) (models.Account, error) {
 }
 
 type requestBody struct {
-	RequestBody string `json:"requestBody" form:"requestBody" binding:"required" example:"look at description for example"`
+	RequestBody string `json:"requestBody" form:"requestBody" validate:"required" example:"look at description for example"`
 }
 
 func (v requestBody) getObjectAsString() string {

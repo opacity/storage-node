@@ -17,8 +17,8 @@ const Paid = "paid"
 const Expired = "expired"
 
 type accountCreateObj struct {
-	StorageLimit     int `json:"storageLimit" binding:"required,gte=10" minimum:"10" maximum:"2048" example:"100"`
-	DurationInMonths int `json:"durationInMonths" binding:"required,gte=1" minimum:"1" example:"12"`
+	StorageLimit     int `json:"storageLimit" validate:"required,gte=10" minimum:"10" maximum:"2048" example:"100"`
+	DurationInMonths int `json:"durationInMonths" validate:"required,gte=1" minimum:"1" example:"12"`
 }
 
 type accountCreateReq struct {
@@ -28,14 +28,14 @@ type accountCreateReq struct {
 }
 
 type accountCreateRes struct {
-	ExpirationDate time.Time      `json:"expirationDate" binding:"required"`
-	Invoice        models.Invoice `json:"invoice" binding:"omitempty"`
+	ExpirationDate time.Time      `json:"expirationDate" validate:"required"`
+	Invoice        models.Invoice `json:"invoice" validate:"omitempty"`
 }
 
 type accountDataRes struct {
 	PaymentStatus string        `json:"paymentStatus" example:"paid"`
 	Error         error         `json:"error" swaggertype:"string" example:"the error encountered while checking"`
-	Account       accountGetObj `json:"account" binding:"required"`
+	Account       accountGetObj `json:"account" validate:"required"`
 	StripeData    stripeDataObj `json:"stripeData"`
 }
 
@@ -47,21 +47,21 @@ type accountUnpaidRes struct {
 type accountGetObj struct {
 	CreatedAt             time.Time               `json:"createdAt"`
 	UpdatedAt             time.Time               `json:"updatedAt"`
-	ExpirationDate        time.Time               `json:"expirationDate" binding:"required"`
-	MonthsInSubscription  int                     `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
-	StorageLimit          models.StorageLimitType `json:"storageLimit" binding:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
-	StorageUsed           float64                 `json:"storageUsed" binding:"exists" example:"30"`                                                                         // how much storage they have used, in GB
-	EthAddress            string                  `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	Cost                  float64                 `json:"cost" binding:"omitempty,gte=0" example:"2.00"`
-	ApiVersion            int                     `json:"apiVersion" binding:"required,gte=1"`
-	TotalFolders          int                     `json:"totalFolders" binding:"exists" example:"2"`
-	TotalMetadataSizeInMB float64                 `json:"totalMetadataSizeInMB" binding:"exists" example:"1.245765432"`
-	MaxFolders            int                     `json:"maxFolders" binding:"exists" example:"2000"`
-	MaxMetadataSizeInMB   int64                   `json:"maxMetadataSizeInMB" binding:"exists" example:"200"`
+	ExpirationDate        time.Time               `json:"expirationDate" validate:"required"`
+	MonthsInSubscription  int                     `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription
+	StorageLimit          models.StorageLimitType `json:"storageLimit" validate:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
+	StorageUsed           float64                 `json:"storageUsed" validate:"exists" example:"30"`                                                                         // how much storage they have used, in GB
+	EthAddress            string                  `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	Cost                  float64                 `json:"cost" validate:"omitempty,gte=0" example:"2.00"`
+	ApiVersion            int                     `json:"apiVersion" validate:"required,gte=1"`
+	TotalFolders          int                     `json:"totalFolders" validate:"exists" example:"2"`
+	TotalMetadataSizeInMB float64                 `json:"totalMetadataSizeInMB" validate:"exists" example:"1.245765432"`
+	MaxFolders            int                     `json:"maxFolders" validate:"exists" example:"2000"`
+	MaxMetadataSizeInMB   int64                   `json:"maxMetadataSizeInMB" validate:"exists" example:"200"`
 }
 
 type accountGetReqObj struct {
-	Timestamp int64 `json:"timestamp" binding:"required"`
+	Timestamp int64 `json:"timestamp" validate:"required"`
 }
 
 type getAccountDataReq struct {

@@ -30,7 +30,7 @@ type testSetRequest struct {
 }
 
 type testRequireForm struct {
-	Object string `formFile:"file"  binding:"required,len=123"`
+	Object string `formFile:"file"  validate:"required,len=123"`
 }
 
 type testNonRequireForm struct {

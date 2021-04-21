@@ -16,7 +16,7 @@ type PublicShareOpsReq struct {
 }
 
 type PublicShareObj struct {
-	Shortlink string `json:"shortlink" binding:"required" example:"the short link of the completed file"`
+	Shortlink string `json:"shortlink" validate:"required" example:"the short link of the completed file"`
 }
 
 type shortlinkFileResp struct {

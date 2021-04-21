@@ -8,9 +8,9 @@ import (
 )
 
 type CompletedUploadIndex struct {
-	FileID string `gorm:"primary_key" json:"fileID" binding:"required"`
-	Index  int    `gorm:"primary_key;auto_increment:false" json:"index" binding:"required"`
-	Etag   string `json:"etag" binding:"required"`
+	FileID string `gorm:"primary_key" json:"fileID" validate:"required"`
+	Index  int    `gorm:"primary_key;auto_increment:false" json:"index" validate:"required"`
+	Etag   string `json:"etag" validate:"required"`
 }
 
 /*BeforeCreate - callback called before the row is created*/

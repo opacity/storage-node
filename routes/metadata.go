@@ -13,9 +13,9 @@ import (
 
 // must be sorted alphabetically for JSON marshaling/stringifying
 type updateMetadataObject struct {
-	Metadata    string `json:"metadata" binding:"required" example:"your (updated) account metadata"`
-	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
-	Timestamp   int64  `json:"timestamp" binding:"required"`
+	Metadata    string `json:"metadata" validate:"required" example:"your (updated) account metadata"`
+	MetadataKey string `json:"metadataKey" validate:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
+	Timestamp   int64  `json:"timestamp" validate:"required"`
 }
 
 type updateMetadataReq struct {
@@ -25,14 +25,14 @@ type updateMetadataReq struct {
 }
 
 type updateMetadataRes struct {
-	MetadataKey    string    `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
-	Metadata       string    `json:"metadata" binding:"required" example:"your (updated) account metadata"`
-	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
+	MetadataKey    string    `json:"metadataKey" validate:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
+	Metadata       string    `json:"metadata" validate:"required" example:"your (updated) account metadata"`
+	ExpirationDate time.Time `json:"expirationDate" validate:"required,gte"`
 }
 
 type metadataKeyObject struct {
-	MetadataKey string `json:"metadataKey" binding:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
-	Timestamp   int64  `json:"timestamp" binding:"required"`
+	MetadataKey string `json:"metadataKey" validate:"required,len=64" example:"a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"`
+	Timestamp   int64  `json:"timestamp" validate:"required"`
 }
 
 type metadataKeyReq struct {
@@ -42,18 +42,18 @@ type metadataKeyReq struct {
 }
 
 type getMetadataRes struct {
-	Metadata       string    `json:"metadata" binding:"exists" example:"your account metadata"`
-	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
+	Metadata       string    `json:"metadata" validate:"exists" example:"your account metadata"`
+	ExpirationDate time.Time `json:"expirationDate" validate:"required"`
 }
 
 type getMetadataHistoryRes struct {
-	Metadata        string    `json:"metadata" binding:"exists" example:"your account metadata"`
-	MetadataHistory []string  `json:"metadataHistory" binding:"exists" example:"your account metadata"`
-	ExpirationDate  time.Time `json:"expirationDate" binding:"required"`
+	Metadata        string    `json:"metadata" validate:"exists" example:"your account metadata"`
+	MetadataHistory []string  `json:"metadataHistory" validate:"exists" example:"your account metadata"`
+	ExpirationDate  time.Time `json:"expirationDate" validate:"required"`
 }
 
 type createMetadataRes struct {
-	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
+	ExpirationDate time.Time `json:"expirationDate" validate:"required"`
 }
 
 var metadataDeletedRes = StatusRes{

@@ -22,6 +22,7 @@ require (
 	github.com/gin-contrib/cors v0.0.0-20190301062745-f9e10995c85a
 	github.com/gin-gonic/gin v1.3.0
 	github.com/go-openapi/spec v0.20.3 // indirect
+	github.com/go-playground/validator/v10 v10.5.0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/google/uuid v1.1.1

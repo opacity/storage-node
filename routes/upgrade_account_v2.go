@@ -14,15 +14,15 @@ import (
 )
 
 type getUpgradeV2AccountInvoiceObject struct {
-	StorageLimit     int `json:"storageLimit" binding:"required,gte=128" minimum:"128" example:"128"`
-	DurationInMonths int `json:"durationInMonths" binding:"required,gte=1" minimum:"1" example:"12"`
+	StorageLimit     int `json:"storageLimit" validate:"required,gte=128" minimum:"128" example:"128"`
+	DurationInMonths int `json:"durationInMonths" validate:"required,gte=1" minimum:"1" example:"12"`
 }
 
 type checkUpgradeV2StatusObject struct {
-	MetadataKeys     []string `json:"metadataKeys" binding:"required" example:"an array containing all your metadata keys"`
-	FileHandles      []string `json:"fileHandles" binding:"required" example:"an array containing all your file handles"`
-	StorageLimit     int      `json:"storageLimit" binding:"required,gte=128" minimum:"128" example:"128"`
-	DurationInMonths int      `json:"durationInMonths" binding:"required,gte=1" minimum:"1" example:"12"`
+	MetadataKeys     []string `json:"metadataKeys" validate:"required" example:"an array containing all your metadata keys"`
+	FileHandles      []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
+	StorageLimit     int      `json:"storageLimit" validate:"required,gte=128" minimum:"128" example:"128"`
+	DurationInMonths int      `json:"durationInMonths" validate:"required,gte=1" minimum:"1" example:"12"`
 }
 
 type getUpgradeV2AccountInvoiceReq struct {

@@ -25,12 +25,12 @@ const defaultPlansJson = `{
 }`
 
 type PlanInfo struct {
-	Name                string  `json:"name" binding:"required"`
-	Cost                float64 `json:"cost" binding:"required,gt=0"`
-	CostInUSD           float64 `json:"costInUSD" binding:"required,gt=0"`
-	StorageInGB         int     `json:"storageInGB" binding:"required,gt=0"`
-	MaxFolders          int     `json:"maxFolders" binding:"required,gt=0"`
-	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB" binding:"required,gt=0"`
+	Name                string  `json:"name" validate:"required"`
+	Cost                float64 `json:"cost" validate:"required,gt=0"`
+	CostInUSD           float64 `json:"costInUSD" validate:"required,gt=0"`
+	StorageInGB         int     `json:"storageInGB" validate:"required,gt=0"`
+	MaxFolders          int     `json:"maxFolders" validate:"required,gt=0"`
+	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB" validate:"required,gt=0"`
 }
 
 type PlanResponseType map[int]PlanInfo

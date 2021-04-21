@@ -18,8 +18,8 @@ type getRenewalV2AccountInvoiceObject struct {
 }
 
 type checkRenewalV2StatusObject struct {
-	MetadataKeys []string `json:"metadataKeys" binding:"required" example:"an array containing all your metadata keys"`
-	FileHandles  []string `json:"fileHandles" binding:"required" example:"an array containing all your file handles"`
+	MetadataKeys []string `json:"metadataKeys" validate:"required" example:"an array containing all your metadata keys"`
+	FileHandles  []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
 }
 
 type getRenewalV2AccountInvoiceReq struct {

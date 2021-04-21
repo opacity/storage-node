@@ -17,16 +17,16 @@ import (
 type File struct {
 	/*FileID will either be the file handle, or a hash of the file handle.  We should add an appropriate length
 	restriction and can change the name to FileHandle if it is appropriate*/
-	FileID           string    `gorm:"primary_key" json:"fileID" binding:"required,len=64" minLength:"64" maxLength:"64"`
+	FileID           string    `gorm:"primary_key" json:"fileID" validate:"required,len=64" minLength:"64" maxLength:"64"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
 	ExpiredAt        time.Time `json:"expiredAt"`
 	AwsUploadID      *string   `json:"awsUploadID"`
 	AwsObjectKey     *string   `json:"awsObjectKey"`
-	EndIndex         int       `json:"endIndex" binding:"required,gte=1"`
+	EndIndex         int       `json:"endIndex" validate:"required,gte=1"`
 	CompletedIndexes *string   `json:"completedIndexes" gorm:"type:mediumtext"`
-	ModifierHash     string    `json:"modifierHash" binding:"required,len=64" minLength:"64" maxLength:"64"`
-	ApiVersion       int       `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+	ModifierHash     string    `json:"modifierHash" validate:"required,len=64" minLength:"64" maxLength:"64"`
+	ApiVersion       int       `json:"apiVersion" validate:"omitempty,gte=1" gorm:"default:1"`
 }
 
 type IndexMap map[int64]*s3.CompletedPart

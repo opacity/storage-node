@@ -11,14 +11,14 @@ import (
 )
 
 type UploadFileObj struct {
-	FileHandle string `form:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-	PartIndex  int    `form:"partIndex" binding:"required,gte=1" example:"1"`
+	FileHandle string `form:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
+	PartIndex  int    `form:"partIndex" validate:"required,gte=1" example:"1"`
 }
 
 type UploadFileReq struct {
 	verification
 	requestBody
-	ChunkData     string `formFile:"chunkData" binding:"required" example:"a binary string of the chunk data"`
+	ChunkData     string `formFile:"chunkData" validate:"required" example:"a binary string of the chunk data"`
 	uploadFileObj UploadFileObj
 }
 

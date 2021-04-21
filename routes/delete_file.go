@@ -7,7 +7,7 @@ import (
 )
 
 type deleteFileObj struct {
-	FileID string `json:"fileID" binding:"required" example:"the handle of the file"`
+	FileID string `json:"fileID" validate:"required" example:"the handle of the file"`
 }
 
 type deleteFileReq struct {
