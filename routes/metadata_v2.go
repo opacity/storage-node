@@ -19,10 +19,10 @@ import (
 // must be sorted alphabetically for JSON marshaling/stringifying
 type updateMetadataV2Object struct {
 	IsPublic         bool     `json:"isPublic"`
-	MetadataV2Edges  []string `json:"metadataV2Edges" binding:"required,dive,required,base64,len=12" example:"the edges to add to your account metadataV2 encoded to base64"`
-	MetadataV2Key    string   `json:"metadataV2Key" binding:"required,base64,len=44" example:"public key for the metadataV2 encoded to base64"`
-	MetadataV2Sig    string   `json:"metadataV2Sig" binding:"required,base64,len=88" example:"a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2"`
-	MetadataV2Vertex string   `json:"metadataV2Vertex" binding:"required,base64" example:"the vertex to add to your account metadataV2 encoded to base64"`
+	MetadataV2Edges  []string `json:"metadataV2Edges" binding:"required,dive,required,base64url,len=12" example:"the edges to add to your account metadataV2 encoded to base64url"`
+	MetadataV2Key    string   `json:"metadataV2Key" binding:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
+	MetadataV2Sig    string   `json:"metadataV2Sig" binding:"required,base64url,len=88" example:"a signature encoded to base64url confirming the metadata change, the publickey will be a key for the metadataV2"`
+	MetadataV2Vertex string   `json:"metadataV2Vertex" binding:"required,base64url" example:"the vertex to add to your account metadataV2 encoded to base64url"`
 	Timestamp        int64    `json:"timestamp" binding:"required"`
 }
 
@@ -33,13 +33,13 @@ type updateMetadataV2Req struct {
 }
 
 type updateMetadataV2Res struct {
-	MetadataV2Key  string    `json:"metadataV2Key" binding:"required,base64,len=44" example:"public key for the metadataV2 encoded to base64"`
-	MetadataV2     string    `json:"metadataV2" binding:"required,base64" example:"your (updated) account metadataV2"`
+	MetadataV2Key  string    `json:"metadataV2Key" binding:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
+	MetadataV2     string    `json:"metadataV2" binding:"required,base64url" example:"your (updated) account metadataV2"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required,gte"`
 }
 
 type metadataV2KeyObject struct {
-	MetadataV2Key string `json:"metadataV2Key" binding:"required,base64,len=44" example:"public key for the metadataV2 encoded to base64"`
+	MetadataV2Key string `json:"metadataV2Key" binding:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
 	Timestamp     int64  `json:"timestamp" binding:"required"`
 }
 
@@ -55,7 +55,7 @@ type metadataV2PublicKeyReq struct {
 }
 
 type getMetadataV2Res struct {
-	MetadataV2     string    `json:"metadataV2" binding:"exists,base64,omitempty" example:"your account metadataV2"`
+	MetadataV2     string    `json:"metadataV2" binding:"exists,base64url,omitempty" example:"your account metadataV2"`
 	ExpirationDate time.Time `json:"expirationDate" binding:"required"`
 }
 
