@@ -42,13 +42,13 @@ type metadataKeyReq struct {
 }
 
 type getMetadataRes struct {
-	Metadata       string    `json:"metadata" validate:"exists" example:"your account metadata"`
+	Metadata       string    `json:"metadata" validate:"required" example:"your account metadata"`
 	ExpirationDate time.Time `json:"expirationDate" validate:"required"`
 }
 
 type getMetadataHistoryRes struct {
-	Metadata        string    `json:"metadata" validate:"exists" example:"your account metadata"`
-	MetadataHistory []string  `json:"metadataHistory" validate:"exists" example:"your account metadata"`
+	Metadata        string    `json:"metadata" validate:"required" example:"your account metadata"`
+	MetadataHistory []string  `json:"metadataHistory" validate:"required" example:"your account metadata"`
 	ExpirationDate  time.Time `json:"expirationDate" validate:"required"`
 }
 

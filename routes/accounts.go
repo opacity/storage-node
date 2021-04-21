@@ -50,14 +50,14 @@ type accountGetObj struct {
 	ExpirationDate        time.Time               `json:"expirationDate" validate:"required"`
 	MonthsInSubscription  int                     `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription
 	StorageLimit          models.StorageLimitType `json:"storageLimit" validate:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
-	StorageUsed           float64                 `json:"storageUsed" validate:"exists" example:"30"`                                                                         // how much storage they have used, in GB
+	StorageUsed           float64                 `json:"storageUsed" validate:"required" example:"30"`                                                                       // how much storage they have used, in GB
 	EthAddress            string                  `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	Cost                  float64                 `json:"cost" validate:"omitempty,gte=0" example:"2.00"`
 	ApiVersion            int                     `json:"apiVersion" validate:"required,gte=1"`
-	TotalFolders          int                     `json:"totalFolders" validate:"exists" example:"2"`
-	TotalMetadataSizeInMB float64                 `json:"totalMetadataSizeInMB" validate:"exists" example:"1.245765432"`
-	MaxFolders            int                     `json:"maxFolders" validate:"exists" example:"2000"`
-	MaxMetadataSizeInMB   int64                   `json:"maxMetadataSizeInMB" validate:"exists" example:"200"`
+	TotalFolders          int                     `json:"totalFolders" validate:"required" example:"2"`
+	TotalMetadataSizeInMB float64                 `json:"totalMetadataSizeInMB" validate:"required" example:"1.245765432"`
+	MaxFolders            int                     `json:"maxFolders" validate:"required" example:"2000"`
+	MaxMetadataSizeInMB   int64                   `json:"maxMetadataSizeInMB" validate:"required" example:"200"`
 }
 
 type accountGetReqObj struct {

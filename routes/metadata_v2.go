@@ -55,7 +55,7 @@ type metadataV2PublicKeyReq struct {
 }
 
 type getMetadataV2Res struct {
-	MetadataV2     string    `json:"metadataV2" validate:"exists,base64url,omitempty" example:"your account metadataV2"`
+	MetadataV2     string    `json:"metadataV2" validate:"required,base64url,omitempty" example:"your account metadataV2"`
 	ExpirationDate time.Time `json:"expirationDate" validate:"required"`
 }
 
