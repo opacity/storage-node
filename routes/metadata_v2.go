@@ -207,7 +207,7 @@ func getMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
 	}
 
-	permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+	permissionHashKey := getPermissionHashV2KeyForBadger(string(metadataV2KeyBin))
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
@@ -224,7 +224,7 @@ func getMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	metadataV2, expirationTime, err := utils.GetValueFromKV(request.metadataV2KeyObject.MetadataV2Key)
+	metadataV2, expirationTime, err := utils.GetValueFromKV(string(metadataV2KeyBin))
 
 	if err != nil {
 		return NotFoundResponse(c, err)
@@ -259,7 +259,7 @@ func getMetadataV2Public(c *gin.Context) error {
 		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
 	}
 
-	isPublicKey := getIsPublicV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+	isPublicKey := getIsPublicV2KeyForBadger(string(metadataV2KeyBin))
 	isPublicInBadger, _, err := utils.GetValueFromKV(isPublicKey)
 
 	if err != nil {
@@ -270,7 +270,7 @@ func getMetadataV2Public(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("Key not found"))
 	}
 
-	metadataV2, expirationTime, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
+	metadataV2, expirationTime, err := utils.GetValueFromKV(string(metadataV2KeyBin))
 
 	if err != nil {
 		return NotFoundResponse(c, err)
@@ -320,7 +320,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	oldMetadataV2, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
+	oldMetadataV2, _, err := utils.GetValueFromKV(string(metadataV2KeyBin))
 
 	if err != nil {
 		if err = account.IncrementMetadataCount(); err != nil {
@@ -330,16 +330,16 @@ func updateMetadataV2(c *gin.Context) error {
 		ttl := time.Until(account.ExpirationDate())
 
 		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin, c)
-		permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+		permissionHashKey := getPermissionHashV2KeyForBadger(string(metadataV2KeyBin))
 
-		isPublicKey := getIsPublicV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+		isPublicKey := getIsPublicV2KeyForBadger(string(metadataV2KeyBin))
 
 		d := dag.NewDAG()
 
 		if err = utils.BatchSet(&utils.KVPairs{
-			requestBodyParsed.MetadataV2Key: base64.URLEncoding.EncodeToString(d.Binary()),
-			permissionHashKey:               permissionHash,
-			isPublicKey:                     strconv.FormatBool(requestBodyParsed.IsPublic),
+			string(metadataV2KeyBin): base64.URLEncoding.EncodeToString(d.Binary()),
+			permissionHashKey:        permissionHash,
+			isPublicKey:              strconv.FormatBool(requestBodyParsed.IsPublic),
 		}, ttl); err != nil {
 			account.DecrementMetadataCount()
 			return InternalErrorResponse(c, err)
@@ -348,7 +348,7 @@ func updateMetadataV2(c *gin.Context) error {
 		oldMetadataV2 = base64.URLEncoding.EncodeToString(d.Binary())
 	}
 
-	permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+	permissionHashKey := getPermissionHashV2KeyForBadger(string(metadataV2KeyBin))
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
@@ -360,7 +360,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	isPublicKey := getIsPublicV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+	isPublicKey := getIsPublicV2KeyForBadger(string(metadataV2KeyBin))
 	isPublicInBadger, _, err := utils.GetValueFromKV(isPublicKey)
 
 	if err != nil {
@@ -454,8 +454,8 @@ func updateMetadataV2(c *gin.Context) error {
 	ttl := time.Until(account.ExpirationDate())
 
 	if err := utils.BatchSet(&utils.KVPairs{
-		requestBodyParsed.MetadataV2Key: newMetadataV2,
-		permissionHashKey:               permissionHashInBadger,
+		string(metadataV2KeyBin): newMetadataV2,
+		permissionHashKey:        permissionHashInBadger,
 	}, ttl); err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -506,7 +506,7 @@ func deleteMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	permissionHashKey := getPermissionHashV2KeyForBadger(requestBodyParsed.MetadataV2Key)
+	permissionHashKey := getPermissionHashV2KeyForBadger(string(metadataV2KeyBin))
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
@@ -517,14 +517,14 @@ func deleteMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	oldMetadataV2, _, err := utils.GetValueFromKV(requestBodyParsed.MetadataV2Key)
+	oldMetadataV2, _, err := utils.GetValueFromKV(string(metadataV2KeyBin))
 
 	if err := account.RemoveMetadata(int64(len(oldMetadataV2))); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
 	if err = utils.BatchDelete(&utils.KVKeys{
-		requestBodyParsed.MetadataV2Key,
+		string(metadataV2KeyBin),
 		permissionHashKey,
 	}); err != nil {
 		return InternalErrorResponse(c, err)
