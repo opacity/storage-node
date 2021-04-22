@@ -105,7 +105,7 @@ func shortlinkURL(c *gin.Context) error {
 	bucketURL := models.GetBucketUrl()
 	return OkResponse(c, shortlinkFileResp{
 		URL:          bucketURL + fileDataPublicKey,
-		ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(publicShare.FileID),
+		ThumbnailURL: bucketURL + "/" + models.GetPublicThumbnailKey(publicShare.FileID),
 	})
 }
 
