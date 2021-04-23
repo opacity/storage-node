@@ -96,16 +96,16 @@ const (
 	/*V2Path is a router group for the v1 version of storage node*/
 	V2Path = "/api/v2"
 
-	/*AccountUpgradeInvoicePath is the path for getting an invoice to upgrade an account*/
+	/*AccountUpgradeV2InvoicePath is the path for getting an invoice to upgrade an account*/
 	AccountUpgradeV2InvoicePath = "/upgrade/invoice"
 
-	/*AccountUpgradePath is the path for checking the upgrade status of an account*/
+	/*AccountUpgradeV2Path is the path for checking the upgrade status of an account*/
 	AccountUpgradeV2Path = "/upgrade"
 
-	/*AccountRenewInvoicePath is the path for getting an invoice to renew an account*/
+	/*AccountRenewV2InvoicePath is the path for getting an invoice to renew an account*/
 	AccountRenewV2InvoicePath = "/renew/invoice"
 
-	/*AccountRenewPath is the path for checking the renew status of an account*/
+	/*AccountRenewV2Path is the path for checking the renew status of an account*/
 	AccountRenewV2Path = "/renew"
 
 	/*MetadataV2GetPath is the path for getting metadata*/
@@ -242,6 +242,9 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 
 	v2Router.POST(AccountRenewV2InvoicePath, GetAccountRenewalV2InvoiceHandler())
 	v2Router.POST(AccountRenewV2Path, CheckRenewalV2StatusHandler())
+
+	v2Router.POST(AccountUpgradeV2InvoicePath, GetAccountUpgradeV2InvoiceHandler())
+	v2Router.POST(AccountUpgradeV2Path, CheckUpgradeV2StatusHandler())
 
 	v2Router.POST(MetadataV2AddPath, UpdateMetadataV2Handler())
 	v2Router.POST(MetadataV2GetPath, GetMetadataV2Handler())
