@@ -201,7 +201,7 @@ func getMetadata(c *gin.Context) error {
 		return err
 	}
 
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(requestBodyParsed.MetadataKey)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
@@ -263,7 +263,7 @@ func getMetadataHistory(c *gin.Context) error {
 		return err
 	}
 
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(requestBodyParsed.MetadataKey)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
@@ -324,11 +324,14 @@ func setMetadata(c *gin.Context) error {
 		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
-	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+	permissionHashKey := getPermissionHashKeyForDb(requestBodyParsed.MetadataKey)
+	permissionHashInDb, _, err := utils.GetValueFromKV(permissionHashKey)
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
 
 	if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
-		permissionHashInBadger, c); err != nil {
+		permissionHashInDb, c); err != nil {
 		return err
 	}
 	if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadata)), int64(len(requestBodyParsed.Metadata))); err != nil {
@@ -339,7 +342,7 @@ func setMetadata(c *gin.Context) error {
 
 	if err := utils.BatchSet(&utils.KVPairs{
 		requestBodyParsed.MetadataKey: requestBodyParsed.Metadata,
-		permissionHashKey:             permissionHashInBadger,
+		permissionHashKey:             permissionHashInDb,
 	}, ttl); err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -385,7 +388,7 @@ func createMetadata(c *gin.Context) error {
 		return err
 	}
 
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(requestBodyParsed.MetadataKey)
 
 	_, _, err = utils.GetValueFromKV(requestBodyParsed.MetadataKey)
 
@@ -433,7 +436,7 @@ func deleteMetadata(c *gin.Context) error {
 		return err
 	}
 
-	permissionHashKey := getPermissionHashKeyForBadger(requestBodyParsed.MetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(requestBodyParsed.MetadataKey)
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
@@ -482,10 +485,10 @@ func storeMetadataHistory(metadataKey string, oldMetadata string, ttl time.Durat
 		if stopOnNextKey {
 			break
 		}
-		badgerKey := getVersionKeyForBadger(metadataKey, i)
-		oldValue, _, err := utils.GetValueFromKV(badgerKey)
+		dbKey := getVersionKeyForDb(metadataKey, i)
+		oldValue, _, err := utils.GetValueFromKV(dbKey)
 		if err := utils.BatchSet(&utils.KVPairs{
-			badgerKey: newValue,
+			dbKey: newValue,
 		}, ttl); err != nil {
 			return InternalErrorResponse(c, err)
 		}
@@ -500,7 +503,7 @@ func storeMetadataHistory(metadataKey string, oldMetadata string, ttl time.Durat
 func getMetadataHistoryWithoutContext(metadataKey string) ([]string, error) {
 	metadataHistory := []string{}
 	for i := 0; i < numMetadatasToRetain; i++ {
-		oldMetadata, _, err := utils.GetValueFromKV(getVersionKeyForBadger(metadataKey, i))
+		oldMetadata, _, err := utils.GetValueFromKV(getVersionKeyForDb(metadataKey, i))
 		if err == badger.ErrKeyNotFound {
 			break
 		}

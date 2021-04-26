@@ -3,12 +3,13 @@ package routes
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"math/big"
-	"time"
 )
 
 type getUpgradeAccountInvoiceObject struct {
@@ -248,7 +249,7 @@ func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTim
 	var kvKeys utils.KVKeys
 
 	for _, metadataKey := range metadataKeys {
-		permissionHashKey := getPermissionHashKeyForBadger(metadataKey)
+		permissionHashKey := getPermissionHashKeyForDb(metadataKey)
 		permissionHashValue, _, err := utils.GetValueFromKV(permissionHashKey)
 		if err != nil {
 			return err

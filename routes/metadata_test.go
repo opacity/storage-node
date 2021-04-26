@@ -130,16 +130,16 @@ func Test_GetMetadataHistoryHandler_Returns_Metadata_History(t *testing.T) {
 	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
 	assert.Nil(t, err)
 
-	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(testMetadataKey)
 
 	if err := utils.BatchSet(&utils.KVPairs{
-		testMetadataKey: testMetadataValue,
-		getVersionKeyForBadger(testMetadataKey, 0): "red",
-		getVersionKeyForBadger(testMetadataKey, 1): "fox",
-		getVersionKeyForBadger(testMetadataKey, 2): "jumps",
-		getVersionKeyForBadger(testMetadataKey, 3): "over",
-		getVersionKeyForBadger(testMetadataKey, 4): "the",
-		permissionHashKey:                          permissionHash,
+		testMetadataKey:                        testMetadataValue,
+		getVersionKeyForDb(testMetadataKey, 0): "red",
+		getVersionKeyForDb(testMetadataKey, 1): "fox",
+		getVersionKeyForDb(testMetadataKey, 2): "jumps",
+		getVersionKeyForDb(testMetadataKey, 3): "over",
+		getVersionKeyForDb(testMetadataKey, 4): "the",
+		permissionHashKey:                      permissionHash,
 	}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
 	}
@@ -178,12 +178,12 @@ func Test_GetMetadataHistoryHandler_Returns_Metadata_History_If_Not_Maxed_Out(t 
 	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
 	assert.Nil(t, err)
 
-	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(testMetadataKey)
 
 	if err := utils.BatchSet(&utils.KVPairs{
-		testMetadataKey: testMetadataValue,
-		getVersionKeyForBadger(testMetadataKey, 0): "red",
-		permissionHashKey:                          permissionHash,
+		testMetadataKey:                        testMetadataValue,
+		getVersionKeyForDb(testMetadataKey, 0): "red",
+		permissionHashKey:                      permissionHash,
 	}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
 	}
@@ -275,7 +275,7 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
 	assert.Nil(t, err)
 
-	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(testMetadataKey)
 
 	if err := utils.BatchSet(&utils.KVPairs{
 		testMetadataKey:   testMetadataValue,
@@ -328,16 +328,16 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata_History(t *testing.T) {
 	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
 	assert.Nil(t, err)
 
-	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(testMetadataKey)
 
 	if err := utils.BatchSet(&utils.KVPairs{
-		testMetadataKey: startingCurrentMetadataValue,
-		getVersionKeyForBadger(testMetadataKey, 0): "red",
-		getVersionKeyForBadger(testMetadataKey, 1): "fox",
-		getVersionKeyForBadger(testMetadataKey, 2): "jumps",
-		getVersionKeyForBadger(testMetadataKey, 3): "over",
-		getVersionKeyForBadger(testMetadataKey, 4): "the",
-		permissionHashKey:                          permissionHash,
+		testMetadataKey:                        startingCurrentMetadataValue,
+		getVersionKeyForDb(testMetadataKey, 0): "red",
+		getVersionKeyForDb(testMetadataKey, 1): "fox",
+		getVersionKeyForDb(testMetadataKey, 2): "jumps",
+		getVersionKeyForDb(testMetadataKey, 3): "over",
+		getVersionKeyForDb(testMetadataKey, 4): "the",
+		permissionHashKey:                      permissionHash,
 	}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
 	}
@@ -401,12 +401,12 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata_History_If_Not_Maxed_Out(t *
 	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
 	assert.Nil(t, err)
 
-	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(testMetadataKey)
 
 	if err := utils.BatchSet(&utils.KVPairs{
-		testMetadataKey: startingCurrentMetadataValue,
-		getVersionKeyForBadger(testMetadataKey, 0): "red",
-		permissionHashKey:                          permissionHash,
+		testMetadataKey:                        startingCurrentMetadataValue,
+		getVersionKeyForDb(testMetadataKey, 0): "red",
+		permissionHashKey:                      permissionHash,
 	}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
 	}
@@ -555,7 +555,7 @@ func Test_Create_Metadata_Creates_Metadata(t *testing.T) {
 
 	metadata, _, err := utils.GetValueFromKV(testMetadataKey)
 	assert.Nil(t, err)
-	permissionHash, _, err := utils.GetValueFromKV(getPermissionHashKeyForBadger(testMetadataKey))
+	permissionHash, _, err := utils.GetValueFromKV(getPermissionHashKeyForDb(testMetadataKey))
 	assert.Nil(t, err)
 	assert.Equal(t, "", metadata)
 	assert.Equal(t, permissionHashExpected, permissionHash)
@@ -747,7 +747,7 @@ func Test_Delete_Metadata_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T) 
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(testMetadataKey)
 
 	ttl := time.Until(account.ExpirationDate())
 
@@ -797,7 +797,7 @@ func Test_Delete_Metadata_Success(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
-	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(testMetadataKey)
 
 	ttl := time.Until(account.ExpirationDate())
 

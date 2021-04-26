@@ -11,10 +11,11 @@ import (
 	"reflect"
 	"strings"
 
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
-	"strconv"
 )
 
 const (
@@ -286,11 +287,11 @@ func getPermissionHash(publicKey, key string, c *gin.Context) (string, error) {
 	return permissionHash, nil
 }
 
-func getPermissionHashKeyForBadger(prefix string) string {
+func getPermissionHashKeyForDb(prefix string) string {
 	return prefix + "_permissionHash"
 }
 
-func getVersionKeyForBadger(prefix string, index int) string {
+func getVersionKeyForDb(prefix string, index int) string {
 	return prefix + "_" + strconv.Itoa(index)
 }
 

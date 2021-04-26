@@ -364,7 +364,7 @@ func makeMetadataForTest(metadataKey string, key string) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	permissionHash, _ := getPermissionHash(key, metadataKey, c)
 
-	permissionHashKey := getPermissionHashKeyForBadger(metadataKey)
+	permissionHashKey := getPermissionHashKeyForDb(metadataKey)
 	utils.BatchSet(&utils.KVPairs{
 		metadataKey:       "",
 		permissionHashKey: permissionHash,
