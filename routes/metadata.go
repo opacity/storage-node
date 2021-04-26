@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -202,7 +201,7 @@ func getMetadata(c *gin.Context) error {
 	}
 
 	permissionHashKey := getPermissionHashKeyForDb(requestBodyParsed.MetadataKey)
-	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+	permissionHashInDB, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
 		// TODO: Enable this after everyone should have migrated.
@@ -215,9 +214,9 @@ func getMetadata(c *gin.Context) error {
 	// TODO remove this if block wrapping the other if after everyone should have migrated
 	// This is only in effect for a limited time because many users already created metadatas without
 	// permission hashes being stored
-	if permissionHashInBadger != "" {
+	if permissionHashInDB != "" {
 		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
-			permissionHashInBadger, c); err != nil {
+			permissionHashInDB, c); err != nil {
 			return err
 		}
 	}
@@ -264,14 +263,14 @@ func getMetadataHistory(c *gin.Context) error {
 	}
 
 	permissionHashKey := getPermissionHashKeyForDb(requestBodyParsed.MetadataKey)
-	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+	permissionHashInDB, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
 		return NotFoundResponse(c, err)
 	}
 
 	if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
-		permissionHashInBadger, c); err != nil {
+		permissionHashInDB, c); err != nil {
 		return err
 	}
 
@@ -437,7 +436,7 @@ func deleteMetadata(c *gin.Context) error {
 	}
 
 	permissionHashKey := getPermissionHashKeyForDb(requestBodyParsed.MetadataKey)
-	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
+	permissionHashInDB, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
 		// TODO: Enable this after everyone should have migrated.
@@ -450,9 +449,9 @@ func deleteMetadata(c *gin.Context) error {
 	// TODO remove this if block wrapping the other if after everyone should have migrated
 	// This is only in effect for a limited time because many users already created metadatas without
 	// permission hashes being stored
-	if permissionHashInBadger != "" {
+	if permissionHashInDB != "" {
 		if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
-			permissionHashInBadger, c); err != nil {
+			permissionHashInDB, c); err != nil {
 			return err
 		}
 	}
@@ -462,7 +461,7 @@ func deleteMetadata(c *gin.Context) error {
 	// TODO remove this if block wrapping the other if after everyone should have migrated
 	// This is only in effect for a limited time because many users already created metadatas without
 	// permission hashes being stored
-	if permissionHashInBadger != "" {
+	if permissionHashInDB != "" {
 		if err := account.RemoveMetadata(int64(len(oldMetadata))); err != nil {
 			return InternalErrorResponse(c, err)
 		}
@@ -492,7 +491,7 @@ func storeMetadataHistory(metadataKey string, oldMetadata string, ttl time.Durat
 		}, ttl); err != nil {
 			return InternalErrorResponse(c, err)
 		}
-		if err == badger.ErrKeyNotFound {
+		if err == utils.ErrDynamodbKeyNotFound {
 			stopOnNextKey = true
 		}
 		newValue = oldValue
@@ -504,7 +503,7 @@ func getMetadataHistoryWithoutContext(metadataKey string) ([]string, error) {
 	metadataHistory := []string{}
 	for i := 0; i < numMetadatasToRetain; i++ {
 		oldMetadata, _, err := utils.GetValueFromKV(getVersionKeyForDb(metadataKey, i))
-		if err == badger.ErrKeyNotFound {
+		if err == utils.ErrDynamodbKeyNotFound {
 			break
 		}
 		if err != nil {
