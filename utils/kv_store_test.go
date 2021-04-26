@@ -14,16 +14,9 @@ const guessedMaxBatchSize = 200000
 
 func Test_KVStore_Init(t *testing.T) {
 	SetTesting("../.env")
-	err := InitKvStore()
-
-	assert.Nil(t, err)
-	defer CloseKvStore()
 }
 
 func Test_KVStore_MassBatchSet(t *testing.T) {
-	InitKvStore()
-	defer CloseKvStore()
-
 	err := BatchSet(getKvPairs(guessedMaxBatchSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
@@ -32,9 +25,6 @@ func Test_KVStore_MassBatchSet(t *testing.T) {
 }
 
 func Test_KVStoreGetValueFromKV(t *testing.T) {
-	InitKvStore()
-	defer CloseKvStore()
-
 	key := "key"
 	valueSet := "opacity"
 
@@ -52,9 +42,6 @@ func Test_KVStoreGetValueFromKV(t *testing.T) {
 }
 
 func Test_KVStoreBatchGet(t *testing.T) {
-	InitKvStore()
-	defer CloseKvStore()
-
 	BatchSet(&KVPairs{"key": "opacity"}, TestValueTimeToLive)
 
 	kvs, err := BatchGet(&KVKeys{"key"})
@@ -65,9 +52,6 @@ func Test_KVStoreBatchGet(t *testing.T) {
 }
 
 func Test_KVStoreBatchGet_WithMissingKey(t *testing.T) {
-	InitKvStore()
-	defer CloseKvStore()
-
 	BatchSet(&KVPairs{"key": "opacity"}, TestValueTimeToLive)
 
 	kvs, err := BatchGet(&KVKeys{"key", "unknownKey"})
@@ -78,9 +62,6 @@ func Test_KVStoreBatchGet_WithMissingKey(t *testing.T) {
 }
 
 func Test_KVStore_MassBatchGet(t *testing.T) {
-	InitKvStore()
-	defer CloseKvStore()
-
 	err := BatchSet(getKvPairs(guessedMaxBatchSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
@@ -89,9 +70,6 @@ func Test_KVStore_MassBatchGet(t *testing.T) {
 }
 
 func Test_KVStoreBatchDelete(t *testing.T) {
-	InitKvStore()
-	defer CloseKvStore()
-
 	BatchSet(&KVPairs{"key1": "opacity1", "key2": "opacity2"}, TestValueTimeToLive)
 
 	err := BatchDelete(&KVKeys{"key1"})
@@ -103,9 +81,6 @@ func Test_KVStoreBatchDelete(t *testing.T) {
 }
 
 func Test_KVStore_MassBatchDelete(t *testing.T) {
-	InitKvStore()
-	defer CloseKvStore()
-
 	err := BatchSet(getKvPairs(guessedMaxBatchSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
@@ -114,11 +89,8 @@ func Test_KVStore_MassBatchDelete(t *testing.T) {
 }
 
 func Test_KVStore_RemoveAllKvStoreData(t *testing.T) {
-	InitKvStore()
-	defer CloseKvStore()
-
 	BatchSet(getKvPairs(2), TestValueTimeToLive)
-	err := RemoveAllKvStoreData()
+	err := RemoveKvStore()
 	assert.Nil(t, err)
 
 	InitKvStore()

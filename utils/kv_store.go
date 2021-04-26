@@ -5,10 +5,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"fmt"
-
-	"os"
-
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 	"github.com/dgraph-io/badger"
@@ -75,29 +72,12 @@ func CloseKvStore() error {
 	return err
 }
 
-/*RemoveAllKvStoreData removes all the data. Caller should call InitKvStore() again to create a new one.*/
-func RemoveAllKvStoreData() error {
-	if err := CloseKvStore(); err != nil {
-		return err
-	}
-
-	var dir string
-	if IsTestEnv() {
-		dir = badgerDirTest
-	} else {
-		dir = badgerDirProd
-	}
-	err := os.RemoveAll(dir)
-	LogIfError(err, map[string]interface{}{"badgerDir": dir})
-	return err
+// RemoveKvStore removes all the data along with the table
+func RemoveKvStore() error {
+	return DynamodbSvc.DeleteTable()
 }
 
-/*GetBadgerDb returns the underlying the database. If not call InitKvStore(), it will return nil*/
-func GetBadgerDb() *badger.DB {
-	return badgerDB
-}
-
-/*GetValueFromKV gets a single value from the provided key*/
+// GetValueFromKV gets a single value from the provided key
 func GetValueFromKV(key string) (value string, expirationTime time.Time, err error) {
 	expirationTime = time.Now()
 	if badgerDB == nil {
@@ -124,65 +104,49 @@ func GetValueFromKV(key string) (value string, expirationTime time.Time, err err
 	return
 }
 
-/*BatchGet returns KVPairs for a set of keys. It won't treat Key missing as error.*/
+// BatchGet returns KVPairs for a set of keys. It won't treat Key missing as error.
 func BatchGet(ks *KVKeys) (kvs *KVPairs, err error) {
 	kvs = &KVPairs{}
-	if badgerDB == nil {
-		return kvs, dbNoInitError
+
+	keys := []map[string]*dynamodb.AttributeValue{}
+	for k, v := range *kvs {
+		if k == "" {
+			continue
+		}
+		keys = append(keys, map[string]*dynamodb.AttributeValue{
+			"MetadataKey": {
+				S: aws.String(v),
+			},
+		})
 	}
 
-	err = badgerDB.View(func(txn *badger.Txn) error {
-		for _, k := range *ks {
-			// Skip any empty keys.
-			if k == "" {
-				continue
-			}
+	input := &dynamodb.BatchGetItemInput{
+		RequestItems: map[string]*dynamodb.KeysAndAttributes{
+			DynamodbSvc.tableName: {
+				Keys: keys,
+			},
+		},
+	}
 
-			item, err := txn.Get([]byte(k))
-			if err == badger.ErrKeyNotFound {
-				continue
-			}
-			if err != nil {
-				return err
-			}
-
-			fmt.Println(item.UserMeta())
-
-			val := ""
-			if item != nil {
-				var valBytes []byte
-				err := item.Value(func(val []byte) error {
-					if val == nil {
-						valBytes = nil
-					} else {
-						valBytes = append([]byte{}, val...)
-					}
-					return nil
-				})
-				if err != nil {
-					return err
-				}
-
-				val = string(valBytes)
-			}
-
-			// Mutate KV map
-			(*kvs)[k] = val
+	batchResult, err := DynamodbSvc.dynamodb.BatchGetItem(input)
+	results := batchResult.Responses[DynamodbSvc.tableName]
+	for _, result := range results {
+		item := DynamoMetadata{}
+		err = dynamodbattribute.UnmarshalMap(result, &item)
+		if err != nil {
+			return
 		}
+		(*kvs)[item.MetadataKey] = item.Value
+	}
 
-		return nil
-	})
 	LogIfError(err, map[string]interface{}{"batchSize": len(*ks)})
 
 	return
 }
 
-/*BatchSet updates a set of KVPairs. Return error if any fails.*/
+// BatchSet updates a set of KVPairs. Return error if any fails.
 func BatchSet(kvs *KVPairs, ttl time.Duration) error {
 	ttl = getTTL(ttl)
-	if badgerDB == nil {
-		return dbNoInitError
-	}
 	requests := []*dynamodb.WriteRequest{}
 
 	for k, v := range *kvs {
@@ -211,12 +175,8 @@ func BatchSet(kvs *KVPairs, ttl time.Duration) error {
 	return DynamodbSvc.SetBatch(requests)
 }
 
-/*BatchDelete deletes a set of KVKeys, Return error if any fails.*/
+// BatchDelete deletes a set of KVKeys, Return error if any fails.
 func BatchDelete(ks *KVKeys) error {
-	if badgerDB == nil {
-		return dbNoInitError
-	}
-
 	var err error
 	txn := badgerDB.NewTransaction(true)
 	for _, key := range *ks {

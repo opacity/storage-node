@@ -184,3 +184,12 @@ func CreateTable(tagValue, tableName string, dynamodbInstance *dynamodb.DynamoDB
 
 	return nil
 }
+
+func (dynamodbSvc *DynamodbWrapper) DeleteTable() error {
+	input := &dynamodb.DeleteTableInput{
+		TableName: aws.String(dynamodbSvc.tableName),
+	}
+	_, err := dynamodbSvc.dynamodb.DeleteTable(input)
+
+	return err
+}

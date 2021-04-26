@@ -140,7 +140,7 @@ func SetTesting(filenames ...string) {
 }
 
 func runInitializations() {
-	InitKvStore()
+	// InitKvStore()
 	newS3Session()
 	dynamodbSvc, err := NewDynamoDBSession(IsTestEnv() || IsDebugEnv(), defaultDynamoDbTable, Env.AwsRegion, Env.AwsDynamoDBEndpoint)
 	LogIfError(err, nil)
