@@ -2,34 +2,44 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
+
+var ErrDynamodbKeyNotFound = errors.New("key does not exist")
 
 type DynamodbWrapper struct {
 	dynamodb  *dynamodb.DynamoDB
 	tableName string
 }
 
-func NewDynamoDBSession(testOrDebug bool, tableName string, region string, endpoint string) *DynamodbWrapper {
+func NewDynamoDBSession(testOrDebug bool, tableName string, region string, endpoint string) (*DynamodbWrapper, error) {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
 
 	awsConfig := aws.NewConfig()
-
+	tagValue := "prod"
 	if testOrDebug {
 		awsConfig = awsConfig.WithEndpoint(endpoint).WithLogLevel(aws.LogDebugWithHTTPBody)
+		tagValue = "dev"
 	}
 
+	dynamodbInstance := dynamodb.New(sess, awsConfig)
+
+	err := CreateTable(tagValue, tableName, dynamodbInstance)
+
 	return &DynamodbWrapper{
-		dynamodb:  dynamodb.New(sess, awsConfig),
+		dynamodb:  dynamodbInstance,
 		tableName: tableName,
-	}
+	}, err
 }
 
 func (dynamodbSvc *DynamodbWrapper) Get(keyName string, keyValue string) (itemOutput *dynamodb.GetItemOutput, err error) {
@@ -46,7 +56,7 @@ func (dynamodbSvc *DynamodbWrapper) Get(keyName string, keyValue string) (itemOu
 	}
 
 	if itemOutput.Item == nil {
-		err = errors.New("item does not exist")
+		err = ErrDynamodbKeyNotFound
 	}
 
 	return
@@ -100,4 +110,77 @@ func (dynamodbSvc *DynamodbWrapper) SetBatch(request []*dynamodb.WriteRequest) e
 func (dynamodbSvc *DynamodbWrapper) Update(input dynamodb.UpdateItemInput) error {
 	_, err := dynamodbSvc.dynamodb.UpdateItem(&input)
 	return err
+}
+
+func CreateTable(tagValue, tableName string, dynamodbInstance *dynamodb.DynamoDB) error {
+	_, err := dynamodbInstance.CreateTable(&dynamodb.CreateTableInput{
+		AttributeDefinitions: []*dynamodb.AttributeDefinition{
+			{
+				AttributeName: aws.String("MetadataKey"),
+				AttributeType: aws.String(dynamodb.ScalarAttributeTypeS),
+			},
+		},
+		TableName: aws.String(tableName),
+		KeySchema: []*dynamodb.KeySchemaElement{
+			{
+				AttributeName: aws.String("MetadataKey"),
+				KeyType:       aws.String(dynamodb.KeyTypeHash),
+			},
+		},
+		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
+			ReadCapacityUnits:  aws.Int64(3),
+			WriteCapacityUnits: aws.Int64(3),
+		},
+		Tags: []*dynamodb.Tag{
+			{
+				Key:   aws.String("env"),
+				Value: aws.String(tagValue),
+			},
+		},
+	})
+
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Code() != dynamodb.ErrCodeResourceInUseException {
+				return err
+			}
+		}
+		return nil
+	}
+
+	input := &dynamodb.DescribeTableInput{
+		TableName: aws.String(tableName),
+	}
+
+	created := false
+	for !created {
+		tableOutput, err := dynamodbInstance.DescribeTable(input)
+		if err != nil {
+			return err
+		}
+
+		if aws.StringValue(tableOutput.Table.TableStatus) == dynamodb.TableStatusActive {
+			created = true
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	_, err = dynamodbInstance.UpdateTimeToLive(&dynamodb.UpdateTimeToLiveInput{
+		TableName: aws.String(tableName),
+		TimeToLiveSpecification: &dynamodb.TimeToLiveSpecification{
+			AttributeName: aws.String("TTL"),
+			Enabled:       aws.Bool(true),
+		},
+	})
+	if err != nil {
+		fmt.Print(err.Error())
+		if aerr, ok := err.(awserr.Error); ok {
+			if aerr.Message() != "TimeToLive is already enabled" {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

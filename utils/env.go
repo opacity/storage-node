@@ -142,10 +142,12 @@ func SetTesting(filenames ...string) {
 func runInitializations() {
 	InitKvStore()
 	newS3Session()
-	DynamodbSvc = NewDynamoDBSession(IsTestEnv() || IsDebugEnv(), defaultDynamoDbTable, Env.AwsRegion, Env.AwsDynamoDBEndpoint)
+	dynamodbSvc, err := NewDynamoDBSession(IsTestEnv() || IsDebugEnv(), defaultDynamoDbTable, Env.AwsRegion, Env.AwsDynamoDBEndpoint)
+	LogIfError(err, nil)
+	DynamodbSvc = dynamodbSvc
 
 	Env.Plans = make(PlanResponseType)
-	err := json.Unmarshal([]byte(Env.PlansJson), &Env.Plans)
+	err = json.Unmarshal([]byte(Env.PlansJson), &Env.Plans)
 	LogIfError(err, nil)
 	createPlanMetrics()
 }
