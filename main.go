@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"runtime/debug"
 	"strings"
@@ -16,8 +17,15 @@ import (
 func main() {
 	defer catchError()
 	defer models.Close()
-
+	migrateFromBadger := flag.Bool("migrateFromBadger", false, "set this flag to execute the migration from BadgerDB to DynamoDB; if the migration was executed already, it will do nothing")
+	flag.Parse()
 	utils.SetLive()
+
+	if *migrateFromBadger {
+		err := utils.MigrateFromBadger()
+		utils.PanicOnError(err)
+	}
+
 	services.SetWallet()
 	err := services.InitStripe()
 	utils.PanicOnError(err)

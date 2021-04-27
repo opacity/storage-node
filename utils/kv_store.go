@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/dgraph-io/badger/pb"
 )
 
 // TestValueTimeToLive is some default value we can use
@@ -152,6 +153,53 @@ func BatchSet(kvs *KVPairs, ttl time.Duration) error {
 		if len(batchKeys) == BatchWriteMaxItems {
 			process()
 			batchKeys = make([]string, 0, BatchWriteMaxItems)
+		}
+	}
+	if len(batchKeys) > 0 {
+		process()
+	}
+
+	return nil
+}
+
+// BatchSetKV updates a set of KVPairs. Return error if any fails.
+func BatchSetKV(list *pb.KVList) error {
+	kvs := list.GetKv()
+	batchKeys := make([]*pb.KV, 0, BatchWriteMaxItems)
+	process := func() error {
+		requests := []*dynamodb.WriteRequest{}
+
+		for _, kv := range batchKeys {
+			dynamoItem := DynamoMetadata{
+				MetadataKey: string(kv.Key),
+				Value:       string(kv.Value),
+				TTL:         int64(kv.ExpiresAt),
+			}
+			item, err := dynamodbattribute.MarshalMap(dynamoItem)
+			if err != nil {
+				return errors.New("object could not be created")
+			}
+			wr := dynamodb.WriteRequest{
+				PutRequest: &dynamodb.PutRequest{
+					Item: item,
+				},
+			}
+			requests = append(requests, &wr)
+		}
+
+		err := DynamodbSvc.SetBatch(requests)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	for _, k := range kvs {
+		batchKeys = append(batchKeys, k)
+		if len(batchKeys) == BatchWriteMaxItems {
+			process()
+			batchKeys = make([]*pb.KV, 0, BatchWriteMaxItems)
 		}
 	}
 	if len(batchKeys) > 0 {

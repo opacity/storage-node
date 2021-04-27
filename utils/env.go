@@ -184,6 +184,20 @@ func SetBadgerMigrationDone(done bool) error {
 	return nil
 }
 
+// Temporary func to execute the migration from BadgerDB to DynamoDB
+func MigrateFromBadger() error {
+	if !DynamodbSvc.badgerMigrationDone {
+		if err := BadgerStreamForMigration(); err != nil {
+			return err
+		}
+		if err := SetBadgerMigrationDone(true); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 /*IsTestEnv returns whether we are in the test environment*/
 func IsTestEnv() bool {
 	return Env.GoEnv == "test"

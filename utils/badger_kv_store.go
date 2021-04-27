@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"errors"
 	"io/ioutil"
 	"time"
@@ -258,4 +259,22 @@ func BadgerBatchDelete(ks *KVKeys) error {
 
 	LogIfError(err, map[string]interface{}{"batchSize": len(*ks)})
 	return err
+}
+
+// BadgerStreamForMigration gets all the values from the BadgerDB
+func BadgerStreamForMigration() error {
+	if badgerDB == nil {
+		return dbNoInitError
+	}
+	stream := badgerDB.NewStream()
+	stream.NumGo = 16
+	stream.LogPrefix = "Badger.Streaming"
+	stream.KeyToList = nil
+	stream.Send = BatchSetKV
+
+	if err := stream.Orchestrate(context.Background()); err != nil {
+		return err
+	}
+
+	return nil
 }
