@@ -48,6 +48,18 @@ services:
     networks:
       - promnet
 
+  dynamodb-local:
+    command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -dbPath ./data"
+    image: "amazon/dynamodb-local:latest"
+    container_name: dynamodb-local
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./data/dynamodb/test:/home/dynamodblocal/data"
+    working_dir: /home/dynamodblocal
+    networks: 
+      - dbnet
+        
 # If we decide to turn on our own grafana dashboard
 #  grafana:
 #    image: grafana/grafana
@@ -72,6 +84,7 @@ services:
       - ".env"
     depends_on:
     - "db"
+    - "dynamodb-local"
     volumes:
     - ".:/go/src/github.com/opacity/storage-node"
     - "./data/badger/prod:/var/lib/badger/prod"
