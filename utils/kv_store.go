@@ -16,6 +16,8 @@ const badgerDirProd = "/var/lib/badger/prod"
 /*TestValueTimeToLive is some default value we can use in unit
 tests for K:V pairs in badger*/
 const TestValueTimeToLive = 1 * time.Minute
+const BatchWriteMaxItems = 25
+const BatchReadMaxItems = 100
 
 // Singleton DB
 var badgerDB *badger.DB
@@ -80,9 +82,6 @@ func RemoveKvStore() error {
 // GetValueFromKV gets a single value from the provided key
 func GetValueFromKV(key string) (value string, expirationTime time.Time, err error) {
 	expirationTime = time.Now()
-	if badgerDB == nil {
-		return value, expirationTime, dbNoInitError
-	}
 
 	if key == "" {
 		return value, expirationTime, errors.New("no key specified")
@@ -107,36 +106,53 @@ func GetValueFromKV(key string) (value string, expirationTime time.Time, err err
 // BatchGet returns KVPairs for a set of keys. It won't treat Key missing as error.
 func BatchGet(ks *KVKeys) (kvs *KVPairs, err error) {
 	kvs = &KVPairs{}
+	batchKeys := make([]string, 0, BatchReadMaxItems)
 
-	keys := []map[string]*dynamodb.AttributeValue{}
-	for k, v := range *kvs {
-		if k == "" {
-			continue
+	process := func() error {
+		keys := []map[string]*dynamodb.AttributeValue{}
+		// for _, k := range *ks {
+		for _, k := range batchKeys {
+			if k == "" {
+				continue
+			}
+			keys = append(keys, map[string]*dynamodb.AttributeValue{
+				"MetadataKey": {
+					S: aws.String(k),
+				},
+			})
 		}
-		keys = append(keys, map[string]*dynamodb.AttributeValue{
-			"MetadataKey": {
-				S: aws.String(v),
+
+		input := &dynamodb.BatchGetItemInput{
+			RequestItems: map[string]*dynamodb.KeysAndAttributes{
+				DynamodbSvc.tableName: {
+					Keys: keys,
+				},
 			},
-		})
+		}
+
+		batchResult, err := DynamodbSvc.dynamodb.BatchGetItem(input)
+		results := batchResult.Responses[DynamodbSvc.tableName]
+		for _, result := range results {
+			item := DynamoMetadata{}
+			err = dynamodbattribute.UnmarshalMap(result, &item)
+			if err != nil {
+				return err
+			}
+			(*kvs)[item.MetadataKey] = item.Value
+		}
+
+		return nil
 	}
 
-	input := &dynamodb.BatchGetItemInput{
-		RequestItems: map[string]*dynamodb.KeysAndAttributes{
-			DynamodbSvc.tableName: {
-				Keys: keys,
-			},
-		},
-	}
-
-	batchResult, err := DynamodbSvc.dynamodb.BatchGetItem(input)
-	results := batchResult.Responses[DynamodbSvc.tableName]
-	for _, result := range results {
-		item := DynamoMetadata{}
-		err = dynamodbattribute.UnmarshalMap(result, &item)
-		if err != nil {
-			return
+	for k := range *kvs {
+		batchKeys = append(batchKeys, k)
+		if len(batchKeys) == BatchReadMaxItems {
+			process()
+			batchKeys = make([]string, 0, BatchWriteMaxItems)
 		}
-		(*kvs)[item.MetadataKey] = item.Value
+	}
+	if len(batchKeys) > 0 {
+		process()
 	}
 
 	LogIfError(err, map[string]interface{}{"batchSize": len(*ks)})
@@ -147,32 +163,52 @@ func BatchGet(ks *KVKeys) (kvs *KVPairs, err error) {
 // BatchSet updates a set of KVPairs. Return error if any fails.
 func BatchSet(kvs *KVPairs, ttl time.Duration) error {
 	ttl = getTTL(ttl)
-	requests := []*dynamodb.WriteRequest{}
 
-	for k, v := range *kvs {
-		if k == "" {
-			return errors.New("object key empty")
+	batchKeys := make([]string, 0, BatchWriteMaxItems)
+	process := func() error {
+		requests := []*dynamodb.WriteRequest{}
+
+		for _, k := range batchKeys {
+			if k == "" {
+				return errors.New("object key empty")
+			}
+			dynamoItem := DynamoMetadata{
+				MetadataKey: k,
+				Value:       (*kvs)[k],
+				TTL:         time.Now().Add(ttl).Unix(),
+			}
+			item, err := dynamodbattribute.MarshalMap(dynamoItem)
+			if err != nil {
+				return errors.New("object could not be created")
+			}
+			wr := dynamodb.WriteRequest{
+				PutRequest: &dynamodb.PutRequest{
+					Item: item,
+				},
+			}
+			requests = append(requests, &wr)
 		}
 
-		dynamoItem := DynamoMetadata{
-			MetadataKey: k,
-			Value:       v,
-			TTL:         time.Now().Add(ttl).Unix(),
-		}
-		item, err := dynamodbattribute.MarshalMap(dynamoItem)
+		err := DynamodbSvc.SetBatch(requests)
 		if err != nil {
-			return errors.New("object could not be created")
-		}
-		wr := dynamodb.WriteRequest{
-			PutRequest: &dynamodb.PutRequest{
-				Item: item,
-			},
+			return err
 		}
 
-		requests = append(requests, &wr)
+		return nil
 	}
 
-	return DynamodbSvc.SetBatch(requests)
+	for k := range *kvs {
+		batchKeys = append(batchKeys, k)
+		if len(batchKeys) == BatchWriteMaxItems {
+			process()
+			batchKeys = make([]string, 0, BatchWriteMaxItems)
+		}
+	}
+	if len(batchKeys) > 0 {
+		process()
+	}
+
+	return nil
 }
 
 // BatchDelete deletes a set of KVKeys, Return error if any fails.
