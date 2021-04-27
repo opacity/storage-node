@@ -103,10 +103,10 @@ services:
         if [ -z ${DEBUG} ]; then
           echo \"Starting Storage node in PROD mode\";
           go build -o ./bin/storage-node && chmod +x ./bin/storage-node;
-          ./bin/storage-node;
+          ./bin/storage-node -migrateFromBadger;
         else
           echo \"Starting Storage node in DEV mode\";
-          gin run main.go
+          gin run main.go -- -migrateFromBadger
         fi
       "
     networks:
