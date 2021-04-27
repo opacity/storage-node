@@ -94,6 +94,7 @@ func (dynamodbSvc *DynamodbWrapper) SetBatch(request []*dynamodb.WriteRequest) e
 	}
 
 	if len(result.UnprocessedItems[dynamodbSvc.tableName]) > 0 {
+		time.Sleep(500 * time.Millisecond)
 		retryInput := &dynamodb.BatchWriteItemInput{
 			RequestItems: map[string][]*dynamodb.WriteRequest{
 				dynamodbSvc.tableName: result.UnprocessedItems[dynamodbSvc.tableName],
