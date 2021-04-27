@@ -144,7 +144,7 @@ func BatchGet(ks *KVKeys) (kvs *KVPairs, err error) {
 		return nil
 	}
 
-	for k := range *kvs {
+	for _, k := range *ks {
 		batchKeys = append(batchKeys, k)
 		if len(batchKeys) == BatchReadMaxItems {
 			process()
@@ -213,37 +213,47 @@ func BatchSet(kvs *KVPairs, ttl time.Duration) error {
 
 // BatchDelete deletes a set of KVKeys, Return error if any fails.
 func BatchDelete(ks *KVKeys) error {
-	var err error
-	txn := badgerDB.NewTransaction(true)
-	for _, key := range *ks {
-		e := txn.Delete([]byte(key))
-		if e == nil {
-			continue
-		}
+	batchKeys := make([]string, 0, BatchWriteMaxItems)
+	process := func() error {
+		requests := []*dynamodb.WriteRequest{}
 
-		if e == badger.ErrTxnTooBig {
-			e = nil
-			if commitErr := txn.Commit(); commitErr != nil {
-				e = commitErr
-			} else {
-				txn = badgerDB.NewTransaction(true)
-				e = txn.Delete([]byte(key))
+		for _, k := range batchKeys {
+			if k == "" {
+				return errors.New("object key empty")
 			}
+
+			dr := dynamodb.WriteRequest{
+				DeleteRequest: &dynamodb.DeleteRequest{
+					Key: map[string]*dynamodb.AttributeValue{
+						"MetadataKey": {
+							S: aws.String(k),
+						},
+					},
+				},
+			}
+			requests = append(requests, &dr)
 		}
 
-		if e != nil {
-			err = e
-			break
+		err := DynamodbSvc.SetBatch(requests)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	for _, k := range *ks {
+		batchKeys = append(batchKeys, k)
+		if len(batchKeys) == BatchWriteMaxItems {
+			process()
+			batchKeys = make([]string, 0, BatchWriteMaxItems)
 		}
 	}
-
-	defer txn.Discard()
-	if err == nil {
-		err = txn.Commit()
+	if len(batchKeys) > 0 {
+		process()
 	}
 
-	LogIfError(err, map[string]interface{}{"batchSize": len(*ks)})
-	return err
+	return nil
 }
 
 func getTTL(ttl time.Duration) time.Duration {

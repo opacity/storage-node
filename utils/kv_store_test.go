@@ -9,22 +9,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// a very big number that will lead to ErrTxnTooBig for write.
-const guessedMaxBatchSize = 200000
+const MaxBatchSize = 10000
 
 func Test_KVStore_Init(t *testing.T) {
 	SetTesting("../.env")
 }
 
 func Test_KVStore_MassBatchSet(t *testing.T) {
-	err := BatchSet(getKvPairs(guessedMaxBatchSize), TestValueTimeToLive)
+	SetTesting("../.env")
+	err := BatchSet(getKvPairs(MaxBatchSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
-	kvs, _ := BatchGet(&KVKeys{strconv.Itoa(guessedMaxBatchSize - 1)})
+	kvs, _ := BatchGet(&KVKeys{strconv.Itoa(MaxBatchSize - 1)})
 	AssertTrue(len(*kvs) == 1, t, "Expect only an item")
 }
 
 func Test_KVStoreGetValueFromKV(t *testing.T) {
+	SetTesting("../.env")
 	key := "key"
 	valueSet := "opacity"
 
@@ -42,6 +43,7 @@ func Test_KVStoreGetValueFromKV(t *testing.T) {
 }
 
 func Test_KVStoreBatchGet(t *testing.T) {
+	SetTesting("../.env")
 	BatchSet(&KVPairs{"key": "opacity"}, TestValueTimeToLive)
 
 	kvs, err := BatchGet(&KVKeys{"key"})
@@ -52,6 +54,7 @@ func Test_KVStoreBatchGet(t *testing.T) {
 }
 
 func Test_KVStoreBatchGet_WithMissingKey(t *testing.T) {
+	SetTesting("../.env")
 	BatchSet(&KVPairs{"key": "opacity"}, TestValueTimeToLive)
 
 	kvs, err := BatchGet(&KVKeys{"key", "unknownKey"})
@@ -62,14 +65,16 @@ func Test_KVStoreBatchGet_WithMissingKey(t *testing.T) {
 }
 
 func Test_KVStore_MassBatchGet(t *testing.T) {
-	err := BatchSet(getKvPairs(guessedMaxBatchSize), TestValueTimeToLive)
+	SetTesting("../.env")
+	err := BatchSet(getKvPairs(MaxBatchSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
-	kvs, _ := BatchGet(getKeys(guessedMaxBatchSize))
-	AssertTrue(len(*kvs) == guessedMaxBatchSize, t, "")
+	kvs, _ := BatchGet(getKeys(MaxBatchSize))
+	AssertTrue(len(*kvs) == MaxBatchSize, t, "")
 }
 
 func Test_KVStoreBatchDelete(t *testing.T) {
+	SetTesting("../.env")
 	BatchSet(&KVPairs{"key1": "opacity1", "key2": "opacity2"}, TestValueTimeToLive)
 
 	err := BatchDelete(&KVKeys{"key1"})
@@ -81,19 +86,21 @@ func Test_KVStoreBatchDelete(t *testing.T) {
 }
 
 func Test_KVStore_MassBatchDelete(t *testing.T) {
-	err := BatchSet(getKvPairs(guessedMaxBatchSize), TestValueTimeToLive)
+	SetTesting("../.env")
+	err := BatchSet(getKvPairs(MaxBatchSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
-	err = BatchDelete(getKeys(guessedMaxBatchSize))
+	err = BatchDelete(getKeys(MaxBatchSize))
 	assert.Nil(t, err)
 }
 
 func Test_KVStore_RemoveAllKvStoreData(t *testing.T) {
+	SetTesting("../.env")
 	BatchSet(getKvPairs(2), TestValueTimeToLive)
 	err := RemoveKvStore()
 	assert.Nil(t, err)
 
-	InitKvStore()
+	SetTesting("../.env")
 	kvs, _ := BatchGet(getKeys(2))
 
 	AssertTrue(len(*kvs) == 0, t, "")
@@ -109,7 +116,7 @@ func getKvPairs(count int) *KVPairs {
 
 func getKeys(count int) *KVKeys {
 	keys := KVKeys{}
-	for i := 0; i < guessedMaxBatchSize; i++ {
+	for i := 0; i < MaxBatchSize; i++ {
 		keys = append(keys, strconv.Itoa(i))
 	}
 	return &keys
