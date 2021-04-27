@@ -107,6 +107,10 @@ func (dynamodbSvc *DynamodbWrapper) Update(input dynamodb.UpdateItemInput) error
 }
 
 func CreateTable(tagValue, tableName string, dynamodbInstance *dynamodb.DynamoDB) error {
+	if IsTableCreated(dynamodbInstance, tableName) {
+		return nil
+	}
+
 	_, err := dynamodbInstance.CreateTable(&dynamodb.CreateTableInput{
 		AttributeDefinitions: []*dynamodb.AttributeDefinition{
 			{
@@ -142,22 +146,11 @@ func CreateTable(tagValue, tableName string, dynamodbInstance *dynamodb.DynamoDB
 		return nil
 	}
 
-	input := &dynamodb.DescribeTableInput{
-		TableName: aws.String(tableName),
-	}
-
-	created := false
+	// Wait for table to be created
+	created := IsTableCreated(dynamodbInstance, tableName)
 	for !created {
-		tableOutput, err := dynamodbInstance.DescribeTable(input)
-		if err != nil {
-			return err
-		}
-
-		if aws.StringValue(tableOutput.Table.TableStatus) == dynamodb.TableStatusActive {
-			created = true
-		}
-
-		time.Sleep(2 * time.Second)
+		created = IsTableCreated(dynamodbInstance, tableName)
+		time.Sleep(1 * time.Second)
 	}
 
 	_, err = dynamodbInstance.UpdateTimeToLive(&dynamodb.UpdateTimeToLiveInput{
@@ -186,4 +179,22 @@ func (dynamodbSvc *DynamodbWrapper) DeleteTable() error {
 	_, err := dynamodbSvc.dynamodb.DeleteTable(input)
 
 	return err
+}
+
+func IsTableCreated(dynamodbInstance *dynamodb.DynamoDB, tableName string) (created bool) {
+	created = false
+	describeTableInput := &dynamodb.DescribeTableInput{
+		TableName: aws.String(tableName),
+	}
+	for !created {
+		tableOutput, err := dynamodbInstance.DescribeTable(describeTableInput)
+		if err != nil {
+			return
+		}
+
+		if aws.StringValue(tableOutput.Table.TableStatus) == dynamodb.TableStatusActive {
+			created = true
+		}
+	}
+	return
 }
