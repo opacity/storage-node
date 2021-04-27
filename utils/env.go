@@ -3,8 +3,8 @@ package utils
 import (
 	"errors"
 	"log"
-
 	"os"
+	"time"
 
 	"strconv"
 
@@ -146,10 +146,42 @@ func runInitializations() {
 	LogIfError(err, nil)
 	DynamodbSvc = dynamodbSvc
 
+	// Temporary until badger migration is done
+	err = checkSetBadgerMigrationDone()
+	LogIfError(err, nil)
+
 	Env.Plans = make(PlanResponseType)
 	err = json.Unmarshal([]byte(Env.PlansJson), &Env.Plans)
 	LogIfError(err, nil)
 	createPlanMetrics()
+}
+
+// Temporary func to check and set FALSE for BadgerDB migration
+func checkSetBadgerMigrationDone() error {
+	badgerMigrationDoneValue, _, err := GetValueFromKV("badgerMigrationDone")
+	if err == ErrDynamodbKeyNotFound {
+		if err := SetBadgerMigrationDone(false); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	badgerMigrationDone, err := strconv.ParseBool(badgerMigrationDoneValue)
+	if err != nil {
+		return err
+	}
+	DynamodbSvc.badgerMigrationDone = badgerMigrationDone
+
+	return nil
+}
+
+// Temporary func to set TRUE for BadgerDB migration
+func SetBadgerMigrationDone(done bool) error {
+	if err := BatchSet(&KVPairs{"badgerMigrationDone": strconv.FormatBool(done)}, 17520*time.Hour); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 /*IsTestEnv returns whether we are in the test environment*/

@@ -16,8 +16,9 @@ import (
 var ErrDynamodbKeyNotFound = errors.New("key does not exist")
 
 type DynamodbWrapper struct {
-	dynamodb  *dynamodb.DynamoDB
-	tableName string
+	dynamodb            *dynamodb.DynamoDB
+	tableName           string
+	badgerMigrationDone bool
 }
 
 func NewDynamoDBSession(testOrDebug bool, tableName string, region string, endpoint string) (*DynamodbWrapper, error) {
@@ -34,12 +35,15 @@ func NewDynamoDBSession(testOrDebug bool, tableName string, region string, endpo
 
 	dynamodbInstance := dynamodb.New(sess, awsConfig)
 
-	err := CreateTable(tagValue, tableName, dynamodbInstance)
+	if err := CreateTable(tagValue, tableName, dynamodbInstance); err != nil {
+		return nil, err
+	}
 
 	return &DynamodbWrapper{
-		dynamodb:  dynamodbInstance,
-		tableName: tableName,
-	}, err
+		dynamodb:            dynamodbInstance,
+		tableName:           tableName,
+		badgerMigrationDone: false,
+	}, nil
 }
 
 func (dynamodbSvc *DynamodbWrapper) Get(keyName string, keyValue string) (itemOutput *dynamodb.GetItemOutput, err error) {
@@ -186,15 +190,13 @@ func IsTableCreated(dynamodbInstance *dynamodb.DynamoDB, tableName string) (crea
 	describeTableInput := &dynamodb.DescribeTableInput{
 		TableName: aws.String(tableName),
 	}
-	for !created {
-		tableOutput, err := dynamodbInstance.DescribeTable(describeTableInput)
-		if err != nil {
-			return
-		}
+	tableOutput, err := dynamodbInstance.DescribeTable(describeTableInput)
+	if err != nil {
+		return
+	}
 
-		if aws.StringValue(tableOutput.Table.TableStatus) == dynamodb.TableStatusActive {
-			created = true
-		}
+	if aws.StringValue(tableOutput.Table.TableStatus) == dynamodb.TableStatusActive {
+		created = true
 	}
 	return
 }
