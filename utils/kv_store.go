@@ -2,76 +2,24 @@ package utils
 
 import (
 	"errors"
-	"io/ioutil"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/dgraph-io/badger"
 )
 
-const badgerDirProd = "/var/lib/badger/prod"
-
-/*TestValueTimeToLive is some default value we can use in unit
-tests for K:V pairs in badger*/
+// TestValueTimeToLive is some default value we can use
 const TestValueTimeToLive = 1 * time.Minute
 const BatchWriteMaxItems = 25
 const BatchReadMaxItems = 100
 
-// Singleton DB
-var badgerDB *badger.DB
-var dbNoInitError error
-var badgerDirTest string
-
-/*KVPairs is a type.  Map key strings to value strings*/
 type KVPairs map[string]string
-
-/*KVKeys is a type.  An array of key strings*/
 type KVKeys []string
-
 type DynamoMetadata struct {
 	MetadataKey string `json:"MetadataKey" binding:"omitempty"`
 	Value       string `json:"Value" binding:"omitempty"`
 	TTL         int64  `json:"TTL" binding:"omitempty"`
-}
-
-func init() {
-	dbNoInitError = errors.New("badgerDB not initialized, Call InitKvStore() first")
-
-	badgerDirTest, _ = ioutil.TempDir("", "badgerForUnitTest")
-}
-
-/*InitKvStore returns db so that caller can call CloseKvStore to close it when it is done.*/
-func InitKvStore() (err error) {
-	if badgerDB != nil {
-		return nil
-	}
-
-	// Setup opts
-	var opts badger.Options
-
-	if IsTestEnv() {
-		opts = badger.DefaultOptions(badgerDirTest).WithTruncate(true)
-	} else {
-		opts = badger.DefaultOptions(badgerDirProd).WithTruncate(true)
-	}
-
-	badgerDB, err = badger.Open(opts)
-	LogIfError(err, nil)
-	return err
-}
-
-/*CloseKvStore closes the db.*/
-func CloseKvStore() error {
-	if badgerDB == nil {
-		return nil
-	}
-
-	err := badgerDB.Close()
-	LogIfError(err, nil)
-	badgerDB = nil
-	return err
 }
 
 // RemoveKvStore removes all the data along with the table
