@@ -110,7 +110,6 @@ func BatchGet(ks *KVKeys) (kvs *KVPairs, err error) {
 
 	process := func() error {
 		keys := []map[string]*dynamodb.AttributeValue{}
-		// for _, k := range *ks {
 		for _, k := range batchKeys {
 			if k == "" {
 				continue
@@ -131,6 +130,9 @@ func BatchGet(ks *KVKeys) (kvs *KVPairs, err error) {
 		}
 
 		batchResult, err := DynamodbSvc.dynamodb.BatchGetItem(input)
+		if err != nil {
+			return err
+		}
 		results := batchResult.Responses[DynamodbSvc.tableName]
 		for _, result := range results {
 			item := DynamoMetadata{}
