@@ -270,7 +270,7 @@ func BadgerStreamForMigration() error {
 	stream.NumGo = 16
 	stream.LogPrefix = "Badger.Streaming"
 	stream.KeyToList = nil
-	stream.Send = BatchSetKV
+	stream.Send = BatchSetMigration
 
 	if err := stream.Orchestrate(context.Background()); err != nil {
 		return err
