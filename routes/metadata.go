@@ -325,8 +325,11 @@ func setMetadata(c *gin.Context) error {
 
 	permissionHashKey := getPermissionHashKeyForDb(requestBodyParsed.MetadataKey)
 	permissionHashInDb, _, err := utils.GetValueFromKV(permissionHashKey)
-	if err != nil {
+	if err == utils.ErrDynamodbKeyNotFound {
 		return NotFoundResponse(c, err)
+	}
+	if err != nil {
+		return InternalErrorResponse(c, err)
 	}
 
 	if err := verifyPermissions(request.PublicKey, requestBodyParsed.MetadataKey,
