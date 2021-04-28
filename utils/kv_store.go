@@ -154,8 +154,8 @@ func BatchSet(kvs *KVPairs, ttl time.Duration) error {
 	return nil
 }
 
-// BatchSetKV updates a set of KVPairs. Return error if any fails.
-func BatchSetKV(list *pb.KVList) error {
+// BatchSetMigration updates a set of KVPairs. Return error if any fails.
+func BatchSetMigration(list *pb.KVList) error {
 	kvs := list.GetKv()
 	batchKeys := make([]*pb.KV, 0, BatchWriteMaxItems)
 	process := func() error {
