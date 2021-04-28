@@ -49,7 +49,7 @@ services:
       - promnet
 
   dynamodb-local:
-    command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -dbPath ./data"
+    command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -delayTransientStatuses -dbPath ./data"
     image: "amazon/dynamodb-local:latest"
     container_name: dynamodb-local
     ports:
