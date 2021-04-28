@@ -12,7 +12,7 @@ type PublicShare struct {
 	PublicID   string    `gorm:"primary_key;autoIncrement:false" json:"public_id" binding:"required"`
 	CreatedAt  time.Time `json:"createdAt"`
 	ViewsCount int       `gorm:"not null" json:"views_count"`
-	FileID     string    `gorm:"UNIQUE_INDEX:idx_publicshare;not null" json:"file_id" binding:"required,len=64" minLength:"64" maxLength:"64"`
+	FileID     string    `gorm:"not null" json:"file_id" binding:"required,len=64" minLength:"64" maxLength:"64"`
 }
 
 /*BeforeCreate - callback called before the row is created*/
