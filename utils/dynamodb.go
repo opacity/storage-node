@@ -2,7 +2,6 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
@@ -171,12 +170,7 @@ func CreateTable(tagValue, tableName string, dynamodbInstance *dynamodb.DynamoDB
 	})
 
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			if aerr.Code() != dynamodb.ErrCodeResourceInUseException {
-				return err
-			}
-		}
-		return nil
+		return err
 	}
 
 	// Wait for table to be created
@@ -194,15 +188,15 @@ func CreateTable(tagValue, tableName string, dynamodbInstance *dynamodb.DynamoDB
 		},
 	})
 	if err != nil {
-		fmt.Print(err.Error())
 		if aerr, ok := err.(awserr.Error); ok {
 			if aerr.Message() != "TimeToLive is already enabled" {
 				return err
 			}
+			return nil
 		}
 	}
 
-	return nil
+	return err
 }
 
 func (dynamodbSvc *DynamodbWrapper) DeleteTable() error {
