@@ -18,9 +18,9 @@ func Test_Init_PublicShares(t *testing.T) {
 }
 
 func Test_Revoke_PublicShares(t *testing.T) {
-	models.DeletePublicSharesForTest(t)
-	ps := models.CreateTestPublicShare(t)
-
+	models.DeletePublicSharesForTest()
+	ps, err := models.CreateTestPublicShare()
+	assert.Nil(t, err)
 	accountID, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountID)
 
@@ -41,25 +41,25 @@ func Test_Revoke_PublicShares(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Public share revoked")
 
 	t.Cleanup(func() {
-		cleanUpBeforeTest(t)
+		cleanUpBeforeTest()
 	})
 }
 
 func Test_GetUrl_PublicShares(t *testing.T) {
-	models.DeletePublicSharesForTest(t)
+	models.DeletePublicSharesForTest()
 	ps := createTestPublicShareWithS3Files(t)
 
 	requestTestGetPublicShareUrl(t, ps)
 
 	t.Cleanup(func() {
-		cleanUpBeforeTest(t)
+		cleanUpBeforeTest()
 		ps.RemovePublicShare()
 		utils.DeleteDefaultBucketObjectKeys(ps.FileID)
 	})
 }
 
 func Test_ViewsCountIncreases_PublicShares(t *testing.T) {
-	models.DeletePublicSharesForTest(t)
+	models.DeletePublicSharesForTest()
 	ps := createTestPublicShareWithS3Files(t)
 	tries := 6
 
@@ -71,14 +71,15 @@ func Test_ViewsCountIncreases_PublicShares(t *testing.T) {
 	assert.Equal(t, tries, psReturned.ViewsCount)
 
 	t.Cleanup(func() {
-		cleanUpBeforeTest(t)
+		cleanUpBeforeTest()
 		ps.RemovePublicShare()
 		utils.DeleteDefaultBucketObjectKeys(ps.FileID)
 	})
 }
 
 func createTestPublicShareWithS3Files(t *testing.T) models.PublicShare {
-	ps := models.CreateTestPublicShare(t)
+	ps, err := models.CreateTestPublicShare()
+	assert.Nil(t, err)
 	fileData := "opacity-public-share-test"
 	utils.SetDefaultBucketObject(models.GetFileDataKey(ps.FileID), fileData)
 	utils.SetDefaultBucketObject(models.GetFileDataPublicKey(ps.FileID), fileData)

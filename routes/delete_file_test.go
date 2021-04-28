@@ -12,13 +12,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_Delete_Files(t *testing.T) {
-	setupTests(t)
+func init() {
+	setupTests()
+	cleanUpBeforeTest()
 }
 
 func Test_Successful_File_Deletion_Request(t *testing.T) {
-	cleanUpBeforeTest(t)
-
 	account, fileID, privateKey := createAccountAndUploadFile(t)
 
 	checkPrerequisites(t, account, fileID)
@@ -37,6 +36,7 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
+	assert.NotNil(t, err)
 	// check that StorageUsedInByte has been deducted after deletion
 	assert.True(t, updatedAccount.StorageUsedInByte == defaultStorageUsedInByteForTest)
 	// check that object is not on S3 anymore

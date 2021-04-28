@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_Files(t *testing.T) {
+func init() {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
 }
@@ -365,7 +365,7 @@ func Test_FinishUpload(t *testing.T) {
 }
 
 func Test_DeleteUploadsOlderThan(t *testing.T) {
-	DeleteFilesForTest(t)
+	DeleteFilesForTest()
 	file := ReturnValidFile()
 	file.EndIndex = 1
 

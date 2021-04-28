@@ -14,7 +14,7 @@ func Test_Init_Completed_File(t *testing.T) {
 }
 
 func Test_GetAllExpiredCompletedFiles(t *testing.T) {
-	DeleteCompletedFilesForTest(t)
+	DeleteCompletedFilesForTest()
 	s := CompletedFile{
 		FileID:       utils.GenerateFileHandle(),
 		ModifierHash: utils.GenerateFileHandle(),
@@ -45,7 +45,7 @@ func Test_GetAllExpiredCompletedFiles(t *testing.T) {
 }
 
 func Test_DeleteAllCompletedFiles(t *testing.T) {
-	DeleteCompletedFilesForTest(t)
+	DeleteCompletedFilesForTest()
 	s1 := CompletedFile{
 		FileID:       utils.GenerateFileHandle(),
 		ModifierHash: utils.GenerateFileHandle(),
@@ -69,7 +69,7 @@ func Test_DeleteAllCompletedFiles(t *testing.T) {
 }
 
 func Test_GetTotalFileSizeInByte(t *testing.T) {
-	DeleteCompletedFilesForTest(t)
+	DeleteCompletedFilesForTest()
 	s := CompletedFile{
 		FileID:         utils.GenerateFileHandle(),
 		ModifierHash:   utils.GenerateFileHandle(),
@@ -90,7 +90,7 @@ func Test_GetTotalFileSizeInByte(t *testing.T) {
 }
 
 func Test_GetCompletedFileByFileID(t *testing.T) {
-	DeleteCompletedFilesForTest(t)
+	DeleteCompletedFilesForTest()
 	s := CompletedFile{
 		FileID:         utils.GenerateFileHandle(),
 		ModifierHash:   utils.GenerateFileHandle(),
@@ -111,7 +111,7 @@ func Test_GetCompletedFileByFileID(t *testing.T) {
 }
 
 func Test_UpdateExpiredAt(t *testing.T) {
-	DeleteCompletedFilesForTest(t)
+	DeleteCompletedFilesForTest()
 
 	startingExpiredAtTime := time.Now().Add(3 * 24 * time.Hour)
 

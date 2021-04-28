@@ -1,6 +1,7 @@
 package models
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -13,82 +14,82 @@ import (
 	"github.com/teris-io/shortid"
 )
 
-func DeleteAccountsForTest(t *testing.T) {
-	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
-		t.Fatalf("should only be calling DeleteAccountsForTest method on test database")
+func DeleteAccountsForTest() {
+	if !(utils.IsTestEnv() || utils.IsDebugEnv()) {
+		log.Fatalf("should only be calling DeleteAccountsForTest method on test or dev database")
 	} else {
 		DB.Exec("DELETE from accounts;")
 	}
 }
 
-func DeleteExpiredAccountsForTest(t *testing.T) {
-	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
-		t.Fatalf("should only be calling DeleteExpiredAccountsForTest method on test database")
+func DeleteExpiredAccountsForTest() {
+	if !(utils.IsTestEnv() || utils.IsDebugEnv()) {
+		log.Fatalf("should only be calling DeleteExpiredAccountsForTest method on test or dev database")
 	} else {
 		DB.Exec("DELETE from expired_accounts;")
 	}
 }
 
-func DeleteUpgradesForTest(t *testing.T) {
-	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
-		t.Fatalf("should only be calling DeleteUpgradesForTest method on test database")
+func DeleteUpgradesForTest() {
+	if !(utils.IsTestEnv() || utils.IsDebugEnv()) {
+		log.Fatalf("should only be calling DeleteUpgradesForTest method on test or dev database")
 	} else {
 		DB.Exec("DELETE from upgrades;")
 	}
 }
 
-func DeleteRenewalsForTest(t *testing.T) {
-	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
-		t.Fatalf("should only be calling DeleteRenewalsForTest method on test database")
+func DeleteRenewalsForTest() {
+	if !(utils.IsTestEnv() || utils.IsDebugEnv()) {
+		log.Fatalf("should only be calling DeleteRenewalsForTest method on test or dev database")
 	} else {
 		DB.Exec("DELETE from renewals;")
 	}
 }
 
-func DeleteFilesForTest(t *testing.T) {
-	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
-		t.Fatalf("should only be calling DeleteFilesForTest method on test database")
+func DeleteFilesForTest() {
+	if !(utils.IsTestEnv() || utils.IsDebugEnv()) {
+		log.Fatalf("should only be calling DeleteFilesForTest method on test or dev database")
 	} else {
 		DB.Exec("DELETE from files;")
 	}
 }
 
-func DeleteCompletedFilesForTest(t *testing.T) {
-	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
-		t.Fatalf("should only be calling DeleteCompletedFilesForTest method on test database")
+func DeleteCompletedFilesForTest() {
+	if !(utils.IsTestEnv() || utils.IsDebugEnv()) {
+		log.Fatalf("should only be calling DeleteCompletedFilesForTest method on test or dev database")
 	} else {
 		DB.Exec("DELETE from completed_files;")
 	}
 }
 
-func DeleteCompletedUploadIndexesForTest(t *testing.T) {
-	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
-		t.Fatalf("should only be calling DeleteCompletedUploadIndexesForTest method on test database")
+func DeleteCompletedUploadIndexesForTest() {
+	if !(utils.IsTestEnv() || utils.IsDebugEnv()) {
+		log.Fatalf("should only be calling DeleteCompletedUploadIndexesForTest method on test or dev database")
 	} else {
 		DB.Exec("DELETE from completed_upload_indices;")
 	}
 }
 
-func DeleteStripePaymentsForTest(t *testing.T) {
-	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
-		t.Fatalf("should only be calling DeleteStripePaymentsForTest method on test database")
+func DeleteStripePaymentsForTest() {
+	if !(utils.IsTestEnv() || utils.IsDebugEnv()) {
+		log.Fatalf("should only be calling DeleteStripePaymentsForTest method on test or dev database")
 	} else {
 		DB.Exec("DELETE from stripe_payments;")
 	}
 }
 
-func DeletePublicSharesForTest(t *testing.T) {
-	if utils.Env.DatabaseURL != utils.Env.TestDatabaseURL {
-		t.Fatalf("should only be calling DeletePublicSharesForTest method on test database")
+func DeletePublicSharesForTest() {
+	if !(utils.IsTestEnv() || utils.IsDebugEnv()) {
+		log.Fatalf("should only be calling DeletePublicSharesForTest method on test or dev database")
 	} else {
 		DB.Exec("DELETE from public_shares;")
 	}
 }
 
-func CreateTestPublicShare(t *testing.T) PublicShare {
-	ps := CreatePublicShareObj()
-	assert.Nil(t, DB.Create(&ps).Error)
-	return ps
+func CreateTestPublicShare() (ps PublicShare, err error) {
+	ps = CreatePublicShareObj()
+	err = DB.Create(&ps).Error
+	return
 }
 
 func CreatePublicShareObj() PublicShare {

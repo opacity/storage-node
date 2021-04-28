@@ -51,7 +51,7 @@ func Test_UploadFilePublicStorageDoesNotCount(t *testing.T) {
 	assert.Equal(t, updatedAccount.StorageUsedInByte, account.StorageUsedInByte)
 
 	t.Cleanup(func() {
-		cleanUpBeforeTest(t)
+		cleanUpBeforeTest()
 	})
 }
 

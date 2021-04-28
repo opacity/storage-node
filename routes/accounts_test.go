@@ -64,8 +64,8 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 	}
 }
 
-func Test_Init_Accounts(t *testing.T) {
-	setupTests(t)
+func init() {
+	setupTests()
 }
 
 func Test_NoErrorsWithValidPost(t *testing.T) {
@@ -195,7 +195,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsExpi
 }
 
 func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExists(t *testing.T) {
-	models.DeleteStripePaymentsForTest(t)
+	models.DeleteStripePaymentsForTest()
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),

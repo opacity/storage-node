@@ -19,7 +19,7 @@ var (
 	localFilePath  string
 )
 
-func Test_S3_Init(t *testing.T) {
+func init() {
 	SetTesting("../.env")
 	workingDir, _ := os.Getwd()
 	testDir := strings.Replace(workingDir, "/utils", "", -1)

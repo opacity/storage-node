@@ -14,12 +14,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_Stripe_Payments(t *testing.T) {
-	setupTests(t)
+func init() {
+	setupTests()
 }
 
 func Test_Successful_Stripe_Payment(t *testing.T) {
-	models.DeleteStripePaymentsForTest(t)
+	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
@@ -53,7 +53,7 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 }
 
 func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
-	models.DeleteStripePaymentsForTest(t)
+	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 
@@ -79,7 +79,7 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 }
 
 func Test_Fails_If_Account_Is_Paid(t *testing.T) {
-	models.DeleteStripePaymentsForTest(t)
+	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
@@ -107,7 +107,7 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 }
 
 func Test_Fails_If_Account_Is_Free(t *testing.T) {
-	models.DeleteStripePaymentsForTest(t)
+	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
@@ -138,7 +138,7 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 }
 
 func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
-	models.DeleteStripePaymentsForTest(t)
+	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
@@ -170,7 +170,7 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 
 //TODO: uncomment out if/when we support stripe for upgrade
 //func Test_Successful_Stripe_Payment_For_Upgrade(t *testing.T) {
-//	models.DeleteStripePaymentsForTest(t)
+//	models.DeleteStripePaymentsForTest()
 //	privateKey, err := utils.GenerateKey()
 //	assert.Nil(t, err)
 //	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))

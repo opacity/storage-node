@@ -15,8 +15,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	setupTests()
+}
+
 func Test_verifyIfPaidWithContext_account_status_already_paid(t *testing.T) {
-	models.DeleteAccountsForTest(t)
+	models.DeleteAccountsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
@@ -30,7 +34,7 @@ func Test_verifyIfPaidWithContext_account_status_already_paid(t *testing.T) {
 }
 
 func Test_verifyIfPaidWithContext_account_opct_balance_has_arrived(t *testing.T) {
-	models.DeleteAccountsForTest(t)
+	models.DeleteAccountsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
@@ -48,8 +52,8 @@ func Test_verifyIfPaidWithContext_account_opct_balance_has_arrived(t *testing.T)
 }
 
 func Test_verifyIfPaidWithContext_stripe_payment_has_been_paid(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteStripePaymentsForTest(t)
+	models.DeleteAccountsForTest()
+	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
@@ -78,7 +82,7 @@ func Test_verifyIfPaidWithContext_stripe_payment_has_been_paid(t *testing.T) {
 }
 
 func Test_verifyIfPaidWithContext_account_not_paid_and_no_stripe_payment(t *testing.T) {
-	models.DeleteAccountsForTest(t)
+	models.DeleteAccountsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
@@ -102,7 +106,7 @@ func Test_verifyValidStorageLimit(t *testing.T) {
 }
 
 func Test_verifyAccountStillActive(t *testing.T) {
-	models.DeleteAccountsForTest(t)
+	models.DeleteAccountsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
@@ -127,7 +131,7 @@ func Test_verifyAccountStillActive(t *testing.T) {
 }
 
 func Test_verifyRenewEligible(t *testing.T) {
-	models.DeleteAccountsForTest(t)
+	models.DeleteAccountsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))

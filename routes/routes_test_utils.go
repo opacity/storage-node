@@ -141,18 +141,16 @@ func UploadFileHelperForTest(t *testing.T, post UploadFileReq, UploadPath, route
 	return httpPostFormRequestHelperForTest(t, UploadPath, &post, form, formFile, routerVersion)
 }
 
-func setupTests(t *testing.T) {
+func setupTests() {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
 	gin.SetMode(gin.TestMode)
-	err := services.InitStripe()
-	assert.Nil(t, err)
 }
 
-func cleanUpBeforeTest(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteCompletedFilesForTest(t)
-	models.DeleteFilesForTest(t)
+func cleanUpBeforeTest() {
+	models.DeleteAccountsForTest()
+	models.DeleteCompletedFilesForTest()
+	models.DeleteFilesForTest()
 }
 
 func generateValidateAccountId(t *testing.T) (string, *ecdsa.PrivateKey) {

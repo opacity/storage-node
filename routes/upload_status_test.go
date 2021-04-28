@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_Upload_Status(t *testing.T) {
-	setupTests(t)
-	cleanUpBeforeTest(t)
+func init() {
+	setupTests()
+	cleanUpBeforeTest()
 }
 
 func Test_CheckWithAccountNoExist(t *testing.T) {

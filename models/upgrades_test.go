@@ -39,7 +39,7 @@ func returnValidUpgrade() (Upgrade, Account) {
 	}, account
 }
 
-func Test_Init_Upgrades(t *testing.T) {
+func init() {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
 }
@@ -333,7 +333,7 @@ func Test_Upgrade_GetTotalCostInWei(t *testing.T) {
 }
 
 func Test_SetUpgradesToLowerPaymentStatusByUpdateTime(t *testing.T) {
-	DeleteUpgradesForTest(t)
+	DeleteUpgradesForTest()
 
 	for i := 0; i < 2; i++ {
 		upgrade, _ := returnValidUpgrade()

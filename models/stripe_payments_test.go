@@ -46,15 +46,18 @@ func returnStripePaymentForTestForUpgrade(upgrade Upgrade) StripePayment {
 	}
 }
 
-func Test_Init_Stripe_Payments(t *testing.T) {
+func init() {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
+}
+
+func Test_Init_Stripe_Payments(t *testing.T) {
 	err := services.InitStripe()
 	assert.Nil(t, err)
 }
 
 func Test_Valid_Stripe_Payment_Passes(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -63,7 +66,7 @@ func Test_Valid_Stripe_Payment_Passes(t *testing.T) {
 }
 
 func Test_Valid_Stripe_Fails_If_No_Account_Exists(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 	account, _ := GetAccountById(stripePayment.AccountID)
 	DB.Delete(&account)
@@ -74,7 +77,7 @@ func Test_Valid_Stripe_Fails_If_No_Account_Exists(t *testing.T) {
 }
 
 func Test_GetStripePaymentByAccountId(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -97,7 +100,7 @@ func Test_GetStripePaymentByAccountId(t *testing.T) {
 }
 
 func Test_GetNewestStripePaymentByAccountId(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment1, account := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment1).Error; err != nil {
@@ -125,7 +128,7 @@ func Test_GetNewestStripePaymentByAccountId(t *testing.T) {
 }
 
 func Test_CheckForPaidStripePayment(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -146,7 +149,7 @@ func Test_CheckForPaidStripePayment(t *testing.T) {
 }
 
 func Test_CheckChargePaid(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -169,7 +172,7 @@ func Test_CheckChargePaid(t *testing.T) {
 }
 
 func Test_SendAccountOPCT(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -188,7 +191,7 @@ func Test_SendAccountOPCT(t *testing.T) {
 }
 
 func Test_SendUpgradeOPCT(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -207,7 +210,7 @@ func Test_SendUpgradeOPCT(t *testing.T) {
 }
 
 func Test_CheckAccountCreationOPCTTransaction_transaction_complete(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 	stripePayment.OpctTxStatus = OpctTxInProgress
 
@@ -228,7 +231,7 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_complete(t *testing.T)
 }
 
 func Test_CheckAccountCreationOPCTTransaction_transaction_incomplete(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 	stripePayment.OpctTxStatus = OpctTxInProgress
 
@@ -248,7 +251,7 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_incomplete(t *testing.
 }
 
 func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
 	stripePayment.OpctTxStatus = OpctTxInProgress
 
@@ -269,7 +272,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 }
 
 func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
 	stripePayment.OpctTxStatus = OpctTxInProgress
 
@@ -289,7 +292,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
 }
 
 func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 	stripePayment.OpctTxStatus = OpctTxInProgress
 
@@ -311,7 +314,7 @@ func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
 }
 
 func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 	stripePayment.OpctTxStatus = OpctTxInProgress
 
@@ -335,7 +338,7 @@ func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
 }
 
 func Test_DeleteStripePaymentIfExists(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePayment, _ := returnValidStripePaymentForTest()
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -351,7 +354,7 @@ func Test_DeleteStripePaymentIfExists(t *testing.T) {
 }
 
 func Test_PurgeOldStripePayments(t *testing.T) {
-	DeleteStripePaymentsForTest(t)
+	DeleteStripePaymentsForTest()
 	stripePaymentNew, _ := returnValidStripePaymentForTest()
 	DB.Create(&stripePaymentNew)
 	stripePaymentNew.OpctTxStatus = OpctTxSuccess

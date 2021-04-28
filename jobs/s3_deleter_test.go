@@ -4,14 +4,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_S3_Deleter(t *testing.T) {
+func init() {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
+	gin.SetMode(gin.TestMode)
 }
 
 func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
@@ -19,7 +21,7 @@ func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 	s2FileID := utils.GenerateFileHandle()
 	s3FileID := utils.GenerateFileHandle()
 
-	models.DeleteCompletedFilesForTest(t)
+	models.DeleteCompletedFilesForTest()
 
 	s := models.CompletedFile{
 		FileID:       s1FileID,

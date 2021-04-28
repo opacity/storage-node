@@ -14,7 +14,7 @@ func Test_Init_Completed_Upload_Index(t *testing.T) {
 }
 
 func Test_GetCompletedUploadProgress(t *testing.T) {
-	DeleteCompletedUploadIndexesForTest(t)
+	DeleteCompletedUploadIndexesForTest()
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar1", 1, "a"))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar1", 2, "b"))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar1", 3, "c"))
@@ -25,7 +25,7 @@ func Test_GetCompletedUploadProgress(t *testing.T) {
 }
 
 func Test_DeleteCompletedUploadIndexes(t *testing.T) {
-	DeleteCompletedUploadIndexesForTest(t)
+	DeleteCompletedUploadIndexesForTest()
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar2", 1, "a"))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar2", 2, "b"))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar3", 2, "c"))
@@ -42,7 +42,7 @@ func Test_DeleteCompletedUploadIndexes(t *testing.T) {
 }
 
 func Test_GetCompletedPartsAsArray(t *testing.T) {
-	DeleteCompletedUploadIndexesForTest(t)
+	DeleteCompletedUploadIndexesForTest()
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar4", 2, "b"))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar4", 1, "a"))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar4", 3, "c"))
@@ -60,7 +60,7 @@ func Test_GetCompletedPartsAsArray(t *testing.T) {
 }
 
 func Test_GetIncompleteIndexesAsArray(t *testing.T) {
-	DeleteCompletedUploadIndexesForTest(t)
+	DeleteCompletedUploadIndexesForTest()
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar5", 5, "b"))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar5", 1, "a"))
 	assert.Nil(t, CreateCompletedUploadIndex("test_bar5", 3, "c"))

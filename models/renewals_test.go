@@ -6,11 +6,12 @@ import (
 	"math/big"
 	"testing"
 
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 func returnValidRenewal() (Renewal, Account) {
@@ -278,7 +279,7 @@ func Test_Renewal_GetTotalCostInWei(t *testing.T) {
 }
 
 func Test_SetRenewalsToLowerPaymentStatusByUpdateTime(t *testing.T) {
-	DeleteRenewalsForTest(t)
+	DeleteRenewalsForTest()
 
 	for i := 0; i < 2; i++ {
 		renewal, _ := returnValidRenewal()

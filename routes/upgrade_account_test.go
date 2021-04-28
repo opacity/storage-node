@@ -16,13 +16,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_Upgrade_Accounts(t *testing.T) {
-	setupTests(t)
+func init() {
+	setupTests()
 }
 
 func Test_GetAccountUpgradeInvoiceHandler_Returns_Invoice(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteUpgradesForTest(t)
+	models.DeleteAccountsForTest()
+	models.DeleteUpgradesForTest()
 
 	getInvoiceObj := getUpgradeAccountInvoiceObject{
 		StorageLimit:     2048,
@@ -51,8 +51,8 @@ func Test_GetAccountUpgradeInvoiceHandler_Returns_Invoice(t *testing.T) {
 }
 
 func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Success(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteUpgradesForTest(t)
+	models.DeleteAccountsForTest()
+	models.DeleteUpgradesForTest()
 
 	newStorageLimit := 1024
 
@@ -118,9 +118,9 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Success(t *testi
 }
 
 func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Still_Pending(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteUpgradesForTest(t)
-	models.DeleteStripePaymentsForTest(t)
+	models.DeleteAccountsForTest()
+	models.DeleteUpgradesForTest()
+	models.DeleteStripePaymentsForTest()
 
 	newStorageLimit := 1024
 
@@ -175,8 +175,8 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Still_Pending(t 
 
 // TODO: uncomment out if/when we support stripe for upgrade
 //func Test_CheckUpgradeStatusHandler_Returns_Status_Stripe_Upgrade(t *testing.T) {
-//	models.DeleteAccountsForTest(t)
-//	models.DeleteUpgradesForTest(t)
+//	models.DeleteAccountsForTest()
+//	models.DeleteUpgradesForTest()
 //
 //	newStorageLimit := 1024
 //
@@ -262,8 +262,8 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Still_Pending(t 
 //}
 
 func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteUpgradesForTest(t)
+	models.DeleteAccountsForTest()
+	models.DeleteUpgradesForTest()
 
 	newStorageLimit := 1024
 	newStorageLimit2 := 2048

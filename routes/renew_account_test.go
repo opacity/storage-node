@@ -14,13 +14,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_Renew_Accounts(t *testing.T) {
-	setupTests(t)
+func init() {
+	setupTests()
 }
 
 func Test_GetAccountRenewInvoiceHandler_Returns_Invoice(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteRenewalsForTest(t)
+	models.DeleteAccountsForTest()
+	models.DeleteRenewalsForTest()
 
 	getInvoiceObj := getRenewalAccountInvoiceObject{}
 
@@ -48,8 +48,8 @@ func Test_GetAccountRenewInvoiceHandler_Returns_Invoice(t *testing.T) {
 }
 
 func Test_GetAccountRenewInvoiceHandler_ReturnsErrorIfExpirationDateTooFarInFuture(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteRenewalsForTest(t)
+	models.DeleteAccountsForTest()
+	models.DeleteRenewalsForTest()
 
 	getInvoiceObj := getRenewalAccountInvoiceObject{}
 
@@ -74,8 +74,8 @@ func Test_GetAccountRenewInvoiceHandler_ReturnsErrorIfExpirationDateTooFarInFutu
 }
 
 func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Success(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteRenewalsForTest(t)
+	models.DeleteAccountsForTest()
+	models.DeleteRenewalsForTest()
 
 	checkRenewalStatusObj := checkRenewalStatusObject{
 		MetadataKeys: []string{utils.GenerateFileHandle()},
@@ -137,9 +137,9 @@ func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Success(t *testing
 }
 
 func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Still_Pending(t *testing.T) {
-	models.DeleteAccountsForTest(t)
-	models.DeleteRenewalsForTest(t)
-	models.DeleteStripePaymentsForTest(t)
+	models.DeleteAccountsForTest()
+	models.DeleteRenewalsForTest()
+	models.DeleteStripePaymentsForTest()
 
 	checkRenewalStatusObj := checkRenewalStatusObject{
 		MetadataKeys: []string{utils.GenerateFileHandle()},

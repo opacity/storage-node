@@ -14,9 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_Metadata(t *testing.T) {
-
-	setupTests(t)
+func init() {
+	setupTests()
 }
 
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {

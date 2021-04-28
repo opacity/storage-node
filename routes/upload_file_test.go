@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_Upload_Files(t *testing.T) {
-	setupTests(t)
+func init() {
+	setupTests()
 }
 
 func Test_Upload_File_Bad_Request(t *testing.T) {

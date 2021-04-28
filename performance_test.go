@@ -21,9 +21,9 @@ const maxAllowedSecondsPerUpload = 10
 
 func deleteEverything(t *testing.T) {
 	// TODO:  Have all the s3 uploads go to one directory on s3 so we can make sure we delete all of them
-	models.DeleteFilesForTest(t)
-	models.DeleteAccountsForTest(t)
-	models.DeleteCompletedFilesForTest(t)
+	models.DeleteFilesForTest()
+	models.DeleteAccountsForTest()
+	models.DeleteCompletedFilesForTest()
 }
 
 func Test_Init_Performance_Test(t *testing.T) {

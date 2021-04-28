@@ -8,8 +8,11 @@ import (
 	"github.com/stripe/stripe-go"
 )
 
-func Test_Stripe_Init(t *testing.T) {
+func init() {
 	utils.SetTesting("../.env")
+}
+
+func Test_Stripe_Init(t *testing.T) {
 	err := InitStripe()
 	assert.Nil(t, err)
 }
