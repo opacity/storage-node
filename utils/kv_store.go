@@ -70,21 +70,12 @@ func BatchGet(ks *KVKeys) (kvs *KVPairs, err error) {
 			})
 		}
 
-		input := &dynamodb.BatchGetItemInput{
-			RequestItems: map[string]*dynamodb.KeysAndAttributes{
-				DynamodbSvc.tableName: {
-					ConsistentRead: aws.Bool(true),
-					Keys:           keys,
-				},
-			},
-		}
-
-		batchResult, err := DynamodbSvc.dynamodb.BatchGetItem(input)
+		batchResult, err := DynamodbSvc.GetBatch(keys)
 		if err != nil {
 			return err
 		}
-		results := batchResult.Responses[DynamodbSvc.tableName]
-		for _, result := range results {
+
+		for _, result := range batchResult {
 			item := DynamoMetadata{}
 			err = dynamodbattribute.UnmarshalMap(result, &item)
 			if err != nil {

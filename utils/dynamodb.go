@@ -67,6 +67,34 @@ func (dynamodbSvc *DynamodbWrapper) Get(keyName string, keyValue string) (itemOu
 	return
 }
 
+func (dynamodbSvc *DynamodbWrapper) GetBatch(keys []map[string]*dynamodb.AttributeValue) ([]map[string]*dynamodb.AttributeValue, error) {
+	input := &dynamodb.BatchGetItemInput{
+		RequestItems: map[string]*dynamodb.KeysAndAttributes{
+			DynamodbSvc.tableName: {
+				ConsistentRead: aws.Bool(true),
+				Keys:           keys,
+			},
+		},
+	}
+
+	batchResult, err := DynamodbSvc.dynamodb.BatchGetItem(input)
+	if err != nil {
+		return nil, err
+	}
+	results := batchResult.Responses[DynamodbSvc.tableName]
+
+	if len(batchResult.UnprocessedKeys[dynamodbSvc.tableName].Keys) > 0 {
+		time.Sleep(500 * time.Millisecond)
+		retryKeys, err := dynamodbSvc.GetBatch(batchResult.UnprocessedKeys[dynamodbSvc.tableName].Keys)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, retryKeys...)
+	}
+
+	return results, nil
+}
+
 func (dynamodbSvc *DynamodbWrapper) Set(item interface{}) error {
 	av, err := dynamodbattribute.MarshalMap(item)
 	if err != nil {
