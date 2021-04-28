@@ -54,6 +54,7 @@ func (dynamodbSvc *DynamodbWrapper) Get(keyName string, keyValue string) (itemOu
 				S: aws.String(keyValue),
 			},
 		},
+		ConsistentRead: aws.Bool(true),
 	})
 	if err != nil {
 		return
