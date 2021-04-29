@@ -24,24 +24,6 @@ func Test_Get_PublicShare_By_ID(t *testing.T) {
 		publicShare.RemovePublicShare()
 	})
 }
-
-func Test_Public_Share_FileID_Unique(t *testing.T) {
-	DeletePublicSharesForTest()
-	ps1, err := CreateTestPublicShare()
-	assert.Nil(t, err)
-	ps2 := CreatePublicShareObj()
-
-	ps2.FileID = ps1.FileID
-	err = DB.Create(&ps2).Error
-	if err == nil {
-		t.Fatalf("two shortlinks for the same FileID is not allowed")
-	}
-
-	t.Cleanup(func() {
-		ps1.RemovePublicShare()
-	})
-}
-
 func Test_Public_Share_Empty_FileID_Fails(t *testing.T) {
 	DeletePublicSharesForTest()
 	ps := CreatePublicShareObj()
