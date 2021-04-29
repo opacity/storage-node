@@ -20,16 +20,20 @@ type DynamodbWrapper struct {
 	badgerMigrationDone bool
 }
 
-func NewDynamoDBSession(testOrDebug bool, tableName string, region string, endpoint string) (*DynamodbWrapper, error) {
+func NewDynamoDBSession(tableName string, region string, endpoint string) (*DynamodbWrapper, error) {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
 		SharedConfigState: session.SharedConfigEnable,
 	}))
 
 	awsConfig := aws.NewConfig()
 	tagValue := "prod"
-	if testOrDebug {
+	if IsDebugEnv() {
 		awsConfig = awsConfig.WithEndpoint(endpoint).WithLogLevel(aws.LogDebugWithHTTPBody)
 		tagValue = "dev"
+	}
+	if IsTestEnv() {
+		awsConfig.WithLogLevel(aws.LogDebugWithRequestErrors)
+		tagValue = "test"
 	}
 
 	dynamodbInstance := dynamodb.New(sess, awsConfig)

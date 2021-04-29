@@ -142,7 +142,7 @@ func SetTesting(filenames ...string) {
 func runInitializations() {
 	BadgerInitKvStore()
 	newS3Session()
-	dynamodbSvc, err := NewDynamoDBSession(IsTestEnv() || IsDebugEnv(), Env.AwsDynamoDBTableName, Env.AwsRegion, Env.AwsDynamoDBEndpoint)
+	dynamodbSvc, err := NewDynamoDBSession(Env.AwsDynamoDBTableName, Env.AwsRegion, Env.AwsDynamoDBEndpoint)
 	LogIfError(err, nil)
 	DynamodbSvc = dynamodbSvc
 
