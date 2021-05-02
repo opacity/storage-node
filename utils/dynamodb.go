@@ -163,10 +163,7 @@ func CreateTable(tagValue, tableName string, dynamodbInstance *dynamodb.DynamoDB
 				KeyType:       aws.String(dynamodb.KeyTypeHash),
 			},
 		},
-		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(100),
-			WriteCapacityUnits: aws.Int64(100),
-		},
+		BillingMode: aws.String(dynamodb.BillingModePayPerRequest),
 		Tags: []*dynamodb.Tag{
 			{
 				Key:   aws.String("env"),
