@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_PublicShare(t *testing.T) {
+func init() {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
 }

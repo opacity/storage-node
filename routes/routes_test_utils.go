@@ -143,7 +143,7 @@ func UploadFileHelperForTest(t *testing.T, post UploadFileReq, UploadPath, route
 
 func setupTests() {
 	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
+	models.Connect(utils.Env.TestDatabaseURL)
 	gin.SetMode(gin.TestMode)
 }
 

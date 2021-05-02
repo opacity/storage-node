@@ -159,7 +159,7 @@ func runInitializations() {
 // Temporary func to check and set FALSE for BadgerDB migration
 func checkSetBadgerMigrationDone() error {
 	badgerMigrationDoneValue, _, err := GetValueFromKV("badgerMigrationDone")
-	if err == ErrDynamodbKeyNotFound {
+	if err == ErrDynamoDBKeyNotFound {
 		if err := SetBadgerMigrationDone(false); err != nil {
 			return err
 		}

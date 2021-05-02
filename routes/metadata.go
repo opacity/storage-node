@@ -325,7 +325,7 @@ func setMetadata(c *gin.Context) error {
 
 	permissionHashKey := getPermissionHashKeyForDb(requestBodyParsed.MetadataKey)
 	permissionHashInDb, _, err := utils.GetValueFromKV(permissionHashKey)
-	if err == utils.ErrDynamodbKeyNotFound {
+	if err == utils.ErrDynamoDBKeyNotFound {
 		return NotFoundResponse(c, err)
 	}
 	if err != nil {
@@ -494,7 +494,7 @@ func storeMetadataHistory(metadataKey string, oldMetadata string, ttl time.Durat
 		}, ttl); err != nil {
 			return InternalErrorResponse(c, err)
 		}
-		if err == utils.ErrDynamodbKeyNotFound {
+		if err == utils.ErrDynamoDBKeyNotFound {
 			stopOnNextKey = true
 		}
 		newValue = oldValue
@@ -506,7 +506,7 @@ func getMetadataHistoryWithoutContext(metadataKey string) ([]string, error) {
 	metadataHistory := []string{}
 	for i := 0; i < numMetadatasToRetain; i++ {
 		oldMetadata, _, err := utils.GetValueFromKV(getVersionKeyForDb(metadataKey, i))
-		if err == utils.ErrDynamodbKeyNotFound {
+		if err == utils.ErrDynamoDBKeyNotFound {
 			break
 		}
 		if err != nil {

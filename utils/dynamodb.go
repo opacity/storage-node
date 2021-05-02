@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
-var ErrDynamodbKeyNotFound = errors.New("key does not exist")
+var ErrDynamoDBKeyNotFound = errors.New("key does not exist")
 
 type DynamodbWrapper struct {
 	dynamodb            *dynamodb.DynamoDB
@@ -32,7 +32,7 @@ func NewDynamoDBSession(tableName string, region string, endpoint string) (*Dyna
 		tagValue = "dev"
 	}
 	if IsTestEnv() {
-		awsConfig.WithLogLevel(aws.LogDebugWithRequestErrors)
+		awsConfig.WithEndpoint(endpoint).WithLogLevel(aws.LogDebugWithRequestErrors)
 		tagValue = "test"
 	}
 
@@ -64,7 +64,7 @@ func (dynamodbSvc *DynamodbWrapper) Get(keyName string, keyValue string) (itemOu
 	}
 
 	if itemOutput.Item == nil {
-		err = ErrDynamodbKeyNotFound
+		err = ErrDynamoDBKeyNotFound
 	}
 
 	return
@@ -86,13 +86,15 @@ func (dynamodbSvc *DynamodbWrapper) GetBatch(keys []map[string]*dynamodb.Attribu
 	}
 	results := batchResult.Responses[DynamodbSvc.tableName]
 
-	if len(batchResult.UnprocessedKeys[dynamodbSvc.tableName].Keys) > 0 {
-		time.Sleep(500 * time.Millisecond)
-		retryKeys, err := dynamodbSvc.GetBatch(batchResult.UnprocessedKeys[dynamodbSvc.tableName].Keys)
-		if err != nil {
-			return nil, err
+	if batchResult.UnprocessedKeys[dynamodbSvc.tableName] != nil {
+		if len(batchResult.UnprocessedKeys[dynamodbSvc.tableName].Keys) > 0 {
+			time.Sleep(500 * time.Millisecond)
+			retryKeys, err := dynamodbSvc.GetBatch(batchResult.UnprocessedKeys[dynamodbSvc.tableName].Keys)
+			if err != nil {
+				return nil, err
+			}
+			results = append(results, retryKeys...)
 		}
-		results = append(results, retryKeys...)
 	}
 
 	return results, nil
@@ -162,8 +164,8 @@ func CreateTable(tagValue, tableName string, dynamodbInstance *dynamodb.DynamoDB
 			},
 		},
 		ProvisionedThroughput: &dynamodb.ProvisionedThroughput{
-			ReadCapacityUnits:  aws.Int64(3),
-			WriteCapacityUnits: aws.Int64(3),
+			ReadCapacityUnits:  aws.Int64(100),
+			WriteCapacityUnits: aws.Int64(100),
 		},
 		Tags: []*dynamodb.Tag{
 			{

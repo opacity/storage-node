@@ -26,7 +26,7 @@ func deleteEverything(t *testing.T) {
 	models.DeleteCompletedFilesForTest()
 }
 
-func Test_Init_Performance_Test(t *testing.T) {
+func init() {
 	utils.SetTesting(".env")
 	models.Connect(utils.Env.DatabaseURL)
 	gin.SetMode(gin.TestMode)

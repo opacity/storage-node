@@ -11,12 +11,11 @@ import (
 
 const MaxBatchSize = 10000
 
-func Test_KVStore_Init(t *testing.T) {
+func init() {
 	SetTesting("../.env")
 }
 
 func Test_KVStore_MassBatchSet(t *testing.T) {
-	SetTesting("../.env")
 	err := BatchSet(getKvPairs(MaxBatchSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
@@ -25,7 +24,6 @@ func Test_KVStore_MassBatchSet(t *testing.T) {
 }
 
 func Test_KVStoreGetValueFromKV(t *testing.T) {
-	SetTesting("../.env")
 	key := "key"
 	valueSet := "opacity"
 
@@ -43,7 +41,6 @@ func Test_KVStoreGetValueFromKV(t *testing.T) {
 }
 
 func Test_KVStoreBatchGet(t *testing.T) {
-	SetTesting("../.env")
 	BatchSet(&KVPairs{"key": "opacity"}, TestValueTimeToLive)
 
 	kvs, err := BatchGet(&KVKeys{"key"})
@@ -54,7 +51,6 @@ func Test_KVStoreBatchGet(t *testing.T) {
 }
 
 func Test_KVStoreBatchGet_WithMissingKey(t *testing.T) {
-	SetTesting("../.env")
 	BatchSet(&KVPairs{"key": "opacity"}, TestValueTimeToLive)
 
 	kvs, err := BatchGet(&KVKeys{"key", "unknownKey"})
@@ -65,7 +61,6 @@ func Test_KVStoreBatchGet_WithMissingKey(t *testing.T) {
 }
 
 func Test_KVStore_MassBatchGet(t *testing.T) {
-	SetTesting("../.env")
 	err := BatchSet(getKvPairs(MaxBatchSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
@@ -74,7 +69,6 @@ func Test_KVStore_MassBatchGet(t *testing.T) {
 }
 
 func Test_KVStoreBatchDelete(t *testing.T) {
-	SetTesting("../.env")
 	BatchSet(&KVPairs{"key1": "opacity1", "key2": "opacity2"}, TestValueTimeToLive)
 
 	err := BatchDelete(&KVKeys{"key1"})
@@ -86,7 +80,6 @@ func Test_KVStoreBatchDelete(t *testing.T) {
 }
 
 func Test_KVStore_MassBatchDelete(t *testing.T) {
-	SetTesting("../.env")
 	err := BatchSet(getKvPairs(MaxBatchSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
@@ -95,7 +88,6 @@ func Test_KVStore_MassBatchDelete(t *testing.T) {
 }
 
 func Test_KVStore_RemoveAllKvStoreData(t *testing.T) {
-	SetTesting("../.env")
 	BatchSet(getKvPairs(2), TestValueTimeToLive)
 	err := RemoveKvStore()
 	assert.Nil(t, err)
