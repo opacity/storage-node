@@ -237,14 +237,11 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 }
 
 func setupV2Paths(v2Router *gin.RouterGroup) {
-	v2Router.POST(AccountUpgradeV2InvoicePath, GetAccountUpgradeV2InvoiceHandler())
-	v2Router.POST(AccountUpgradeV2Path, CheckUpgradeV2StatusHandler())
-
 	v2Router.POST(AccountRenewV2InvoicePath, GetAccountRenewalV2InvoiceHandler())
 	v2Router.POST(AccountRenewV2Path, CheckRenewalV2StatusHandler())
 
-	// v2Router.POST(AccountUpgradeV2InvoicePath, GetAccountUpgradeV2InvoiceHandler())
-	// v2Router.POST(AccountUpgradeV2Path, CheckUpgradeV2StatusHandler())
+	v2Router.POST(AccountUpgradeV2InvoicePath, GetAccountUpgradeV2InvoiceHandler())
+	v2Router.POST(AccountUpgradeV2Path, CheckUpgradeV2StatusHandler())
 
 	v2Router.POST(MetadataV2AddPath, UpdateMetadataV2Handler())
 	v2Router.POST(MetadataV2GetPath, GetMetadataV2Handler())
