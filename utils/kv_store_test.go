@@ -16,6 +16,7 @@ func init() {
 }
 
 func Test_KVStore_MassBatchSet(t *testing.T) {
+	t.Skip()
 	err := BatchSet(getKvPairs(MaxKvPairsSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
@@ -61,6 +62,8 @@ func Test_KVStoreBatchGet_WithMissingKey(t *testing.T) {
 }
 
 func Test_KVStore_MassBatchGet(t *testing.T) {
+	t.Skip()
+
 	err := BatchSet(getKvPairs(MaxKvPairsSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
@@ -80,6 +83,8 @@ func Test_KVStoreBatchDelete(t *testing.T) {
 }
 
 func Test_KVStore_MassBatchDelete(t *testing.T) {
+	t.Skip()
+
 	err := BatchSet(getKvPairs(MaxKvPairsSize%2), TestValueTimeToLive)
 	assert.Nil(t, err)
 

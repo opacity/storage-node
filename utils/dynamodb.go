@@ -32,7 +32,7 @@ func NewDynamoDBSession(tableName string, region string, endpoint string) (*Dyna
 		tagValue = "dev"
 	}
 	if IsTestEnv() {
-		awsConfig.WithEndpoint(endpoint).WithLogLevel(aws.LogDebugWithRequestErrors)
+		awsConfig.WithEndpoint(endpoint).WithLogLevel(aws.LogOff)
 		tagValue = "test"
 	}
 
