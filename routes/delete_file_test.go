@@ -18,6 +18,7 @@ func init() {
 }
 
 func Test_Successful_File_Deletion_Request(t *testing.T) {
+	t.Skip()
 	account, fileID, privateKey := createAccountAndUploadFile(t)
 
 	checkPrerequisites(t, account, fileID)
