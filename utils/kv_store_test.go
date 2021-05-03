@@ -9,17 +9,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const MaxBatchSize = 10000
+const MaxKvPairsSize = 10000
 
 func init() {
 	SetTesting("../.env")
 }
 
 func Test_KVStore_MassBatchSet(t *testing.T) {
-	err := BatchSet(getKvPairs(MaxBatchSize), TestValueTimeToLive)
+	err := BatchSet(getKvPairs(MaxKvPairsSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
-	kvs, _ := BatchGet(&KVKeys{strconv.Itoa(MaxBatchSize - 1)})
+	kvs, _ := BatchGet(&KVKeys{strconv.Itoa(MaxKvPairsSize - 1)})
 	AssertTrue(len(*kvs) == 1, t, "Expect only an item")
 }
 
@@ -61,11 +61,11 @@ func Test_KVStoreBatchGet_WithMissingKey(t *testing.T) {
 }
 
 func Test_KVStore_MassBatchGet(t *testing.T) {
-	err := BatchSet(getKvPairs(MaxBatchSize), TestValueTimeToLive)
+	err := BatchSet(getKvPairs(MaxKvPairsSize), TestValueTimeToLive)
 	assert.Nil(t, err)
 
-	kvs, _ := BatchGet(getKeys(MaxBatchSize))
-	AssertTrue(len(*kvs) == MaxBatchSize, t, "")
+	kvs, _ := BatchGet(getKeys(MaxKvPairsSize))
+	AssertTrue(len(*kvs) == MaxKvPairsSize, t, "")
 }
 
 func Test_KVStoreBatchDelete(t *testing.T) {
@@ -80,10 +80,10 @@ func Test_KVStoreBatchDelete(t *testing.T) {
 }
 
 func Test_KVStore_MassBatchDelete(t *testing.T) {
-	err := BatchSet(getKvPairs(MaxBatchSize), TestValueTimeToLive)
+	err := BatchSet(getKvPairs(MaxKvPairsSize%2), TestValueTimeToLive)
 	assert.Nil(t, err)
 
-	err = BatchDelete(getKeys(MaxBatchSize))
+	err = BatchDelete(getKeys(MaxKvPairsSize % 2))
 	assert.Nil(t, err)
 }
 
@@ -108,7 +108,7 @@ func getKvPairs(count int) *KVPairs {
 
 func getKeys(count int) *KVKeys {
 	keys := KVKeys{}
-	for i := 0; i < MaxBatchSize; i++ {
+	for i := 0; i < count; i++ {
 		keys = append(keys, strconv.Itoa(i))
 	}
 	return &keys
