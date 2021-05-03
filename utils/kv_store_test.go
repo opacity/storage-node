@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const MaxKvPairsSize = 10000
+const MaxKvPairsSize = 1000
 
 func init() {
 	SetTesting("../.env")
