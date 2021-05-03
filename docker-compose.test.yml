@@ -1,53 +1,6 @@
 version: "3"
 
 services:
-  prometheus:
-    build:
-      context: ./prometheus
-      dockerfile: Dockerfile
-    ports:
-      - 9090:9090
-    volumes:
-      - prometheus_data:/prometheus
-    entrypoint: ./prometheus/entrypoint.sh ${ADMIN_USER} ${ADMIN_PASSWORD}
-      # nginx will be listening on port 12321
-      # must create /etc/nginx/sites-available/prometheus-proxy, symbolically link it in /etc/nginx/sites-enabled,
-      # and restart nginx.  More info in README.
-    networks:
-      - promnet
-
-  influxdb:
-    build:
-      context: ./influxdb
-      dockerfile: Dockerfile
-    networks:
-      - promnet
-    ports:
-      - 8083:8083
-      - 8086:8086
-      - 8090:8090
-    restart: "always"
-    volumes:
-      - influxdb_data:/var/lib/influxdb
-      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
-      - ./influxdb/prometheus.iql:/docker-entrypoint-initdb.d/prometheus.iql:ro
-    environment:
-      - INFLUXDB_DB=prometheus
-      - INFLUXDB_ADMIN_USER=${ADMIN_USER}
-      - INFLUXDB_ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - INFLUXDB_USER=${ADMIN_USER}
-      - INFLUXDB_USER_PASSWORD=${ADMIN_PASSWORD}
-      - INFLUXDB_READ_USER=${ADMIN_USER}
-      - INFLUXDB_READ_USER_PASSWORD=${ADMIN_PASSWORD}
-
-  # Explore current machine metric for prometheus to scrape.
-  node-exporter:
-    image: prom/node-exporter
-    ports:
-      - 9100:9100
-    networks:
-      - promnet
-
   dynamodb-local:
     command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -delayTransientStatuses -dbPath ./data"
     image: "amazon/dynamodb-local:latest"
@@ -59,21 +12,6 @@ services:
     working_dir: /home/dynamodblocal
     networks: 
       - dbnet
-        
-# If we decide to turn on our own grafana dashboard
-#  grafana:
-#    image: grafana/grafana
-#    environment:
-#      - GF_SECURITY_ADMIN_PASSWORD=<your_password>
-#      - GF_SERVER_HTTP_PORT=3100
-#    depends_on:
-#      - prometheus
-#    ports:
-#      - 3100:3100
-#    volumes:
-#      - grafana_data:/var/lib/grafana
-#    networks:
-#      - promnet
 
   app:
     build: "."
@@ -138,8 +76,4 @@ networks:
   dbnet:
     driver: bridge
 
-volumes:
-  prometheus_data: {}
-  influxdb_data: {}
-# grafana_data: {}
 
