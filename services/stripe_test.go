@@ -10,11 +10,7 @@ import (
 
 func init() {
 	utils.SetTesting("../.env")
-}
-
-func Test_Stripe_Init(t *testing.T) {
-	err := InitStripe()
-	assert.Nil(t, err)
+	InitStripe()
 }
 
 func Test_CreateCharge(t *testing.T) {

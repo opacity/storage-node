@@ -9,5 +9,5 @@ import (
 
 func Test_Init_Jobs(t *testing.T) {
 	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
+	models.Connect(utils.Env.TestDatabaseURL)
 }

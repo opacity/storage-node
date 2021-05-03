@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_S3_Life_Cycle(t *testing.T) {
+func init() {
 	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
+	models.Connect(utils.Env.TestDatabaseURL)
 }
 
 func Test_Delete_S3Object(t *testing.T) {

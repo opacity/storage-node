@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_PublicShares(t *testing.T) {
+func init() {
 	utils.SetTesting("../.env")
-	models.Connect(utils.Env.DatabaseURL)
+	models.Connect(utils.Env.TestDatabaseURL)
 	gin.SetMode(gin.TestMode)
 }
 
