@@ -15,5 +15,5 @@ RUN mkdir -p "$GOPATH/src/github.com/opacity/storage-node"
 WORKDIR "$GOPATH/src/github.com/opacity/storage-node"
 
 COPY . .
-
+RUN go get gotest.tools/gotestsum
 RUN go build ./...
