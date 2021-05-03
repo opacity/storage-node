@@ -72,4 +72,4 @@ install: true
 before_script:
 
 script:
-  - docker-compose exec app go test ./... -p 1
+  - docker-compose exec app gotestsum --format testname
