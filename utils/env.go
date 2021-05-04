@@ -166,11 +166,13 @@ func checkSetBadgerMigrationDone() error {
 		return nil
 	}
 
-	badgerMigrationDone, err := strconv.ParseBool(badgerMigrationDoneValue)
-	if err != nil {
-		return err
+	if badgerMigrationDoneValue != "" {
+		badgerMigrationDone, err := strconv.ParseBool(badgerMigrationDoneValue)
+		if err != nil {
+			return err
+		}
+		DynamodbSvc.badgerMigrationDone = badgerMigrationDone
 	}
-	DynamodbSvc.badgerMigrationDone = badgerMigrationDone
 
 	return nil
 }
