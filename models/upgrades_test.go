@@ -39,11 +39,6 @@ func returnValidUpgrade() (Upgrade, Account) {
 	}, account
 }
 
-func init() {
-	utils.SetTesting("../.env")
-	Connect(utils.Env.TestDatabaseURL)
-}
-
 func Test_Valid_Upgrade_Passes(t *testing.T) {
 	upgrade, _ := returnValidUpgrade()
 

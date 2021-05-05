@@ -24,6 +24,25 @@ import (
 
 const defaultStorageUsedInByteForTest = 10 * 1e9
 
+func TestMain(m *testing.M) {
+	setupRoutesTests()
+	os.Exit(m.Run())
+	cleanUpBeforeRoutesTest()
+}
+
+func setupRoutesTests() {
+	utils.SetTesting("../.env")
+	models.Connect(utils.Env.TestDatabaseURL)
+	gin.SetMode(gin.TestMode)
+}
+
+func cleanUpBeforeRoutesTest() {
+	models.DeleteAccountsForTest()
+	models.DeleteCompletedFilesForTest()
+	models.DeleteFilesForTest()
+	models.DeletePublicSharesForTest()
+}
+
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
 
@@ -139,18 +158,6 @@ func UploadFileHelperForTest(t *testing.T, post UploadFileReq, UploadPath, route
 		"chunkData": post.ChunkData,
 	}
 	return httpPostFormRequestHelperForTest(t, UploadPath, &post, form, formFile, routerVersion)
-}
-
-func setupTests() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.TestDatabaseURL)
-	gin.SetMode(gin.TestMode)
-}
-
-func cleanUpBeforeTest() {
-	models.DeleteAccountsForTest()
-	models.DeleteCompletedFilesForTest()
-	models.DeleteFilesForTest()
 }
 
 func generateValidateAccountId(t *testing.T) (string, *ecdsa.PrivateKey) {

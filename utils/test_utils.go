@@ -1,10 +1,16 @@
 package utils
 
-import "testing"
+import (
+	"testing"
+)
 
 /*AssertTrue fails if v is false.*/
 func AssertTrue(v bool, t *testing.T, desc string) {
 	if !v {
 		t.Error(desc)
 	}
+}
+
+func TestMain(m *testing.M) {
+	SetTesting("../.env")
 }

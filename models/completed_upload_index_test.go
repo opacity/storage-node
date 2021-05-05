@@ -4,14 +4,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
-
-func Test_Init_Completed_Upload_Index(t *testing.T) {
-	utils.SetTesting("../.env")
-	Connect(utils.Env.TestDatabaseURL)
-}
 
 func Test_GetCompletedUploadProgress(t *testing.T) {
 	DeleteCompletedUploadIndexesForTest()

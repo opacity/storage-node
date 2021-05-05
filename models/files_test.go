@@ -11,11 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	utils.SetTesting("../.env")
-	Connect(utils.Env.TestDatabaseURL)
-}
-
 func Test_Valid_File_Passes(t *testing.T) {
 	file := ReturnValidFile()
 

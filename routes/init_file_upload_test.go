@@ -11,10 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	setupTests()
-}
-
 func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 	accountID, privateKey := generateValidateAccountId(t)
 

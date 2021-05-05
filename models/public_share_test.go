@@ -7,11 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	utils.SetTesting("../.env")
-	Connect(utils.Env.TestDatabaseURL)
-}
-
 func Test_Get_PublicShare_By_ID(t *testing.T) {
 	DeletePublicSharesForTest()
 	ps, err := CreateTestPublicShare()
@@ -19,10 +14,6 @@ func Test_Get_PublicShare_By_ID(t *testing.T) {
 	publicShare, err := GetPublicShareByID(ps.PublicID)
 	assert.True(t, publicShare.FileID == ps.FileID)
 	assert.Nil(t, err)
-
-	t.Cleanup(func() {
-		publicShare.RemovePublicShare()
-	})
 }
 func Test_Public_Share_Empty_FileID_Fails(t *testing.T) {
 	DeletePublicSharesForTest()
@@ -32,8 +23,4 @@ func Test_Public_Share_Empty_FileID_Fails(t *testing.T) {
 	if err := utils.Validator.Struct(ps); err == nil {
 		t.Fatalf("public share with an empty FileID is not allowed")
 	}
-
-	t.Cleanup(func() {
-		ps.RemovePublicShare()
-	})
 }

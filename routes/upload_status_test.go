@@ -10,11 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	setupTests()
-	cleanUpBeforeTest()
-}
-
 func Test_CheckWithAccountNoExist(t *testing.T) {
 	_, privateKey := generateValidateAccountId(t)
 	req, _ := generateUploadStatusRequest(t, privateKey)

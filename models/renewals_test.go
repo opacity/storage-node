@@ -35,11 +35,6 @@ func returnValidRenewal() (Renewal, Account) {
 	}, account
 }
 
-func Test_Init_Renewals(t *testing.T) {
-	utils.SetTesting("../.env")
-	Connect(utils.Env.TestDatabaseURL)
-}
-
 func Test_Valid_Renewal_Passes(t *testing.T) {
 	renewal, _ := returnValidRenewal()
 

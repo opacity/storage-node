@@ -64,10 +64,6 @@ func returnValidGetAccountReq(t *testing.T, body accountGetReqObj, privateKeyToS
 	}
 }
 
-func init() {
-	setupTests()
-}
-
 func Test_NoErrorsWithValidPost(t *testing.T) {
 	post := returnValidCreateAccountReq(t, returnValidCreateAccountBody())
 

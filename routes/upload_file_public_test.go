@@ -5,17 +5,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.TestDatabaseURL)
-	gin.SetMode(gin.TestMode)
-}
 
 func Test_UploadFilePublicStorageDoesNotCount(t *testing.T) {
 	t.Skip()
@@ -49,10 +42,6 @@ func Test_UploadFilePublicStorageDoesNotCount(t *testing.T) {
 
 	updatedAccount, _ := models.GetAccountById(account.AccountID)
 	assert.Equal(t, updatedAccount.StorageUsedInByte, account.StorageUsedInByte)
-
-	t.Cleanup(func() {
-		cleanUpBeforeTest()
-	})
 }
 
 func initFileUploadPublic(t *testing.T, endIndex int, privateKey *ecdsa.PrivateKey) InitFileUploadObj {

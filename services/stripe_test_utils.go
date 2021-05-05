@@ -1,6 +1,11 @@
 package services
 
-import "github.com/opacity/storage-node/utils"
+import (
+	"os"
+	"testing"
+
+	"github.com/opacity/storage-node/utils"
+)
 
 var testTokens = []string{
 	`tok_visa`,
@@ -13,6 +18,12 @@ var testTokens = []string{
 	`tok_diners`,
 	`tok_jcb`,
 	`tok_unionpay`,
+}
+
+func TestMain(m *testing.M) {
+	utils.SetTesting("../.env")
+	InitStripe()
+	os.Exit(m.Run())
 }
 
 func RandTestStripeToken() string {

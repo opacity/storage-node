@@ -4,17 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.TestDatabaseURL)
-	gin.SetMode(gin.TestMode)
-}
 
 func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 	s1FileID := utils.GenerateFileHandle()

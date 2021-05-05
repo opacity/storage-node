@@ -14,10 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	setupTests()
-}
-
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
 

@@ -20,7 +20,6 @@ var (
 )
 
 func init() {
-	SetTesting("../.env")
 	workingDir, _ := os.Getwd()
 	testDir := strings.Replace(workingDir, "/utils", "", -1)
 	testDir = testDir + "/test_files"

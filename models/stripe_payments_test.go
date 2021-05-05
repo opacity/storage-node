@@ -46,11 +46,6 @@ func returnStripePaymentForTestForUpgrade(upgrade Upgrade) StripePayment {
 	}
 }
 
-func init() {
-	utils.SetTesting("../.env")
-	Connect(utils.Env.TestDatabaseURL)
-}
-
 func Test_Init_Stripe_Payments(t *testing.T) {
 	err := services.InitStripe()
 	assert.Nil(t, err)

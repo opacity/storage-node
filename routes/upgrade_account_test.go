@@ -16,10 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	setupTests()
-}
-
 func Test_GetAccountUpgradeInvoiceHandler_Returns_Invoice(t *testing.T) {
 	models.DeleteAccountsForTest()
 	models.DeleteUpgradesForTest()

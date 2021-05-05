@@ -39,11 +39,6 @@ func returnValidAccount() Account {
 	}
 }
 
-func init() {
-	utils.SetTesting("../.env")
-	Connect(utils.Env.TestDatabaseURL)
-}
-
 func Test_Valid_Account_Passes(t *testing.T) {
 	account := returnValidAccount()
 

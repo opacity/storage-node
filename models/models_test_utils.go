@@ -14,6 +14,16 @@ import (
 	"github.com/teris-io/shortid"
 )
 
+func TestMain(m *testing.M) {
+	setupModelsTests()
+	os.Exit(m.Run())
+}
+
+func setupModelsTests() {
+	utils.SetTesting("../.env")
+	Connect(utils.Env.TestDatabaseURL)
+}
+
 func DeleteAccountsForTest() {
 	if !(utils.IsTestEnv() || utils.IsDebugEnv()) {
 		log.Fatalf("should only be calling DeleteAccountsForTest method on test or dev database")

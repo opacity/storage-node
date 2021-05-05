@@ -12,11 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	setupTests()
-	cleanUpBeforeTest()
-}
-
 func Test_Successful_File_Deletion_Request(t *testing.T) {
 	t.Skip()
 	account, fileID, privateKey := createAccountAndUploadFile(t)

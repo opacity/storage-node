@@ -8,11 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_Completed_File(t *testing.T) {
-	utils.SetTesting("../.env")
-	Connect(utils.Env.TestDatabaseURL)
-}
-
 func Test_GetAllExpiredCompletedFiles(t *testing.T) {
 	DeleteCompletedFilesForTest()
 	s := CompletedFile{

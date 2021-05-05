@@ -15,10 +15,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	setupTests()
-}
-
 func Test_verifyIfPaidWithContext_account_status_already_paid(t *testing.T) {
 	models.DeleteAccountsForTest()
 	privateKey, err := utils.GenerateKey()

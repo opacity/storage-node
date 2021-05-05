@@ -11,10 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	setupTests()
-}
-
 func Test_Upload_File_Bad_Request(t *testing.T) {
 	// TODO: Update tests to work with multipart-form requests
 	t.Skip()

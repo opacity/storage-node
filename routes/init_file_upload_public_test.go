@@ -4,17 +4,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.TestDatabaseURL)
-	gin.SetMode(gin.TestMode)
-}
 
 func Test_CreateInitFileUploadPulic(t *testing.T) {
 	completedFile := models.CompletedFile{

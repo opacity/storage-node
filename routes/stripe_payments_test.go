@@ -14,10 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	setupTests()
-}
-
 func Test_Successful_Stripe_Payment(t *testing.T) {
 	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()

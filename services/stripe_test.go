@@ -8,11 +8,6 @@ import (
 	"github.com/stripe/stripe-go"
 )
 
-func init() {
-	utils.SetTesting("../.env")
-	InitStripe()
-}
-
 func Test_CreateCharge(t *testing.T) {
 	if utils.Env.StripeKey != utils.Env.StripeKeyTest {
 		t.Fatalf("wrong stripe key")

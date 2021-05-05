@@ -5,17 +5,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.TestDatabaseURL)
-	gin.SetMode(gin.TestMode)
-}
 
 func Test_Revoke_PublicShares(t *testing.T) {
 	models.DeletePublicSharesForTest()
@@ -39,10 +32,6 @@ func Test_Revoke_PublicShares(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "Public share revoked")
-
-	t.Cleanup(func() {
-		cleanUpBeforeTest()
-	})
 }
 
 func Test_GetUrl_PublicShares(t *testing.T) {
@@ -52,7 +41,6 @@ func Test_GetUrl_PublicShares(t *testing.T) {
 	requestTestGetPublicShareUrl(t, ps)
 
 	t.Cleanup(func() {
-		cleanUpBeforeTest()
 		ps.RemovePublicShare()
 		utils.DeleteDefaultBucketObjectKeys(ps.FileID)
 	})
@@ -71,7 +59,6 @@ func Test_ViewsCountIncreases_PublicShares(t *testing.T) {
 	assert.Equal(t, tries, psReturned.ViewsCount)
 
 	t.Cleanup(func() {
-		cleanUpBeforeTest()
 		ps.RemovePublicShare()
 		utils.DeleteDefaultBucketObjectKeys(ps.FileID)
 	})

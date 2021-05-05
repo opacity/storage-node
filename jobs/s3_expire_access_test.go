@@ -5,14 +5,8 @@ import (
 	"time"
 
 	"github.com/opacity/storage-node/models"
-	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	utils.SetTesting("../.env")
-	models.Connect(utils.Env.TestDatabaseURL)
-}
 
 func Test_Delete_S3Object(t *testing.T) {
 	// Make sure nothing existed in the table

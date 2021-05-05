@@ -133,9 +133,6 @@ type PlanResponse struct {
 	Plans utils.PlanResponseType `json:"plans"`
 }
 
-func init() {
-}
-
 /*CreateRoutes creates our application's routes*/
 func CreateRoutes() {
 	uptime = time.Now()

@@ -11,10 +11,6 @@ import (
 
 const MaxKvPairsSize = 1000
 
-func init() {
-	SetTesting("../.env")
-}
-
 func Test_KVStore_MassBatchSet(t *testing.T) {
 	t.Skip()
 	err := BatchSet(getKvPairs(MaxKvPairsSize), TestValueTimeToLive)

@@ -12,10 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	setupTests()
-}
-
 func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	models.DeleteAccountsForTest()
 	models.DeleteRenewalsForTest()
