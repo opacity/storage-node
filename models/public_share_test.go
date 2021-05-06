@@ -8,7 +8,6 @@ import (
 )
 
 func Test_Get_PublicShare_By_ID(t *testing.T) {
-	DeletePublicSharesForTest()
 	ps, err := CreateTestPublicShare()
 	assert.Nil(t, err)
 	publicShare, err := GetPublicShareByID(ps.PublicID)
@@ -16,7 +15,6 @@ func Test_Get_PublicShare_By_ID(t *testing.T) {
 	assert.Nil(t, err)
 }
 func Test_Public_Share_Empty_FileID_Fails(t *testing.T) {
-	DeletePublicSharesForTest()
 	ps := CreatePublicShareObj()
 	ps.FileID = ""
 

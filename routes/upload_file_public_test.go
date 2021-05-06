@@ -12,21 +12,22 @@ import (
 
 func Test_UploadFilePublicStorageDoesNotCount(t *testing.T) {
 	t.Skip()
-	completedFile := models.CompletedFile{
-		FileID:         utils.GenerateFileHandle(),
-		ModifierHash:   utils.GenerateFileHandle(),
-		FileSizeInByte: 1003,
-	}
-	assert.Nil(t, models.DB.Create(&completedFile).Error)
+	// completedFile := models.CompletedFile{
+	// 	FileID:         utils.GenerateFileHandle(),
+	// 	ModifierHash:   utils.GenerateFileHandle(),
+	// 	FileSizeInByte: 1003,
+	// }
+	// assert.Nil(t, models.DB.Create(&completedFile).Error)
 	accountID, privateKey := generateValidateAccountId(t)
 	account := CreatePaidAccountForTest(t, accountID)
+	// fileID := completedFile.FileID
 
-	fileID := completedFile.FileID
+	fileUploadObj := initFileUploadPublic(t, 1, privateKey)
 	// Just random data, no file on S3 to get
 	chunkData := utils.RandHexString(int(utils.MinMultiPartSize))
 
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
-	uploadObj.FileHandle = fileID
+	uploadObj.FileHandle = fileUploadObj.FileHandle
 	req := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 	req.ChunkData = chunkData
 
@@ -34,8 +35,8 @@ func Test_UploadFilePublicStorageDoesNotCount(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "Chunk is uploaded")
 
-	checkStatusReq, _ := createUploadStatusRequest(t, fileID, privateKey)
-	checkStatusReq.uploadStatusObj.FileHandle = fileID
+	checkStatusReq, _ := createUploadStatusRequest(t, fileUploadObj.FileHandle, privateKey)
+	checkStatusReq.uploadStatusObj.FileHandle = fileUploadObj.FileHandle
 	w = httpPostRequestHelperForTest(t, UploadStatusPublicPath, "v2", checkStatusReq)
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), "File is uploaded")
@@ -53,7 +54,7 @@ func initFileUploadPublic(t *testing.T, endIndex int, privateKey *ecdsa.PrivateK
 		"metadata": "abc_file",
 	}
 
-	w := httpPostFormRequestHelperForTest(t, InitUploadPath, &req, form, formFile, "v1")
+	w := httpPostFormRequestHelperForTest(t, InitUploadPublicPath, &req, form, formFile, "v2")
 
 	assert.Equal(t, http.StatusOK, w.Code)
 

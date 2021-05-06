@@ -24,7 +24,5 @@ func Test_AppendLookupErrors(t *testing.T) {
 }
 
 func Test_SetTesting(t *testing.T) {
-	SetTesting("../.env")
-
 	assert.True(t, Env.AccountRetentionDays > 0)
 }

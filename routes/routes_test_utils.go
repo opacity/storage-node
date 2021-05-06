@@ -24,12 +24,6 @@ import (
 
 const defaultStorageUsedInByteForTest = 10 * 1e9
 
-func TestMain(m *testing.M) {
-	setupRoutesTests()
-	os.Exit(m.Run())
-	cleanUpBeforeRoutesTest()
-}
-
 func setupRoutesTests() {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.TestDatabaseURL)
@@ -41,6 +35,7 @@ func cleanUpBeforeRoutesTest() {
 	models.DeleteCompletedFilesForTest()
 	models.DeleteFilesForTest()
 	models.DeletePublicSharesForTest()
+	models.DeleteCompletedUploadIndexesForTest()
 }
 
 func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {

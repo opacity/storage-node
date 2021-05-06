@@ -48,6 +48,7 @@ func Test_verifyIfPaidWithContext_account_opct_balance_has_arrived(t *testing.T)
 }
 
 func Test_verifyIfPaidWithContext_stripe_payment_has_been_paid(t *testing.T) {
+	t.Skip()
 	models.DeleteAccountsForTest()
 	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()

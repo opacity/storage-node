@@ -11,7 +11,6 @@ import (
 )
 
 func Test_Revoke_PublicShares(t *testing.T) {
-	models.DeletePublicSharesForTest()
 	ps, err := models.CreateTestPublicShare()
 	assert.Nil(t, err)
 	accountID, privateKey := generateValidateAccountId(t)
@@ -35,19 +34,16 @@ func Test_Revoke_PublicShares(t *testing.T) {
 }
 
 func Test_GetUrl_PublicShares(t *testing.T) {
-	models.DeletePublicSharesForTest()
 	ps := createTestPublicShareWithS3Files(t)
 
 	requestTestGetPublicShareUrl(t, ps)
 
 	t.Cleanup(func() {
-		ps.RemovePublicShare()
 		utils.DeleteDefaultBucketObjectKeys(ps.FileID)
 	})
 }
 
 func Test_ViewsCountIncreases_PublicShares(t *testing.T) {
-	models.DeletePublicSharesForTest()
 	ps := createTestPublicShareWithS3Files(t)
 	tries := 6
 
@@ -59,7 +55,6 @@ func Test_ViewsCountIncreases_PublicShares(t *testing.T) {
 	assert.Equal(t, tries, psReturned.ViewsCount)
 
 	t.Cleanup(func() {
-		ps.RemovePublicShare()
 		utils.DeleteDefaultBucketObjectKeys(ps.FileID)
 	})
 }
@@ -81,7 +76,6 @@ func requestTestGetPublicShareUrl(t *testing.T, ps models.PublicShare) *httptest
 	w := httpGetRequestHelperForTest(t, "/"+PublicSharePathPrefix+PublicShareShortlinkPath, "v2", params)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), utils.Env.BucketName)
 
 	return w
 }

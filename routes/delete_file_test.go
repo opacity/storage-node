@@ -13,7 +13,6 @@ import (
 )
 
 func Test_Successful_File_Deletion_Request(t *testing.T) {
-	t.Skip()
 	account, fileID, privateKey := createAccountAndUploadFile(t)
 
 	checkPrerequisites(t, account, fileID)
@@ -32,7 +31,7 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	// check that StorageUsedInByte has been deducted after deletion
 	assert.True(t, updatedAccount.StorageUsedInByte == defaultStorageUsedInByteForTest)
 	// check that object is not on S3 anymore

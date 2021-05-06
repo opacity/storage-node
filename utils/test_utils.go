@@ -10,7 +10,3 @@ func AssertTrue(v bool, t *testing.T, desc string) {
 		t.Error(desc)
 	}
 }
-
-func TestMain(m *testing.M) {
-	SetTesting("../.env")
-}
