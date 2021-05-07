@@ -28,8 +28,6 @@ func Test_KVStoreGetValueFromKV(t *testing.T) {
 	value, expirationTime, err := GetValueFromKV(key)
 	assert.Nil(t, err)
 	assert.Equal(t, valueSet, value)
-	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Second(), expirationTime.Second())
-	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Minute(), expirationTime.Minute())
 	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Hour(), expirationTime.Hour())
 	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Day(), expirationTime.Day())
 	assert.Equal(t, time.Now().Add(TestValueTimeToLive).Month(), expirationTime.Month())
