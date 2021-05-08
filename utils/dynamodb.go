@@ -26,14 +26,12 @@ func NewDynamoDBSession(tableName string, region string, endpoint string) (*Dyna
 	}))
 
 	awsConfig := aws.NewConfig()
-	tagValue := "prod"
+	tagValue := Env.GoEnv
 	if IsDebugEnv() {
 		awsConfig = awsConfig.WithEndpoint(endpoint).WithLogLevel(aws.LogDebugWithHTTPBody)
-		tagValue = "dev"
 	}
 	if IsTestEnv() {
 		awsConfig.WithEndpoint(endpoint).WithLogLevel(aws.LogOff)
-		tagValue = "test"
 	}
 
 	dynamodbInstance := dynamodb.New(sess, awsConfig)
