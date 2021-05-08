@@ -2,13 +2,15 @@ version: "3"
 
 services:
   dynamodb-local:
-    command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -delayTransientStatuses -dbPath ./data"
+    command: "-jar DynamoDBLocal.jar -sharedDb -optimizeDbBeforeStartup -delayTransientStatuses -dbPath /dynamodblocal/data"
+    user: root
     image: "amazon/dynamodb-local:latest"
+    restart: "always"
     container_name: dynamodb-local
     ports:
       - "8000:8000"
     volumes:
-      - "./data/dynamodb/test:/home/dynamodblocal/data"
+      - "./data/dynamodb/test:/dynamodblocal/data"
     working_dir: /home/dynamodblocal
     networks: 
       - dbnet
@@ -36,6 +38,11 @@ services:
           sleep 0.5;
           free -m;
         done;
+        while ! nc -z dynamodb-local 8000;
+        do
+          sleep 0.5;
+          free -m;
+        done;
         echo ${DEBUG}
         go get github.com/codegangsta/gin
         if [ -z ${DEBUG} ]; then
@@ -48,7 +55,6 @@ services:
         fi
       "
     networks:
-      - promnet
       - dbnet
 
   db:
@@ -56,7 +62,6 @@ services:
     image: mysql:5.7
     restart: "always"
     command: --sql_mode=''
-    # command: mysqld --sql_mode=''
     environment:
       - MYSQL_DATABASE=test
       - MYSQL_ROOT_USER=root
@@ -71,8 +76,6 @@ services:
 # In order for each service to connect to each other, They need to be on the same
 # network and use name like "app", "db", "prometheus" for reference. Ex: "db:3306", "app:3000".
 networks:
-  promnet:
-    driver: bridge
   dbnet:
     driver: bridge
 
