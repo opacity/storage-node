@@ -28,6 +28,7 @@ func setupRoutesTests() {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.TestDatabaseURL)
 	gin.SetMode(gin.TestMode)
+	services.InitStripe()
 }
 
 func cleanUpBeforeRoutesTest() {
