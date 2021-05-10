@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -27,6 +28,7 @@ func NewDynamoDBSession(tableName string, region string, endpoint string) (*Dyna
 
 	awsConfig := aws.NewConfig()
 	tagValue := Env.GoEnv
+	endpoint = strings.ReplaceAll(endpoint, "\"", "")
 	if IsDebugEnv() {
 		awsConfig = awsConfig.WithEndpoint(endpoint).WithLogLevel(aws.LogDebugWithHTTPBody)
 	}
