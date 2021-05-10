@@ -228,6 +228,7 @@ func tryLookUp() error {
 	var collectedErrors []error
 	prodDBUrl := AppendLookupErrors("PROD_DATABASE_URL", &collectedErrors)
 	testDBUrl := AppendLookupErrors("TEST_DATABASE_URL", &collectedErrors)
+	goEnv := AppendLookupErrors("GO_ENV", &collectedErrors)
 	encryptionKey := AppendLookupErrors("ENCRYPTION_KEY", &collectedErrors)
 	contractAddress := AppendLookupErrors("TOKEN_CONTRACT_ADDRESS", &collectedErrors)
 	ethNodeURL := AppendLookupErrors("ETH_NODE_URL", &collectedErrors)
@@ -261,7 +262,7 @@ func tryLookUp() error {
 	}
 
 	plansJson, exists := os.LookupEnv("PLANS_JSON")
-	if exists == false {
+	if !exists {
 		plansJson = defaultPlansJson
 	}
 
@@ -271,6 +272,7 @@ func tryLookUp() error {
 	serverEnv := StorageNodeEnv{
 		ProdDatabaseURL:      prodDBUrl,
 		TestDatabaseURL:      testDBUrl,
+		GoEnv:                goEnv,
 		EncryptionKey:        encryptionKey,
 		ContractAddress:      contractAddress,
 		EthNodeURL:           ethNodeURL,
