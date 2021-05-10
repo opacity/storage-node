@@ -16,7 +16,6 @@ func TestMain(m *testing.M) {
 }
 
 func Test_CreateCharge(t *testing.T) {
-	t.Skip()
 	if utils.Env.StripeKey != utils.Env.StripeKeyTest {
 		t.Fatalf("wrong stripe key")
 		return
@@ -30,7 +29,6 @@ func Test_CreateCharge(t *testing.T) {
 }
 
 func Test_CheckChargeStatus(t *testing.T) {
-	t.Skip()
 	if utils.Env.StripeKey != utils.Env.StripeKeyTest {
 		t.Fatalf("wrong stripe key")
 		return
@@ -47,7 +45,6 @@ func Test_CheckChargeStatus(t *testing.T) {
 }
 
 func Test_CheckChargePaid(t *testing.T) {
-	t.Skip()
 	if utils.Env.StripeKey != utils.Env.StripeKeyTest {
 		t.Fatalf("wrong stripe key")
 		return

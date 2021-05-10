@@ -15,7 +15,6 @@ import (
 )
 
 func Test_Successful_Stripe_Payment(t *testing.T) {
-	t.Skip()
 	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
@@ -50,7 +49,6 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 }
 
 func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
-	t.Skip()
 	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
@@ -77,7 +75,6 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 }
 
 func Test_Fails_If_Account_Is_Paid(t *testing.T) {
-	t.Skip()
 	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
@@ -106,7 +103,6 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 }
 
 func Test_Fails_If_Account_Is_Free(t *testing.T) {
-	t.Skip()
 	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
@@ -138,7 +134,6 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 }
 
 func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
-	t.Skip()
 	models.DeleteStripePaymentsForTest()
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
