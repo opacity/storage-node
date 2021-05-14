@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"math"
 
 	"github.com/gin-gonic/gin"
@@ -32,12 +34,19 @@ func sizeOnFS(size float64) float64 {
 	return size + blockOverhead*numberOfBlocks(size)
 }
 
-func getBlockSize(metadata FileMetadata) int {
+func getBlockSize(metadata FileMetadata) float64 {
 	if metadata.P.BlockSize == 0 {
 		return blockSize
 	}
 
-	return metadata.P.BlockSize
+	return float64(metadata.P.BlockSize)
+}
+
+func getUploadSize(size int, metadata FileMetadata) float64 {
+	size64 := float64(size)
+	blockCount := numberOfBlocks(size64)
+
+	return size64 + blockCount*blockOverhead
 }
 
 type PrivateToPublicReq struct {
@@ -98,22 +107,16 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 
-	// file, err := utils.GetDefaultBucketObject(models.GetFileDataKey(hash), false)
-	// if err != nil {
-	// 	return err
-	// }
-	// decryptedFile, err := PublicShareDecrypt(encryptionKey, file)
-	// if err != nil {
-	// 	return err
-	// }
-
 	fileMetadata, err := utils.GetDefaultBucketObject(models.GetFileMetadataKey(hash), false)
 	if err != nil {
 		return err
 	}
-	decryptedMetadata, _ := DecryptMetadata(encryptionKey, fileMetadata)
-	fmt.Println(string(decryptedMetadata.Name))
+	decryptedMetadata, _ := DecryptMetadata(encryptionKey, []byte(fileMetadata))
 
+	fmt.Println(decryptedMetadata.P.PartSize)
+	fmt.Println(decryptedMetadata.P.BlockSize)
+
+	PublicShareDownloadFile(hash, encryptionKey, decryptedMetadata)
 	// ----------------------
 	// err = utils.SetDefaultBucketObject(models.GetFileDataPublicKey(fileID), string(decryptedFile))
 	// if err != nil {
@@ -123,7 +126,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	return nil
 }
 
-func PublicShareDecrypt(key []byte, data string) (decryptedData []byte, err error) {
+func PublicShareDecrypt(key []byte, data []byte) (decryptedData []byte, err error) {
 	nonceSize := 16
 
 	block, err := aes.NewCipher(key)
@@ -152,12 +155,12 @@ func PublicShareDecrypt(key []byte, data string) (decryptedData []byte, err erro
 	return
 }
 
-func DecryptMetadata(key []byte, data string) (fileMetadata FileMetadata, err error) {
+func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
 	decryptedByteData, err := PublicShareDecrypt(key, data)
 	if err != nil {
 		return
 	}
-
+	fmt.Println(string(decryptedByteData))
 	err = json.Unmarshal(decryptedByteData, &fileMetadata)
 	if err != nil {
 		return
@@ -166,28 +169,54 @@ func DecryptMetadata(key []byte, data string) (fileMetadata FileMetadata, err er
 	return
 }
 
-// func PublicShareDownloadFile(fileID string, metadata FileMetadata) error {
-// 	downloadFileURL, err := GetFileDownloadURL(fileID)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	req, err := http.NewRequest(http.MethodGet, downloadFileURL+"/file", nil)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	blockSize := getBlockSize(metadata)
-// 	blockCount := metadata.P.PartSize / blockSizeOnFS
-// 	if (blockCount != int(math.Floor(float64(blockCount)))) {
-// 		return errors.New("metadata partSize must be a multiple of blockSize + blockOverhead")
-// 	}
-// 	headerRange := partInex
-// 	// req.Header.Add()
+func PublicShareDownloadFile(hash string, key []byte, metadata FileMetadata) error {
+	file, err := utils.GetBucketObject(models.GetFileDataKey(hash), false)
 
-// 	res, err := http.DefaultClient.Do(req)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer res.Body.Close()
+	blockSize := getBlockSize(metadata)
+	partSize := 80 * (blockSize + blockOverhead)
+	blockCount := partSize / (blockSize + blockOverhead)
+	if blockCount != math.Floor(blockCount) {
+		return fmt.Errorf("partSize must be a multiple of blockSize + blockOverhead")
+	}
 
-// 	return nil
-// }
+	decryptedFile := *new([]byte)
+	if err != nil {
+		return err
+	}
+	defer file.Body.Close()
+
+	sizeBytes := 65568
+
+	nBytes, nChunks := int64(0), int64(0)
+	buf := make([]byte, 0, sizeBytes)
+
+	for {
+		chunk, err := file.Body.Read(buf[:cap(buf)])
+		buf = buf[:chunk]
+		if chunk == 0 {
+			if err == nil {
+				continue
+			}
+			if err == io.EOF {
+				break
+			}
+			log.Fatal(err)
+		}
+		nChunks++
+		nBytes += int64(len(buf))
+		if err != nil && err != io.EOF {
+			log.Fatal(err)
+		}
+		decryptedChunk, err := PublicShareDecrypt(key, buf)
+		decryptedFile = append(decryptedFile, decryptedChunk...)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	log.Println("Bytes:", nBytes, "Chunks:", nChunks)
+
+	// upload public file back
+	utils.SetDefaultBucketObject(models.GetFileDataPublicKey(hash), string(decryptedFile))
+
+	return nil
+}
