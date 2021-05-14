@@ -129,14 +129,14 @@ func GeneratePublicThumbnail(fileID string, mimeType string) error {
 	if err != nil {
 		return err
 	}
-	defer publicFileObj.Close()
+	defer publicFileObj.Body.Close()
 
-	image, err := imaging.Decode(publicFileObj)
+	image, err := imaging.Decode(publicFileObj.Body)
 	if err != nil {
 		return err
 	}
 
-	_, extension := splitMime(mimeType)
+	_, extension := SplitMime(mimeType)
 	thumbnailFormat, _ := imaging.FormatFromExtension(extension)
 	thumbnailImage := imaging.Thumbnail(image, 1200, 628, imaging.CatmullRom)
 	distThumbnailWriter := new(bytes.Buffer)
@@ -149,7 +149,7 @@ func GeneratePublicThumbnail(fileID string, mimeType string) error {
 	return utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString)
 }
 
-func splitMime(s string) (string, string) {
+func SplitMime(s string) (string, string) {
 	x := strings.Split(s, "/")
 	if len(x) > 1 {
 		return x[0], x[1]
