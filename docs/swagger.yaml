@@ -71,6 +71,44 @@ definitions:
         $ref: '#/definitions/utils.PlanResponseType'
         type: object
     type: object
+  routes.PrivateToPublicObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - fileHandle
+    type: object
+  routes.PrivateToPublicReq:
+    properties:
+      privateToPublicObj:
+        $ref: '#/definitions/routes.PrivateToPublicObj'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.PublicShareObj:
     properties:
       shortlink:
@@ -1573,6 +1611,44 @@ paths:
           schema:
             type: string
       summary: get S3 url for a publicly shared file
+  /api/v2/public-share/convert:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        convert private file to a public shared one
+        requestBody should be a stringified version of:
+        {
+        "fileHandle": "a deterministically created file handle",
+        }
+      parameters:
+      - description: an object to do the conversion of a private file to a public
+          one
+        in: body
+        name: PrivateToPublicReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.PrivateToPublicReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.shortlinkFileResp'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: the data does not exist
+          schema:
+            type: string
+      summary: convert private file to a public shared one
   /api/v2/public-share/revoke:
     post:
       consumes:

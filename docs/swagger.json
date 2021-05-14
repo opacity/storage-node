@@ -937,6 +937,55 @@
                 }
             }
         },
+        "/api/v2/public-share/convert": {
+            "post": {
+                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "convert private file to a public shared one",
+                "parameters": [
+                    {
+                        "description": "an object to do the conversion of a private file to a public one",
+                        "name": "PrivateToPublicReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.PrivateToPublicReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.shortlinkFileResp"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "the data does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/public-share/revoke": {
             "post": {
                 "description": "remove a public share entry, revoke the share\nrequestBody should be a stringified version of):\n{\n\"shortlink\": \"the shortlink of the completed file\",\n}",
@@ -1249,6 +1298,51 @@
                 "plans": {
                     "type": "object",
                     "$ref": "#/definitions/utils.PlanResponseType"
+                }
+            }
+        },
+        "routes.PrivateToPublicObj": {
+            "type": "object",
+            "required": [
+                "fileHandle"
+            ],
+            "properties": {
+                "fileHandle": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a deterministically created file handle"
+                }
+            }
+        },
+        "routes.PrivateToPublicReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "privateToPublicObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.PrivateToPublicObj"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
                 }
             }
         },
