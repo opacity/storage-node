@@ -73,13 +73,25 @@ definitions:
     type: object
   routes.PrivateToPublicObj:
     properties:
+      description:
+        example: lorem ipsum
+        maxLength: 65535
+        minLength: 1
+        type: string
       fileHandle:
         example: a deterministically created file handle
         maxLength: 128
         minLength: 128
         type: string
+      title:
+        example: LoremIpsum
+        maxLength: 65535
+        minLength: 1
+        type: string
     required:
+    - description
     - fileHandle
+    - title
     type: object
   routes.PrivateToPublicReq:
     properties:

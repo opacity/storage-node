@@ -1304,14 +1304,28 @@
         "routes.PrivateToPublicObj": {
             "type": "object",
             "required": [
-                "fileHandle"
+                "description",
+                "fileHandle",
+                "title"
             ],
             "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 65535,
+                    "minLength": 1,
+                    "example": "lorem ipsum"
+                },
                 "fileHandle": {
                     "type": "string",
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a deterministically created file handle"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 65535,
+                    "minLength": 1,
+                    "example": "LoremIpsum"
                 }
             }
         },
