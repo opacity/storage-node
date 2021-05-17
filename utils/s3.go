@@ -100,7 +100,7 @@ func getObjectSizeInByte(bucketName string, objectKey string) int64 {
 	return aws.Int64Value(r.ContentLength)
 }
 
-func getObject(bucketName string, objectKey string, cached bool) (string, error) {
+func getObject(bucketName, objectKey, downloadRange string, cached bool) (string, error) {
 	if cached {
 		valueS, okS := cachedData.Get(getKey(bucketName, objectKey))
 		if okS {
@@ -111,6 +111,9 @@ func getObject(bucketName string, objectKey string, cached bool) (string, error)
 	input := &s3.GetObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(objectKey),
+	}
+	if downloadRange != "" {
+		input.SetRange(downloadRange)
 	}
 
 	output, err := svc.s3.GetObject(input)
@@ -126,7 +129,7 @@ func getObject(bucketName string, objectKey string, cached bool) (string, error)
 	return outputString, err
 }
 
-func getObjectOutput(bucketName string, objectKey string, cached bool) (*s3.GetObjectOutput, error) {
+func getObjectOutput(bucketName, objectKey, downloadRange string, cached bool) (*s3.GetObjectOutput, error) {
 	if cached {
 		valueR, okR := cachedData.Get(getKey(bucketName, objectKey+"_object"))
 		if okR {
@@ -138,6 +141,9 @@ func getObjectOutput(bucketName string, objectKey string, cached bool) (*s3.GetO
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(objectKey),
 	}
+	if downloadRange != "" {
+		input.SetRange(downloadRange)
+	}
 	output, err := svc.s3.GetObject(input)
 
 	if err == nil && shouldCachedData {
@@ -147,31 +153,14 @@ func getObjectOutput(bucketName string, objectKey string, cached bool) (*s3.GetO
 	return output, err
 }
 
-func getObjectAsString(bucketName string, objectKey string, cached bool) (string, error) {
-	outputString, err := getObject(bucketName, objectKey, cached)
+func getObjectAsString(bucketName, objectKey, downloadRange string, cached bool) (string, error) {
+	outputString, err := getObject(bucketName, objectKey, downloadRange, cached)
 	if err != nil {
 		return "", err
 	}
 
 	return outputString, nil
 }
-
-// func getObjectChunk(bucketName string, objectKey string) (*s3.GetObjectOutput, string, error) {
-
-// 	input := &s3.GetObjectInput{
-// 		Bucket: aws.String(bucketName),
-// 		Key:    aws.String(objectKey),
-// 	}
-// 	input.SetRange()
-
-// 	output, err := svc.s3.GetObject(input)
-
-// 	buf := new(bytes.Buffer)
-// 	buf.ReadFrom(output.Body)
-// 	outputString := buf.String()
-
-// 	return output, outputString, err
-// }
 
 func setObject(bucketName string, objectKey string, data string) error {
 	input := &s3.PutObjectInput{
@@ -331,11 +320,11 @@ func DoesDefaultBucketObjectExist(objectKey string) bool {
 
 // Get Object operation on defaultBucketName
 func GetDefaultBucketObject(objectKey string, cached bool) (string, error) {
-	return getObjectAsString(Env.BucketName, objectKey, cached)
+	return getObjectAsString(Env.BucketName, objectKey, "", cached)
 }
 
-func GetBucketObject(objectKey string, cached bool) (*s3.GetObjectOutput, error) {
-	return getObjectOutput(Env.BucketName, objectKey, cached)
+func GetBucketObject(objectKey, downloadRange string, cached bool) (*s3.GetObjectOutput, error) {
+	return getObjectOutput(Env.BucketName, objectKey, downloadRange, cached)
 }
 
 func GetDefaultBucketObjectSize(objectKey string) int64 {
@@ -580,13 +569,6 @@ func (svc *s3Wrapper) GetBucketLifecycleConfiguration(input *s3.GetBucketLifecyc
 	return v.Rules, nil
 }
 
-// func (svc *s3Wrapper) DownloadS3ObjectInChunks(key string) {
-// 	downloader := s3manager.NewDownloaderWithClient(svc.s3)
-// 	input := &s3.GetObjectInput{
-// 		Bucket: aws.String(Env.BucketName),
-// 		Key:    aws.String(key),
-// 	}
-// 	var w aws.WriteAtBuffer
-// 	downloader.Download(&w, input)
+func (svc *s3Wrapper) DownloadS3ObjectInChunks(key, downloadRange string) {
 
-// }
+}
