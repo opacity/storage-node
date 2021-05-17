@@ -102,7 +102,3 @@ func handleChunkData(file models.File, chunkIndex int, chunkData []byte) (*s3.Co
 	return utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
 		chunkData, chunkIndex)
 }
-
-func handleChunkDataAWS(AwsObjectKey, AwsUploadID string, chunkIndex int, chunkData []byte) (*s3.CompletedPart, error) {
-	return utils.UploadMultiPartPart(AwsObjectKey, AwsUploadID, chunkData, chunkIndex)
-}
