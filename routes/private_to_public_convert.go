@@ -1,52 +1,170 @@
 package routes
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"log"
-	"math"
+	"strconv"
+	"sync"
 
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
 const (
-	blockSize     = 64 * 1024
-	blockOverhead = 32
-	blockSizeOnFS = blockSize + blockOverhead
+	NonceByteLength  = 16
+	TagByteLength    = 16
+	DefaultBlockSize = 64 * 1024
+	BlockOverhead    = TagByteLength + NonceByteLength
+	DefaultPartSize  = 80 * (DefaultBlockSize + BlockOverhead)
 )
 
-func numberOfBlocks(size float64) float64 {
-	return math.Ceil(size / blockSize)
+type DownloadProgress struct {
+	RawProgress        int
+	SizeWithEncryption int
+	PartSize           int
+	ActivePart         int
+	Parts              [][]byte
+	ReadIndex          []int
+	ReadPartIndex      int
+
+	mux sync.Mutex
 }
 
-func numberOfBlocksOnFS(sizeOnFS float64) float64 {
-	return math.Ceil(sizeOnFS / blockSizeOnFS)
-}
+func (dl *DownloadProgress) Write(part []byte) (int, error) {
+	dl.mux.Lock()
+	defer dl.mux.Unlock()
 
-func sizeOnFS(size float64) float64 {
-	return size + blockOverhead*numberOfBlocks(size)
-}
+	length := len(part)
+	dl.RawProgress += length
 
-func getBlockSize(metadata FileMetadata) float64 {
-	if metadata.P.BlockSize == 0 {
-		return blockSize
+	if dl.ActivePart >= cap(dl.Parts) {
+		dl.Parts = append(dl.Parts, []byte{})
 	}
 
-	return float64(metadata.P.BlockSize)
+	dl.Parts[dl.ActivePart] = append(dl.Parts[dl.ActivePart], part...)
+
+	return length, nil
 }
 
-func getUploadSize(size int, metadata FileMetadata) float64 {
-	size64 := float64(size)
-	blockCount := numberOfBlocks(size64)
+func (dl *DownloadProgress) Read(part []byte) (int, error) {
+	dl.mux.Lock()
+	defer dl.mux.Unlock()
 
-	return size64 + blockCount*blockOverhead
+	if dl.ReadPartIndex >= cap(dl.ReadIndex) {
+		dl.ReadIndex = append(dl.ReadIndex, make([]int, dl.ReadPartIndex-cap(dl.ReadIndex)+1)...)
+	}
+
+	if dl.ActivePart >= cap(dl.Parts) {
+		dl.Parts = append(dl.Parts, []byte{})
+	}
+
+	if dl.RawProgress == dl.SizeWithEncryption && dl.ReadPartIndex == len(dl.Parts) && dl.ReadIndex[dl.ReadPartIndex] == dl.PartSize {
+		return 0, io.EOF
+	}
+
+	lenToRead := len(part)
+	if lenToRead > len(dl.Parts[dl.ActivePart]) {
+		lenToRead = len(dl.Parts[dl.ActivePart])
+	}
+
+	for i := 0; i < lenToRead; i++ {
+		part[i] = dl.Parts[dl.ActivePart][i]
+	}
+
+	dl.Parts[dl.ActivePart] = dl.Parts[dl.ActivePart][lenToRead:]
+	dl.ReadIndex[dl.ReadPartIndex] += lenToRead
+
+	if dl.ReadIndex[dl.ReadPartIndex] == dl.PartSize {
+		dl.ReadPartIndex++
+
+		if dl.ReadPartIndex >= cap(dl.ReadIndex) {
+			dl.ReadIndex = append(dl.ReadIndex, make([]int, dl.ReadPartIndex-cap(dl.ReadIndex)+1)...)
+		}
+		dl.ReadIndex = dl.ReadIndex[:dl.ReadPartIndex+1]
+
+		dl.ReadIndex[dl.ReadPartIndex] = 0
+	}
+
+	return lenToRead, nil
+}
+
+type DecryptProgress struct {
+	Key                []byte
+	RawProgress        int
+	Size               int
+	SizeWithEncryption int
+	ChunkSize          int
+	Part               []byte
+	Data               []byte
+	ReadIndex          int
+
+	mux sync.Mutex
+}
+
+func (dc *DecryptProgress) Write(part []byte) (int, error) {
+	dc.mux.Lock()
+	defer dc.mux.Unlock()
+
+	length := len(part)
+	dc.RawProgress += length
+
+	dc.Part = append(dc.Part, part...)
+
+	for {
+		if dc.RawProgress == dc.SizeWithEncryption && len(dc.Part) == 0 {
+			return length, io.EOF
+		}
+
+		if dc.RawProgress != dc.SizeWithEncryption && len(dc.Part) < dc.ChunkSize {
+			return length, nil
+		}
+
+		if len(dc.Part) < dc.ChunkSize {
+			dc.ChunkSize = len(dc.Part)
+		}
+
+		chunk := dc.Part[:dc.ChunkSize]
+		dc.mux.Unlock()
+		data, err := DecryptWithNonceSize(dc.Key, chunk)
+		if err != nil {
+			return -1, err
+		}
+		dc.mux.Lock()
+
+		dc.Part = dc.Part[dc.ChunkSize:]
+		dc.Data = append(dc.Data, data...)
+	}
+}
+
+func (dc *DecryptProgress) Read(part []byte) (int, error) {
+	dc.mux.Lock()
+	defer dc.mux.Unlock()
+
+	if dc.ReadIndex == dc.Size {
+		return 0, io.EOF
+	}
+
+	lenToRead := len(part)
+	if lenToRead > len(dc.Data) {
+		lenToRead = len(dc.Data)
+	}
+
+	for i := 0; i < lenToRead; i++ {
+		part[i] = dc.Data[i]
+	}
+
+	dc.Data = dc.Data[lenToRead:]
+	dc.ReadIndex += lenToRead
+
+	return lenToRead, nil
 }
 
 type PrivateToPublicReq struct {
@@ -56,7 +174,15 @@ type PrivateToPublicReq struct {
 }
 
 type PrivateToPublicObj struct {
-	FileHandle string `form:"fileHandle" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a deterministically created file handle"`
+	FileHandle  string `form:"fileHandle" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a deterministically created file handle"`
+	Title       string `json:"title" binding:"required" minLength:"1" maxLength:"65535" example:"LoremIpsum"`
+	Description string `json:"description" binding:"required" minLength:"1" maxLength:"65535" example:"lorem ipsum"`
+}
+
+type PrivateToPublicResp struct {
+	S3URL          string `json:"s3_url"`
+	S3ThumbnailURL string `json:"s3_thumbnail_url"`
+	ShortID        string `json:"short_id"`
 }
 
 type FileMetadata struct {
@@ -109,44 +235,63 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 
 	fileMetadata, err := utils.GetDefaultBucketObject(models.GetFileMetadataKey(hash), false)
 	if err != nil {
-		return err
+		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 	decryptedMetadata, _ := DecryptMetadata(encryptionKey, []byte(fileMetadata))
 
-	fmt.Println(decryptedMetadata.P.PartSize)
-	fmt.Println(decryptedMetadata.P.BlockSize)
+	numberOfParts := ((decryptedMetadata.Size-1)/DefaultPartSize + 1)
+	sizeWithEncryption := decryptedMetadata.Size + BlockOverhead*((decryptedMetadata.Size-1)/DefaultBlockSize+1)
 
-	PublicShareDownloadFile(hash, encryptionKey, decryptedMetadata)
-	// ----------------------
-	// err = utils.SetDefaultBucketObject(models.GetFileDataPublicKey(fileID), string(decryptedFile))
-	// if err != nil {
-	// 	return err
-	// }
+	downloadProgress := &DownloadProgress{
+		SizeWithEncryption: sizeWithEncryption,
+		PartSize:           DefaultPartSize,
+	}
 
-	return nil
+	decryptProgress := &DecryptProgress{
+		Key:                encryptionKey,
+		Size:               decryptedMetadata.Size,
+		SizeWithEncryption: sizeWithEncryption,
+		ChunkSize:          DefaultBlockSize + BlockOverhead,
+	}
+
+	go DownloadProgressRun(downloadProgress, decryptProgress)
+	go ReadUploadPublicDecryptedFile(decryptProgress, decryptedMetadata, hash)
+
+	err = PublicShareDownloadFile(hash, encryptionKey, numberOfParts, sizeWithEncryption, decryptedMetadata, downloadProgress)
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	publicShare, err := models.CreatePublicShare(request.privateToPublicObj.Title, request.privateToPublicObj.Description, hash)
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	bucketURL := models.GetBucketUrl()
+
+	return OkResponse(c, PrivateToPublicResp{
+		S3URL:          bucketURL + models.GetFileDataPublicKey(hash),
+		S3ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(hash),
+		ShortID:        publicShare.PublicID,
+	})
 }
 
-func PublicShareDecrypt(key []byte, data []byte) (decryptedData []byte, err error) {
-	nonceSize := 16
-
+func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byte, err error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return
 	}
 
-	aesgcm, err := cipher.NewGCMWithNonceSize(block, nonceSize)
+	aesgcm, err := cipher.NewGCMWithNonceSize(block, NonceByteLength)
 	if err != nil {
 		return
 	}
 
-	byteData := []byte(data)
-	splitter := len(byteData) - nonceSize
-	nonce := byteData[splitter:]
-	cipherText := byteData[:splitter]
-	if err != nil {
-		return
-	}
+	encryptedByteData := []byte(encryptedData)
+	rawData := encryptedByteData[0 : len(encryptedByteData)-BlockOverhead]
+	tag := encryptedByteData[len(encryptedByteData)-BlockOverhead : len(encryptedByteData)-BlockOverhead+NonceByteLength]
+	nonce := encryptedByteData[len(encryptedByteData)-BlockOverhead+TagByteLength:]
 
+	cipherText := append(rawData, tag...)
 	decryptedData, err = aesgcm.Open(nil, nonce, cipherText, nil)
 	if err != nil {
 		return
@@ -156,11 +301,11 @@ func PublicShareDecrypt(key []byte, data []byte) (decryptedData []byte, err erro
 }
 
 func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
-	decryptedByteData, err := PublicShareDecrypt(key, data)
+	decryptedByteData, err := DecryptWithNonceSize(key, data)
 	if err != nil {
 		return
 	}
-	fmt.Println(string(decryptedByteData))
+
 	err = json.Unmarshal(decryptedByteData, &fileMetadata)
 	if err != nil {
 		return
@@ -169,54 +314,147 @@ func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err er
 	return
 }
 
-func PublicShareDownloadFile(hash string, key []byte, metadata FileMetadata) error {
-	file, err := utils.GetBucketObject(models.GetFileDataKey(hash), false)
+func PublicShareDownloadFile(hash string, key []byte, numberOfParts, sizeWithEncryption int, metadata FileMetadata, downloadProgress *DownloadProgress) error {
+	for i := 0; i < numberOfParts; i++ {
+		offset := i * DefaultPartSize
+		limit := offset + DefaultPartSize
 
-	blockSize := getBlockSize(metadata)
-	partSize := 80 * (blockSize + blockOverhead)
-	blockCount := partSize / (blockSize + blockOverhead)
-	if blockCount != math.Floor(blockCount) {
-		return fmt.Errorf("partSize must be a multiple of blockSize + blockOverhead")
-	}
+		downloadRange := "bytes=" + strconv.Itoa(offset) + "-" + strconv.Itoa(limit-1)
 
-	decryptedFile := *new([]byte)
-	if err != nil {
-		return err
-	}
-	defer file.Body.Close()
+		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(hash), downloadRange, false)
+		if err != nil {
+			return err
+		}
 
-	sizeBytes := 65568
+		for {
+			b := make([]byte, bytes.MinRead)
+			fileChunk, err := fileChunkObjOutput.Body.Read(b)
 
-	nBytes, nChunks := int64(0), int64(0)
-	buf := make([]byte, 0, sizeBytes)
-
-	for {
-		chunk, err := file.Body.Read(buf[:cap(buf)])
-		buf = buf[:chunk]
-		if chunk == 0 {
-			if err == nil {
-				continue
+			if err != nil && err != io.EOF {
+				return err
 			}
+
+			if fileChunk != 0 {
+				b = b[:fileChunk]
+				_, err := downloadProgress.Write(b)
+				if err != nil && err != io.EOF {
+					return err
+				}
+			}
+
 			if err == io.EOF {
 				break
 			}
-			log.Fatal(err)
-		}
-		nChunks++
-		nBytes += int64(len(buf))
-		if err != nil && err != io.EOF {
-			log.Fatal(err)
-		}
-		decryptedChunk, err := PublicShareDecrypt(key, buf)
-		decryptedFile = append(decryptedFile, decryptedChunk...)
-		if err != nil {
-			log.Fatal(err)
 		}
 	}
-	log.Println("Bytes:", nBytes, "Chunks:", nChunks)
-
-	// upload public file back
-	utils.SetDefaultBucketObject(models.GetFileDataPublicKey(hash), string(decryptedFile))
 
 	return nil
+}
+
+func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, metadata FileMetadata, hash string) error {
+	awsKey := models.GetFileDataPublicKey(hash)
+	_, uploadID, err := utils.CreateMultiPartUpload(awsKey)
+	if err != nil {
+		return err
+	}
+
+	var completedParts []*s3.CompletedPart
+	partNumber := 1
+	uploadPart := make([]byte, 0)
+	partForThumbnailBuf := make([]byte, 0)
+	for {
+		b := make([]byte, bytes.MinRead)
+
+		n, err := decryptProgress.Read(b)
+
+		if err != nil && err != io.EOF {
+			return err
+		}
+
+		if n != 0 {
+			b = b[:n]
+			uploadPart = append(uploadPart, b...)
+
+			if int64(len(uploadPart)) == utils.MinMultiPartSize {
+				completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, partNumber)
+				if uploadError != nil {
+					utils.AbortMultiPartUpload(awsKey, *uploadID)
+				}
+				completedParts = append(completedParts, completedPart)
+				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
+
+				partNumber++
+				uploadPart = make([]byte, 0)
+			}
+		}
+
+		if err == io.EOF {
+			completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, partNumber)
+			if uploadError != nil {
+				utils.AbortMultiPartUpload(awsKey, *uploadID)
+			}
+
+			partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
+			generatePublicShareThumbnail(hash, metadata.Type, partForThumbnailBuf)
+
+			completedParts = append(completedParts, completedPart)
+			break
+		}
+	}
+
+	if _, err = utils.CompleteMultiPartUpload(awsKey, *uploadID, completedParts); err != nil {
+		return err
+	}
+
+	return utils.SetDefaultObjectCannedAcl(awsKey, utils.CannedAcl_PublicRead)
+
+}
+
+func DownloadProgressRun(downloadProgress *DownloadProgress, decryptProgress *DecryptProgress) error {
+	for {
+		b := make([]byte, bytes.MinRead)
+
+		n, err := downloadProgress.Read(b)
+		if err != nil && err != io.EOF {
+			return err
+		}
+
+		if n != 0 {
+			b = b[:n]
+			_, err := decryptProgress.Write(b)
+			if err != nil && err != io.EOF {
+				return err
+			}
+		}
+
+		if err == io.EOF {
+			break
+		}
+	}
+
+	return nil
+}
+
+func generatePublicShareThumbnail(fileID string, mimeType string, imageBytes []byte) error {
+	thumbnailKey := models.GetPublicThumbnailKey(fileID)
+	_, extension := SplitMime(mimeType)
+	buf := bytes.NewBuffer(imageBytes)
+	image, err := imaging.Decode(buf)
+	if err != nil {
+		return err
+	}
+
+	thumbnailFormat, _ := imaging.FormatFromExtension(extension)
+	thumbnailImage := imaging.Thumbnail(image, 1200, 628, imaging.CatmullRom)
+	distThumbnailWriter := new(bytes.Buffer)
+	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, thumbnailFormat); err != nil {
+		return err
+	}
+
+	distThumbnailString := distThumbnailWriter.String()
+	if err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString); err != nil {
+		return err
+	}
+
+	return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)
 }
