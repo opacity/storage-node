@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
-	"github.com/teris-io/shortid"
 )
 
 /*File defines a model for managing a user subscription for uploads*/
@@ -282,23 +281,9 @@ func (file *File) FinishUploadPublic(title, description string) (PublicShare, er
 		return PublicShare{}, err
 	}
 
-	shortID, err := shortid.Generate()
+	publicShare, err := CreatePublicShare(title, description, file.FileID)
 	if err != nil {
-		return PublicShare{}, err
-	}
-	completedFile, err := GetCompletedFileByFileID(file.FileID)
-	if err != nil {
-		return PublicShare{}, err
-	}
-	publicShare := PublicShare{
-		PublicID:    shortID,
-		ViewsCount:  0,
-		Title:       title,
-		Description: description,
-		FileID:      completedFile.FileID,
-	}
-	if err := DB.Save(&publicShare).Error; err != nil {
-		return PublicShare{}, errors.New("could not save public share to database, possible duplicate")
+		return publicShare, err
 	}
 
 	if err := DeleteCompletedUploadIndexes(file.FileID); err != nil {
