@@ -21,8 +21,8 @@ type PublicShareObj struct {
 }
 
 type shortlinkFileResp struct {
-	URL          string `json:"url"`
-	ThumbnailURL string `json:"thumbnailUrl"`
+	S3URL          string `json:"s3_url"`
+	S3ThumbnailURL string `json:"s3_thumbnail_url"`
 }
 
 type viewsCountResp struct {
@@ -104,8 +104,8 @@ func shortlinkURL(c *gin.Context) error {
 	}
 	bucketURL := models.GetBucketUrl()
 	return OkResponse(c, shortlinkFileResp{
-		URL:          bucketURL + fileDataPublicKey,
-		ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(publicShare.FileID),
+		S3URL:          bucketURL + fileDataPublicKey,
+		S3ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(publicShare.FileID),
 	})
 }
 
