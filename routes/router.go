@@ -61,6 +61,9 @@ const (
 	/*AccountRenewPath is the path for checking the renew status of an account*/
 	AccountRenewPath = "/renew"
 
+	/*AccountUpdateApiVersion is the path for updating the API version to v2 */
+	AccountUpdateApiVersion = "/account/updateApiVersion"
+
 	/*AdminPath is a router group for admin task. */
 	AdminPath = "/admin"
 
@@ -214,6 +217,8 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	v2Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())
 	v2Router.POST(UploadPublicPath, UploadFilePublicHandler())
 	v2Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
+
+	v2Router.POST(AccountUpdateApiVersion, AccountUpdateApiVersionHandler())
 
 	publicShareRouterGroup := v2Router.Group(PublicSharePathPrefix)
 	publicShareRouterGroup.GET(PublicShareShortlinkPath, ShortlinkFileHandler())
