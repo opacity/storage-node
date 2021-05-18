@@ -14,7 +14,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/disintegration/imaging"
 	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
@@ -168,12 +167,6 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 	return lenToRead, nil
 }
 
-type PrivateToPublicReq struct {
-	verification
-	requestBody
-	privateToPublicObj PrivateToPublicObj
-}
-
 type CreateShortlinkReq struct {
 	verification
 	requestBody
@@ -184,19 +177,9 @@ type PrivateToPublicObj struct {
 	FileHandle string `json:"fileHandle" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a deterministically created file handle"`
 }
 
-type CreateShortlinkObj struct {
-	FileID      string `json:"file_id" binding:"required,len=64" minLength:"64" maxLength:"64" example:"the id of the file"`
-	Title       string `json:"title" binding:"required" minLength:"1" maxLength:"65535" example:"LoremIpsum"`
-	Description string `json:"description" binding:"required" minLength:"1" maxLength:"65535" example:"lorem ipsum"`
-}
-
 type PrivateToPublicResp struct {
 	S3URL          string `json:"s3_url"`
 	S3ThumbnailURL string `json:"s3_thumbnail_url"`
-}
-
-type CreateShortlinkResp struct {
-	ShortID string `json:"short_id"`
 }
 
 type FileMetadata struct {
@@ -235,28 +218,6 @@ func (v *CreateShortlinkReq) getObjectRef() interface{} {
 /*PrivateToPublicConvertHandler is a handler for the user to convert an existing private file to a public share on*/
 func PrivateToPublicConvertHandler() gin.HandlerFunc {
 	return ginHandlerFunc(privateToPublicConvertWithContext)
-}
-
-// CreateShortlinkHandler godoc
-// @Summary creates a shortlink
-// @Description this endpoint will created a new shortlink based on the fileHandle, a title and a description
-// @Accept json
-// @Produce json
-// @Param CreateShortlinkReq body routes.CreateShortlinkReq true "an object to create a shortlink for a public shared file"
-// @description requestBody should be a stringified version of:
-// @description {
-// @description 	"fileId": "the ID of the file",
-// @description 	"title": "the title of the file",
-// @description 	"description": "a description of the file",
-// @description }
-// @Success 200 {object} routes.CreateShortlinkResp
-// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
-// @Failure 403 {string} string "signature did not match"
-// @Failure 404 {string} string "the data does not exist"
-// @Router /api/v2/public-share/shortlink [post]
-/*CreateShortlinkHandler is a handler to create a shortlink for a public shared file*/
-func CreateShortlinkHandler() gin.HandlerFunc {
-	return ginHandlerFunc(createShortLinkWithContext)
 }
 
 func privateToPublicConvertWithContext(c *gin.Context) error {
@@ -307,26 +268,6 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	return OkResponse(c, PrivateToPublicResp{
 		S3URL:          bucketURL + models.GetFileDataPublicKey(hash),
 		S3ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(hash),
-	})
-}
-
-func createShortLinkWithContext(c *gin.Context) error {
-	request := CreateShortlinkReq{}
-
-	if err := verifyAndParseBodyRequest(&request, c); err != nil {
-		return err
-	}
-
-	publicShare, err := models.CreatePublicShare(request.createShortlinkObj.Title, request.createShortlinkObj.Description, request.createShortlinkObj.FileID)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return NotFoundResponse(c, errors.New("the data does not exist"))
-		}
-		return InternalErrorResponse(c, err)
-	}
-
-	return OkResponse(c, CreateShortlinkResp{
-		ShortID: publicShare.PublicID,
 	})
 }
 
