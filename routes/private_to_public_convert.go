@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
 	"strconv"
 	"sync"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -25,6 +27,16 @@ const (
 	BlockOverhead    = TagByteLength + NonceByteLength
 	DefaultPartSize  = 80 * (DefaultBlockSize + BlockOverhead)
 )
+
+func getAcceptedMimeTypesThumbnail() []string {
+	return []string{
+		"image/jpeg",
+		"image/png",
+		"image/gif",
+		"image/tiff",
+		"image/bmp",
+	}
+}
 
 type DownloadProgress struct {
 	RawProgress        int
@@ -255,20 +267,36 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 		ChunkSize:          DefaultBlockSize + BlockOverhead,
 	}
 
+	var g errgroup.Group
+
 	go DownloadProgressRun(downloadProgress, decryptProgress)
-	go ReadUploadPublicDecryptedFile(decryptProgress, decryptedMetadata, hash)
+
+	generateThumbnailC := make(chan bool, 1)
+	g.Go(func() error {
+		return ReadUploadPublicDecryptedFile(decryptProgress, decryptedMetadata, hash, generateThumbnailC)
+	})
 
 	err = PublicShareDownloadFile(hash, encryptionKey, numberOfParts, sizeWithEncryption, decryptedMetadata, downloadProgress)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
+	if err := g.Wait(); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	thumbnailGenerated := <-generateThumbnailC
 	bucketURL := models.GetBucketUrl()
 
-	return OkResponse(c, PrivateToPublicResp{
+	privateToPublicResp := PrivateToPublicResp{
 		S3URL:          bucketURL + models.GetFileDataPublicKey(hash),
 		S3ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(hash),
-	})
+	}
+
+	if !thumbnailGenerated {
+		privateToPublicResp.S3ThumbnailURL = bucketURL + "thumbnail_default.png"
+	}
+
+	return OkResponse(c, privateToPublicResp)
 }
 
 func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byte, err error) {
@@ -347,60 +375,79 @@ func PublicShareDownloadFile(hash string, key []byte, numberOfParts, sizeWithEnc
 	return nil
 }
 
-func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, metadata FileMetadata, hash string) error {
+func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, metadata FileMetadata, hash string, generateThumbnailC chan bool) (err error) {
+	defer close(generateThumbnailC)
+
 	awsKey := models.GetFileDataPublicKey(hash)
 	_, uploadID, err := utils.CreateMultiPartUpload(awsKey)
 	if err != nil {
-		return err
+		return
 	}
 
 	var completedParts []*s3.CompletedPart
-	partNumber := 1
+	uploadPartNumber := 1
 	uploadPart := make([]byte, 0)
+
+	generateThumbnail, firstRun := true, true
 	partForThumbnailBuf := make([]byte, 0)
+	fileContentType := ""
+	aceptedMimeTypesThumbnail := getAcceptedMimeTypesThumbnail()
+
 	for {
 		b := make([]byte, bytes.MinRead)
-
-		n, err := decryptProgress.Read(b)
+		n := 0
+		n, err = decryptProgress.Read(b)
 
 		if err != nil && err != io.EOF {
-			return err
+			return
 		}
 
 		if n != 0 {
 			b = b[:n]
+			if generateThumbnail && firstRun {
+				fileContentType = http.DetectContentType(b)
+				if !mimeTypeContains(aceptedMimeTypesThumbnail, fileContentType) {
+					generateThumbnail = false
+				}
+				firstRun = false
+			}
 			uploadPart = append(uploadPart, b...)
 
 			if int64(len(uploadPart)) == utils.MinMultiPartSize {
-				completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, partNumber)
+				completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber)
 				if uploadError != nil {
 					utils.AbortMultiPartUpload(awsKey, *uploadID)
 				}
 				completedParts = append(completedParts, completedPart)
-				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
 
-				partNumber++
+				if generateThumbnail {
+					partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
+				}
+
+				uploadPartNumber++
 				uploadPart = make([]byte, 0)
 			}
 		}
 
 		if err == io.EOF {
-			completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, partNumber)
+			completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber)
 			if uploadError != nil {
 				utils.AbortMultiPartUpload(awsKey, *uploadID)
 			}
 
-			partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
-			generatePublicShareThumbnail(hash, metadata.Type, partForThumbnailBuf)
-
+			if generateThumbnail {
+				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
+				generatePublicShareThumbnail(hash, fileContentType, partForThumbnailBuf)
+			}
 			completedParts = append(completedParts, completedPart)
 			break
 		}
 	}
 
 	if _, err = utils.CompleteMultiPartUpload(awsKey, *uploadID, completedParts); err != nil {
-		return err
+		return
 	}
+	generateThumbnailC <- generateThumbnail
 
 	return utils.SetDefaultObjectCannedAcl(awsKey, utils.CannedAcl_PublicRead)
 
@@ -453,4 +500,13 @@ func generatePublicShareThumbnail(fileID string, mimeType string, imageBytes []b
 	}
 
 	return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)
+}
+
+func mimeTypeContains(mimeTypes []string, mimeType string) bool {
+	for _, t := range mimeTypes {
+		if t == mimeType {
+			return true
+		}
+	}
+	return false
 }
