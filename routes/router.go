@@ -103,6 +103,9 @@ const (
 	/*PrivateToPublicConvertPath is the path for converting a private file to a public shared one*/
 	PrivateToPublicConvertPath = "/convert"
 
+	/*CreateShortLinkPath is the path for creating a shortlink of a public shared file */
+	CreateShortLinkPath = "/shortlink"
+
 	/*PublicShareShortlinkPath is the path for getting the shortlink of a public shared files*/
 	PublicShareShortlinkPath = "/:shortlink"
 
@@ -221,6 +224,7 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	publicShareRouterGroup := v2Router.Group(PublicSharePathPrefix)
 	publicShareRouterGroup.GET(PublicShareShortlinkPath, ShortlinkFileHandler())
 	publicShareRouterGroup.POST(PrivateToPublicConvertPath, PrivateToPublicConvertHandler())
+	publicShareRouterGroup.POST(CreateShortLinkPath, CreateShortlinkHandler())
 	publicShareRouterGroup.POST(PublicShareViewsCountPath, ViewsCountHandler())
 	publicShareRouterGroup.POST(PublicShareRevokePath, RevokePublicShareHandler())
 }
