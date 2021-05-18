@@ -847,6 +847,49 @@
                 }
             }
         },
+        "/api/v2/account/updateApiVersion": {
+            "post": {
+                "description": "update the account api version to v2\nrequestBody should be a stringified version of (values are just examples):\n{\n\"timestamp\": 1659325302\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "update the account api version to v2",
+                "parameters": [
+                    {
+                        "description": "account object",
+                        "name": "getAccountDataReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.getAccountDataReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/init-upload-public": {
             "post": {
                 "description": "start a public upload.\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"the file ID for which the public file should be created\",\n\"fileSizeInByte\": \"55600008877\",\n\"endIndex\": 2\n}",
@@ -950,11 +993,11 @@
                 "parameters": [
                     {
                         "description": "an object to do operations on a public share",
-                        "name": "publicShareOpsReq",
+                        "name": "PublicShareOpsReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.publicShareOpsReq"
+                            "$ref": "#/definitions/routes.PublicShareOpsReq"
                         }
                     }
                 ],
@@ -1005,11 +1048,11 @@
                 "parameters": [
                     {
                         "description": "an object to do operations on a public share",
-                        "name": "publicShareOpsReq",
+                        "name": "PublicShareOpsReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.publicShareOpsReq"
+                            "$ref": "#/definitions/routes.PublicShareOpsReq"
                         }
                     }
                 ],
@@ -1249,6 +1292,49 @@
                 "plans": {
                     "type": "object",
                     "$ref": "#/definitions/utils.PlanResponseType"
+                }
+            }
+        },
+        "routes.PublicShareObj": {
+            "type": "object",
+            "required": [
+                "shortlink"
+            ],
+            "properties": {
+                "shortlink": {
+                    "type": "string",
+                    "example": "the short link of the completed file"
+                }
+            }
+        },
+        "routes.PublicShareOpsReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "publicShareObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.PublicShareObj"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
                 }
             }
         },
@@ -2026,49 +2112,6 @@
                     "maxLength": 66,
                     "minLength": 66,
                     "example": "a 66-character public key"
-                },
-                "requestBody": {
-                    "type": "string",
-                    "example": "look at description for example"
-                },
-                "signature": {
-                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 128,
-                    "example": "a 128 character string created when you signed the request with your private key or account handle"
-                }
-            }
-        },
-        "routes.publicShareObj": {
-            "type": "object",
-            "required": [
-                "shortlink"
-            ],
-            "properties": {
-                "shortlink": {
-                    "type": "string",
-                    "example": "the short link of the completed file"
-                }
-            }
-        },
-        "routes.publicShareOpsReq": {
-            "type": "object",
-            "required": [
-                "publicKey",
-                "requestBody",
-                "signature"
-            ],
-            "properties": {
-                "publicKey": {
-                    "type": "string",
-                    "maxLength": 66,
-                    "minLength": 66,
-                    "example": "a 66-character public key"
-                },
-                "publicShareObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.publicShareObj"
                 },
                 "requestBody": {
                     "type": "string",

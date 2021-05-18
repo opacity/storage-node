@@ -71,6 +71,42 @@ definitions:
         $ref: '#/definitions/utils.PlanResponseType'
         type: object
     type: object
+  routes.PublicShareObj:
+    properties:
+      shortlink:
+        example: the short link of the completed file
+        type: string
+    required:
+    - shortlink
+    type: object
+  routes.PublicShareOpsReq:
+    properties:
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      publicShareObj:
+        $ref: '#/definitions/routes.PublicShareObj'
+        type: object
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.StatusRes:
     properties:
       status:
@@ -678,42 +714,6 @@ definitions:
         maxLength: 66
         minLength: 66
         type: string
-      requestBody:
-        example: look at description for example
-        type: string
-      signature:
-        description: |-
-          signature without 0x prefix is broken into
-          R: sig[0:63]
-          S: sig[64:127]
-        example: a 128 character string created when you signed the request with your
-          private key or account handle
-        maxLength: 128
-        minLength: 128
-        type: string
-    required:
-    - publicKey
-    - requestBody
-    - signature
-    type: object
-  routes.publicShareObj:
-    properties:
-      shortlink:
-        example: the short link of the completed file
-        type: string
-    required:
-    - shortlink
-    type: object
-  routes.publicShareOpsReq:
-    properties:
-      publicKey:
-        example: a 66-character public key
-        maxLength: 66
-        minLength: 66
-        type: string
-      publicShareObj:
-        $ref: '#/definitions/routes.publicShareObj'
-        type: object
       requestBody:
         example: look at description for example
         type: string
@@ -1505,6 +1505,39 @@ paths:
           schema:
             type: string
       summary: check status of an upload
+  /api/v2/account/updateApiVersion:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        update the account api version to v2
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "timestamp": 1659325302
+        }
+      parameters:
+      - description: account object
+        in: body
+        name: getAccountDataReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.getAccountDataReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+      summary: update the account api version to v2
   /api/v2/init-upload-public:
     post:
       consumes:
@@ -1584,10 +1617,10 @@ paths:
       parameters:
       - description: an object to do operations on a public share
         in: body
-        name: publicShareOpsReq
+        name: PublicShareOpsReq
         required: true
         schema:
-          $ref: '#/definitions/routes.publicShareOpsReq'
+          $ref: '#/definitions/routes.PublicShareOpsReq'
       produces:
       - application/json
       responses:
@@ -1625,10 +1658,10 @@ paths:
       parameters:
       - description: an object to do operations on a public share
         in: body
-        name: publicShareOpsReq
+        name: PublicShareOpsReq
         required: true
         schema:
-          $ref: '#/definitions/routes.publicShareOpsReq'
+          $ref: '#/definitions/routes.PublicShareOpsReq'
       produces:
       - application/json
       responses:
