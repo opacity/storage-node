@@ -847,6 +847,49 @@
                 }
             }
         },
+        "/api/v2/account/updateApiVersion": {
+            "post": {
+                "description": "update the account api version to v2\nrequestBody should be a stringified version of (values are just examples):\n{\n\"timestamp\": 1659325302\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "update the account api version to v2",
+                "parameters": [
+                    {
+                        "description": "account object",
+                        "name": "getAccountDataReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.getAccountDataReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/init-upload-public": {
             "post": {
                 "description": "start a public upload.\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"the file ID for which the public file should be created\",\n\"fileSizeInByte\": \"55600008877\",\n\"endIndex\": 2\n}",

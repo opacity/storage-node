@@ -1607,6 +1607,39 @@ paths:
           schema:
             type: string
       summary: check status of an upload
+  /api/v2/account/updateApiVersion:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        update the account api version to v2
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "timestamp": 1659325302
+        }
+      parameters:
+      - description: account object
+        in: body
+        name: getAccountDataReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.getAccountDataReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+      summary: update the account api version to v2
   /api/v2/init-upload-public:
     post:
       consumes:
