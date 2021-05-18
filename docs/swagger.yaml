@@ -12,6 +12,61 @@ definitions:
     required:
     - ethAddress
     type: object
+  routes.CreateShortlinkObj:
+    properties:
+      description:
+        example: lorem ipsum
+        maxLength: 65535
+        minLength: 1
+        type: string
+      file_id:
+        example: the id of the file
+        maxLength: 64
+        minLength: 64
+        type: string
+      title:
+        example: LoremIpsum
+        maxLength: 65535
+        minLength: 1
+        type: string
+    required:
+    - description
+    - file_id
+    - title
+    type: object
+  routes.CreateShortlinkReq:
+    properties:
+      createShortlinkObj:
+        $ref: '#/definitions/routes.CreateShortlinkObj'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
+  routes.CreateShortlinkResp:
+    properties:
+      short_id:
+        type: string
+    type: object
   routes.InitFileUploadObj:
     properties:
       endIndex:
@@ -70,6 +125,51 @@ definitions:
       plans:
         $ref: '#/definitions/utils.PlanResponseType'
         type: object
+    type: object
+  routes.PrivateToPublicObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - fileHandle
+    type: object
+  routes.PrivateToPublicReq:
+    properties:
+      privateToPublicObj:
+        $ref: '#/definitions/routes.PrivateToPublicObj'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
+  routes.PrivateToPublicResp:
+    properties:
+      s3_thumbnail_url:
+        type: string
+      s3_url:
+        type: string
     type: object
   routes.PublicShareObj:
     properties:
@@ -734,7 +834,9 @@ definitions:
     type: object
   routes.shortlinkFileResp:
     properties:
-      url:
+      s3_thumbnail_url:
+        type: string
+      s3_url:
         type: string
     type: object
   routes.stripeDataObj:
@@ -1604,6 +1706,44 @@ paths:
           schema:
             type: string
       summary: get S3 url for a publicly shared file
+  /api/v2/public-share/convert:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        convert private file to a public shared one
+        requestBody should be a stringified version of:
+        {
+        "fileHandle": "a deterministically created file handle",
+        }
+      parameters:
+      - description: an object to do the conversion of a private file to a public
+          one
+        in: body
+        name: PrivateToPublicReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.PrivateToPublicReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.PrivateToPublicResp'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: the data does not exist
+          schema:
+            type: string
+      summary: convert private file to a public shared one
   /api/v2/public-share/revoke:
     post:
       consumes:
@@ -1645,6 +1785,45 @@ paths:
           schema:
             type: string
       summary: revokes public share
+  /api/v2/public-share/shortlink:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        this endpoint will created a new shortlink based on the fileHandle, a title and a description
+        requestBody should be a stringified version of:
+        {
+        "fileId": "the ID of the file",
+        "title": "the title of the file",
+        "description": "a description of the file",
+        }
+      parameters:
+      - description: an object to create a shortlink for a public shared file
+        in: body
+        name: CreateShortlinkReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.CreateShortlinkReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.CreateShortlinkResp'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: the data does not exist
+          schema:
+            type: string
+      summary: creates a shortlink
   /api/v2/public-share/views-count:
     post:
       consumes:
@@ -1730,10 +1909,14 @@ paths:
       consumes:
       - application/json
       description: |-
-        check status of a public upload
+        check status of a public upload and creates a thumbnail in case the file is an image. If the mimeType is send, the API will not create the thumbnail
+        "jpg" (or "jpeg"), "png", "gif", "tif" (or "tiff") and "bmp" are supported
         requestBody should be a stringified version of (values are just examples):
         {
         "fileHandle": "a deterministically created file handle",
+        "mimeType": "the mime type of the file",
+        "title": "file title",
+        "description": "a description to be used as metatags value"
         }
       produces:
       - application/json

@@ -94,9 +94,11 @@ func CreateTestPublicShare(t *testing.T) PublicShare {
 func CreatePublicShareObj() PublicShare {
 	shortID, _ := shortid.Generate()
 	return PublicShare{
-		PublicID:   shortID,
-		ViewsCount: 0,
-		FileID:     utils.GenerateFileHandle(),
+		PublicID:    shortID,
+		ViewsCount:  0,
+		Title:       "LoremTitle",
+		Description: "Sed felis eget velit aliquet sagittis id consectetur purus ut. Sed libero enim sed faucibus turpis. Leo urna molestie at elementum. Sed egestas egestas fringilla phasellus faucibus.",
+		FileID:      utils.GenerateFileHandle(),
 	}
 }
 

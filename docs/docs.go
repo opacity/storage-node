@@ -998,6 +998,55 @@ var doc = `{
                 }
             }
         },
+        "/api/v2/public-share/convert": {
+            "post": {
+                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "convert private file to a public shared one",
+                "parameters": [
+                    {
+                        "description": "an object to do the conversion of a private file to a public one",
+                        "name": "PrivateToPublicReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.PrivateToPublicReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.PrivateToPublicResp"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "the data does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/public-share/revoke": {
             "post": {
                 "description": "remove a public share entry, revoke the share\nrequestBody should be a stringified version of):\n{\n\"shortlink\": \"the shortlink of the completed file\",\n}",
@@ -1046,6 +1095,55 @@ var doc = `{
                     },
                     "500": {
                         "description": "public file could not be deleted from databse or S3",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/public-share/shortlink": {
+            "post": {
+                "description": "this endpoint will created a new shortlink based on the fileHandle, a title and a description\nrequestBody should be a stringified version of:\n{\n\"fileId\": \"the ID of the file\",\n\"title\": \"the title of the file\",\n\"description\": \"a description of the file\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "creates a shortlink",
+                "parameters": [
+                    {
+                        "description": "an object to create a shortlink for a public shared file",
+                        "name": "CreateShortlinkReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.CreateShortlinkReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.CreateShortlinkResp"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "the data does not exist",
                         "schema": {
                             "type": "string"
                         }
@@ -1159,7 +1257,7 @@ var doc = `{
         },
         "/api/v2/upload-status-public": {
             "post": {
-                "description": "check status of a public upload\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "description": "check status of a public upload and creates a thumbnail in case the file is an image. If the mimeType is send, the API will not create the thumbnail\n\"jpg\" (or \"jpeg\"), \"png\", \"gif\", \"tif\" (or \"tiff\") and \"bmp\" are supported\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"mimeType\": \"the mime type of the file\",\n\"title\": \"file title\",\n\"description\": \"a description to be used as metatags value\"\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -1241,6 +1339,73 @@ var doc = `{
                 }
             }
         },
+        "routes.CreateShortlinkObj": {
+            "type": "object",
+            "required": [
+                "description",
+                "file_id",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 65535,
+                    "minLength": 1,
+                    "example": "lorem ipsum"
+                },
+                "file_id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "the id of the file"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 65535,
+                    "minLength": 1,
+                    "example": "LoremIpsum"
+                }
+            }
+        },
+        "routes.CreateShortlinkReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "createShortlinkObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.CreateShortlinkObj"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.CreateShortlinkResp": {
+            "type": "object",
+            "properties": {
+                "short_id": {
+                    "type": "string"
+                }
+            }
+        },
         "routes.InitFileUploadObj": {
             "type": "object",
             "required": [
@@ -1310,6 +1475,62 @@ var doc = `{
                 "plans": {
                     "type": "object",
                     "$ref": "#/definitions/utils.PlanResponseType"
+                }
+            }
+        },
+        "routes.PrivateToPublicObj": {
+            "type": "object",
+            "required": [
+                "fileHandle"
+            ],
+            "properties": {
+                "fileHandle": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a deterministically created file handle"
+                }
+            }
+        },
+        "routes.PrivateToPublicReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "privateToPublicObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.PrivateToPublicObj"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.PrivateToPublicResp": {
+            "type": "object",
+            "properties": {
+                "s3_thumbnail_url": {
+                    "type": "string"
+                },
+                "s3_url": {
+                    "type": "string"
                 }
             }
         },
@@ -2147,7 +2368,10 @@ var doc = `{
         "routes.shortlinkFileResp": {
             "type": "object",
             "properties": {
-                "url": {
+                "s3_thumbnail_url": {
+                    "type": "string"
+                },
+                "s3_url": {
                     "type": "string"
                 }
             }
