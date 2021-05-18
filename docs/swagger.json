@@ -962,7 +962,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.shortlinkFileResp"
+                            "$ref": "#/definitions/routes.PrivateToPublicResp"
                         }
                     },
                     "400": {
@@ -1034,6 +1034,55 @@
                     },
                     "500": {
                         "description": "public file could not be deleted from databse or S3",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/public-share/shortlink": {
+            "post": {
+                "description": "this endpoint will created a new shortlink based on the fileHandle, a title and a description\nrequestBody should be a stringified version of:\n{\n\"fileId\": \"the ID of the file\",\n\"title\": \"the title of the file\",\n\"description\": \"a description of the file\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "creates a shortlink",
+                "parameters": [
+                    {
+                        "description": "an object to create a shortlink for a public shared file",
+                        "name": "CreateShortlinkReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.CreateShortlinkReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.CreateShortlinkResp"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "the data does not exist",
                         "schema": {
                             "type": "string"
                         }
@@ -1229,6 +1278,73 @@
                 }
             }
         },
+        "routes.CreateShortlinkObj": {
+            "type": "object",
+            "required": [
+                "description",
+                "file_id",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 65535,
+                    "minLength": 1,
+                    "example": "lorem ipsum"
+                },
+                "file_id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "the id of the file"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 65535,
+                    "minLength": 1,
+                    "example": "LoremIpsum"
+                }
+            }
+        },
+        "routes.CreateShortlinkReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "createShortlinkObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.CreateShortlinkObj"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.CreateShortlinkResp": {
+            "type": "object",
+            "properties": {
+                "short_id": {
+                    "type": "string"
+                }
+            }
+        },
         "routes.InitFileUploadObj": {
             "type": "object",
             "required": [
@@ -1304,28 +1420,14 @@
         "routes.PrivateToPublicObj": {
             "type": "object",
             "required": [
-                "description",
-                "fileHandle",
-                "title"
+                "fileHandle"
             ],
             "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 65535,
-                    "minLength": 1,
-                    "example": "lorem ipsum"
-                },
                 "fileHandle": {
                     "type": "string",
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a deterministically created file handle"
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 65535,
-                    "minLength": 1,
-                    "example": "LoremIpsum"
                 }
             }
         },
@@ -1357,6 +1459,17 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.PrivateToPublicResp": {
+            "type": "object",
+            "properties": {
+                "s3_thumbnail_url": {
+                    "type": "string"
+                },
+                "s3_url": {
+                    "type": "string"
                 }
             }
         },
@@ -2194,10 +2307,10 @@
         "routes.shortlinkFileResp": {
             "type": "object",
             "properties": {
-                "thumbnailUrl": {
+                "s3_thumbnail_url": {
                     "type": "string"
                 },
-                "url": {
+                "s3_url": {
                     "type": "string"
                 }
             }
