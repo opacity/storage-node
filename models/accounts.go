@@ -9,10 +9,11 @@ import (
 
 	"encoding/hex"
 
+	"math"
+
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"math"
 )
 
 const (
@@ -35,7 +36,7 @@ type Account struct {
 	EthAddress               string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	EthPrivateKey            string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
 	PaymentStatus            PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
-	ApiVersion               int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
+	ApiVersion               int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:2"`
 	TotalFolders             int               `json:"totalFolders" binding:"omitempty,gte=0" gorm:"default:0"`
 	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
 	PaymentMethod            PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
