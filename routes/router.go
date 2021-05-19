@@ -58,6 +58,9 @@ const (
 	/*AccountRenewPath is the path for checking the renew status of an account*/
 	AccountRenewPath = "/renew"
 
+	/*AccountUpdateApiVersion is the path for updating the API version to v2 */
+	AccountUpdateApiVersion = "/account/updateApiVersion"
+
 	/*AdminPath is a router group for admin task. */
 	AdminPath = "/admin"
 
@@ -134,6 +137,12 @@ const (
 
 	/*PublicSharePathPrefix is the base path public shared files*/
 	PublicSharePathPrefix = "public-share"
+
+	/*PrivateToPublicConvertPath is the path for converting a private file to a public shared one*/
+	PrivateToPublicConvertPath = "/convert"
+
+	/*CreateShortLinkPath is the path for creating a shortlink of a public shared file */
+	CreateShortLinkPath = "/shortlink"
 
 	/*PublicShareShortlinkPath is the path for getting the shortlink of a public shared files*/
 	PublicShareShortlinkPath = "/:shortlink"
@@ -252,8 +261,12 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	v2Router.POST(UploadPublicPath, UploadFilePublicHandler())
 	v2Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
 
+	v2Router.POST(AccountUpdateApiVersion, AccountUpdateApiVersionHandler())
+
 	publicShareRouterGroup := v2Router.Group(PublicSharePathPrefix)
 	publicShareRouterGroup.GET(PublicShareShortlinkPath, ShortlinkFileHandler())
+	publicShareRouterGroup.POST(PrivateToPublicConvertPath, PrivateToPublicConvertHandler())
+	publicShareRouterGroup.POST(CreateShortLinkPath, CreateShortlinkHandler())
 	publicShareRouterGroup.POST(PublicShareViewsCountPath, ViewsCountHandler())
 	publicShareRouterGroup.POST(PublicShareRevokePath, RevokePublicShareHandler())
 }

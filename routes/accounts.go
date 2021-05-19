@@ -70,12 +70,26 @@ type getAccountDataReq struct {
 	accountGetReqObj accountGetReqObj
 }
 
+type accountUpdateApiVersionObj struct {
+	AccountID string `json:"account_id" binding:"required"`
+}
+
+type accountUpdateApiVersionReq struct {
+	verification
+	requestBody
+	accountUpdateApiVersionObj accountUpdateApiVersionObj
+}
+
 func (v *accountCreateReq) getObjectRef() interface{} {
 	return &v.accountCreateObj
 }
 
 func (v *getAccountDataReq) getObjectRef() interface{} {
 	return &v.accountGetReqObj
+}
+
+func (v *accountUpdateApiVersionReq) getObjectRef() interface{} {
+	return &v.accountUpdateApiVersionObj
 }
 
 // CreateAccountHandler godoc
@@ -116,6 +130,46 @@ func CreateAccountHandler() gin.HandlerFunc {
 /*CheckAccountPaymentStatusHandler is a handler for requests checking the payment status*/
 func CheckAccountPaymentStatusHandler() gin.HandlerFunc {
 	return ginHandlerFunc(checkAccountPaymentStatus)
+}
+
+// AccountUpdateApiVersionHandler godoc
+// @Summary update the account api version to v2
+// @Description update the account api version to v2
+// @Accept json
+// @Produce json
+// @Param getAccountDataReq body routes.getAccountDataReq true "account object"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"timestamp": 1659325302
+// @description }
+// @Success 200 {object} routes.StatusRes
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 404 {string} string "no account with that id: (with your accountID)"
+// @Router /api/v2/account/updateApiVersion [post]
+/*AccountUpdateApiVersionHandler is a handler for requests updating the account api version to v2*/
+func AccountUpdateApiVersionHandler() gin.HandlerFunc {
+	return ginHandlerFunc(accountUpdateApiVersionWithContext)
+}
+
+func accountUpdateApiVersionWithContext(c *gin.Context) error {
+	request := getAccountDataReq{}
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
+	}
+
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+	account.ApiVersion = 2
+
+	if err := models.DB.Save(&account).Error; err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	return OkResponse(c, StatusRes{
+		Status: "account apiVersion updated to v2",
+	})
 }
 
 func createAccount(c *gin.Context) error {

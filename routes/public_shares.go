@@ -2,25 +2,46 @@ package routes
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
 
+// PublicShareOpsReq...
 type PublicShareOpsReq struct {
 	verification
 	requestBody
 	publicShareObj PublicShareObj
 }
 
+// PrivateToPublicReq...
+type PrivateToPublicReq struct {
+	verification
+	requestBody
+	privateToPublicObj PrivateToPublicObj
+}
+
+// PublicShareObj...
 type PublicShareObj struct {
 	Shortlink string `json:"shortlink" validate:"required" example:"the short link of the completed file"`
 }
 
-type shortlinkFileResp struct {
-	URL string `json:"url"`
+// CreateShortlinkObj...
+type CreateShortlinkObj struct {
+	FileID      string `json:"file_id" binding:"required,len=64" minLength:"64" maxLength:"64" example:"the id of the file"`
+	Title       string `json:"title" binding:"required" minLength:"1" maxLength:"65535" example:"LoremIpsum"`
+	Description string `json:"description" binding:"required" minLength:"1" maxLength:"65535" example:"lorem ipsum"`
+}
+
+type ShortlinkFileResp struct {
+	S3URL          string `json:"s3_url"`
+	S3ThumbnailURL string `json:"s3_thumbnail_url"`
+}
+
+type CreateShortlinkResp struct {
+	ShortID string `json:"short_id"`
 }
 
 type viewsCountResp struct {
@@ -29,6 +50,28 @@ type viewsCountResp struct {
 
 func (v *PublicShareOpsReq) getObjectRef() interface{} {
 	return &v.publicShareObj
+}
+
+// CreateShortlinkHandler godoc
+// @Summary creates a shortlink
+// @Description this endpoint will created a new shortlink based on the fileHandle, a title and a description
+// @Accept json
+// @Produce json
+// @Param CreateShortlinkReq body routes.CreateShortlinkReq true "an object to create a shortlink for a public shared file"
+// @description requestBody should be a stringified version of:
+// @description {
+// @description 	"fileId": "the ID of the file",
+// @description 	"title": "the title of the file",
+// @description 	"description": "a description of the file",
+// @description }
+// @Success 200 {object} routes.CreateShortlinkResp
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 403 {string} string "signature did not match"
+// @Failure 404 {string} string "the data does not exist"
+// @Router /api/v2/public-share/shortlink [post]
+/*CreateShortlinkHandler is a handler to create a shortlink for a public shared file*/
+func CreateShortlinkHandler() gin.HandlerFunc {
+	return ginHandlerFunc(createShortLinkWithContext)
 }
 
 // ShortlinkFileHandler godoc
@@ -49,13 +92,13 @@ func ShortlinkFileHandler() gin.HandlerFunc {
 // ViewsCountHandler godoc
 // @Summary get views count
 // @Description get the views count for a publicly shared file
-// @Accept json
-// @Produce json
+// @Accept  json
+// @Produce  json
+// @Param PublicShareOpsReq body routes.PublicShareOpsReq true "an object to do operations on a public share"
 // @description requestBody should be a stringified version of:
 // @description {
 // @description 	"shortlink": "the shortlink of the completed file",
 // @description }
-// @Param publicShareOpsReq body publicShareOpsReq true "an object to do operations on a public share"
 // @Success 200 {object} routes.viewsCountResp
 // @Failure 400 {string} string "bad request, unable to get views count"
 // @Failure 403 {string} string "signature did not match"
@@ -69,13 +112,13 @@ func ViewsCountHandler() gin.HandlerFunc {
 // RevokePublicShareHandler godoc
 // @Summary revokes public share
 // @Description remove a public share entry, revoke the share
-// @Accept json
-// @Produce json
+// @Accept  json
+// @Produce  json
+// @Param PublicShareOpsReq body routes.PublicShareOpsReq true "an object to do operations on a public share"
 // @description requestBody should be a stringified version of):
 // @description {
 // @description 	"shortlink": "the shortlink of the completed file",
 // @description }
-// @Param publicShareOpsReq body publicShareOpsReq true "an object to do operations on a public share"
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to revoke public share"
 // @Failure 403 {string} string "signature did not match"
@@ -85,6 +128,26 @@ func ViewsCountHandler() gin.HandlerFunc {
 /*RevokePublicShareHandler is a handler for the user get the views count a public file*/
 func RevokePublicShareHandler() gin.HandlerFunc {
 	return ginHandlerFunc(revokePublicShare)
+}
+
+func createShortLinkWithContext(c *gin.Context) error {
+	request := CreateShortlinkReq{}
+
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
+	}
+
+	publicShare, err := models.CreatePublicShare(request.createShortlinkObj.Title, request.createShortlinkObj.Description, request.createShortlinkObj.FileID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return NotFoundResponse(c, errors.New("the data does not exist"))
+		}
+		return InternalErrorResponse(c, err)
+	}
+
+	return OkResponse(c, CreateShortlinkResp{
+		ShortID: publicShare.PublicID,
+	})
 }
 
 func shortlinkURL(c *gin.Context) error {
@@ -100,8 +163,10 @@ func shortlinkURL(c *gin.Context) error {
 	if err != nil {
 		return InternalErrorResponse(c, errors.New("there was an error parsing your request"))
 	}
-	return OkResponse(c, shortlinkFileResp{
-		URL: fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName, fileDataPublicKey),
+	bucketURL := models.GetBucketUrl()
+	return OkResponse(c, ShortlinkFileResp{
+		S3URL:          bucketURL + fileDataPublicKey,
+		S3ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(publicShare.FileID),
 	})
 }
 
@@ -144,6 +209,7 @@ func revokePublicShare(c *gin.Context) error {
 	}
 
 	utils.DeleteDefaultBucketObjectKeys(models.GetFileDataPublicKey(publicShare.FileID))
+	utils.DeleteDefaultBucketObjectKeys(models.GetPublicThumbnailKey(publicShare.FileID))
 
 	if err = publicShare.RemovePublicShare(); err != nil {
 		return InternalErrorResponse(c, err)

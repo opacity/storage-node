@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/meirf/gopart"
-	"github.com/orcaman/concurrent-map"
+	cmap "github.com/orcaman/concurrent-map"
 )
 
 type s3Wrapper struct {
@@ -100,10 +100,11 @@ func getObjectSizeInByte(bucketName string, objectKey string) int64 {
 	return aws.Int64Value(r.ContentLength)
 }
 
-func getObject(bucketName string, objectKey string, cached bool) (string, error) {
+func getObject(bucketName, objectKey, downloadRange string, cached bool) (string, error) {
 	if cached {
-		if value, ok := cachedData.Get(getKey(bucketName, objectKey)); ok {
-			return value.(string), nil
+		valueS, okS := cachedData.Get(getKey(bucketName, objectKey))
+		if okS {
+			return valueS.(string), nil
 		}
 	}
 
@@ -111,11 +112,54 @@ func getObject(bucketName string, objectKey string, cached bool) (string, error)
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(objectKey),
 	}
-	data, err := svc.GetObjectAsString(input)
-	if err == nil && shouldCachedData {
-		cachedData.Set(getKey(bucketName, objectKey), data)
+	if downloadRange != "" {
+		input.SetRange(downloadRange)
 	}
-	return data, err
+
+	output, err := svc.s3.GetObject(input)
+
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(output.Body)
+	outputString := buf.String()
+
+	if err == nil && shouldCachedData {
+		cachedData.Set(getKey(bucketName, objectKey), outputString)
+	}
+
+	return outputString, err
+}
+
+func getObjectOutput(bucketName, objectKey, downloadRange string, cached bool) (*s3.GetObjectOutput, error) {
+	if cached {
+		valueR, okR := cachedData.Get(getKey(bucketName, objectKey+"_object"))
+		if okR {
+			return valueR.(*s3.GetObjectOutput), nil
+		}
+	}
+
+	input := &s3.GetObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(objectKey),
+	}
+	if downloadRange != "" {
+		input.SetRange(downloadRange)
+	}
+	output, err := svc.s3.GetObject(input)
+
+	if err == nil && shouldCachedData {
+		cachedData.Set(getKey(bucketName, objectKey+"_object"), output)
+	}
+
+	return output, err
+}
+
+func getObjectAsString(bucketName, objectKey, downloadRange string, cached bool) (string, error) {
+	outputString, err := getObject(bucketName, objectKey, downloadRange, cached)
+	if err != nil {
+		return "", err
+	}
+
+	return outputString, nil
 }
 
 func setObject(bucketName string, objectKey string, data string) error {
@@ -276,7 +320,11 @@ func DoesDefaultBucketObjectExist(objectKey string) bool {
 
 // Get Object operation on defaultBucketName
 func GetDefaultBucketObject(objectKey string, cached bool) (string, error) {
-	return getObject(Env.BucketName, objectKey, cached)
+	return getObjectAsString(Env.BucketName, objectKey, "", cached)
+}
+
+func GetBucketObject(objectKey, downloadRange string, cached bool) (*s3.GetObjectOutput, error) {
+	return getObjectOutput(Env.BucketName, objectKey, downloadRange, cached)
 }
 
 func GetDefaultBucketObjectSize(objectKey string) int64 {
@@ -385,22 +433,6 @@ func (svc *s3Wrapper) PutObject(input *s3.PutObjectInput) error {
 
 	_, err := svc.s3.PutObject(input)
 	return err
-}
-
-func (svc *s3Wrapper) GetObjectAsString(input *s3.GetObjectInput) (string, error) {
-	if svc.s3 == nil {
-		return "", nil
-	}
-
-	output, err := svc.s3.GetObject(input)
-
-	if err != nil {
-		return "", err
-	}
-
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(output.Body)
-	return buf.String(), nil
 }
 
 func (svc *s3Wrapper) ListObjectPages(input *s3.ListObjectsV2Input, it ObjectIterator) error {
@@ -535,4 +567,8 @@ func (svc *s3Wrapper) GetBucketLifecycleConfiguration(input *s3.GetBucketLifecyc
 		return nil, err
 	}
 	return v.Rules, nil
+}
+
+func (svc *s3Wrapper) DownloadS3ObjectInChunks(key, downloadRange string) {
+
 }

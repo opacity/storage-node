@@ -10,7 +10,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/utils"
-	"github.com/teris-io/shortid"
 )
 
 /*File defines a model for managing a user subscription for uploads*/
@@ -109,6 +108,10 @@ func GetFileDataKey(fileID string) string {
 
 func GetFileDataPublicKey(fileID string) string {
 	return fileID + "/public"
+}
+
+func GetPublicThumbnailKey(fileID string) string {
+	return fileID + "/thumbnail"
 }
 
 /*Return File object(first one) if there is not any error. If not found, return nil without error. */
@@ -262,7 +265,7 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 }
 
 /*FinishUploadPublic - finishes the public upload*/
-func (file *File) FinishUploadPublic() (PublicShare, error) {
+func (file *File) FinishUploadPublic(title, description string) (PublicShare, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
 		return PublicShare{}, IncompleteUploadErr
@@ -278,21 +281,9 @@ func (file *File) FinishUploadPublic() (PublicShare, error) {
 		return PublicShare{}, err
 	}
 
-	shortID, err := shortid.Generate()
+	publicShare, err := CreatePublicShare(title, description, file.FileID)
 	if err != nil {
-		return PublicShare{}, err
-	}
-	completedFile, err := GetCompletedFileByFileID(file.FileID)
-	if err != nil {
-		return PublicShare{}, err
-	}
-	publicShare := PublicShare{
-		PublicID:   shortID,
-		ViewsCount: 0,
-		FileID:     completedFile.FileID,
-	}
-	if err := DB.Save(&publicShare).Error; err != nil {
-		return PublicShare{}, errors.New("could not save public share to database, possible duplicate")
+		return publicShare, err
 	}
 
 	if err := DeleteCompletedUploadIndexes(file.FileID); err != nil {

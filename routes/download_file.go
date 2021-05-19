@@ -42,24 +42,36 @@ func downloadFile(c *gin.Context) error {
 		err = fmt.Errorf("bad request, unable to parse request body:  %v", err)
 		return BadRequestResponse(c, err)
 	}
-	// verify object existed in S3
-	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(request.FileID)) {
-		return NotFoundResponse(c, errors.New("such data does not exist"))
-	}
 
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(request.FileID), utils.CannedAcl_PublicRead); err != nil {
+	url, err := GetFileDownloadURL(request.FileID)
+	if err != nil {
+		if err.Error() == "such data does not exist" {
+			return NotFoundResponse(c, err)
+		}
 		return InternalErrorResponse(c, err)
 	}
-
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(request.FileID), utils.CannedAcl_PublicRead); err != nil {
-		return InternalErrorResponse(c, err)
-	}
-
-	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName,
-		request.FileID)
 
 	return OkResponse(c, downloadFileRes{
 		// Redirect to a different URL that client would have authorization to download it.
 		FileDownloadUrl: url,
 	})
+}
+
+func GetFileDownloadURL(fileID string) (string, error) {
+	// verify object existed in S3
+	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)) {
+		return "", errors.New("such data does not exist")
+	}
+
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(fileID), utils.CannedAcl_PublicRead); err != nil {
+		return "", err
+	}
+
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(fileID), utils.CannedAcl_PublicRead); err != nil {
+		return "", err
+	}
+	url := fmt.Sprintf("https://s3.%s.amazonaws.com/%s/%s", utils.Env.AwsRegion, utils.Env.BucketName,
+		fileID)
+
+	return url, nil
 }

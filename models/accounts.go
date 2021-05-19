@@ -26,16 +26,16 @@ type Account struct {
 	AccountID                string            `gorm:"primary_key" json:"accountID" validate:"required,len=64"` // some hash of the user's master handle
 	CreatedAt                time.Time         `json:"createdAt"`
 	UpdatedAt                time.Time         `json:"updatedAt"`
-	MonthsInSubscription     int               `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription
-	StorageLocation          string            `json:"storageLocation" validate:"omitempty,url"`                                                                           // where their files live, on S3 or elsewhere
-	StorageLimit             StorageLimitType  `json:"storageLimit" validate:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
-	StorageUsedInByte        int64             `json:"storageUsedInByte" validate:"gte=0" example:"30"`                                                                    // how much storage they have used, in B
-	EthAddress               string            `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	EthPrivateKey            string            `json:"ethPrivateKey" validate:"required,len=96"`                                                                           // the private key of the eth address
-	PaymentStatus            PaymentStatusType `json:"paymentStatus" validate:"required"`                                                                                  // the status of their payment
-	ApiVersion               int               `json:"apiVersion" validate:"omitempty,gte=1" gorm:"default:1"`
-	TotalFolders             int               `json:"totalFolders" validate:"omitempty,gte=0" gorm:"default:0"`
-	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" validate:"omitempty,gte=0" gorm:"default:0"`
+	MonthsInSubscription     int               `json:"monthsInSubscription" binding:"required,gte=1" example:"12"`                                                        // number of months in their subscription
+	StorageLocation          string            `json:"storageLocation" binding:"omitempty,url"`                                                                           // where their files live, on S3 or elsewhere
+	StorageLimit             StorageLimitType  `json:"storageLimit" binding:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
+	StorageUsedInByte        int64             `json:"storageUsedInByte" binding:"exists,gte=0" example:"30"`                                                             // how much storage they have used, in B
+	EthAddress               string            `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	EthPrivateKey            string            `json:"ethPrivateKey" binding:"required,len=96"`                                                                           // the private key of the eth address
+	PaymentStatus            PaymentStatusType `json:"paymentStatus" binding:"required"`                                                                                  // the status of their payment
+	ApiVersion               int               `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:2"`
+	TotalFolders             int               `json:"totalFolders" binding:"omitempty,gte=0" gorm:"default:0"`
+	TotalMetadataSizeInBytes int64             `json:"totalMetadataSizeInBytes" binding:"omitempty,gte=0" gorm:"default:0"`
 	PaymentMethod            PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	Upgrades                 []Upgrade         `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
 	ExpiredAt                time.Time         `json:"expiredAt"`
