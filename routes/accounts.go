@@ -214,6 +214,7 @@ func createAccount(c *gin.Context) error {
 		EthAddress:           ethAddr.String(),
 		EthPrivateKey:        hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:        models.InitialPaymentInProgress,
+		ApiVersion:           2,
 		MonthsInSubscription: request.accountCreateObj.DurationInMonths,
 		ExpiredAt:            time.Now().AddDate(0, request.accountCreateObj.DurationInMonths, 0),
 	}
