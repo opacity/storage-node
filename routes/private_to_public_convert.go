@@ -293,7 +293,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	}
 
 	if !thumbnailGenerated {
-		privateToPublicResp.S3ThumbnailURL = bucketURL + "thumbnail_default.png"
+		privateToPublicResp.S3ThumbnailURL = "https://s3.us-east-2.amazonaws.com/opacity-public/thumbnail_default.png"
 	}
 
 	return OkResponse(c, privateToPublicResp)
