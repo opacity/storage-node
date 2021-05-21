@@ -179,12 +179,6 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 	return lenToRead, nil
 }
 
-type CreateShortlinkReq struct {
-	verification
-	requestBody
-	createShortlinkObj CreateShortlinkObj
-}
-
 type PrivateToPublicObj struct {
 	FileHandle string `json:"fileHandle" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a deterministically created file handle"`
 }
@@ -206,10 +200,6 @@ type FileMetadata struct {
 
 func (v *PrivateToPublicReq) getObjectRef() interface{} {
 	return &v.privateToPublicObj
-}
-
-func (v *CreateShortlinkReq) getObjectRef() interface{} {
-	return &v.createShortlinkObj
 }
 
 // PrivateToPublicConvertHandler godoc

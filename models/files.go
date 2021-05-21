@@ -280,8 +280,12 @@ func (file *File) FinishUploadPublic(title, description string) (PublicShare, er
 	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
 		return PublicShare{}, err
 	}
-
-	publicShare, err := CreatePublicShare(title, description, file.FileID)
+	createShortlinkObj := CreateShortlinkObj{
+		FileID:      file.FileID,
+		Title:       title,
+		Description: description,
+	}
+	publicShare, err := CreatePublicShare(createShortlinkObj)
 	if err != nil {
 		return publicShare, err
 	}

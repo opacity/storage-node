@@ -12,12 +12,23 @@ import (
 
 // PublicShare ...
 type PublicShare struct {
-	PublicID    string    `gorm:"UNIQUE_INDEX:idx_publicshare;primary_key;autoIncrement:false" json:"public_id" binding:"required"`
-	CreatedAt   time.Time `json:"createdAt"`
-	ViewsCount  int       `gorm:"not null" json:"views_count"`
-	Title       string    `gorm:"not null;size:65535" json:"title"`
-	Description string    `gorm:"not null;size:65535" json:"description"`
-	FileID      string    `gorm:"not null" json:"file_id" binding:"required,len=64" minLength:"64" maxLength:"64"`
+	PublicID      string    `gorm:"UNIQUE_INDEX:idx_publicshare;primary_key;autoIncrement:false" json:"public_id" binding:"required"`
+	CreatedAt     time.Time `json:"createdAt"`
+	ViewsCount    int       `gorm:"not null" json:"views_count"`
+	Title         string    `gorm:"not null;size:65535" json:"title"`
+	Description   string    `gorm:"not null;size:65535" json:"description"`
+	MimeType      string    `gorm:"not null;size:255" json:"mimeType"`
+	FileExtension string    `gorm:"not null;size:255" json:"fileExtension"`
+	FileID        string    `gorm:"not null" json:"file_id" binding:"required,len=64" minLength:"64" maxLength:"64"`
+}
+
+// CreateShortlinkObj...
+type CreateShortlinkObj struct {
+	FileID        string `json:"file_id" binding:"required,len=64" minLength:"64" maxLength:"64" example:"the id of the file"`
+	Title         string `json:"title" binding:"required" minLength:"1" maxLength:"65535" example:"LoremIpsum"`
+	MimeType      string `json:"mimeType" minLength:"1" maxLength:"255" example:"image/png"`
+	FileExtension string `json:"fileExtension" minLength:"1" maxLength:"255" example:"png"`
+	Description   string `json:"description" binding:"required" minLength:"1" maxLength:"65535" example:"lorem ipsum"`
 }
 
 /*BeforeCreate - callback called before the row is created*/
@@ -47,22 +58,31 @@ func (publicShare *PublicShare) RemovePublicShare() error {
 	return DB.Delete(&publicShare).Error
 }
 
-func CreatePublicShare(title, description, fileID string) (PublicShare, error) {
+func CreatePublicShare(createShortlinkObj CreateShortlinkObj) (PublicShare, error) {
 	shortID, err := shortid.Generate()
 	if err != nil {
 		return PublicShare{}, err
 	}
-	completedFile, err := GetCompletedFileByFileID(fileID)
+	completedFile, err := GetCompletedFileByFileID(createShortlinkObj.FileID)
 	if err != nil {
 		return PublicShare{}, err
 	}
 	publicShare := PublicShare{
-		PublicID:    shortID,
-		ViewsCount:  0,
-		Title:       title,
-		Description: description,
-		FileID:      completedFile.FileID,
+		PublicID:      shortID,
+		ViewsCount:    0,
+		Title:         createShortlinkObj.Title,
+		Description:   createShortlinkObj.Description,
+		MimeType:      createShortlinkObj.MimeType,
+		FileExtension: createShortlinkObj.FileExtension,
+		FileID:        completedFile.FileID,
 	}
+	if createShortlinkObj.MimeType == "" {
+		publicShare.MimeType = "image/png"
+	}
+	if createShortlinkObj.FileExtension == "" {
+		publicShare.FileExtension = "png"
+	}
+
 	if err := DB.Save(&publicShare).Error; err != nil {
 		return PublicShare{}, errors.New("error saving the public share")
 	}
