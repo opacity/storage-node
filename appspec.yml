@@ -1,0 +1,15 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /home/ubuntu/storage-node
+file_exists_behavior: OVERWRITE
+hooks:
+  ApplicationStart:
+    - location: deploy_scripts/app_start.sh
+      timeout: 400
+      runas: root
+  ApplicationStop:
+    - location: deploy_scripts/app_stop.sh
+      timeout: 400
+      runas: root
