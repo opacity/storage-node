@@ -2057,7 +2057,7 @@ paths:
           schema:
             type: string
       summary: download a file without cryptographic verification
-  /api/v2/download/file:
+  /api/v2/download/public:
     post:
       consumes:
       - application/json

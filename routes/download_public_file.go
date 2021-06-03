@@ -25,7 +25,7 @@ type downloadPublicFileRes struct {
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "such data does not exist"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v2/download/file [post]
+// @Router /api/v2/download/public [post]
 /*DownloadPublicFileHandler returns the URLs for a public file and it's thumbnail, if no thumbnail is present, return a default one*/
 func DownloadPublicFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(downloadPublicFile)

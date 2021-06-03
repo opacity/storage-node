@@ -1006,7 +1006,7 @@ var doc = `{
                 }
             }
         },
-        "/api/v2/download/file": {
+        "/api/v2/download/public": {
             "post": {
                 "description": "returns the URLs for a public file and it's thumbnail, if no thumbnail is present, return a default one",
                 "consumes": [
