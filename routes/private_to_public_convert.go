@@ -183,11 +183,6 @@ type PrivateToPublicObj struct {
 	Size       int    `json:"size" binding:"required"`
 }
 
-type PrivateToPublicResp struct {
-	S3URL          string `json:"s3_url"`
-	S3ThumbnailURL string `json:"s3_thumbnail_url"`
-}
-
 func (v *PrivateToPublicReq) getObjectRef() interface{} {
 	return &v.privateToPublicObj
 }
@@ -250,9 +245,8 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 
 	go DownloadProgressRun(downloadProgress, decryptProgress)
 
-	generateThumbnailC := make(chan bool, 1)
 	g.Go(func() error {
-		return ReadUploadPublicDecryptedFile(decryptProgress, hash, generateThumbnailC)
+		return ReadUploadPublicDecryptedFile(decryptProgress, hash)
 	})
 
 	err := PublicShareDownloadFile(hash, encryptionKey, numberOfParts, downloadProgress)
@@ -263,19 +257,10 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	if err := g.Wait(); err != nil {
 		return InternalErrorResponse(c, err)
 	}
-	thumbnailGenerated := <-generateThumbnailC
-	bucketURL := models.GetBucketUrl()
 
-	privateToPublicResp := PrivateToPublicResp{
-		S3URL:          bucketURL + models.GetFileDataPublicKey(hash),
-		S3ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(hash),
-	}
-
-	if !thumbnailGenerated {
-		privateToPublicResp.S3ThumbnailURL = "https://s3.us-east-2.amazonaws.com/opacity-public/thumbnail_default.png"
-	}
-
-	return OkResponse(c, privateToPublicResp)
+	return OkResponse(c, StatusRes{
+		Status: "private file converted to public",
+	})
 }
 
 func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byte, err error) {
@@ -340,9 +325,7 @@ func PublicShareDownloadFile(hash string, key []byte, numberOfParts int, downloa
 	return nil
 }
 
-func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, hash string, generateThumbnailC chan bool) (err error) {
-	defer close(generateThumbnailC)
-
+func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, hash string) (err error) {
 	awsKey := models.GetFileDataPublicKey(hash)
 	_, uploadID, err := utils.CreateMultiPartUpload(awsKey)
 	if err != nil {
@@ -412,7 +395,6 @@ func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, hash string
 	if _, err = utils.CompleteMultiPartUpload(awsKey, *uploadID, completedParts); err != nil {
 		return
 	}
-	generateThumbnailC <- generateThumbnail
 
 	return utils.SetDefaultObjectCannedAcl(awsKey, utils.CannedAcl_PublicRead)
 
