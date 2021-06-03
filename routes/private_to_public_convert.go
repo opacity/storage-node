@@ -198,7 +198,7 @@ func (v *PrivateToPublicReq) getObjectRef() interface{} {
 // @description 	"fileHandle": "a deterministically created file handle",
 // @description 	"size": 7123534,
 // @description }
-// @Success 200 {object} routes.PrivateToPublicResp
+// @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 403 {string} string "signature did not match"
 // @Failure 404 {string} string "the data does not exist"

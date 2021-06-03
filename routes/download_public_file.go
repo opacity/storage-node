@@ -18,9 +18,9 @@ type downloadPublicFileRes struct {
 // DownloadPublicFileHandler godoc
 // @Summary returns the URLs for a public file and it's thumbnail
 // @Description returns the URLs for a public file and it's thumbnail, if no thumbnail is present, return a default one
+// @Param routes.DownloadFileObj body routes.DownloadFileObj true "download object for non-signed requests"
 // @Accept json
 // @Produce json
-// @Param downloadFileObj body routes.downloadFileObj true "download object for non-signed requests"
 // @Success 200 {object} routes.downloadPublicFileRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "such data does not exist"

@@ -85,7 +85,7 @@ func CreateShortlinkHandler() gin.HandlerFunc {
 // @Accept  json
 // @Produce  json
 // @Param shortlink path string true "shortlink ID"
-// @Success 200 {object} ShortlinkFileResp
+// @Success 200 {object} PublicFileDownloadResp
 // @Failure 404 {string} string "file does not exist"
 // @Failure 500 {string} string "there was an error parsing your request"
 // @Router /api/v2/public-share/:shortlink [get]

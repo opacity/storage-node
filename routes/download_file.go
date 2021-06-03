@@ -21,9 +21,9 @@ type downloadFileRes struct {
 // DownloadFileHandler godoc
 // @Summary download a file without cryptographic verification
 // @Description download a file without cryptographic verification
+// @Param routes.DownloadFileObj body routes.DownloadFileObj true "download object for non-signed requests"
 // @Accept  json
 // @Produce  json
-// @Param downloadFileObj body routes.downloadFileObj true "download object for non-signed requests"
 // @Success 200 {object} routes.downloadFileRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "such data does not exist"
