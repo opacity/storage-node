@@ -2286,6 +2286,7 @@ paths:
         requestBody should be a stringified version of:
         {
         "fileHandle": "a deterministically created file handle",
+        "size": 7123534,
         }
       parameters:
       - description: an object to do the conversion of a private file to a public

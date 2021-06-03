@@ -1306,7 +1306,7 @@ var doc = `{
         },
         "/api/v2/public-share/convert": {
             "post": {
-                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"size\": 7123534,\n}",
                 "consumes": [
                     "application/json"
                 ],
