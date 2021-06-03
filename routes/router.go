@@ -115,7 +115,7 @@ const (
 	DownloadV2Path = "/download/private"
 
 	/*DownloadPublicV2Path is the path for downloading public files*/
-	DownloadPublicV2Path = "/download/public"
+	DownloadPublicV2Path = "/download/file"
 
 	/*MetadataV2GetPath is the path for getting metadata*/
 	MetadataV2GetPath = "/metadata/get"
