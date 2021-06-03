@@ -11,8 +11,8 @@ import (
 )
 
 type downloadPublicFileRes struct {
-	FileDownloadUrlPublic          string `json:"fileDownloadUrlPublic" example:"a URL to use to download the public file"`
-	FileDownloadThumbnailUrlPublic string `json:"fileDownloadThumbnailUrlPublic" example:"a URL to use to download the public file thumbnail"`
+	FileDownloadUrl          string `json:"fileDownloadUrl" example:"a URL to use to download the public file"`
+	FileDownloadThumbnailUrl string `json:"fileDownloadThumbnailUrl" example:"a URL to use to download the public file thumbnail"`
 }
 
 // DownloadPublicFileHandler godoc
@@ -47,8 +47,8 @@ func downloadPublicFile(c *gin.Context) error {
 	thumbnailURL = checkFileThumbnail(thumbnailURL)
 
 	return OkResponse(c, downloadPublicFileRes{
-		FileDownloadUrlPublic:          fileURL,
-		FileDownloadThumbnailUrlPublic: thumbnailURL,
+		FileDownloadUrl:          fileURL,
+		FileDownloadThumbnailUrl: thumbnailURL,
 	})
 }
 
