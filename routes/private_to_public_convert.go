@@ -189,13 +189,7 @@ type PrivateToPublicResp struct {
 }
 
 type FileMetadata struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Size int    `json:"size"`
-	P    struct {
-		BlockSize int `json:"blockSize"`
-		PartSize  int `json:"partSize"`
-	} `json:"p"`
+	Size int `json:"size"`
 }
 
 func (v *PrivateToPublicReq) getObjectRef() interface{} {
