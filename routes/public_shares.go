@@ -28,7 +28,7 @@ type PublicShareObj struct {
 	Shortlink string `json:"shortlink" validate:"required" example:"the short link of the completed file"`
 }
 
-type ShortlinkFileResp struct {
+type PublicFileDownloadResp struct {
 	S3URL          string `json:"s3_url"`
 	S3ThumbnailURL string `json:"s3_thumbnail_url"`
 }
@@ -168,10 +168,12 @@ func shortlinkURL(c *gin.Context) error {
 	if err != nil {
 		return InternalErrorResponse(c, errors.New("there was an error parsing your request"))
 	}
-	bucketURL := models.GetBucketUrl()
-	return OkResponse(c, ShortlinkFileResp{
-		S3URL:          bucketURL + fileDataPublicKey,
-		S3ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(publicShare.FileID),
+
+	fileURL, thumbnailURL := models.GetPublicFileDownloadData(publicShare.FileID)
+
+	return OkResponse(c, PublicFileDownloadResp{
+		S3URL:          fileURL,
+		S3ThumbnailURL: thumbnailURL,
 	})
 }
 

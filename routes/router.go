@@ -91,6 +91,9 @@ const (
 	/*DownloadPath is the path for downloading files*/
 	DownloadPath = "/download/private"
 
+	/*DownloadPublicPath is the path for downloading public files*/
+	DownloadPublicPath = "/download/public"
+
 	/*StripeCreatePath is the path for creating a stripe payment*/
 	StripeCreatePath = "/stripe/create"
 )
@@ -263,6 +266,7 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	v2Router.POST(AccountUpdateApiVersion, AccountUpdateApiVersionHandler())
 
 	v2Router.POST(DownloadPath, DownloadFileHandler())
+	v2Router.POST(DownloadPublicPath, DownloadPublicFileHandler())
 
 	publicShareRouterGroup := v2Router.Group(PublicSharePathPrefix)
 	publicShareRouterGroup.GET(PublicShareShortlinkPath, ShortlinkFileHandler())

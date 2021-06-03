@@ -94,3 +94,12 @@ func CreatePublicShare(createShortlinkObj CreateShortlinkObj) (PublicShare, erro
 func GetBucketUrl() string {
 	return fmt.Sprintf("https://s3.%s.amazonaws.com/%s/", utils.Env.AwsRegion, utils.Env.BucketName)
 }
+
+func GetPublicFileDownloadData(fileID string) (fileURL, thumbnailURL string) {
+	bucketURL := GetBucketUrl()
+
+	fileURL = bucketURL + GetFileDataPublicKey(fileID)
+	thumbnailURL = bucketURL + GetPublicThumbnailKey(fileID)
+
+	return
+}
