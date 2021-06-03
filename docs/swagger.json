@@ -494,22 +494,22 @@
         },
         "/api/v1/renew": {
             "post": {
-                "description": "check the renewal status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
+                "description": "check the renewalV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "check the renewal status",
+                "summary": "check the renewalV2 status",
                 "parameters": [
                     {
-                        "description": "check renewal status object",
-                        "name": "checkRenewalStatusReq",
+                        "description": "check renewalV2 status object",
+                        "name": "checkRenewalV2StatusReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.checkRenewalStatusReq"
+                            "$ref": "#/definitions/routes.checkRenewalV2StatusReq"
                         }
                     }
                 ],
@@ -553,12 +553,12 @@
                 "summary": "get an invoice to renew an account",
                 "parameters": [
                     {
-                        "description": "get renewal invoice object",
-                        "name": "getRenewalAccountInvoiceReq",
+                        "description": "get renewalV2 invoice object",
+                        "name": "getRenewalV2AccountInvoiceReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.getRenewalAccountInvoiceReq"
+                            "$ref": "#/definitions/routes.getRenewalV2AccountInvoiceReq"
                         }
                     }
                 ],
@@ -566,7 +566,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.getRenewalAccountInvoiceRes"
+                            "$ref": "#/definitions/routes.getRenewalV2AccountInvoiceRes"
                         }
                     },
                     "400": {
@@ -1781,7 +1781,8 @@
         "routes.PrivateToPublicObj": {
             "type": "object",
             "required": [
-                "fileHandle"
+                "fileHandle",
+                "size"
             ],
             "properties": {
                 "fileHandle": {
@@ -1789,6 +1790,9 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a deterministically created file handle"
+                },
+                "size": {
+                    "type": "integer"
                 }
             }
         },
