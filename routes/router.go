@@ -89,7 +89,7 @@ const (
 	DeletePath = "/delete"
 
 	/*DownloadPath is the path for downloading files*/
-	DownloadPath = "/download"
+	DownloadPath = "/download/private"
 
 	/*StripeCreatePath is the path for creating a stripe payment*/
 	StripeCreatePath = "/stripe/create"
@@ -239,7 +239,6 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 
 	// File endpoint
 	v1Router.POST(DeletePath, DeleteFileHandler())
-	v1Router.POST(DownloadPath, DownloadFileHandler())
 
 	// Stripe endpoints
 	v1Router.POST(StripeCreatePath, CreateStripePaymentHandler())
@@ -262,6 +261,8 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	v2Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
 
 	v2Router.POST(AccountUpdateApiVersion, AccountUpdateApiVersionHandler())
+
+	v2Router.POST(DownloadPath, DownloadFileHandler())
 
 	publicShareRouterGroup := v2Router.Group(PublicSharePathPrefix)
 	publicShareRouterGroup.GET(PublicShareShortlinkPath, ShortlinkFileHandler())
