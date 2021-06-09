@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"runtime/debug"
 	"strings"
@@ -28,12 +29,37 @@ func main() {
 		models.Connect(utils.Env.DatabaseURL)
 	}
 
+	setEnvPlans()
+
 	jobs.StartupJobs()
 	if utils.Env.EnableJobs {
 		jobs.ScheduleBackgroundJobs()
 	}
 
 	routes.CreateRoutes()
+}
+
+func setEnvPlans() {
+	plans := []utils.PlanInfo{}
+	results := models.DB.Find(&plans)
+
+	utils.Env.Plans = make(utils.PlanResponseType)
+
+	if results.RowsAffected == 0 {
+		err := json.Unmarshal([]byte(utils.DefaultPlansJson), &utils.Env.Plans)
+		utils.LogIfError(err, nil)
+
+		for _, plan := range utils.Env.Plans {
+			models.DB.Model(&utils.PlanInfo{}).Create(&plan)
+		}
+	} else {
+		for _, plan := range plans {
+			fmt.Println(plan.Name)
+			utils.Env.Plans[plan.StorageInGB] = plan
+		}
+	}
+
+	utils.CreatePlanMetrics()
 }
 
 func catchError() {
