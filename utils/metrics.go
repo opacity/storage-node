@@ -99,7 +99,7 @@ var (
 	//})
 )
 
-func createPlanMetrics() {
+func CreatePlanMetrics() {
 	Metrics_Percent_Of_Space_Used_Map[TotalLbl] = Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": TotalLbl})
 	Metrics_Total_Paid_Accounts_Map[TotalLbl] = Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": TotalLbl})
 	Metrics_Total_Stripe_Paid_Accounts_Map[TotalLbl] = Metrics_Total_Stripe_Paid_Accounts.With(prometheus.Labels{"plan_type": TotalLbl})
