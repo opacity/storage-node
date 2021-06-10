@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 
@@ -125,6 +126,8 @@ func SetLive() {
 func SetTesting(filenames ...string) {
 	initEnv(filenames...)
 	Env.GoEnv = "test"
+	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
+	LogIfError(err, nil)
 	Env.DatabaseURL = Env.TestDatabaseURL
 	Env.StripeKey = Env.StripeKeyTest
 	runInitializations()
