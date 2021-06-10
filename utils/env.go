@@ -19,8 +19,8 @@ const defaultStripeRetentionDays = 30
 const DefaultPlansJson = `{
 	"10":{"name":"Free","cost":0,"costInUSD":0.00,"storageInGB":10,"maxFolders":200,"maxMetadataSizeInMB":20},
 	"128":{"name":"Basic","cost":2,"costInUSD":39.99,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
-	"1024":{"name":"Professional","cost":16,"costInUSD":79.99,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600},
-	"2048":{"name":"Business","cost":32,"costInUSD":9.99,"storageInGB":2048,"maxFolders":32000,"maxMetadataSizeInMB":3200},
+	"1024":{"name":"Professional","cost":16,"costInUSD":99.99,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600},
+	"2048":{"name":"Business","cost":32,"costInUSD":119.99,"storageInGB":2048,"maxFolders":32000,"maxMetadataSizeInMB":3200},
 	"10000":{"name":"Custom10TB","cost":150000,"costInUSD":550.00,"storageInGB":10000,"maxFolders":156000,"maxMetadataSizeInMB":15600}
 }`
 
