@@ -54,7 +54,6 @@ func setEnvPlans() {
 		}
 	} else {
 		for _, plan := range plans {
-			fmt.Println(plan.Name)
 			utils.Env.Plans[plan.StorageInGB] = plan
 		}
 	}
