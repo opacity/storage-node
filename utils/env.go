@@ -1,14 +1,13 @@
 package utils
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 
 	"os"
 
 	"strconv"
-
-	"encoding/json"
 
 	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
@@ -17,20 +16,21 @@ import (
 const defaultAccountRetentionDays = 7
 const defaultStripeRetentionDays = 30
 
-const defaultPlansJson = `{
-"10": {"name":"Free","cost":0,"costInUSD":0.00,"storageInGB":10,"maxFolders":200,"maxMetadataSizeInMB":20},
-"128": {"name":"Basic","cost":2,"costInUSD":39.99,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
-"1024": {"name":"Professional","cost":16,"costInUSD":99.99,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600},
-"2048": {"name":"Business","cost":32,"costInUSD":149.99,"storageInGB":2048,"maxFolders":32000,"maxMetadataSizeInMB":3200}
+const DefaultPlansJson = `{
+	"10":{"name":"Free","cost":0,"costInUSD":0.00,"storageInGB":10,"maxFolders":200,"maxMetadataSizeInMB":20},
+	"128":{"name":"Basic","cost":2,"costInUSD":39.99,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
+	"1024":{"name":"Professional","cost":16,"costInUSD":99.99,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600},
+	"2048":{"name":"Business","cost":32,"costInUSD":119.99,"storageInGB":2048,"maxFolders":32000,"maxMetadataSizeInMB":3200},
+	"10000":{"name":"Custom10TB","cost":150000,"costInUSD":550.00,"storageInGB":10000,"maxFolders":156000,"maxMetadataSizeInMB":15600}
 }`
 
 type PlanInfo struct {
-	Name                string  `json:"name" validate:"required"`
-	Cost                float64 `json:"cost" validate:"required,gt=0"`
-	CostInUSD           float64 `json:"costInUSD" validate:"required,gt=0"`
-	StorageInGB         int     `json:"storageInGB" validate:"required,gt=0"`
-	MaxFolders          int     `json:"maxFolders" validate:"required,gt=0"`
-	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB" validate:"required,gt=0"`
+	Name                string  `gorm:"primary_key" json:"name"`
+	Cost                float64 `json:"cost"`
+	CostInUSD           float64 `json:"costInUSD"`
+	StorageInGB         int     `json:"storageInGB"`
+	MaxFolders          int     `json:"maxFolders"`
+	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB"`
 }
 
 type PlanResponseType map[int]PlanInfo
@@ -78,8 +78,7 @@ type StorageNodeEnv struct {
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
 	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
 
-	PlansJson string `env:"PLANS_JSON"`
-	Plans     PlanResponseType
+	Plans PlanResponseType
 
 	// Stripe Keys
 	StripeKeyTest string `env:"STRIPE_KEY_TEST" envDefault:"Unknown"`
@@ -107,10 +106,6 @@ func initEnv(filenames ...string) {
 	storageNodeEnv := StorageNodeEnv{}
 	env.Parse(&storageNodeEnv)
 
-	if storageNodeEnv.PlansJson == "" {
-		storageNodeEnv.PlansJson = defaultPlansJson
-	}
-
 	if storageNodeEnv.EncryptionKey == "" {
 		log.Fatal("must set an encryption key in the .env file")
 	}
@@ -130,8 +125,9 @@ func SetLive() {
 /*SetTesting sets the testing environment*/
 func SetTesting(filenames ...string) {
 	initEnv(filenames...)
-	Env.PlansJson = defaultPlansJson
 	Env.GoEnv = "test"
+	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
+	LogIfError(err, nil)
 	Env.DatabaseURL = Env.TestDatabaseURL
 	Env.StripeKey = Env.StripeKeyTest
 	runInitializations()
@@ -140,11 +136,6 @@ func SetTesting(filenames ...string) {
 func runInitializations() {
 	InitKvStore()
 	newS3Session()
-
-	Env.Plans = make(PlanResponseType)
-	err := json.Unmarshal([]byte(Env.PlansJson), &Env.Plans)
-	LogIfError(err, nil)
-	createPlanMetrics()
 }
 
 /*IsTestEnv returns whether we are in the test environment*/
@@ -200,11 +191,6 @@ func tryLookUp() error {
 		stripeRetentionDays = defaultStripeRetentionDays
 	}
 
-	plansJson, exists := os.LookupEnv("PLANS_JSON")
-	if exists == false {
-		plansJson = defaultPlansJson
-	}
-
 	enableCreditCardsStr, _ := os.LookupEnv("ENABLE_CREDIT_CARDS")
 	enableCreditCards := enableCreditCardsStr == "true"
 
@@ -224,7 +210,6 @@ func tryLookUp() error {
 		AwsSecretAccessKey:   awsSecretAccessKey,
 		AdminUser:            adminUser,
 		AdminPassword:        adminPassword,
-		PlansJson:            plansJson,
 		StripeKeyTest:        stripeKeyTest,
 		StripeKeyProd:        stripeKeyProd,
 		EnableCreditCards:    enableCreditCards,
