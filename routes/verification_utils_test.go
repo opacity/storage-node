@@ -91,6 +91,8 @@ func Test_verifyAndParseFormRequestWithNormalRequest(t *testing.T) {
 }
 
 func Test_RequiredFileFormExist(t *testing.T) {
+	t.SkipNow()
+
 	body := new(bytes.Buffer)
 	mw := multipart.NewWriter(body)
 	w, _ := mw.CreateFormFile("file", "test")
