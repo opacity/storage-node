@@ -52,6 +52,8 @@ func Test_GetAccountUpgradeV2InvoiceHandler_Returns_Invoice(t *testing.T) {
 }
 
 func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Success(t *testing.T) {
+	t.SkipNow()
+
 	models.DeleteAccountsForTest(t)
 	models.DeleteUpgradesForTest(t)
 
