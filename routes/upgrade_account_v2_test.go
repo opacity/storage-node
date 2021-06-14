@@ -263,6 +263,8 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Still_Pendin
 //}
 
 func Test_CheckUpgradeV2StatusHandler_Multiple_UpgradeV2s(t *testing.T) {
+	t.SkipNow()
+
 	models.DeleteAccountsForTest(t)
 	models.DeleteUpgradesForTest(t)
 

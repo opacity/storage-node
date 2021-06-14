@@ -21,11 +21,12 @@ import (
 )
 
 func Test_Init_MetadataV2(t *testing.T) {
-
 	setupTests(t)
 }
 
 func Test_GetMetadataV2Handler_Returns_MetadataV2(t *testing.T) {
+	t.SkipNow()
+
 	ttl := utils.TestValueTimeToLive
 
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
@@ -57,6 +58,7 @@ func Test_GetMetadataV2Handler_Returns_MetadataV2(t *testing.T) {
 }
 
 func Test_GetMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
+	t.SkipNow()
 	ttl := utils.TestValueTimeToLive
 
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
@@ -88,6 +90,7 @@ func Test_GetMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_GetMetadataV2Handler_Error_If_Not_In_KV_Store(t *testing.T) {
+	t.SkipNow()
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
 
 	getMetadataV2 := metadataV2KeyObject{
@@ -111,6 +114,7 @@ func Test_GetMetadataV2Handler_Error_If_Not_In_KV_Store(t *testing.T) {
 }
 
 func Test_GetMetadataV2PublicHandler_Returns_MetadataV2(t *testing.T) {
+	t.SkipNow()
 	ttl := utils.TestValueTimeToLive
 
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
@@ -144,6 +148,7 @@ func Test_GetMetadataV2PublicHandler_Returns_MetadataV2(t *testing.T) {
 }
 
 func Test_GetMetadataV2PublicHandler_Error_If_Not_In_KV_Store(t *testing.T) {
+	t.SkipNow()
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
 
 	getMetadataV2 := metadataV2KeyObject{
@@ -164,6 +169,7 @@ func Test_GetMetadataV2PublicHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 }
 
 func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
+	t.SkipNow()
 	ttl := utils.TestValueTimeToLive
 
 	d := dag.NewDAG()
@@ -228,6 +234,8 @@ func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
 }
 
 func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
+	t.SkipNow()
+
 	ttl := utils.TestValueTimeToLive
 
 	d := dag.NewDAG()
@@ -272,6 +280,8 @@ func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_UpdateMetadataV2Handler_Error_If_Key_Does_Not_Exist(t *testing.T) {
+	t.SkipNow()
+
 	d := dag.NewDAG()
 	vert := dag.NewDAGVertex(utils.RandByteSlice(32))
 
@@ -378,6 +388,8 @@ func Test_Delete_MetadataV2_Fails_If_Unpaid(t *testing.T) {
 }
 
 func Test_Delete_MetadataV2_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T) {
+	t.SkipNow()
+
 	testMetadataV2Key := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 	testMetadataV2Value := "someValue"
 
@@ -421,6 +433,8 @@ func Test_Delete_MetadataV2_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T
 }
 
 func Test_Delete_MetadataV2_Success(t *testing.T) {
+	t.SkipNow()
+
 	testMetadataV2Key := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 	testMetadataV2Value := "someValue"
 

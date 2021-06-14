@@ -74,6 +74,8 @@ func Test_GetAccountRenewV2InvoiceHandler_ReturnsErrorIfExpirationDateTooFarInFu
 }
 
 func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Success(t *testing.T) {
+	t.SkipNow()
+
 	models.DeleteAccountsForTest(t)
 	models.DeleteRenewalsForTest(t)
 
