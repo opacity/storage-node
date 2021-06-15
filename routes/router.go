@@ -40,9 +40,6 @@ const (
 	/*V1Path is a router group for the v1 version of storage node*/
 	V1Path = "/api/v1"
 
-	/*V2Path is a router group for the v2 version of storage node*/
-	V2Path = "/api/v2"
-
 	/*AccountsPath is the path for dealing with accounts*/
 	AccountsPath = "/accounts"
 
@@ -88,7 +85,51 @@ const (
 	/*UploadPath is the path for uploading files to paid accounts*/
 	UploadPath = "/upload"
 
-	/*InitUploadPublicPath is the path for initiating the upload of files for public sharing on an already uploaded private upload*/
+	/*DeletePath is the path for deleting files*/
+	DeletePath = "/delete"
+
+	/*DownloadPath is the path for downloading files*/
+	DownloadPath = "/download"
+
+	/*StripeCreatePath is the path for creating a stripe payment*/
+	StripeCreatePath = "/stripe/create"
+)
+
+const (
+	/*V2Path is a router group for the v1 version of storage node*/
+	V2Path = "/api/v2"
+
+	/*AccountUpgradeV2InvoicePath is the path for getting an invoice to upgrade an account*/
+	AccountUpgradeV2InvoicePath = "/upgrade/invoice"
+
+	/*AccountUpgradeV2Path is the path for checking the upgrade status of an account*/
+	AccountUpgradeV2Path = "/upgrade"
+
+	/*AccountRenewV2InvoicePath is the path for getting an invoice to renew an account*/
+	AccountRenewV2InvoicePath = "/renew/invoice"
+
+	/*AccountRenewV2Path is the path for checking the renew status of an account*/
+	AccountRenewV2Path = "/renew"
+
+	/*DownloadV2Path is the path for downloading files*/
+	DownloadV2Path = "/download/private"
+
+	/*DownloadPublicV2Path is the path for downloading public files*/
+	DownloadPublicV2Path = "/download/public"
+
+	/*MetadataV2GetPath is the path for getting metadata*/
+	MetadataV2GetPath = "/metadata/get"
+
+	/*MetadataV2GetPublicPath is the path for getting metadata*/
+	MetadataV2GetPublicPath = "/metadata/get-public"
+
+	/*MetadataV2AddPath is the path for setting metadata*/
+	MetadataV2AddPath = "/metadata/add"
+
+	/*MetadataV2DeletePath is the path for deleting a metadata*/
+	MetadataV2DeletePath = "/metadata/delete"
+
+	/*InitUploadPublicPath is the path for initiating the upload of files for public sharing*/
 	InitUploadPublicPath = "/init-upload-public"
 
 	/*UploadPublicPath is the path for uploading files for public sharing*/
@@ -117,15 +158,6 @@ const (
 
 	/*PublicShareRevokePath is the path for revoking the share of a public file*/
 	PublicShareRevokePath = "/revoke"
-
-	/*DeletePath is the path for deleting files*/
-	DeletePath = "/delete"
-
-	/*DownloadPath is the path for downloading files*/
-	DownloadPath = "/download"
-
-	/*StripeCreatePath is the path for creating a stripe payment*/
-	StripeCreatePath = "/stripe/create"
 )
 
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
@@ -220,11 +252,25 @@ func setupV1Paths(v1Router *gin.RouterGroup) {
 }
 
 func setupV2Paths(v2Router *gin.RouterGroup) {
+	v2Router.POST(AccountRenewV2InvoicePath, GetAccountRenewalV2InvoiceHandler())
+	v2Router.POST(AccountRenewV2Path, CheckRenewalV2StatusHandler())
+
+	v2Router.POST(AccountUpgradeV2InvoicePath, GetAccountUpgradeV2InvoiceHandler())
+	v2Router.POST(AccountUpgradeV2Path, CheckUpgradeV2StatusHandler())
+
+	v2Router.POST(MetadataV2AddPath, UpdateMetadataV2Handler())
+	v2Router.POST(MetadataV2GetPath, GetMetadataV2Handler())
+	v2Router.POST(MetadataV2GetPublicPath, GetMetadataV2PublicHandler())
+	v2Router.POST(MetadataV2DeletePath, DeleteMetadataV2Handler())
+
 	v2Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())
 	v2Router.POST(UploadPublicPath, UploadFilePublicHandler())
 	v2Router.POST(UploadStatusPublicPath, CheckUploadStatusPublicHandler())
 
 	v2Router.POST(AccountUpdateApiVersion, AccountUpdateApiVersionHandler())
+
+	v2Router.POST(DownloadV2Path, DownloadFileHandler())
+	v2Router.POST(DownloadPublicV2Path, DownloadPublicFileHandler())
 
 	publicShareRouterGroup := v2Router.Group(PublicSharePathPrefix)
 	publicShareRouterGroup.GET(PublicShareShortlinkPath, ShortlinkFileHandler())

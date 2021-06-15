@@ -17,11 +17,11 @@ const (
 )
 
 type createStripePaymentObject struct {
-	StripeToken      string `json:"stripeToken" binding:"required" example:"tok_KPte7942xySKBKyrBu11yEpf"`
-	Timestamp        int64  `json:"timestamp" binding:"required"`
+	StripeToken      string `json:"stripeToken" validate:"required" example:"tok_KPte7942xySKBKyrBu11yEpf"`
+	Timestamp        int64  `json:"timestamp" validate:"required"`
 	UpgradeAccount   bool   `json:"upgradeAccount"`
-	StorageLimit     int    `json:"storageLimit" binding:"omitempty,gte=128" minimum:"128" example:"128"`
-	DurationInMonths int    `json:"durationInMonths" binding:"omitempty,gte=1" minimum:"1" example:"12"`
+	StorageLimit     int    `json:"storageLimit" validate:"omitempty,gte=128" minimum:"128" example:"128"`
+	DurationInMonths int    `json:"durationInMonths" validate:"omitempty,gte=1" minimum:"1" example:"12"`
 }
 
 type createStripePaymentReq struct {
@@ -41,7 +41,7 @@ type stripeDataObj struct {
 	StripeToken         string  `json:"stripeToken"`
 	OpctTxStatus        string  `json:"opctTxStatus"`
 	ChargeID            string  `json:"chargeID"`
-	Amount              float64 `json:"amount" binding:"omitempty,gte=0"`
+	Amount              float64 `json:"amount" validate:"omitempty,gte=0"`
 }
 
 func (v *createStripePaymentReq) getObjectRef() interface{} {

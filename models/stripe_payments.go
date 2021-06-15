@@ -12,11 +12,11 @@ import (
 
 /*StripePayment defines a model for managing a credit card payment*/
 type StripePayment struct {
-	StripeToken    string           `gorm:"primary_key" json:"stripeToken" binding:"required"`
-	AccountID      string           `json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
-	ChargeID       string           `json:"chargeID" binding:"omitempty"`
-	ApiVersion     int              `json:"apiVersion" binding:"omitempty,gte=1" gorm:"default:1"`
-	OpctTxStatus   OpctTxStatusType `json:"opctTxStatus" binding:"required" gorm:"default:1"`
+	StripeToken    string           `gorm:"primary_key" json:"stripeToken" validate:"required"`
+	AccountID      string           `json:"accountID" validate:"required,len=64"` // some hash of the user's master handle
+	ChargeID       string           `json:"chargeID" validate:"omitempty"`
+	ApiVersion     int              `json:"apiVersion" validate:"omitempty,gte=1" gorm:"default:1"`
+	OpctTxStatus   OpctTxStatusType `json:"opctTxStatus" validate:"required" gorm:"default:1"`
 	ChargePaid     bool             `json:"chargePaid"`
 	CreatedAt      time.Time        `json:"createdAt"`
 	UpdatedAt      time.Time        `json:"updatedAt"`

@@ -9,10 +9,10 @@ import (
 
 /*Account defines a model for managing a user subscription for uploads*/
 type ExpiredAccount struct {
-	AccountID  string    `gorm:"primary_key" json:"accountID" binding:"required,len=64"` // some hash of the user's master handle
+	AccountID  string    `gorm:"primary_key" json:"accountID" validate:"required,len=64"` // some hash of the user's master handle
 	CreatedAt  time.Time `json:"createdAt"`
 	UpdatedAt  time.Time `json:"updatedAt"`
-	EthAddress string    `json:"ethAddress" binding:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	EthAddress string    `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	ExpiredAt  time.Time `json:"expiredAt"`
 	RemovedAt  time.Time `json:"removedAt"`
 }

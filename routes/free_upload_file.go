@@ -8,8 +8,8 @@ import (
 )
 
 type freeUploadFileReq struct {
-	UploadID string `json:"uploadID" binding:"required"`
-	FileData string `json:"fileData" binding:"required"`
+	UploadID string `json:"uploadID" validate:"required"`
+	FileData string `json:"fileData" validate:"required"`
 }
 
 type freeUploadFileRes struct {

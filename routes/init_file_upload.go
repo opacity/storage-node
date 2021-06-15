@@ -7,15 +7,15 @@ import (
 )
 
 type InitFileUploadObj struct {
-	FileHandle     string `form:"fileHandle" binding:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-	FileSizeInByte int64  `form:"fileSizeInByte" binding:"required" example:"200000000000006"`
-	EndIndex       int    `form:"endIndex" binding:"required" example:"2"`
+	FileHandle     string `form:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
+	FileSizeInByte int64  `form:"fileSizeInByte" validate:"required" example:"200000000000006"`
+	EndIndex       int    `form:"endIndex" validate:"required" example:"2"`
 }
 
 type InitFileUploadReq struct {
 	verification
 	requestBody
-	Metadata          string `form:"metadata" binding:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
+	Metadata          string `form:"metadata" validate:"required" example:"the metadata of the file you are about to upload, as an array of bytes"`
 	MetadataAsFile    string `formFile:"metadata"`
 	initFileUploadObj InitFileUploadObj
 }

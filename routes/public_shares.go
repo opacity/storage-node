@@ -25,17 +25,10 @@ type PrivateToPublicReq struct {
 
 // PublicShareObj...
 type PublicShareObj struct {
-	Shortlink string `json:"shortlink" binding:"required" example:"the short link of the completed file"`
+	Shortlink string `json:"shortlink" validate:"required" example:"the short link of the completed file"`
 }
 
-// CreateShortlinkObj...
-type CreateShortlinkObj struct {
-	FileID      string `json:"file_id" binding:"required,len=64" minLength:"64" maxLength:"64" example:"the id of the file"`
-	Title       string `json:"title" binding:"required" minLength:"1" maxLength:"65535" example:"LoremIpsum"`
-	Description string `json:"description" binding:"required" minLength:"1" maxLength:"65535" example:"lorem ipsum"`
-}
-
-type ShortlinkFileResp struct {
+type PublicFileDownloadResp struct {
 	S3URL          string `json:"s3_url"`
 	S3ThumbnailURL string `json:"s3_thumbnail_url"`
 }
@@ -44,12 +37,22 @@ type CreateShortlinkResp struct {
 	ShortID string `json:"short_id"`
 }
 
+type CreateShortlinkReq struct {
+	verification
+	requestBody
+	createShortlinkObj models.CreateShortlinkObj
+}
+
 type viewsCountResp struct {
 	Count int `json:"count"`
 }
 
 func (v *PublicShareOpsReq) getObjectRef() interface{} {
 	return &v.publicShareObj
+}
+
+func (v *CreateShortlinkReq) getObjectRef() interface{} {
+	return &v.createShortlinkObj
 }
 
 // CreateShortlinkHandler godoc
@@ -63,6 +66,8 @@ func (v *PublicShareOpsReq) getObjectRef() interface{} {
 // @description 	"fileId": "the ID of the file",
 // @description 	"title": "the title of the file",
 // @description 	"description": "a description of the file",
+// @description 	"mimeType": "the file mimeType example: image/png",
+// @description 	"fileExtension": "the file extension, example: png"
 // @description }
 // @Success 200 {object} routes.CreateShortlinkResp
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -80,7 +85,7 @@ func CreateShortlinkHandler() gin.HandlerFunc {
 // @Accept  json
 // @Produce  json
 // @Param shortlink path string true "shortlink ID"
-// @Success 200 {object} shortlinkFileResp
+// @Success 200 {object} PublicFileDownloadResp
 // @Failure 404 {string} string "file does not exist"
 // @Failure 500 {string} string "there was an error parsing your request"
 // @Router /api/v2/public-share/:shortlink [get]
@@ -137,7 +142,7 @@ func createShortLinkWithContext(c *gin.Context) error {
 		return err
 	}
 
-	publicShare, err := models.CreatePublicShare(request.createShortlinkObj.Title, request.createShortlinkObj.Description, request.createShortlinkObj.FileID)
+	publicShare, err := models.CreatePublicShare(request.createShortlinkObj)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return NotFoundResponse(c, errors.New("the data does not exist"))
@@ -163,10 +168,12 @@ func shortlinkURL(c *gin.Context) error {
 	if err != nil {
 		return InternalErrorResponse(c, errors.New("there was an error parsing your request"))
 	}
-	bucketURL := models.GetBucketUrl()
-	return OkResponse(c, ShortlinkFileResp{
-		S3URL:          bucketURL + fileDataPublicKey,
-		S3ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(publicShare.FileID),
+
+	fileURL, thumbnailURL := models.GetPublicFileDownloadData(publicShare.FileID)
+
+	return OkResponse(c, PublicFileDownloadResp{
+		S3URL:          fileURL,
+		S3ThumbnailURL: thumbnailURL,
 	})
 }
 

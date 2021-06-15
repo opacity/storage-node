@@ -143,55 +143,6 @@
                 }
             }
         },
-        "/api/v1/download": {
-            "post": {
-                "description": "download a file without cryptographic verification",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "download a file without cryptographic verification",
-                "parameters": [
-                    {
-                        "description": "download object for non-signed requests",
-                        "name": "downloadFileObj",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/routes.downloadFileObj"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routes.downloadFileRes"
-                        }
-                    },
-                    "400": {
-                        "description": "bad request, unable to parse request body: (with the error)",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "such data does not exist",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "some information about the internal error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v1/init-upload": {
             "post": {
                 "description": "start an upload\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"fileSizeInByte\": \"200000000000006\",\n\"endIndex\": 2\n}",
@@ -743,6 +694,104 @@
                 }
             }
         },
+        "/api/v1/upgradeV2": {
+            "post": {
+                "description": "check the upgradeV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "check the upgradeV2 status",
+                "parameters": [
+                    {
+                        "description": "check upgradeV2 status object",
+                        "name": "checkUpgradeV2StatusReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.checkUpgradeV2StatusReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/upgradeV2/invoice": {
+            "post": {
+                "description": "get an invoice to upgradeV2 an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get an invoice to upgradeV2 an account",
+                "parameters": [
+                    {
+                        "description": "get upgradeV2 invoice object",
+                        "name": "getUpgradeV2AccountInvoiceReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/upload": {
             "post": {
                 "description": "upload a chunk of a file. The first partIndex must be 1.\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"partIndex\": 1,\n}",
@@ -890,6 +939,104 @@
                 }
             }
         },
+        "/api/v2/download/private": {
+            "post": {
+                "description": "download a file without cryptographic verification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "download a file without cryptographic verification",
+                "parameters": [
+                    {
+                        "description": "download object for non-signed requests",
+                        "name": "routes.DownloadFileObj",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.DownloadFileObj"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.downloadFileRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "such data does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/download/public": {
+            "post": {
+                "description": "returns the URLs for a public file and it's thumbnail, if no thumbnail is present, return a default one",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "returns the URLs for a public file and it's thumbnail",
+                "parameters": [
+                    {
+                        "description": "download object for non-signed requests",
+                        "name": "routes.DownloadFileObj",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.DownloadFileObj"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.downloadPublicFileRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "such data does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/init-upload-public": {
             "post": {
                 "description": "start a public upload.\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"the file ID for which the public file should be created\",\n\"fileSizeInByte\": \"55600008877\",\n\"endIndex\": 2\n}",
@@ -939,6 +1086,214 @@
                 }
             }
         },
+        "/api/v2/metadata/add": {
+            "post": {
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataV2Key\": \"public key for the metadataV2 encoded to base64\",\n\"metadataV2Vertex\": \"the vertex to add to your account metadataV2 encoded to base64\",\n\"metadataV2Edges\": \"the edges to add to your account metadataV2 encoded to base64\",\n\"metadataV2Sig\": \"a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2\",\n\"timestamp\": 1557346389\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Update metadataV2",
+                "parameters": [
+                    {
+                        "description": "update metadataV2 object",
+                        "name": "updateMetadataV2Req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.updateMetadataV2Req"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.updateMetadataV2Res"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, can't verify signature: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "subscription expired, or the invoice response",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no value found for that key, or account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/metadata/delete": {
+            "post": {
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataV2Key\": \"public key for the metadataV2 encoded to base64\",\n\"timestamp\": 1557346389\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "delete a metadataV2",
+                "parameters": [
+                    {
+                        "description": "object for endpoints that only need metadataV2Key and timestamp",
+                        "name": "metadataV2KeyReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.metadataV2KeyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, incorrect key length",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "subscription expired, or the invoice resonse",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/metadata/get": {
+            "post": {
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataV2Key\": \"public key for the metadataV2 encoded to base64\",\n\"timestamp\": 1557346389\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Retrieve account metadataV2",
+                "parameters": [
+                    {
+                        "description": "object for endpoints that only need metadataV2Key and timestamp",
+                        "name": "metadataV2KeyReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.metadataV2KeyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.getMetadataV2Res"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, incorrect key length",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "subscription expired, or the invoice resonse",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no value found for that key, or account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/metadata/get-public": {
+            "post": {
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataV2Key\": \"public key for the metadataV2 encoded to base64\",\n\"timestamp\": 1557346389\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Retrieve account metadataV2",
+                "parameters": [
+                    {
+                        "description": "object for endpoints that only need metadataV2Key and timestamp",
+                        "name": "metadataV2PublicKeyReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.metadataV2PublicKeyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.getMetadataV2Res"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, incorrect key length",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "subscription expired, or the invoice resonse",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no value found for that key, or account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/public-share/:shortlink": {
             "get": {
                 "description": "get the S3 URL for a publicly shared file",
@@ -962,7 +1317,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.shortlinkFileResp"
+                            "$ref": "#/definitions/routes.PublicFileDownloadResp"
                         }
                     },
                     "404": {
@@ -982,7 +1337,7 @@
         },
         "/api/v2/public-share/convert": {
             "post": {
-                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"size\": 7123534,\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -1005,7 +1360,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.PrivateToPublicResp"
+                            "$ref": "#/definitions/routes.StatusRes"
                         }
                     },
                     "400": {
@@ -1086,7 +1441,7 @@
         },
         "/api/v2/public-share/shortlink": {
             "post": {
-                "description": "this endpoint will created a new shortlink based on the fileHandle, a title and a description\nrequestBody should be a stringified version of:\n{\n\"fileId\": \"the ID of the file\",\n\"title\": \"the title of the file\",\n\"description\": \"a description of the file\",\n}",
+                "description": "this endpoint will created a new shortlink based on the fileHandle, a title and a description\nrequestBody should be a stringified version of:\n{\n\"fileId\": \"the ID of the file\",\n\"title\": \"the title of the file\",\n\"description\": \"a description of the file\",\n\"mimeType\": \"the file mimeType example: image/png\",\n\"fileExtension\": \"the file extension, example: png\"\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -1303,6 +1658,46 @@
         }
     },
     "definitions": {
+        "models.CreateShortlinkObj": {
+            "type": "object",
+            "required": [
+                "description",
+                "file_id",
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "maxLength": 65535,
+                    "minLength": 1,
+                    "example": "lorem ipsum"
+                },
+                "fileExtension": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1,
+                    "example": "png"
+                },
+                "file_id": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "the id of the file"
+                },
+                "mimeType": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1,
+                    "example": "image/png"
+                },
+                "title": {
+                    "type": "string",
+                    "maxLength": 65535,
+                    "minLength": 1,
+                    "example": "LoremIpsum"
+                }
+            }
+        },
         "models.Invoice": {
             "type": "object",
             "required": [
@@ -1321,34 +1716,6 @@
                 }
             }
         },
-        "routes.CreateShortlinkObj": {
-            "type": "object",
-            "required": [
-                "description",
-                "file_id",
-                "title"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 65535,
-                    "minLength": 1,
-                    "example": "lorem ipsum"
-                },
-                "file_id": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 64,
-                    "example": "the id of the file"
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 65535,
-                    "minLength": 1,
-                    "example": "LoremIpsum"
-                }
-            }
-        },
         "routes.CreateShortlinkReq": {
             "type": "object",
             "required": [
@@ -1359,7 +1726,7 @@
             "properties": {
                 "createShortlinkObj": {
                     "type": "object",
-                    "$ref": "#/definitions/routes.CreateShortlinkObj"
+                    "$ref": "#/definitions/models.CreateShortlinkObj"
                 },
                 "publicKey": {
                     "type": "string",
@@ -1385,6 +1752,18 @@
             "properties": {
                 "short_id": {
                     "type": "string"
+                }
+            }
+        },
+        "routes.DownloadFileObj": {
+            "type": "object",
+            "required": [
+                "fileID"
+            ],
+            "properties": {
+                "fileID": {
+                    "type": "string",
+                    "example": "the handle of the file"
                 }
             }
         },
@@ -1463,7 +1842,8 @@
         "routes.PrivateToPublicObj": {
             "type": "object",
             "required": [
-                "fileHandle"
+                "fileHandle",
+                "size"
             ],
             "properties": {
                 "fileHandle": {
@@ -1471,6 +1851,9 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a deterministically created file handle"
+                },
+                "size": {
+                    "type": "integer"
                 }
             }
         },
@@ -1505,7 +1888,7 @@
                 }
             }
         },
-        "routes.PrivateToPublicResp": {
+        "routes.PublicFileDownloadResp": {
             "type": "object",
             "properties": {
                 "s3_thumbnail_url": {
@@ -1745,7 +2128,8 @@
                     "$ref": "#/definitions/routes.accountGetObj"
                 },
                 "error": {
-                    "type": "error"
+                    "type": "string",
+                    "example": "the error encountered while checking"
                 },
                 "paymentStatus": {
                     "type": "string",
@@ -1845,7 +2229,8 @@
                     "$ref": "#/definitions/routes.accountGetObj"
                 },
                 "error": {
-                    "type": "error"
+                    "type": "string",
+                    "example": "the error encountered while checking"
                 },
                 "invoice": {
                     "type": "object",
@@ -1919,6 +2304,64 @@
                 }
             }
         },
+        "routes.checkRenewalV2StatusObject": {
+            "type": "object",
+            "required": [
+                "fileHandles",
+                "metadataKeys"
+            ],
+            "properties": {
+                "fileHandles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "an array containing all your file handles"
+                    ]
+                },
+                "metadataKeys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "an array containing all your metadata keys"
+                    ]
+                }
+            }
+        },
+        "routes.checkRenewalV2StatusReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "checkRenewalV2StatusObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.checkRenewalV2StatusObject"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
         "routes.checkUpgradeStatusObject": {
             "type": "object",
             "required": [
@@ -1969,6 +2412,76 @@
                 "checkUpgradeStatusObject": {
                     "type": "object",
                     "$ref": "#/definitions/routes.checkUpgradeStatusObject"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.checkUpgradeV2StatusObject": {
+            "type": "object",
+            "required": [
+                "durationInMonths",
+                "fileHandles",
+                "metadataKeys",
+                "storageLimit"
+            ],
+            "properties": {
+                "durationInMonths": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 12
+                },
+                "fileHandles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "an array containing all your file handles"
+                    ]
+                },
+                "metadataKeys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "an array containing all your metadata keys"
+                    ]
+                },
+                "storageLimit": {
+                    "type": "integer",
+                    "minimum": 128,
+                    "example": 128
+                }
+            }
+        },
+        "routes.checkUpgradeV2StatusReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "checkUpgradeV2StatusObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.checkUpgradeV2StatusObject"
                 },
                 "publicKey": {
                     "type": "string",
@@ -2106,18 +2619,6 @@
         "routes.deleteFileRes": {
             "type": "object"
         },
-        "routes.downloadFileObj": {
-            "type": "object",
-            "required": [
-                "fileID"
-            ],
-            "properties": {
-                "fileID": {
-                    "type": "string",
-                    "example": "the handle of the file"
-                }
-            }
-        },
         "routes.downloadFileRes": {
             "type": "object",
             "properties": {
@@ -2125,6 +2626,19 @@
                     "description": "Url should point to S3, thus client does not need to download it from this node.",
                     "type": "string",
                     "example": "a URL to use to download the file"
+                }
+            }
+        },
+        "routes.downloadPublicFileRes": {
+            "type": "object",
+            "properties": {
+                "fileDownloadThumbnailUrl": {
+                    "type": "string",
+                    "example": "a URL to use to download the public file thumbnail"
+                },
+                "fileDownloadUrl": {
+                    "type": "string",
+                    "example": "a URL to use to download the public file"
                 }
             }
         },
@@ -2162,7 +2676,9 @@
         "routes.getMetadataHistoryRes": {
             "type": "object",
             "required": [
-                "expirationDate"
+                "expirationDate",
+                "metadata",
+                "metadataHistory"
             ],
             "properties": {
                 "expirationDate": {
@@ -2186,7 +2702,8 @@
         "routes.getMetadataRes": {
             "type": "object",
             "required": [
-                "expirationDate"
+                "expirationDate",
+                "metadata"
             ],
             "properties": {
                 "expirationDate": {
@@ -2195,6 +2712,22 @@
                 "metadata": {
                     "type": "string",
                     "example": "your account metadata"
+                }
+            }
+        },
+        "routes.getMetadataV2Res": {
+            "type": "object",
+            "required": [
+                "expirationDate",
+                "metadataV2"
+            ],
+            "properties": {
+                "expirationDate": {
+                    "type": "string"
+                },
+                "metadataV2": {
+                    "type": "string",
+                    "example": "your account metadataV2"
                 }
             }
         },
@@ -2233,6 +2766,49 @@
             }
         },
         "routes.getRenewalAccountInvoiceRes": {
+            "type": "object",
+            "properties": {
+                "opctInvoice": {
+                    "type": "object",
+                    "$ref": "#/definitions/models.Invoice"
+                }
+            }
+        },
+        "routes.getRenewalV2AccountInvoiceObject": {
+            "type": "object"
+        },
+        "routes.getRenewalV2AccountInvoiceReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "getRenewalV2AccountInvoiceObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.getRenewalV2AccountInvoiceObject"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.getRenewalV2AccountInvoiceRes": {
             "type": "object",
             "properties": {
                 "opctInvoice": {
@@ -2300,6 +2876,65 @@
                 }
             }
         },
+        "routes.getUpgradeV2AccountInvoiceObject": {
+            "type": "object",
+            "required": [
+                "durationInMonths",
+                "storageLimit"
+            ],
+            "properties": {
+                "durationInMonths": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 12
+                },
+                "storageLimit": {
+                    "type": "integer",
+                    "minimum": 128,
+                    "example": 128
+                }
+            }
+        },
+        "routes.getUpgradeV2AccountInvoiceReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "getUpgradeV2AccountInvoiceObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceObject"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.getUpgradeV2AccountInvoiceRes": {
+            "type": "object",
+            "properties": {
+                "opctInvoice": {
+                    "type": "object",
+                    "$ref": "#/definitions/models.Invoice"
+                }
+            }
+        },
         "routes.metadataKeyObject": {
             "type": "object",
             "required": [
@@ -2347,14 +2982,66 @@
                 }
             }
         },
-        "routes.shortlinkFileResp": {
+        "routes.metadataV2KeyObject": {
             "type": "object",
+            "required": [
+                "metadataV2Key",
+                "timestamp"
+            ],
             "properties": {
-                "s3_thumbnail_url": {
-                    "type": "string"
+                "metadataV2Key": {
+                    "type": "string",
+                    "example": "public key for the metadataV2 encoded to base64url"
                 },
-                "s3_url": {
-                    "type": "string"
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "routes.metadataV2KeyReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "metadataV2KeyObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.metadataV2KeyObject"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.metadataV2PublicKeyReq": {
+            "type": "object",
+            "required": [
+                "requestBody"
+            ],
+            "properties": {
+                "metadataV2KeyObject": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.metadataV2KeyObject"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
                 }
             }
         },
@@ -2478,6 +3165,97 @@
                 "metadataKey": {
                     "type": "string",
                     "example": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"
+                }
+            }
+        },
+        "routes.updateMetadataV2Object": {
+            "type": "object",
+            "required": [
+                "metadataV2Edges",
+                "metadataV2Key",
+                "metadataV2Sig",
+                "metadataV2Vertex",
+                "timestamp"
+            ],
+            "properties": {
+                "isPublic": {
+                    "type": "boolean"
+                },
+                "metadataV2Edges": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "the edges to add to your account metadataV2 encoded to base64url"
+                    ]
+                },
+                "metadataV2Key": {
+                    "type": "string",
+                    "example": "public key for the metadataV2 encoded to base64url"
+                },
+                "metadataV2Sig": {
+                    "type": "string",
+                    "example": "a signature encoded to base64url confirming the metadata change, the publickey will be a key for the metadataV2"
+                },
+                "metadataV2Vertex": {
+                    "type": "string",
+                    "example": "the vertex to add to your account metadataV2 encoded to base64url"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "routes.updateMetadataV2Req": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                },
+                "updateMetadataV2Object": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.updateMetadataV2Object"
+                }
+            }
+        },
+        "routes.updateMetadataV2Res": {
+            "type": "object",
+            "required": [
+                "expirationDate",
+                "metadataV2",
+                "metadataV2Key"
+            ],
+            "properties": {
+                "expirationDate": {
+                    "type": "string"
+                },
+                "metadataV2": {
+                    "type": "string",
+                    "example": "your (updated) account metadataV2"
+                },
+                "metadataV2Key": {
+                    "type": "string",
+                    "example": "public key for the metadataV2 encoded to base64url"
                 }
             }
         },

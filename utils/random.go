@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/base64"
 	"math/rand"
 	"time"
 )
@@ -13,9 +14,27 @@ func GenerateFileHandle() string {
 	return RandHexString(64)
 }
 
+func GenerateMetadataV2Key() string {
+	return RandB64String(64)
+}
+
+func RandByteSlice(length int) []byte {
+	b := make([]byte, length)
+	rand.Read(b)
+
+	return b
+}
+
 /*RandHexString generates a random hex string of the length passed in*/
 func RandHexString(length int) string {
 	return RandSeqFromRunes(length, []rune("abcdef01234567890"))
+}
+
+func RandB64String(byteLen int) string {
+	b := make([]byte, byteLen)
+	rand.Read(b)
+
+	return base64.URLEncoding.EncodeToString(b)
 }
 
 /*RandSeqFromRunes generates a random sequence from some runes*/

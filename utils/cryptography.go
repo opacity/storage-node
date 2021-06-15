@@ -4,6 +4,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/ecdsa"
+	"encoding/base64"
 	"encoding/hex"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -87,6 +88,11 @@ func HashString(dataString string) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(crypto.Keccak256(dataBytes)), nil
+}
+
+/*HashStringV2 hashes input string arguments and outputs a hash encoded as a base64 string*/
+func HashStringV2(data []byte) string {
+	return base64.URLEncoding.EncodeToString(crypto.Keccak256(data))
 }
 
 /*Hash hashes input byte arguments*/

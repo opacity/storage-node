@@ -5,7 +5,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -179,37 +178,13 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 	return lenToRead, nil
 }
 
-type CreateShortlinkReq struct {
-	verification
-	requestBody
-	createShortlinkObj CreateShortlinkObj
-}
-
 type PrivateToPublicObj struct {
 	FileHandle string `json:"fileHandle" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a deterministically created file handle"`
-}
-
-type PrivateToPublicResp struct {
-	S3URL          string `json:"s3_url"`
-	S3ThumbnailURL string `json:"s3_thumbnail_url"`
-}
-
-type FileMetadata struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Size int    `json:"size"`
-	P    struct {
-		BlockSize int `json:"blockSize"`
-		PartSize  int `json:"partSize"`
-	} `json:"p"`
+	Size       int    `json:"size" binding:"required"`
 }
 
 func (v *PrivateToPublicReq) getObjectRef() interface{} {
 	return &v.privateToPublicObj
-}
-
-func (v *CreateShortlinkReq) getObjectRef() interface{} {
-	return &v.createShortlinkObj
 }
 
 // PrivateToPublicConvertHandler godoc
@@ -221,8 +196,9 @@ func (v *CreateShortlinkReq) getObjectRef() interface{} {
 // @description requestBody should be a stringified version of:
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
+// @description 	"size": 7123534,
 // @description }
-// @Success 200 {object} routes.PrivateToPublicResp
+// @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 403 {string} string "signature did not match"
 // @Failure 404 {string} string "the data does not exist"
@@ -245,15 +221,13 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(hash)) {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
-
-	fileMetadata, err := utils.GetDefaultBucketObject(models.GetFileMetadataKey(hash), false)
-	if err != nil {
-		return NotFoundResponse(c, errors.New("the data does not exist"))
+	size := request.privateToPublicObj.Size
+	if size <= 0 {
+		return InternalErrorResponse(c, errors.New("file size can't be 0 or below 0"))
 	}
-	decryptedMetadata, _ := DecryptMetadata(encryptionKey, []byte(fileMetadata))
 
-	numberOfParts := ((decryptedMetadata.Size-1)/DefaultPartSize + 1)
-	sizeWithEncryption := decryptedMetadata.Size + BlockOverhead*((decryptedMetadata.Size-1)/DefaultBlockSize+1)
+	numberOfParts := ((size-1)/DefaultPartSize + 1)
+	sizeWithEncryption := size + BlockOverhead*((size-1)/DefaultBlockSize+1)
 
 	downloadProgress := &DownloadProgress{
 		SizeWithEncryption: sizeWithEncryption,
@@ -262,7 +236,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 
 	decryptProgress := &DecryptProgress{
 		Key:                encryptionKey,
-		Size:               decryptedMetadata.Size,
+		Size:               size,
 		SizeWithEncryption: sizeWithEncryption,
 		ChunkSize:          DefaultBlockSize + BlockOverhead,
 	}
@@ -271,12 +245,11 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 
 	go DownloadProgressRun(downloadProgress, decryptProgress)
 
-	generateThumbnailC := make(chan bool, 1)
 	g.Go(func() error {
-		return ReadUploadPublicDecryptedFile(decryptProgress, decryptedMetadata, hash, generateThumbnailC)
+		return ReadUploadPublicDecryptedFile(decryptProgress, hash)
 	})
 
-	err = PublicShareDownloadFile(hash, encryptionKey, numberOfParts, sizeWithEncryption, decryptedMetadata, downloadProgress)
+	err := PublicShareDownloadFile(hash, encryptionKey, numberOfParts, downloadProgress)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -284,19 +257,10 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	if err := g.Wait(); err != nil {
 		return InternalErrorResponse(c, err)
 	}
-	thumbnailGenerated := <-generateThumbnailC
-	bucketURL := models.GetBucketUrl()
 
-	privateToPublicResp := PrivateToPublicResp{
-		S3URL:          bucketURL + models.GetFileDataPublicKey(hash),
-		S3ThumbnailURL: bucketURL + models.GetPublicThumbnailKey(hash),
-	}
-
-	if !thumbnailGenerated {
-		privateToPublicResp.S3ThumbnailURL = bucketURL + "thumbnail_default.png"
-	}
-
-	return OkResponse(c, privateToPublicResp)
+	return OkResponse(c, StatusRes{
+		Status: "private file converted to public",
+	})
 }
 
 func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byte, err error) {
@@ -324,21 +288,7 @@ func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byt
 	return
 }
 
-func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
-	decryptedByteData, err := DecryptWithNonceSize(key, data)
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(decryptedByteData, &fileMetadata)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-func PublicShareDownloadFile(hash string, key []byte, numberOfParts, sizeWithEncryption int, metadata FileMetadata, downloadProgress *DownloadProgress) error {
+func PublicShareDownloadFile(hash string, key []byte, numberOfParts int, downloadProgress *DownloadProgress) error {
 	for i := 0; i < numberOfParts; i++ {
 		offset := i * DefaultPartSize
 		limit := offset + DefaultPartSize
@@ -375,9 +325,7 @@ func PublicShareDownloadFile(hash string, key []byte, numberOfParts, sizeWithEnc
 	return nil
 }
 
-func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, metadata FileMetadata, hash string, generateThumbnailC chan bool) (err error) {
-	defer close(generateThumbnailC)
-
+func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, hash string) (err error) {
 	awsKey := models.GetFileDataPublicKey(hash)
 	_, uploadID, err := utils.CreateMultiPartUpload(awsKey)
 	if err != nil {
@@ -447,7 +395,6 @@ func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, metadata Fi
 	if _, err = utils.CompleteMultiPartUpload(awsKey, *uploadID, completedParts); err != nil {
 		return
 	}
-	generateThumbnailC <- generateThumbnail
 
 	return utils.SetDefaultObjectCannedAcl(awsKey, utils.CannedAcl_PublicRead)
 

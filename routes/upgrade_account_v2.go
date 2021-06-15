@@ -1,81 +1,83 @@
 package routes
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"math/big"
-	"time"
 )
 
-type getUpgradeAccountInvoiceObject struct {
+type getUpgradeV2AccountInvoiceObject struct {
 	StorageLimit     int `json:"storageLimit" validate:"required,gte=128" minimum:"128" example:"128"`
 	DurationInMonths int `json:"durationInMonths" validate:"required,gte=1" minimum:"1" example:"12"`
 }
 
-type checkUpgradeStatusObject struct {
+type checkUpgradeV2StatusObject struct {
 	MetadataKeys     []string `json:"metadataKeys" validate:"required" example:"an array containing all your metadata keys"`
 	FileHandles      []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
 	StorageLimit     int      `json:"storageLimit" validate:"required,gte=128" minimum:"128" example:"128"`
 	DurationInMonths int      `json:"durationInMonths" validate:"required,gte=1" minimum:"1" example:"12"`
 }
 
-type getUpgradeAccountInvoiceReq struct {
+type getUpgradeV2AccountInvoiceReq struct {
 	verification
 	requestBody
-	getUpgradeAccountInvoiceObject getUpgradeAccountInvoiceObject
+	getUpgradeV2AccountInvoiceObject getUpgradeV2AccountInvoiceObject
 }
 
-type checkUpgradeStatusReq struct {
+type checkUpgradeV2StatusReq struct {
 	verification
 	requestBody
-	checkUpgradeStatusObject checkUpgradeStatusObject
+	checkUpgradeV2StatusObject checkUpgradeV2StatusObject
 }
 
-type getUpgradeAccountInvoiceRes struct {
+type getUpgradeV2AccountInvoiceRes struct {
 	OpctInvoice models.Invoice `json:"opctInvoice"`
-	// TODO: uncomment out if we decide to support stripe for upgrades
+	// TODO: uncomment out if we decide to support stripe for upgradeV2s
 	// UsdInvoice float64        `json:"usdInvoice,omitempty"`
 }
 
-func (v *getUpgradeAccountInvoiceReq) getObjectRef() interface{} {
-	return &v.getUpgradeAccountInvoiceObject
+func (v *getUpgradeV2AccountInvoiceReq) getObjectRef() interface{} {
+	return &v.getUpgradeV2AccountInvoiceObject
 }
 
-func (v *checkUpgradeStatusReq) getObjectRef() interface{} {
-	return &v.checkUpgradeStatusObject
+func (v *checkUpgradeV2StatusReq) getObjectRef() interface{} {
+	return &v.checkUpgradeV2StatusObject
 }
 
-// GetAccountUpgradeInvoiceHandler godoc
-// @Summary get an invoice to upgrade an account
-// @Description get an invoice to upgrade an account
+// GetAccountUpgradeV2InvoiceHandler godoc
+// @Summary get an invoice to upgradeV2 an account
+// @Description get an invoice to upgradeV2 an account
 // @Accept  json
 // @Produce  json
-// @Param getUpgradeAccountInvoiceReq body routes.getUpgradeAccountInvoiceReq true "get upgrade invoice object"
+// @Param getUpgradeV2AccountInvoiceReq body routes.getUpgradeV2AccountInvoiceReq true "get upgradeV2 invoice object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"storageLimit": 100,
 // @description 	"durationInMonths": 12,
 // @description }
-// @Success 200 {object} routes.getUpgradeAccountInvoiceRes
+// @Success 200 {object} routes.getUpgradeV2AccountInvoiceRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/upgrade/invoice [post]
-/*GetAccountUpgradeInvoiceHandler is a handler for getting an invoice to upgrade an account*/
-func GetAccountUpgradeInvoiceHandler() gin.HandlerFunc {
-	return ginHandlerFunc(getAccountUpgradeInvoice)
+// @Router /api/v1/upgradeV2/invoice [post]
+/*GetAccountUpgradeV2InvoiceHandler is a handler for getting an invoice to upgradeV2 an account*/
+func GetAccountUpgradeV2InvoiceHandler() gin.HandlerFunc {
+	return ginHandlerFunc(getAccountUpgradeV2Invoice)
 }
 
-// CheckUpgradeStatusHandler godoc
-// @Summary check the upgrade status
-// @Description check the upgrade status
+// CheckUpgradeV2StatusHandler godoc
+// @Summary check the upgradeV2 status
+// @Description check the upgradeV2 status
 // @Accept  json
 // @Produce  json
-// @Param checkUpgradeStatusReq body routes.checkUpgradeStatusReq true "check upgrade status object"
+// @Param checkUpgradeV2StatusReq body routes.checkUpgradeV2StatusReq true "check upgradeV2 status object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"storageLimit": 100,
@@ -87,14 +89,14 @@ func GetAccountUpgradeInvoiceHandler() gin.HandlerFunc {
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/upgrade [post]
-/*CheckUpgradeStatusHandler is a handler for checking the upgrade status*/
-func CheckUpgradeStatusHandler() gin.HandlerFunc {
-	return ginHandlerFunc(checkUpgradeStatus)
+// @Router /api/v1/upgradeV2 [post]
+/*CheckUpgradeV2StatusHandler is a handler for checking the upgradeV2 status*/
+func CheckUpgradeV2StatusHandler() gin.HandlerFunc {
+	return ginHandlerFunc(checkUpgradeV2Status)
 }
 
-func getAccountUpgradeInvoice(c *gin.Context) error {
-	request := getUpgradeAccountInvoiceReq{}
+func getAccountUpgradeV2Invoice(c *gin.Context) error {
+	request := getUpgradeV2AccountInvoiceReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
@@ -105,17 +107,17 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyUpgradeEligible(account, request.getUpgradeAccountInvoiceObject.StorageLimit, c); err != nil {
+	if err := verifyUpgradeEligible(account, request.getUpgradeV2AccountInvoiceObject.StorageLimit, c); err != nil {
 		return err
 	}
 
-	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(request.getUpgradeAccountInvoiceObject.StorageLimit,
-		//request.getUpgradeAccountInvoiceObject.DurationInMonths)
+	upgradeV2CostInOPCT, _ := account.UpgradeCostInOPCT(request.getUpgradeV2AccountInvoiceObject.StorageLimit,
+		//request.getUpgradeV2AccountInvoiceObject.DurationInMonths)
 		account.MonthsInSubscription)
 
 	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
 	if err != nil {
-		err = fmt.Errorf("error generating upgrade wallet:  %v", err)
+		err = fmt.Errorf("error generating upgradeV2 wallet:  %v", err)
 		return BadRequestResponse(c, err)
 	}
 
@@ -129,36 +131,36 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 		return ServiceUnavailableResponse(c, fmt.Errorf("error encrypting private key:  %v", encryptErr))
 	}
 
-	upgrade := models.Upgrade{
+	upgradeV2 := models.Upgrade{
 		AccountID:       account.AccountID,
-		NewStorageLimit: models.StorageLimitType(request.getUpgradeAccountInvoiceObject.StorageLimit),
+		NewStorageLimit: models.StorageLimitType(request.getUpgradeV2AccountInvoiceObject.StorageLimit),
 		OldStorageLimit: account.StorageLimit,
 		EthAddress:      ethAddr.String(),
 		EthPrivateKey:   hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:   models.InitialPaymentInProgress,
-		OpctCost:        upgradeCostInOPCT,
-		//UsdCost:          upgradeCostInUSD,
-		//DurationInMonths: request.getUpgradeAccountInvoiceObject.DurationInMonths,
+		OpctCost:        upgradeV2CostInOPCT,
+		//UsdCost:          upgradeV2CostInUSD,
+		//DurationInMonths: request.getUpgradeV2AccountInvoiceObject.DurationInMonths,
 		DurationInMonths: account.MonthsInSubscription,
 	}
 
-	upgradeInDB, err := models.GetOrCreateUpgrade(upgrade)
+	upgradeV2InDB, err := models.GetOrCreateUpgrade(upgradeV2)
 	if err != nil {
-		err = fmt.Errorf("error getting or creating upgrade:  %v", err)
+		err = fmt.Errorf("error getting or creating upgradeV2:  %v", err)
 		return ServiceUnavailableResponse(c, err)
 	}
 
-	return OkResponse(c, getUpgradeAccountInvoiceRes{
+	return OkResponse(c, getUpgradeV2AccountInvoiceRes{
 		OpctInvoice: models.Invoice{
-			Cost:       upgradeCostInOPCT,
-			EthAddress: upgradeInDB.EthAddress,
+			Cost:       upgradeV2CostInOPCT,
+			EthAddress: upgradeV2InDB.EthAddress,
 		},
-		//UsdInvoice: upgradeCostInUSD,
+		//UsdInvoice: upgradeV2CostInUSD,
 	})
 }
 
-func checkUpgradeStatus(c *gin.Context) error {
-	request := checkUpgradeStatusReq{}
+func checkUpgradeV2Status(c *gin.Context) error {
+	request := checkUpgradeV2StatusReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
@@ -169,18 +171,18 @@ func checkUpgradeStatus(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyUpgradeEligible(account, request.checkUpgradeStatusObject.StorageLimit, c); err != nil {
+	if err := verifyUpgradeEligible(account, request.checkUpgradeV2StatusObject.StorageLimit, c); err != nil {
 		return err
 	}
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, request.checkUpgradeStatusObject.StorageLimit, int(account.StorageLimit))
-	//if upgrade.DurationInMonths != request.checkUpgradeStatusObject.DurationInMonths {
+	upgradeV2, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, request.checkUpgradeV2StatusObject.StorageLimit, int(account.StorageLimit))
+	//if upgradeV2.DurationInMonths != request.checkUpgradeV2StatusObject.DurationInMonths {
 	//	return ForbiddenResponse(c, errors.New("durationInMonths does not match durationInMonths "+
-	//		"when upgrade was initiated"))
+	//		"when upgradeV2 was initiated"))
 	//}
 
 	//stripePayment, err := models.GetNewestStripePaymentByAccountId(account.AccountID)
-	//if stripePayment.AccountID == account.AccountID && err == nil && stripePayment.UpgradePayment {
+	//if stripePayment.AccountID == account.AccountID && err == nil && stripePayment.UpgradeV2Payment {
 	//	paid, err := stripePayment.CheckChargePaid()
 	//	if err != nil {
 	//		return InternalErrorResponse(c, err)
@@ -190,13 +192,13 @@ func checkUpgradeStatus(c *gin.Context) error {
 	//			Status: "Incomplete",
 	//		})
 	//	}
-	//	stripePayment.CheckUpgradeOPCTTransaction(account, request.checkUpgradeStatusObject.StorageLimit)
+	//	stripePayment.CheckUpgradeV2OPCTTransaction(account, request.checkUpgradeV2StatusObject.StorageLimit)
 	//	amount, err := checkChargeAmount(c, stripePayment.ChargeID)
 	//	if err != nil {
 	//		return InternalErrorResponse(c, err)
 	//	}
-	//	if amount >= upgrade.UsdCost {
-	//		if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
+	//	if amount >= upgradeV2.UsdCost {
+	//		if err := upgradeV2AccountAndUpdateExpireDates(account, request, c); err != nil {
 	//			return InternalErrorResponse(c, err)
 	//		}
 	//		return OkResponse(c, StatusRes{
@@ -205,8 +207,8 @@ func checkUpgradeStatus(c *gin.Context) error {
 	//	}
 	//}
 
-	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgrade.EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost)))
+	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgradeV2.EthAddress),
+		utils.ConvertToWeiUnit(big.NewFloat(upgradeV2.OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -215,10 +217,10 @@ func checkUpgradeStatus(c *gin.Context) error {
 			Status: "Incomplete",
 		})
 	}
-	if err := models.DB.Model(&upgrade).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+	if err := models.DB.Model(&upgradeV2).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
 		return InternalErrorResponse(c, err)
 	}
-	if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
+	if err := upgradeV2AccountAndUpdateExpireDates(account, request, c); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	return OkResponse(c, StatusRes{
@@ -226,40 +228,50 @@ func checkUpgradeStatus(c *gin.Context) error {
 	})
 }
 
-func upgradeAccountAndUpdateExpireDates(account models.Account, request checkUpgradeStatusReq, c *gin.Context) error {
-	if err := account.UpgradeAccount(request.checkUpgradeStatusObject.StorageLimit,
-		//request.checkUpgradeStatusObject.DurationInMonths); err != nil {
+func upgradeV2AccountAndUpdateExpireDates(account models.Account, request checkUpgradeV2StatusReq, c *gin.Context) error {
+	if err := account.UpgradeAccount(request.checkUpgradeV2StatusObject.StorageLimit,
+		//request.checkUpgradeV2StatusObject.DurationInMonths); err != nil {
 		account.MonthsInSubscription); err != nil {
 		return err
 	}
-	filesErr := models.UpdateExpiredAt(request.checkUpgradeStatusObject.FileHandles,
+	filesErr := models.UpdateExpiredAt(request.checkUpgradeV2StatusObject.FileHandles,
 		request.verification.PublicKey, account.ExpirationDate())
 
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
-	metadatasErr := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
+	metadatasErr := updateMetadataExpiration(request.checkUpgradeV2StatusObject.MetadataKeys,
 		request.verification.PublicKey, account.ExpirationDate().Add(24*time.Hour*60), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }
 
-func updateMetadataExpiration(metadataKeys []string, key string, newExpiredAtTime time.Time, c *gin.Context) error {
+func updateMetadataExpirationV2(metadataKeys []string, key string, newExpiredAtTime time.Time, c *gin.Context) error {
 	var kvPairs = make(utils.KVPairs)
 	var kvKeys utils.KVKeys
 
+	keyBytes, err := hex.DecodeString(key)
+	if err != nil {
+		return err
+	}
+
 	for _, metadataKey := range metadataKeys {
-		permissionHashKey := getPermissionHashKeyForBadger(metadataKey)
+		metadataKeyBytes, err := base64.RawURLEncoding.DecodeString(metadataKey)
+		if err != nil {
+			return err
+		}
+
+		permissionHashKey := getPermissionHashKeyForBadger(string(metadataKeyBytes))
 		permissionHashValue, _, err := utils.GetValueFromKV(permissionHashKey)
 		if err != nil {
 			return err
 		}
 
-		if err := verifyPermissions(key, metadataKey,
+		if err := verifyPermissionsV2(keyBytes, metadataKeyBytes,
 			permissionHashValue, c); err != nil {
 			return err
 		}
 		kvPairs[permissionHashKey] = permissionHashValue
-		kvKeys = append(kvKeys, metadataKey)
+		kvKeys = append(kvKeys, string(metadataKeyBytes))
 	}
 
 	kvs, err := utils.BatchGet(&kvKeys)

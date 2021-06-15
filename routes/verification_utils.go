@@ -9,12 +9,12 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
-	"strconv"
 )
 
 const (
@@ -42,8 +42,8 @@ type verification struct {
 	// signature without 0x prefix is broken into
 	// R: sig[0:63]
 	// S: sig[64:127]
-	Signature string `json:"signature" form:"signature" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a 128 character string created when you signed the request with your private key or account handle"`
-	PublicKey string `json:"publicKey" form:"publicKey" binding:"required,len=66" minLength:"66" maxLength:"66" example:"a 66-character public key"`
+	Signature string `json:"signature" form:"signature" validate:"required,len=128" minLength:"128" maxLength:"128" example:"a 128 character string created when you signed the request with your private key or account handle"`
+	PublicKey string `json:"publicKey" form:"publicKey" validate:"required,len=66" minLength:"66" maxLength:"66" example:"a 66-character public key"`
 }
 
 func (v verification) getVerification() verification {
@@ -74,7 +74,7 @@ func (v verification) getAccount(c *gin.Context) (models.Account, error) {
 }
 
 type requestBody struct {
-	RequestBody string `json:"requestBody" form:"requestBody" binding:"required" example:"look at description for example"`
+	RequestBody string `json:"requestBody" form:"requestBody" validate:"required" example:"look at description for example"`
 }
 
 func (v requestBody) getObjectAsString() string {
@@ -204,6 +204,14 @@ func verifyAndParseStringRequest(reqAsString string, dest interface{}, verificat
 	return nil
 }
 
+func parseStringRequest(reqAsString string, dest interface{}, c *gin.Context) error {
+	if err := utils.ParseStringifiedRequest(reqAsString, dest); err != nil {
+		return BadRequestResponse(c, fmt.Errorf("bad request, unable to parse request body: %v", err))
+	}
+
+	return nil
+}
+
 func verifyParsedRequest(reqBody interface{}, verificationData verification, c *gin.Context) error {
 	hash, err := hashRequestBody(reqBody, c)
 	if err != nil {
@@ -286,8 +294,21 @@ func getPermissionHash(publicKey, key string, c *gin.Context) (string, error) {
 	return permissionHash, nil
 }
 
+func getPermissionHashV2(publicKey, key []byte, c *gin.Context) string {
+	permissionHash := utils.HashStringV2(append(publicKey, key...))
+	return permissionHash
+}
+
 func getPermissionHashKeyForBadger(prefix string) string {
 	return prefix + "_permissionHash"
+}
+
+func getPermissionHashV2KeyForBadger(prefix string) string {
+	return prefix + "_permissionHash"
+}
+
+func getIsPublicV2KeyForBadger(prefix string) string {
+	return prefix + "_isPublic"
 }
 
 func getVersionKeyForBadger(prefix string, index int) string {
@@ -302,6 +323,18 @@ func verifyPermissions(publicKey, key, expectedPermissionHash string, c *gin.Con
 	if err != nil {
 		return err
 	}
+	if permissionHash != expectedPermissionHash {
+		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))
+	}
+	return nil
+}
+
+func verifyPermissionsV2(publicKey []byte, key []byte, expectedPermissionHash string, c *gin.Context) error {
+	if expectedPermissionHash == "" {
+		return ForbiddenResponse(c, errors.New("resource is ineligible for modification"))
+	}
+	permissionHash := getPermissionHashV2(publicKey, key, c)
+
 	if permissionHash != expectedPermissionHash {
 		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))
 	}

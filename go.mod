@@ -21,6 +21,7 @@ require (
 	github.com/ethereum/go-ethereum v1.9.23
 	github.com/fjl/memsize v0.0.0-20180929194037-2a09253e352a // indirect
 	github.com/gin-contrib/cors v0.0.0-20190301062745-f9e10995c85a
+	github.com/go-playground/validator/v10 v10.5.0
 	github.com/gin-gonic/gin v1.4.0
 	github.com/go-openapi/spec v0.20.3 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect

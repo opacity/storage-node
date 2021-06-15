@@ -1,13 +1,12 @@
 package utils
 
 import (
-	"gopkg.in/go-playground/validator.v8"
+	"github.com/go-playground/validator/v10"
 )
 
 // Use for validate any struct
 var Validator *validator.Validate
 
 func init() {
-	config := &validator.Config{TagName: "binding"}
-	Validator = validator.New(config)
+	Validator = validator.New()
 }
