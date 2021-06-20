@@ -110,12 +110,12 @@ func (dl *DownloadProgress) Read(part []byte) (int, error) {
 type DecryptProgress struct {
 	Key                []byte
 	RawProgress        int
-	Size               int
 	SizeWithEncryption int
 	ChunkSize          int
 	Part               []byte
 	Data               []byte
 	ReadIndex          int
+	LastReadIndex      int
 
 	mux sync.Mutex
 }
@@ -159,7 +159,7 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 	dc.mux.Lock()
 	defer dc.mux.Unlock()
 
-	if dc.ReadIndex == dc.Size {
+	if dc.ReadIndex == dc.LastReadIndex && dc.LastReadIndex != 0 {
 		return 0, io.EOF
 	}
 
@@ -173,6 +173,7 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 	}
 
 	dc.Data = dc.Data[lenToRead:]
+	dc.LastReadIndex = dc.ReadIndex
 	dc.ReadIndex += lenToRead
 
 	return lenToRead, nil
@@ -220,38 +221,31 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 
-	size, err := getFileContentLength(hash)
+	realSize, err := getFileContentLength(hash)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
-	if size <= 0 {
-		return InternalErrorResponse(c, errors.New("file size can't be 0 or below 0"))
-	}
-
-	numberOfParts := ((size-1)/DefaultPartSize + 1)
-	sizeWithEncryption := size + BlockOverhead*((size-1)/DefaultBlockSize+1)
+	numberOfParts := ((realSize-1)/DefaultPartSize + 1)
 
 	downloadProgress := &DownloadProgress{
-		SizeWithEncryption: sizeWithEncryption,
+		SizeWithEncryption: realSize,
 		PartSize:           DefaultPartSize,
 	}
 
 	decryptProgress := &DecryptProgress{
 		Key:                encryptionKey,
-		Size:               size,
-		SizeWithEncryption: sizeWithEncryption,
+		SizeWithEncryption: realSize,
 		ChunkSize:          DefaultBlockSize + BlockOverhead,
 	}
 
 	var g errgroup.Group
-
-	go DownloadProgressRun(downloadProgress, decryptProgress)
-
 	g.Go(func() error {
 		return ReadUploadPublicDecryptedFile(decryptProgress, hash)
 	})
 
-	err = PublicShareDownloadFile(hash, encryptionKey, numberOfParts, downloadProgress)
+	go DownloadProgressRun(downloadProgress, decryptProgress)
+
+	err = PublicShareDownloadFile(hash, encryptionKey, numberOfParts, realSize, downloadProgress)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -290,13 +284,16 @@ func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byt
 	return
 }
 
-func PublicShareDownloadFile(fileID string, key []byte, numberOfParts int, downloadProgress *DownloadProgress) error {
+func PublicShareDownloadFile(fileID string, key []byte, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress) error {
 	for i := 0; i < numberOfParts; i++ {
 		offset := i * DefaultPartSize
 		limit := offset + DefaultPartSize
 
-		downloadRange := "bytes=" + strconv.Itoa(offset) + "-" + strconv.Itoa(limit-1)
+		if limit > sizeWithEncryption {
+			limit = sizeWithEncryption
+		}
 
+		downloadRange := "bytes=" + strconv.Itoa(offset) + "-" + strconv.Itoa(limit-1)
 		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(fileID), downloadRange, false)
 		if err != nil {
 			return err
