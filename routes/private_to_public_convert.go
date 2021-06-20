@@ -180,7 +180,6 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 
 type PrivateToPublicObj struct {
 	FileHandle string `json:"fileHandle" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a deterministically created file handle"`
-	Size       int    `json:"size" binding:"required"`
 }
 
 func (v *PrivateToPublicReq) getObjectRef() interface{} {
@@ -196,7 +195,6 @@ func (v *PrivateToPublicReq) getObjectRef() interface{} {
 // @description requestBody should be a stringified version of:
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
-// @description 	"size": 7123534,
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -221,7 +219,11 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(hash)) {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
-	size := request.privateToPublicObj.Size
+
+	size, err := getFileContentLength(hash)
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
 	if size <= 0 {
 		return InternalErrorResponse(c, errors.New("file size can't be 0 or below 0"))
 	}
@@ -249,7 +251,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 		return ReadUploadPublicDecryptedFile(decryptProgress, hash)
 	})
 
-	err := PublicShareDownloadFile(hash, encryptionKey, numberOfParts, downloadProgress)
+	err = PublicShareDownloadFile(hash, encryptionKey, numberOfParts, downloadProgress)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -288,14 +290,14 @@ func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byt
 	return
 }
 
-func PublicShareDownloadFile(hash string, key []byte, numberOfParts int, downloadProgress *DownloadProgress) error {
+func PublicShareDownloadFile(fileID string, key []byte, numberOfParts int, downloadProgress *DownloadProgress) error {
 	for i := 0; i < numberOfParts; i++ {
 		offset := i * DefaultPartSize
 		limit := offset + DefaultPartSize
 
 		downloadRange := "bytes=" + strconv.Itoa(offset) + "-" + strconv.Itoa(limit-1)
 
-		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(hash), downloadRange, false)
+		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(fileID), downloadRange, false)
 		if err != nil {
 			return err
 		}
@@ -447,6 +449,17 @@ func generatePublicShareThumbnail(fileID string, mimeType string, imageBytes []b
 	}
 
 	return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)
+}
+
+func getFileContentLength(fileID string) (int, error) {
+	resp, err := http.Head(models.GetBucketUrl() + fileID + "/file")
+
+	if err == nil && resp.StatusCode == http.StatusOK {
+		return int(resp.ContentLength), nil
+	}
+	defer resp.Body.Close()
+
+	return 0, err
 }
 
 func mimeTypeContains(mimeTypes []string, mimeType string) bool {
