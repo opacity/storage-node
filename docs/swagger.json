@@ -143,6 +143,55 @@
                 }
             }
         },
+        "/api/v1/download": {
+            "post": {
+                "description": "download a file without cryptographic verification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "download a file without cryptographic verification",
+                "parameters": [
+                    {
+                        "description": "download object for non-signed requests",
+                        "name": "routes.DownloadFileObj",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.DownloadFileObj"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.downloadFileRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "such data does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/init-upload": {
             "post": {
                 "description": "start an upload\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"fileSizeInByte\": \"200000000000006\",\n\"endIndex\": 2\n}",
@@ -445,22 +494,22 @@
         },
         "/api/v1/renew": {
             "post": {
-                "description": "check the renewal status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
+                "description": "check the renewalV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "check the renewal status",
+                "summary": "check the renewalV2 status",
                 "parameters": [
                     {
-                        "description": "check renewal status object",
-                        "name": "checkRenewalStatusReq",
+                        "description": "check renewalV2 status object",
+                        "name": "checkRenewalV2StatusReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.checkRenewalStatusReq"
+                            "$ref": "#/definitions/routes.checkRenewalV2StatusReq"
                         }
                     }
                 ],
@@ -504,12 +553,12 @@
                 "summary": "get an invoice to renew an account",
                 "parameters": [
                     {
-                        "description": "get renewal invoice object",
-                        "name": "getRenewalAccountInvoiceReq",
+                        "description": "get renewalV2 invoice object",
+                        "name": "getRenewalV2AccountInvoiceReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.getRenewalAccountInvoiceReq"
+                            "$ref": "#/definitions/routes.getRenewalV2AccountInvoiceReq"
                         }
                     }
                 ],
@@ -517,7 +566,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.getRenewalAccountInvoiceRes"
+                            "$ref": "#/definitions/routes.getRenewalV2AccountInvoiceRes"
                         }
                     },
                     "400": {
@@ -939,55 +988,6 @@
                 }
             }
         },
-        "/api/v2/download/private": {
-            "post": {
-                "description": "download a file without cryptographic verification",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "download a file without cryptographic verification",
-                "parameters": [
-                    {
-                        "description": "download object for non-signed requests",
-                        "name": "routes.DownloadFileObj",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/routes.DownloadFileObj"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routes.downloadFileRes"
-                        }
-                    },
-                    "400": {
-                        "description": "bad request, unable to parse request body: (with the error)",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "such data does not exist",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "some information about the internal error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/api/v2/download/public": {
             "post": {
                 "description": "returns the URLs for a public file and it's thumbnail, if no thumbnail is present, return a default one",
@@ -1337,7 +1337,7 @@
         },
         "/api/v2/public-share/convert": {
             "post": {
-                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"size\": 7123534,\n}",
+                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -1842,8 +1842,7 @@
         "routes.PrivateToPublicObj": {
             "type": "object",
             "required": [
-                "fileHandle",
-                "size"
+                "fileHandle"
             ],
             "properties": {
                 "fileHandle": {
@@ -1851,9 +1850,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a deterministically created file handle"
-                },
-                "size": {
-                    "type": "integer"
                 }
             }
         },
@@ -3269,14 +3265,6 @@
         },
         "utils.PlanInfo": {
             "type": "object",
-            "required": [
-                "cost",
-                "costInUSD",
-                "maxFolders",
-                "maxMetadataSizeInMB",
-                "name",
-                "storageInGB"
-            ],
             "properties": {
                 "cost": {
                     "type": "number"

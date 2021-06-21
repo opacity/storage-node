@@ -151,11 +151,8 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
-      size:
-        type: integer
     required:
     - fileHandle
-    - size
     type: object
   routes.PrivateToPublicReq:
     properties:
@@ -1290,13 +1287,6 @@ definitions:
         type: string
       storageInGB:
         type: integer
-    required:
-    - cost
-    - costInUSD
-    - maxFolders
-    - maxMetadataSizeInMB
-    - name
-    - storageInGB
     type: object
   utils.PlanResponseType:
     additionalProperties:
@@ -1413,6 +1403,38 @@ paths:
           schema:
             type: string
       summary: delete a file
+  /api/v1/download:
+    post:
+      consumes:
+      - application/json
+      description: download a file without cryptographic verification
+      parameters:
+      - description: download object for non-signed requests
+        in: body
+        name: routes.DownloadFileObj
+        required: true
+        schema:
+          $ref: '#/definitions/routes.DownloadFileObj'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.downloadFileRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: such data does not exist
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: download a file without cryptographic verification
   /api/v1/init-upload:
     post:
       consumes:
@@ -1647,19 +1669,19 @@ paths:
       consumes:
       - application/json
       description: |-
-        check the renewal status
+        check the renewalV2 status
         requestBody should be a stringified version of (values are just examples):
         {
         "metadataKeys": "["someKey", "someOtherKey]",
         "fileHandles": "["someHandle", "someOtherHandle]",
         }
       parameters:
-      - description: check renewal status object
+      - description: check renewalV2 status object
         in: body
-        name: checkRenewalStatusReq
+        name: checkRenewalV2StatusReq
         required: true
         schema:
-          $ref: '#/definitions/routes.checkRenewalStatusReq'
+          $ref: '#/definitions/routes.checkRenewalV2StatusReq'
       produces:
       - application/json
       responses:
@@ -1679,7 +1701,7 @@ paths:
           description: some information about the internal error
           schema:
             type: string
-      summary: check the renewal status
+      summary: check the renewalV2 status
   /api/v1/renew/invoice:
     post:
       consumes:
@@ -1690,19 +1712,19 @@ paths:
         {
         }
       parameters:
-      - description: get renewal invoice object
+      - description: get renewalV2 invoice object
         in: body
-        name: getRenewalAccountInvoiceReq
+        name: getRenewalV2AccountInvoiceReq
         required: true
         schema:
-          $ref: '#/definitions/routes.getRenewalAccountInvoiceReq'
+          $ref: '#/definitions/routes.getRenewalV2AccountInvoiceReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.getRenewalAccountInvoiceRes'
+            $ref: '#/definitions/routes.getRenewalV2AccountInvoiceRes'
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -2025,38 +2047,6 @@ paths:
           schema:
             type: string
       summary: update the account api version to v2
-  /api/v2/download/private:
-    post:
-      consumes:
-      - application/json
-      description: download a file without cryptographic verification
-      parameters:
-      - description: download object for non-signed requests
-        in: body
-        name: routes.DownloadFileObj
-        required: true
-        schema:
-          $ref: '#/definitions/routes.DownloadFileObj'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.downloadFileRes'
-        "400":
-          description: 'bad request, unable to parse request body: (with the error)'
-          schema:
-            type: string
-        "404":
-          description: such data does not exist
-          schema:
-            type: string
-        "500":
-          description: some information about the internal error
-          schema:
-            type: string
-      summary: download a file without cryptographic verification
   /api/v2/download/public:
     post:
       consumes:
@@ -2324,7 +2314,6 @@ paths:
         requestBody should be a stringified version of:
         {
         "fileHandle": "a deterministically created file handle",
-        "size": 7123534,
         }
       parameters:
       - description: an object to do the conversion of a private file to a public

@@ -22,14 +22,15 @@ type downloadFileRes struct {
 // @Summary download a file without cryptographic verification
 // @Description download a file without cryptographic verification
 // @Param routes.DownloadFileObj body routes.DownloadFileObj true "download object for non-signed requests"
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Success 200 {object} routes.downloadFileRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "such data does not exist"
 // @Failure 500 {string} string "some information about the internal error"
 // @Router /api/v2/download/private [post]
-/*DownloadFileHandler handles the downloading of a file without cryptographic verification*/
+// @Router /api/v1/download [post]
+/*DownloadFileHandler returns the file location on the storage platform*/
 func DownloadFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(downloadFile)
 }
@@ -42,7 +43,7 @@ func downloadFile(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	fileURL, err := GetFileDownloadURL(request.FileID)
+	fileURL, err := GetBaseFileDownloadURL(request.FileID)
 	if err != nil {
 		if err.Error() == "such data does not exist" {
 			return NotFoundResponse(c, err)
@@ -51,12 +52,11 @@ func downloadFile(c *gin.Context) error {
 	}
 
 	return OkResponse(c, downloadFileRes{
-		// Redirect to a different URL that client would have authorization to download it.
 		FileDownloadUrl: fileURL,
 	})
 }
 
-func GetFileDownloadURL(fileID string) (string, error) {
+func GetBaseFileDownloadURL(fileID string) (string, error) {
 	// verify object existed in S3
 	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)) {
 		return "", errors.New("such data does not exist")
@@ -70,7 +70,5 @@ func GetFileDownloadURL(fileID string) (string, error) {
 		return "", err
 	}
 
-	fileURL := models.GetBucketUrl() + models.GetFileDataKey(fileID)
-
-	return fileURL, nil
+	return models.GetBucketUrl() + fileID, nil
 }
