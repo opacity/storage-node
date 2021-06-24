@@ -5,6 +5,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -111,11 +112,11 @@ type DecryptProgress struct {
 	Key                []byte
 	RawProgress        int
 	SizeWithEncryption int
+	FileSize           int
 	ChunkSize          int
 	Part               []byte
 	Data               []byte
 	ReadIndex          int
-	LastReadIndex      int
 
 	mux sync.Mutex
 }
@@ -159,7 +160,7 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 	dc.mux.Lock()
 	defer dc.mux.Unlock()
 
-	if dc.ReadIndex == dc.LastReadIndex && dc.LastReadIndex != 0 {
+	if dc.ReadIndex == dc.FileSize {
 		return 0, io.EOF
 	}
 
@@ -173,10 +174,14 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 	}
 
 	dc.Data = dc.Data[lenToRead:]
-	dc.LastReadIndex = dc.ReadIndex
 	dc.ReadIndex += lenToRead
 
 	return lenToRead, nil
+}
+
+type FileMetadata struct {
+	Size     int    `json:"size"`
+	FileName string `json:"name"`
 }
 
 type PrivateToPublicObj struct {
@@ -217,15 +222,27 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	hash := request.privateToPublicObj.FileHandle[:64]
 	key := request.privateToPublicObj.FileHandle[64:]
 	encryptionKey, _ := hex.DecodeString(key)
+
+	fileMetadata, err := utils.GetDefaultBucketObject(models.GetFileMetadataKey(hash), false)
+	if err != nil {
+		return NotFoundResponse(c, errors.New("the data does not exist"))
+	}
+
 	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(hash)) {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 
-	realSize, err := getFileContentLength(hash)
+	decryptedMetadata, err := DecryptMetadata(encryptionKey, []byte(fileMetadata))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
-	numberOfParts := ((realSize-1)/DefaultPartSize + 1)
+	realSize, err := getFileContentLength(hash)
+	fileSize := decryptedMetadata.Size
+
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	numberOfParts := ((fileSize-1)/DefaultPartSize + 1)
 
 	downloadProgress := &DownloadProgress{
 		SizeWithEncryption: realSize,
@@ -234,6 +251,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 
 	decryptProgress := &DecryptProgress{
 		Key:                encryptionKey,
+		FileSize:           fileSize,
 		SizeWithEncryption: realSize,
 		ChunkSize:          DefaultBlockSize + BlockOverhead,
 	}
@@ -277,6 +295,20 @@ func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byt
 
 	cipherText := append(rawData, tag...)
 	decryptedData, err = aesgcm.Open(nil, nonce, cipherText, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
+	decryptedByteData, err := DecryptWithNonceSize(key, data)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(decryptedByteData, &fileMetadata)
 	if err != nil {
 		return
 	}
