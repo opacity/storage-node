@@ -57,18 +57,18 @@ func downloadFile(c *gin.Context) error {
 }
 
 func GetBaseFileDownloadURL(fileID string) (string, error) {
-	// verify object existed in S3
-	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)) {
+	fileDataKey := models.GetFileDataKey(fileID)
+	if !utils.DoesDefaultBucketObjectExist(fileDataKey) {
 		return "", errors.New("such data does not exist")
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(fileID), utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(fileDataKey, utils.CannedAcl_PublicRead); err != nil {
 		return "", err
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(fileID), utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(fileDataKey, utils.CannedAcl_PublicRead); err != nil {
 		return "", err
 	}
 
-	return models.GetBucketUrl() + fileID, nil
+	return models.GetBucketUrl() + fileDataKey, nil
 }
