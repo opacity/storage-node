@@ -46,8 +46,8 @@ type DownloadProgress struct {
 	Parts              [][]byte
 	ReadIndex          []int
 	ReadPartIndex      int
-
-	mux sync.Mutex
+	ReadTotalIndex     int
+	mux                sync.Mutex
 }
 
 func (dl *DownloadProgress) Write(part []byte) (int, error) {
@@ -78,7 +78,7 @@ func (dl *DownloadProgress) Read(part []byte) (int, error) {
 		dl.Parts = append(dl.Parts, []byte{})
 	}
 
-	if dl.RawProgress == dl.SizeWithEncryption && dl.ReadPartIndex == len(dl.Parts) && dl.ReadIndex[dl.ReadPartIndex] == dl.PartSize {
+	if dl.RawProgress == dl.SizeWithEncryption && dl.RawProgress == dl.ReadTotalIndex {
 		return 0, io.EOF
 	}
 
@@ -93,6 +93,7 @@ func (dl *DownloadProgress) Read(part []byte) (int, error) {
 
 	dl.Parts[dl.ActivePart] = dl.Parts[dl.ActivePart][lenToRead:]
 	dl.ReadIndex[dl.ReadPartIndex] += lenToRead
+	dl.ReadTotalIndex += lenToRead
 
 	if dl.ReadIndex[dl.ReadPartIndex] == dl.PartSize {
 		dl.ReadPartIndex++
@@ -258,15 +259,15 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 
 	var g errgroup.Group
 	g.Go(func() error {
-		return ReadUploadPublicDecryptedFile(decryptProgress, hash)
+		return UploadPublicFileAndGenerateThumb(decryptProgress, hash)
+	})
+	g.Go(func() error {
+		return ReadAndDecryptPrivateFile(downloadProgress, decryptProgress)
 	})
 
-	go DownloadProgressRun(downloadProgress, decryptProgress)
-
-	err = PublicShareDownloadFile(hash, encryptionKey, numberOfParts, realSize, downloadProgress)
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
+	g.Go(func() error {
+		return DownloadPrivateFile(hash, encryptionKey, numberOfParts, realSize, downloadProgress)
+	})
 
 	if err := g.Wait(); err != nil {
 		return InternalErrorResponse(c, err)
@@ -316,7 +317,7 @@ func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err er
 	return
 }
 
-func PublicShareDownloadFile(fileID string, key []byte, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress) error {
+func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress) error {
 	for i := 0; i < numberOfParts; i++ {
 		offset := i * DefaultPartSize
 		limit := offset + DefaultPartSize
@@ -356,7 +357,7 @@ func PublicShareDownloadFile(fileID string, key []byte, numberOfParts, sizeWithE
 	return nil
 }
 
-func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, hash string) (err error) {
+func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string) (err error) {
 	awsKey := models.GetFileDataPublicKey(hash)
 	_, uploadID, err := utils.CreateMultiPartUpload(awsKey)
 	if err != nil {
@@ -431,7 +432,7 @@ func ReadUploadPublicDecryptedFile(decryptProgress *DecryptProgress, hash string
 
 }
 
-func DownloadProgressRun(downloadProgress *DownloadProgress, decryptProgress *DecryptProgress) error {
+func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgress *DecryptProgress) error {
 	for {
 		b := make([]byte, bytes.MinRead)
 
