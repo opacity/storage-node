@@ -299,6 +299,14 @@ func setupAdminPaths(router *gin.Engine) {
 
 	g.POST("/delete", AdminDeleteFileHandler())
 
+	g.GET("/prices", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "prices.tmpl", gin.H{
+			"title": "Change prices",
+		})
+	})
+
+	g.POST("/prices", AdminPricesHandler())
+
 	// Load template file location relative to the current working directory
 	// Unable to find the file.
 	// g.GET("/jobrunner/html", jobs.JobHtml)
