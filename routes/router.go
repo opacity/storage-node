@@ -158,6 +158,9 @@ const (
 
 	/*PublicShareRevokePath is the path for revoking the share of a public file*/
 	PublicShareRevokePath = "/revoke"
+
+	/*DeletePath is the path for deleting files, allowing multiple deletions*/
+	DeleteV2Path = "/delete"
 )
 
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
@@ -278,6 +281,8 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	publicShareRouterGroup.POST(CreateShortLinkPath, CreateShortlinkHandler())
 	publicShareRouterGroup.POST(PublicShareViewsCountPath, ViewsCountHandler())
 	publicShareRouterGroup.POST(PublicShareRevokePath, RevokePublicShareHandler())
+
+	v2Router.POST(DeleteV2Path, DeleteFilesHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {

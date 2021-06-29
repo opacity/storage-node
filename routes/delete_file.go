@@ -62,13 +62,20 @@ func deleteFile(c *gin.Context) error {
 		return err
 	}
 
-	fileId := request.deleteFileObj.FileID
-	var completedFile models.CompletedFile
-	if completedFile, err = models.GetCompletedFileByFileID(fileId); err != nil {
+	if err := DeleteFileByID(request.deleteFileObj.FileID, request.PublicKey, account, c); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := verifyPermissions(request.PublicKey, fileId, completedFile.ModifierHash, c); err != nil {
+	return OkResponse(c, deleteFileRes{})
+}
+
+func DeleteFileByID(fileID, publicKey string, account models.Account, c *gin.Context) error {
+	completedFile, err := models.GetCompletedFileByFileID(fileID)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyPermissions(publicKey, fileID, completedFile.ModifierHash, c); err != nil {
 		return err
 	}
 
@@ -77,16 +84,16 @@ func deleteFile(c *gin.Context) error {
 		err = models.DB.Model(&account).Update("storage_used_in_byte", int64(0)).Error
 	}
 	if err != nil && err.Error() != models.StorageUsedTooLow {
-		return InternalErrorResponse(c, err)
+		return err
 	}
 
-	if err := utils.DeleteDefaultBucketObjectKeys(fileId); err != nil {
-		return InternalErrorResponse(c, err)
+	if err := utils.DeleteDefaultBucketObjectKeys(fileID); err != nil {
+		return err
 	}
 
 	if err := models.DB.Delete(&completedFile).Error; err != nil {
-		return InternalErrorResponse(c, err)
+		return err
 	}
 
-	return OkResponse(c, deleteFileRes{})
+	return nil
 }
