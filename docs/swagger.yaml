@@ -760,6 +760,52 @@ definitions:
     type: object
   routes.deleteFileRes:
     type: object
+  routes.deleteFilesObj:
+    properties:
+      fileIDs:
+        example:
+        - the handle of the files
+        items:
+          type: string
+        type: array
+    required:
+    - fileIDs
+    type: object
+  routes.deleteFilesReq:
+    properties:
+      deleteFilesObj:
+        $ref: '#/definitions/routes.deleteFilesObj'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
+  routes.deleteFilesRes:
+    properties:
+      unsuccessfulDeletions:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
   routes.downloadFileRes:
     properties:
       fileDownloadUrl:
@@ -2047,6 +2093,39 @@ paths:
           schema:
             type: string
       summary: update the account api version to v2
+  /api/v2/delete:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        deletes files
+        requestBody should be a stringified version of:
+        {
+        "fileIDs": [],
+        }
+      parameters:
+      - description: file(s) deletion object
+        in: body
+        name: deleteFilesReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.deleteFilesReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.deleteFilesRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: deletes files
   /api/v2/download/public:
     post:
       consumes:

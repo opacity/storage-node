@@ -23,21 +23,21 @@ func (v *deleteFilesReq) getObjectRef() interface{} {
 	return &v.deleteFilesObj
 }
 
-// DeleteFileHandler godoc
-// @Summary delete a file
-// @Description delete a file
-// @Accept  json
-// @Produce  json
-// @Param deleteFileReq body routes.deleteFileReq true "file deletion object"
-// @description requestBody should be a stringified version of (values are just examples):
+// DeleteFilesHandler godoc
+// @Summary deletes files
+// @Description deletes files
+// @Accept json
+// @Produce json
+// @Param deleteFilesReq body routes.deleteFilesReq true "file(s) deletion object"
+// @description requestBody should be a stringified version of:
 // @description {
 // @description 	"fileIDs": [],
 // @description }
-// @Success 200 {object} routes.deleteFileRes
+// @Success 200 {object} routes.deleteFilesRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/delete [post]
-/*DeleteFileHandler is a handler for the user to upload files*/
+// @Router /api/v2/delete [post]
+/*DeleteFilesHandler is a handler for the user to delete files*/
 func DeleteFilesHandler() gin.HandlerFunc {
 	return ginHandlerFunc(deleteFiles)
 }

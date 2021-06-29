@@ -988,6 +988,49 @@
                 }
             }
         },
+        "/api/v2/delete": {
+            "post": {
+                "description": "deletes files\nrequestBody should be a stringified version of:\n{\n\"fileIDs\": [],\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "deletes files",
+                "parameters": [
+                    {
+                        "description": "file(s) deletion object",
+                        "name": "deleteFilesReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.deleteFilesReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.deleteFilesRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/download/public": {
             "post": {
                 "description": "returns the URLs for a public file and it's thumbnail, if no thumbnail is present, return a default one",
@@ -2614,6 +2657,65 @@
         },
         "routes.deleteFileRes": {
             "type": "object"
+        },
+        "routes.deleteFilesObj": {
+            "type": "object",
+            "required": [
+                "fileIDs"
+            ],
+            "properties": {
+                "fileIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "the handle of the files"
+                    ]
+                }
+            }
+        },
+        "routes.deleteFilesReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "deleteFilesObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.deleteFilesObj"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.deleteFilesRes": {
+            "type": "object",
+            "properties": {
+                "unsuccessfulDeletions": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
         },
         "routes.downloadFileRes": {
             "type": "object",
