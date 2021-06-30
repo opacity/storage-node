@@ -39,7 +39,7 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	updatedAccount, err := models.GetAccountById(account.AccountID)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	// check that StorageUsedInByte has been deducted after deletion
 	assert.True(t, updatedAccount.StorageUsedInByte == defaultStorageUsedInByteForTest)
 	// check that object is not on S3 anymore
@@ -80,7 +80,21 @@ func Test_Successful_Multiple_File_Deletion_Request(t *testing.T) {
 	err = json.Unmarshal(bodyBytes, &deleteFilesRes)
 	assert.Nil(t, err)
 
-	assert.Equal(t, make(map[string]string), deleteFilesRes)
+	assert.Equal(t, map[string]string{}, deleteFilesRes.UnsuccessfulDeletions)
+
+	updatedAccount, err := models.GetAccountById(account.AccountID)
+	assert.Nil(t, err)
+	// check that StorageUsedInByte has been deducted after deletion
+	assert.True(t, updatedAccount.StorageUsedInByte == defaultStorageUsedInByteForTest)
+	for _, fileID := range fileIDs {
+		// check that object is not on S3 anymore
+		assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID)))
+		assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)))
+		// check that completed file row in SQL table is gone
+		completedFile, err := models.GetCompletedFileByFileID(fileID)
+		assert.NotNil(t, err)
+		assert.NotEqual(t, fileID, completedFile.FileID)
+	}
 }
 
 func checkPrerequisites(t *testing.T, account models.Account, fileID string) {
