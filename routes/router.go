@@ -315,10 +315,16 @@ func setupAdminPlansPaths(adminGroup *gin.RouterGroup) {
 			"plans": utils.Env.Plans,
 		})
 	})
-	plansGroup.GET("/:plan", AdminPlansGetHandler())
-	plansGroup.GET("/:plan/confirm-remove", AdminPlansRemoveConfirmHandler())
-	plansGroup.POST("/:plan/remove", AdminPlansRemoveHandler())
+	plansGroup.GET("/edit/:plan", AdminPlansGetHandler())
+	plansGroup.GET("/confirm-remove/:plan", AdminPlansRemoveConfirmHandler())
+	plansGroup.POST("/remove/:plan", AdminPlansRemoveHandler())
 	plansGroup.POST("/", AdminPlansChangeHandler())
+	plansGroup.GET("/add", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "plan-add.tmpl", gin.H{
+			"title": "Add plan",
+		})
+	})
+	plansGroup.POST("/add", AdminPlansAddHandler())
 }
 
 // GetPlansHandler godoc

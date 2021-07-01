@@ -12,7 +12,7 @@
   <section class="section">
     <div class="container is-max-desktop">
       <h1 class="title">
-        {{ .title }}
+        {{ .title }} <span class="pl-2"><a class="button is-link" href="/admin/plans/add">Add new plan</a></span>
       </h1>
       <div id="plans">
         <table class="table">
@@ -30,20 +30,20 @@
           <tbody>
             {{with .plans}}
             {{range .}}
-              <tr>
-                <th>{{ .Name }}</th>
-                <th>{{ .Cost }}</th>
-                <th>{{ .CostInUSD }}</th>
-                <th>{{ .StorageInGB }}</th>
-                <th>{{ .MaxFolders }}</th>
-                <th>{{ .MaxMetadataSizeInMB }}</th>
-                <th>
-                  <div class="buttons">
-                    <a href="{{ .StorageInGB }}" class="button is-link is-small is-primary is-outlined">Edit</a>
-                    <a href="{{ .StorageInGB }}/confirm-remove" class="button is-link is-small is-danger">Remove</a>
-                  </div>
-                </th>
-              </tr>
+            <tr>
+              <th>{{ .Name }}</th>
+              <th>{{ .Cost }}</th>
+              <th>{{ .CostInUSD }}</th>
+              <th>{{ .StorageInGB }}</th>
+              <th>{{ .MaxFolders }}</th>
+              <th>{{ .MaxMetadataSizeInMB }}</th>
+              <th>
+                <div class="buttons">
+                  <a href="edit/{{ .StorageInGB }}/" class="button is-link is-small is-primary is-outlined">Edit</a>
+                  <a href="confirm-remove/{{ .StorageInGB }}" class="button is-link is-small is-danger">Remove</a>
+                </div>
+              </th>
+            </tr>
             {{end}}
             {{end}}
           </tbody>
