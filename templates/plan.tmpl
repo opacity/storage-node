@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .title }} | Opacity</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+  </head>
+  <body>
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h1 class="title">
+        {{ .title }}
+      </h1>
+      <div id="plan">
+        <div class="box">
+          <form action="/admin/plans" method="POST" enctype="multipart/form-data">
+          
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Name</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="text" name="name" value="{{ .plan.Name }}">
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Cost</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="number" name="cost" value="{{ .plan.Cost }}">
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Cost in USD</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="number" name="costInUSD" value="{{ .plan.CostInUSD }}">
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Storage in GB</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="number" name="storageInGB" value="{{ .plan.StorageInGB }}">
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Max Folders</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="number" name="maxFolders" value="{{ .plan.MaxFolders }}">
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Max Metadata size in MB</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="number" name="maxMetadataSizeInMB" value="{{ .plan.MaxMetadataSizeInMB }}">
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-grouped is-grouped-centered">
+              <div class="control">
+                <button class="button is-link">Submit</button>
+              </div>
+              <div class="control">
+                <button class="button is-link is-light">Cancel</button>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  </body>
+</html>

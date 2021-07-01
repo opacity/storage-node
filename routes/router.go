@@ -296,21 +296,29 @@ func setupAdminPaths(router *gin.Engine) {
 			"title": "Delete File",
 		})
 	})
-
 	g.POST("/delete", AdminDeleteFileHandler())
 
-	g.GET("/prices", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "prices.tmpl", gin.H{
-			"title": "Change prices",
-		})
-	})
-
-	g.POST("/prices", AdminPricesHandler())
+	setupAdminPlansPaths(g)
 
 	// Load template file location relative to the current working directory
 	// Unable to find the file.
 	// g.GET("/jobrunner/html", jobs.JobHtml)
 	//router.LoadHTMLGlob("../../bamzi/jobrunner/views/Status.html")
+}
+
+func setupAdminPlansPaths(adminGroup *gin.RouterGroup) {
+	plansGroup := adminGroup.Group("/plans")
+
+	plansGroup.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "plans-list.tmpl", gin.H{
+			"title": "Change plans",
+			"plans": utils.Env.Plans,
+		})
+	})
+	plansGroup.GET("/:plan", AdminPlansGetHandler())
+	plansGroup.GET("/:plan/confirm-remove", AdminPlansRemoveConfirmHandler())
+	plansGroup.POST("/:plan/remove", AdminPlansRemoveHandler())
+	plansGroup.POST("/", AdminPlansChangeHandler())
 }
 
 // GetPlansHandler godoc
