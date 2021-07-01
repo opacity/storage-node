@@ -14,7 +14,7 @@
       </h1>
       <div id="plan">
         <div class="box">
-          <form action="/admin/plans/{{ .plan.StorageInGB }}/remove" method="POST" enctype="multipart/form-data">
+          <form action="/admin/plans/{{ .plan.StorageInGB }}/remove" method="POST">
           
             <p>Confirm the removal of plan {{ .plan.Name }}?</p>
 
@@ -23,7 +23,7 @@
                 <button class="button is-link">Submit</button>
               </div>
               <div class="control">
-                <button class="button is-link is-light">Cancel</button>
+                <a class="button is-link is-light" href="/admin/plans">Cancel</a>
               </div>
             </div>
 
