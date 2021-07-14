@@ -90,7 +90,6 @@ func Test_GetMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_GetMetadataV2Handler_Error_If_Not_In_KV_Store(t *testing.T) {
-	t.SkipNow()
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
 
 	getMetadataV2 := metadataV2KeyObject{
