@@ -167,7 +167,6 @@ func Test_GetMetadataV2PublicHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 }
 
 func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
-	t.SkipNow()
 	ttl := utils.TestValueTimeToLive
 
 	d := dag.NewDAG()
@@ -232,8 +231,6 @@ func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
 }
 
 func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
-	t.SkipNow()
-
 	ttl := utils.TestValueTimeToLive
 
 	d := dag.NewDAG()
