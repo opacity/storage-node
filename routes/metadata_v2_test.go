@@ -147,7 +147,6 @@ func Test_GetMetadataV2PublicHandler_Returns_MetadataV2(t *testing.T) {
 }
 
 func Test_GetMetadataV2PublicHandler_Error_If_Not_In_KV_Store(t *testing.T) {
-	t.SkipNow()
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
 
 	getMetadataV2 := metadataV2KeyObject{
@@ -162,8 +161,8 @@ func Test_GetMetadataV2PublicHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 		requestBody:         b,
 	}
 
-	w := httpPostRequestHelperForTest(t, MetadataV2GetPath, "v2", get)
-	// Check to see if the response was what you expected
+	w := httpPostRequestHelperForTest(t, MetadataV2GetPublicPath, "v2", get)
+
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 

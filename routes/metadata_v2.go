@@ -16,6 +16,8 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
+const metadataIncorrectKeyLength = "bad request, incorrect key length"
+
 // must be sorted alphabetically for JSON marshaling/stringifying
 type updateMetadataV2Object struct {
 	IsPublic         bool     `json:"isPublic"`
@@ -204,7 +206,7 @@ func getMetadataV2(c *gin.Context) error {
 	}
 
 	if cap(metadataV2KeyBin) != 33 {
-		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
+		return BadRequestResponse(c, errors.New(metadataIncorrectKeyLength))
 	}
 
 	permissionHashKey := getPermissionHashV2KeyForBadger(string(metadataV2KeyBin))
@@ -255,8 +257,8 @@ func getMetadataV2Public(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	if len(metadataV2KeyBin) != 33 {
-		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
+	if cap(metadataV2KeyBin) != 33 {
+		return BadRequestResponse(c, errors.New(metadataIncorrectKeyLength))
 	}
 
 	isPublicKey := getIsPublicV2KeyForBadger(string(metadataV2KeyBin))
@@ -267,7 +269,7 @@ func getMetadataV2Public(c *gin.Context) error {
 	}
 
 	if isPublicInBadger != "true" {
-		return NotFoundResponse(c, errors.New("Key not found"))
+		return NotFoundResponse(c, errors.New("key not found"))
 	}
 
 	metadataV2, expirationTime, err := utils.GetValueFromKV(string(metadataV2KeyBin))
@@ -310,8 +312,8 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	if len(metadataV2KeyBin) != 33 {
-		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
+	if cap(metadataV2KeyBin) != 33 {
+		return BadRequestResponse(c, errors.New(metadataIncorrectKeyLength))
 	}
 
 	publicKeyBin, err := hex.DecodeString(request.PublicKey)
@@ -496,8 +498,8 @@ func deleteMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	if len(metadataV2KeyBin) != 33 {
-		return BadRequestResponse(c, errors.New("bad request, incorrect key length"))
+	if cap(metadataV2KeyBin) != 33 {
+		return BadRequestResponse(c, errors.New(metadataIncorrectKeyLength))
 	}
 
 	publicKeyBin, err := hex.DecodeString(request.PublicKey)
