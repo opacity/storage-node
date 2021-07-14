@@ -9,6 +9,7 @@ import (
 
 	_ "github.com/opacity/storage-node/docs"
 
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/jobs"
@@ -199,6 +200,9 @@ func CreateRoutes() {
 
 func returnEngine() *gin.Engine {
 	router := gin.Default()
+	router.Use(sentrygin.New(sentrygin.Options{
+		Repanic: true,
+	}))
 	config := cors.DefaultConfig()
 
 	// TODO:  update to only allow our frontend and localhost

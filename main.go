@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"runtime/debug"
 	"strings"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/opacity/storage-node/jobs"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/routes"
@@ -15,12 +17,18 @@ import (
 )
 
 func main() {
+	err := sentry.Init(sentry.ClientOptions{
+		Dsn: "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
+	})
+	if err != nil {
+		log.Fatalf("sentry.Init: %s", err)
+	}
 	defer catchError()
 	defer models.Close()
 
 	utils.SetLive()
 	services.SetWallet()
-	err := services.InitStripe()
+	err = services.InitStripe()
 	utils.PanicOnError(err)
 
 	utils.SlackLog("Begin to restart service!")
