@@ -113,16 +113,20 @@ func Test_GetMetadataV2Handler_Error_If_Not_In_KV_Store(t *testing.T) {
 }
 
 func Test_GetMetadataV2PublicHandler_Returns_MetadataV2(t *testing.T) {
-	t.SkipNow()
 	ttl := utils.TestValueTimeToLive
 
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
+	testMetadataV2KeyBinBytes, err := base64.URLEncoding.DecodeString(testMetadataV2Key)
+	if err != nil {
+		t.Fatalf("there should not have been an error")
+	}
+	testMetadataV2KeyBin := string(testMetadataV2KeyBinBytes)
 	testMetadataV2Value := utils.GenerateMetadataV2Key()
 
-	testMetadataV2IsPublicKey := getIsPublicV2KeyForBadger(testMetadataV2Key)
+	testMetadataV2IsPublicKey := getIsPublicV2KeyForBadger(testMetadataV2KeyBin)
 
 	if err := utils.BatchSet(&utils.KVPairs{
-		testMetadataV2Key:         testMetadataV2Value,
+		testMetadataV2KeyBin:      testMetadataV2Value,
 		testMetadataV2IsPublicKey: "true",
 	}, ttl); err != nil {
 		t.Fatalf("there should not have been an error")
@@ -167,6 +171,7 @@ func Test_GetMetadataV2PublicHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 }
 
 func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
+	t.SkipNow()
 	ttl := utils.TestValueTimeToLive
 
 	d := dag.NewDAG()
