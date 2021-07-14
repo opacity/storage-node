@@ -15,7 +15,7 @@ func GenerateFileHandle() string {
 }
 
 func GenerateMetadataV2Key() string {
-	return RandB64String(64)
+	return HashStringV2(RandByteSlice(128))
 }
 
 func RandByteSlice(length int) []byte {

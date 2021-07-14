@@ -203,6 +203,7 @@ func returnEngine() *gin.Engine {
 
 	// TODO:  update to only allow our frontend and localhost
 	config.AllowAllOrigins = true
+	config.AllowHeaders = append(config.AllowHeaders, "sentry-trace")
 	router.Use(cors.New(config))
 
 	// Test app is running
