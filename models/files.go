@@ -111,7 +111,7 @@ func GetFileDataPublicKey(fileID string) string {
 }
 
 func GetPublicThumbnailKey(fileID string) string {
-	return fileID + "/thumbnail"
+	return fileID + "/thumbnail.png"
 }
 
 /*Return File object(first one) if there is not any error. If not found, return nil without error. */
