@@ -417,7 +417,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 
 			if generateThumbnail {
 				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
-				generatePublicShareThumbnail(hash, fileContentType, partForThumbnailBuf)
+				generatePublicShareThumbnail(hash, partForThumbnailBuf)
 			}
 			completedParts = append(completedParts, completedPart)
 			break
@@ -457,19 +457,17 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 	return nil
 }
 
-func generatePublicShareThumbnail(fileID string, mimeType string, imageBytes []byte) error {
+func generatePublicShareThumbnail(fileID string, imageBytes []byte) error {
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
-	_, extension := SplitMime(mimeType)
 	buf := bytes.NewBuffer(imageBytes)
 	image, err := imaging.Decode(buf)
 	if err != nil {
 		return err
 	}
 
-	thumbnailFormat, _ := imaging.FormatFromExtension(extension)
 	thumbnailImage := imaging.Thumbnail(image, 1200, 628, imaging.CatmullRom)
 	distThumbnailWriter := new(bytes.Buffer)
-	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, thumbnailFormat); err != nil {
+	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.PNG); err != nil {
 		return err
 	}
 
