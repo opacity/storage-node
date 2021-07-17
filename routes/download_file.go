@@ -70,5 +70,5 @@ func GetBaseFileDownloadURL(fileID string) (string, error) {
 		return "", err
 	}
 
-	return models.GetBucketUrl() + fileDataKey, nil
+	return models.GetBucketUrl(), nil
 }
