@@ -66,7 +66,7 @@ func GetBaseFileDownloadURL(fileID string) (string, error) {
 		return "", err
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(fileDataKey, utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(fileID), utils.CannedAcl_PublicRead); err != nil {
 		return "", err
 	}
 
