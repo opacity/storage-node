@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"image/png"
 	"io"
 	"math"
 	"net/http"
@@ -470,7 +469,7 @@ func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentT
 
 	thumbnailImage := imaging.Thumbnail(image, 1024, int(newH), imaging.MitchellNetravali)
 	distThumbnailWriter := new(bytes.Buffer)
-	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.PNG, imaging.JPEGQuality(70), imaging.PNGCompressionLevel(png.BestCompression)); err != nil {
+	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.JPEG, imaging.JPEGQuality(70)); err != nil {
 		return err
 	}
 
