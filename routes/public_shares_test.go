@@ -82,8 +82,8 @@ func createTestPublicShareWithS3Files(t *testing.T, fileData string) models.Publ
 	if fileData == "" {
 		fileData = "opacity-public-share-test"
 	}
-	utils.SetDefaultBucketObject(models.GetFileDataKey(ps.FileID), fileData)
-	utils.SetDefaultBucketObject(models.GetFileDataPublicKey(ps.FileID), fileData)
+	utils.SetDefaultBucketObject(models.GetFileDataKey(ps.FileID), fileData, "")
+	utils.SetDefaultBucketObject(models.GetFileDataPublicKey(ps.FileID), fileData, "")
 
 	return ps
 }

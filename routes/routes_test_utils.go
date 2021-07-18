@@ -117,7 +117,7 @@ func ReturnChunkDataForTest(t *testing.T) []byte {
 }
 
 func InitUploadFileForTest(t *testing.T, publicKey, fileID string, endIndx int) string {
-	objectKey, uploadID, err := utils.CreateMultiPartUpload(fileID)
+	objectKey, uploadID, err := utils.CreateMultiPartUpload(fileID, "")
 	assert.Nil(t, err)
 	modifierHash, err := utils.HashString(publicKey + fileID)
 	assert.Nil(t, err)

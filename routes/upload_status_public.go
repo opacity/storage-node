@@ -146,7 +146,7 @@ func GeneratePublicThumbnail(fileID string, mimeType string) error {
 
 	distThumbnailString := distThumbnailWriter.String()
 
-	return utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString)
+	return utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, mimeType)
 }
 
 func SplitMime(s string) (string, string) {

@@ -361,11 +361,7 @@ func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncry
 
 func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string) (err error) {
 	awsKey := models.GetFileDataPublicKey(hash)
-	_, uploadID, err := utils.CreateMultiPartUpload(awsKey)
-	if err != nil {
-		return
-	}
-
+	uploadID := new(string)
 	var completedParts []*s3.CompletedPart
 	uploadPartNumber := 1
 	uploadPart := make([]byte, 0)
@@ -390,6 +386,10 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 				fileContentType = http.DetectContentType(b)
 				if !mimeTypeContains(aceptedMimeTypesThumbnail, fileContentType) {
 					generateThumbnail = false
+				}
+				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
+				if err != nil {
+					return
 				}
 				firstRun = false
 			}
@@ -419,7 +419,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 
 			if generateThumbnail {
 				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
-				generatePublicShareThumbnail(hash, partForThumbnailBuf)
+				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType)
 			}
 			completedParts = append(completedParts, completedPart)
 			break
@@ -459,7 +459,7 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 	return nil
 }
 
-func generatePublicShareThumbnail(fileID string, imageBytes []byte) error {
+func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentType string) error {
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
 	buf := bytes.NewBuffer(imageBytes)
 	image, err := imaging.Decode(buf)
@@ -475,7 +475,7 @@ func generatePublicShareThumbnail(fileID string, imageBytes []byte) error {
 	}
 
 	distThumbnailString := distThumbnailWriter.String()
-	if err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString); err != nil {
+	if err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, fileContentType); err != nil {
 		return err
 	}
 

@@ -29,7 +29,7 @@ func freeUploadFile(c *gin.Context) error {
 
 	objectKey := fmt.Sprintf("%s%s", "free_upload/", request.UploadID)
 
-	if err := utils.SetDefaultBucketObject(objectKey, request.FileData); err != nil {
+	if err := utils.SetDefaultBucketObject(objectKey, request.FileData, ""); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
