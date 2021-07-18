@@ -136,7 +136,7 @@ func MultipartUploadOfSingleChunk(t *testing.T, f *File) (*s3.CompletedPart, err
 	file.Read(buffer)
 
 	awsObjKey := aws.StringValue(f.AwsObjectKey) + "/file"
-	key, uploadID, err := utils.CreateMultiPartUpload(awsObjKey)
+	key, uploadID, err := utils.CreateMultiPartUpload(awsObjKey, "")
 	if err != nil {
 		return nil, err
 	}

@@ -26,7 +26,7 @@ const (
 	CannedAcl_Private         = "private"
 	CannedAcl_PublicRead      = "public-read"
 	CannedAcl_PublicReadWrite = "public-read-write"
-	MultiPartFileType         = "application/octet-stream"
+	DefaultFileContentType    = "application/octet-stream"
 )
 
 var awsPagingSize int64
@@ -162,11 +162,12 @@ func getObjectAsString(bucketName, objectKey, downloadRange string, cached bool)
 	return outputString, nil
 }
 
-func setObject(bucketName string, objectKey string, data string) error {
+func setObject(bucketName, objectKey, data, fileContentType string) error {
 	input := &s3.PutObjectInput{
-		Body:   aws.ReadSeekCloser(strings.NewReader(data)),
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(objectKey),
+		Body:        aws.ReadSeekCloser(strings.NewReader(data)),
+		Bucket:      aws.String(bucketName),
+		Key:         aws.String(objectKey),
+		ContentType: aws.String(fileContentType),
 	}
 
 	err := svc.PutObject(input)
@@ -332,8 +333,11 @@ func GetDefaultBucketObjectSize(objectKey string) int64 {
 }
 
 // Set Object operation on defaultBucketName
-func SetDefaultBucketObject(objectKey string, data string) error {
-	return setObject(Env.BucketName, objectKey, data)
+func SetDefaultBucketObject(objectKey, data, fileContentType string) error {
+	if fileContentType == "" {
+		fileContentType = DefaultFileContentType
+	}
+	return setObject(Env.BucketName, objectKey, data, fileContentType)
 }
 
 // Delete Object operation on defaultBucketName with particular prefix
@@ -351,8 +355,11 @@ func DeleteDefaultBucketObjectKeys(objectKeyPrefix string) error {
 	return deleteObjectKeys(Env.BucketName, objectKeyPrefix)
 }
 
-func CreateMultiPartUpload(key string) (*string, *string, error) {
-	return createMultiPartUpload(key, MultiPartFileType)
+func CreateMultiPartUpload(key, fileContentType string) (*string, *string, error) {
+	if fileContentType == "" {
+		fileContentType = DefaultFileContentType
+	}
+	return createMultiPartUpload(key, fileContentType)
 }
 
 func UploadMultiPartPart(key, uploadID string, fileBytes []byte, partNumber int) (*s3.CompletedPart, error) {

@@ -84,7 +84,7 @@ func startUploadForTest(t *testing.T) (string, string, []byte, int64) {
 
 	awsKey := awsTestDirPath + fileName
 
-	_, uploadID, err := CreateMultiPartUpload(awsKey)
+	_, uploadID, err := CreateMultiPartUpload(awsKey, "")
 	assert.Nil(t, err)
 
 	return awsKey, aws.StringValue(uploadID), buffer, size

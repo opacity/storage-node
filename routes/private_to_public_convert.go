@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"sync"
@@ -359,11 +360,7 @@ func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncry
 
 func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string) (err error) {
 	awsKey := models.GetFileDataPublicKey(hash)
-	_, uploadID, err := utils.CreateMultiPartUpload(awsKey)
-	if err != nil {
-		return
-	}
-
+	uploadID := new(string)
 	var completedParts []*s3.CompletedPart
 	uploadPartNumber := 1
 	uploadPart := make([]byte, 0)
@@ -388,6 +385,10 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 				fileContentType = http.DetectContentType(b)
 				if !mimeTypeContains(aceptedMimeTypesThumbnail, fileContentType) {
 					generateThumbnail = false
+				}
+				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
+				if err != nil {
+					return
 				}
 				firstRun = false
 			}
@@ -417,7 +418,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 
 			if generateThumbnail {
 				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
-				generatePublicShareThumbnail(hash, partForThumbnailBuf)
+				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType)
 			}
 			completedParts = append(completedParts, completedPart)
 			break
@@ -457,22 +458,23 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 	return nil
 }
 
-func generatePublicShareThumbnail(fileID string, imageBytes []byte) error {
+func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentType string) error {
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
 	buf := bytes.NewBuffer(imageBytes)
 	image, err := imaging.Decode(buf)
 	if err != nil {
 		return err
 	}
+	newH := math.Round((float64(image.Bounds().Max.Y) / float64(image.Bounds().Max.X)) * 1024)
 
-	thumbnailImage := imaging.Thumbnail(image, 1200, 628, imaging.CatmullRom)
+	thumbnailImage := imaging.Thumbnail(image, 1024, int(newH), imaging.MitchellNetravali)
 	distThumbnailWriter := new(bytes.Buffer)
-	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.PNG); err != nil {
+	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.JPEG, imaging.JPEGQuality(70)); err != nil {
 		return err
 	}
 
 	distThumbnailString := distThumbnailWriter.String()
-	if err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString); err != nil {
+	if err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, fileContentType); err != nil {
 		return err
 	}
 
