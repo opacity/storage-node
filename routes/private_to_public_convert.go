@@ -267,7 +267,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	})
 
 	g.Go(func() error {
-		return DownloadPrivateFile(hash, encryptionKey, numberOfParts, realSize, downloadProgress)
+		return DownloadPrivateFile(hash, numberOfParts, realSize, downloadProgress)
 	})
 
 	if err := g.Wait(); err != nil {
@@ -318,7 +318,7 @@ func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err er
 	return
 }
 
-func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress) error {
+func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress) error {
 	for i := 0; i < numberOfParts; i++ {
 		offset := i * DefaultPartSize
 		limit := offset + DefaultPartSize
