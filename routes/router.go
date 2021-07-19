@@ -214,7 +214,8 @@ func returnEngine() *gin.Engine {
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, map[string]interface{}{
 			"message": "Storage node is running",
-			"uptime":  fmt.Sprintf("%v", time.Now().Sub(uptime)),
+			"uptime":  fmt.Sprintf("%v", time.Since(uptime)),
+			"version": utils.Env.Version,
 		})
 	})
 

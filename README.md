@@ -10,9 +10,9 @@ Then clone this repo somewhere outside of the `$GOPATH`.  It needs to be outside
 will use go modules.
 
 ```bash
-# To setup this first time, you need to have .env file. By default, use .env.test for unit test.
+# To setup this first time, you need to have .env file. By default, use .env.template for unit test.
 # Feel free to modify the .env file. Note: we don't check in .env file.
-cp .env.test .env
+cp .env.template .env
 
 # Starts the storage node on port 3000
 DEBUG=1 docker-compose up --build -d # This takes a few minutes when you first run it.
