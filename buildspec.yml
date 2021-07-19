@@ -3,8 +3,8 @@ version: 0.2
 env:
   git-credential-helper: yes
   variables:
-    SENTRY_ORG: opacity-mihai-test
-    SENTRY_PROJECT: storage-node-mihai-tests
+    SENTRY_ORG: opacity
+    SENTRY_PROJECT: storage-node
   parameter-store:
     SENTRY_AUTH_TOKEN: /storage-node/SENTRY_AUTH_TOKEN
 
