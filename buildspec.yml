@@ -18,7 +18,7 @@ phases:
     commands:
       - VERSION=`sentry-cli releases propose-version`
       - sentry-cli releases new "$VERSION"
-      - sentry-cli releases set-commits "$VERSION" --auto --ignore-missing
+      - sentry-cli releases set-commits "$VERSION" --auto --ignore-missing --ignore-empty
       - echo $VERSION > .version
       - sentry-cli releases finalize "$VERSION"
 artifacts:
