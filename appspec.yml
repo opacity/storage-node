@@ -5,6 +5,10 @@ files:
     destination: /home/ubuntu/storage-node
 file_exists_behavior: OVERWRITE
 hooks:
+  BeforeInstall:
+    - location: deploy_scripts/before_install.sh
+      timeout: 300
+      runas: root
   ApplicationStart:
     - location: deploy_scripts/app_start.sh
       timeout: 400
