@@ -16,9 +16,15 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
+var GO_ENV string
+
 func main() {
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn: "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
+		// Dsn:         "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
+		// @TODO: replace Dsn, below is a sandbox environment (Mihai)
+		Dsn:         "https://2603daa7015a4decb2ca5c76876bb1e8@o920906.ingest.sentry.io/5866955",
+		Release:     "storage-node@2.0",
+		Environment: GO_ENV,
 	})
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)

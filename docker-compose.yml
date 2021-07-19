@@ -89,11 +89,11 @@ services:
         go get github.com/codegangsta/gin
         if [ -z ${DEBUG} ]; then
           echo \"Starting Storage node in PROD mode\";
-          go build -o ./bin/storage-node && chmod +x ./bin/storage-node;
+          go build -ldflags='-X main.GO_ENV=${GO_ENV}' -o ./bin/storage-node && chmod +x ./bin/storage-node;
           ./bin/storage-node;
         else
           echo \"Starting Storage node in DEV mode\";
-          gin run main.go
+          gin --buildArgs \"-ldflags '-X main.GO_ENV=${GO_ENV}'\" run main.go
         fi
       "
     networks:

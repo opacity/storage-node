@@ -113,10 +113,9 @@ func initEnv(filenames ...string) {
 	Env = storageNodeEnv
 }
 
-/*SetLive sets the live environment*/
+/*SetLive sets the production environment*/
 func SetLive() {
 	initEnv()
-	Env.GoEnv = "live"
 	Env.DatabaseURL = Env.ProdDatabaseURL
 	Env.StripeKey = Env.StripeKeyProd
 	runInitializations()
@@ -125,6 +124,7 @@ func SetLive() {
 /*SetTesting sets the testing environment*/
 func SetTesting(filenames ...string) {
 	initEnv(filenames...)
+	// Overwrite the GoEnv variable, just to make sure we are in test mode
 	Env.GoEnv = "test"
 	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
 	LogIfError(err, nil)
