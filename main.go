@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"runtime/debug"
@@ -28,8 +27,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)
 	}
-	sentry.CaptureMessage("is sentry set correctly?")
-	sentry.CaptureException(errors.New("arbitrary error to see stack trace"))
 
 	defer catchError()
 	defer models.Close()
