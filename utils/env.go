@@ -46,7 +46,8 @@ type StorageNodeEnv struct {
 	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:""`
 
 	// Go environment
-	GoEnv string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
+	GoEnv   string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
+	Version string `env:"VERSION" envDefault:"VERSION not SET!"`
 
 	// Payment stuff
 	ContractAddress      string `env:"TOKEN_CONTRACT_ADDRESS" envDefault:""`
@@ -113,10 +114,9 @@ func initEnv(filenames ...string) {
 	Env = storageNodeEnv
 }
 
-/*SetLive sets the live environment*/
+/*SetLive sets the production environment*/
 func SetLive() {
 	initEnv()
-	Env.GoEnv = "live"
 	Env.DatabaseURL = Env.ProdDatabaseURL
 	Env.StripeKey = Env.StripeKeyProd
 	runInitializations()
@@ -125,6 +125,7 @@ func SetLive() {
 /*SetTesting sets the testing environment*/
 func SetTesting(filenames ...string) {
 	initEnv(filenames...)
+	// Overwrite the GoEnv variable, just to make sure we are in test mode
 	Env.GoEnv = "test"
 	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
 	LogIfError(err, nil)
