@@ -1,0 +1,26 @@
+version: 0.2
+
+env:
+  git-credential-helper: yes
+  variables:
+    SENTRY_ORG: opacity-mihai-test
+    SENTRY_PROJECT: storage-node-mihai-tests
+  parameter-store:
+    SENTRY_AUTH_TOKEN: /storage-node/SENTRY_AUTH_TOKEN
+
+phases:
+  install:
+    on-failure: ABORT
+    commands:
+      - curl -sL https://sentry.io/get-cli/ | bash
+  build:
+    on-failure: ABORT
+    commands:
+      - VERSION=`sentry-cli releases propose-version`
+      - sentry-cli releases new "$VERSION"
+      - sentry-cli releases set-commits "$VERSION" --auto --ignore-missing
+      - echo $VERSION > .version
+      - sentry-cli releases finalize "$VERSION"
+artifacts:
+  files:
+    - '**/*'
