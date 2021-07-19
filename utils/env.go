@@ -46,7 +46,8 @@ type StorageNodeEnv struct {
 	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:""`
 
 	// Go environment
-	GoEnv string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
+	GoEnv   string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
+	Version string `env:"VERSION" envDefault:"VERSION not SET!"`
 
 	// Payment stuff
 	ContractAddress      string `env:"TOKEN_CONTRACT_ADDRESS" envDefault:""`
