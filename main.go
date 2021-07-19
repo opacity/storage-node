@@ -29,6 +29,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)
 	}
+	sentry.CaptureMessage("is sentry set correctly?")
+
 	defer catchError()
 	defer models.Close()
 
