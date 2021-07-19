@@ -3,6 +3,7 @@ package routes
 import (
 	"errors"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/models"
@@ -139,11 +140,13 @@ func createShortLinkWithContext(c *gin.Context) error {
 	request := CreateShortlinkReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		sentry.CaptureException(err)
 		return err
 	}
 
 	publicShare, err := models.CreatePublicShare(request.createShortlinkObj)
 	if err != nil {
+		sentry.CaptureException(err)
 		if err == gorm.ErrRecordNotFound {
 			return NotFoundResponse(c, errors.New("the data does not exist"))
 		}
