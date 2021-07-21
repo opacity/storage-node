@@ -17,10 +17,11 @@ phases:
     on-failure: ABORT
     commands:
       - SVERSION=`sentry-cli releases propose-version`
-      - VERSION="${CODE_PIPELINE_ENV}@${SVERSION}"
+      - VERSION="${GO_ENV}@${SVERSION}"
       - sentry-cli releases new "$VERSION"
       - sentry-cli releases set-commits "$VERSION" --auto --ignore-missing --ignore-empty
       - echo $VERSION > .version
+      - echo $GO_ENV > .go_env
       - sentry-cli releases finalize "$VERSION"
 artifacts:
   files:

@@ -18,11 +18,12 @@ import (
 )
 
 var GO_ENV string
+var VERSION string
 
 func main() {
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
-		Release:          "storage-node@2.0",
+		Release:          GO_ENV + "@" + VERSION,
 		Environment:      GO_ENV,
 		AttachStacktrace: true,
 	})
