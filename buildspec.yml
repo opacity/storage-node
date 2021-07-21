@@ -24,6 +24,7 @@ phases:
       - echo $VERSION > .version
       - echo $GO_ENV > .go_env
       - sentry-cli releases finalize "$VERSION"
+      - sentry-cli releases deploys "$VERSION" new -e $GO_ENV
 artifacts:
   files:
     - '**/*'
