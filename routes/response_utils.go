@@ -10,6 +10,8 @@ import (
 
 	"time"
 
+	"github.com/getsentry/sentry-go"
+	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/opacity/storage-node/models"
@@ -22,9 +24,19 @@ const REQUEST_UUID = "request_uuid"
 
 type handlerFunc func(*gin.Context) error
 
+func sentryCaptureException(c *gin.Context, err error) {
+	if hub := sentrygin.GetHubFromContext(c); hub != nil {
+		hub.WithScope(func(scope *sentry.Scope) {
+			hub.CaptureException(err)
+		})
+	}
+}
+
 func InternalErrorResponse(c *gin.Context, err error) error {
 	c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
 	utils.Metrics_500_Response_Counter.Inc()
+
+	sentryCaptureException(c, err)
 
 	getLogger(c).LogIfError(err, nil)
 	return err
@@ -40,6 +52,8 @@ func BadRequestResponse(c *gin.Context, err error) error {
 func ServiceUnavailableResponse(c *gin.Context, err error) error {
 	c.AbortWithStatusJSON(http.StatusServiceUnavailable, err.Error())
 	utils.Metrics_503_Response_Counter.Inc()
+
+	sentryCaptureException(c, err)
 
 	return err
 }
@@ -107,7 +121,9 @@ func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 		defer func() {
 			// Capture the error
 			if r := recover(); r != nil {
-				utils.SlackLogError(fmt.Sprintf("Recover from err %v", r))
+				sentry.CurrentHub().Recover(r)
+
+				utils.SlackLogError(fmt.Sprintf("recover from err %v", r))
 
 				buff := bytes.NewBufferString("")
 				buff.Write(debug.Stack())
@@ -117,13 +133,15 @@ func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 				if len(stacks) > 5 {
 					stacks = stacks[5:] // skip the Stack() and Defer method.
 				}
-				getLogger(c).Error(fmt.Sprintf("[StorageNode]Recover from err %v\nRunning on thread: %s,\nStack: \n%v\n", r, threadId, strings.Join(stacks, "\n")))
+				getLogger(c).Error(fmt.Sprintf("[StorageNode]recover from err %v\nRunning on thread: %s,\nStack: \n%v\n", r, threadId, strings.Join(stacks, "\n")))
 
 				if err, ok := r.(error); ok {
-					InternalErrorResponse(c, err)
+					c.AbortWithStatusJSON(http.StatusInternalServerError, err)
 				} else {
-					InternalErrorResponse(c, fmt.Errorf("Unknown error: %v", r))
+					c.AbortWithStatusJSON(http.StatusInternalServerError, fmt.Errorf("unknown error: %v", r))
 				}
+				utils.Metrics_500_Response_Counter.Inc()
+
 			}
 		}()
 

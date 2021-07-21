@@ -15,7 +15,6 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/disintegration/imaging"
-	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -272,7 +271,6 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	})
 
 	if err := g.Wait(); err != nil {
-		sentry.CaptureException(err)
 		return InternalErrorResponse(c, err)
 	}
 
@@ -284,13 +282,11 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byte, err error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
 	aesgcm, err := cipher.NewGCMWithNonceSize(block, NonceByteLength)
 	if err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
@@ -302,7 +298,6 @@ func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byt
 	cipherText := append(rawData, tag...)
 	decryptedData, err = aesgcm.Open(nil, nonce, cipherText, nil)
 	if err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
@@ -312,13 +307,11 @@ func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byt
 func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
 	decryptedByteData, err := DecryptWithNonceSize(key, data)
 	if err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
 	err = json.Unmarshal(decryptedByteData, &fileMetadata)
 	if err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
@@ -337,7 +330,6 @@ func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncry
 		downloadRange := "bytes=" + strconv.Itoa(offset) + "-" + strconv.Itoa(limit-1)
 		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(fileID), downloadRange, false)
 		if err != nil {
-			sentry.CaptureException(err)
 			return err
 		}
 
@@ -346,7 +338,6 @@ func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncry
 			fileChunk, err := fileChunkObjOutput.Body.Read(b)
 
 			if err != nil && err != io.EOF {
-				sentry.CaptureException(err)
 				return err
 			}
 
@@ -354,7 +345,6 @@ func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncry
 				b = b[:fileChunk]
 				_, err := downloadProgress.Write(b)
 				if err != nil && err != io.EOF {
-					sentry.CaptureException(err)
 					return err
 				}
 			}
@@ -384,9 +374,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 		b := make([]byte, bytes.MinRead)
 		n := 0
 		n, err = decryptProgress.Read(b)
-
 		if err != nil && err != io.EOF {
-			sentry.CaptureException(err)
 			return
 		}
 
@@ -399,7 +387,6 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 				}
 				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
 				if err != nil {
-					sentry.CaptureException(err)
 					return
 				}
 				firstRun = false
@@ -438,7 +425,6 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 	}
 
 	if _, err = utils.CompleteMultiPartUpload(awsKey, *uploadID, completedParts); err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
@@ -452,7 +438,6 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 
 		n, err := downloadProgress.Read(b)
 		if err != nil && err != io.EOF {
-			sentry.CaptureException(err)
 			return err
 		}
 
@@ -460,7 +445,6 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 			b = b[:n]
 			_, err := decryptProgress.Write(b)
 			if err != nil && err != io.EOF {
-				sentry.CaptureException(err)
 				return err
 			}
 		}
@@ -478,7 +462,6 @@ func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentT
 	buf := bytes.NewBuffer(imageBytes)
 	image, err := imaging.Decode(buf)
 	if err != nil {
-		sentry.CaptureException(err)
 		return err
 	}
 	newH := math.Round((float64(image.Bounds().Max.Y) / float64(image.Bounds().Max.X)) * 1024)
@@ -486,13 +469,11 @@ func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentT
 	thumbnailImage := imaging.Thumbnail(image, 1024, int(newH), imaging.MitchellNetravali)
 	distThumbnailWriter := new(bytes.Buffer)
 	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.JPEG, imaging.JPEGQuality(70)); err != nil {
-		sentry.CaptureException(err)
 		return err
 	}
 
 	distThumbnailString := distThumbnailWriter.String()
 	if err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, fileContentType); err != nil {
-		sentry.CaptureException(err)
 		return err
 	}
 
@@ -503,7 +484,6 @@ func getFileContentLength(fileID string) (int, error) {
 	resp, err := http.Head(models.GetBucketUrl() + fileID + "/file")
 
 	if err != nil {
-		sentry.CaptureException(err)
 		return 0, err
 	}
 
