@@ -7,6 +7,7 @@ import (
 	"log"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/opacity/storage-node/jobs"
@@ -20,13 +21,15 @@ var GO_ENV string
 
 func main() {
 	err := sentry.Init(sentry.ClientOptions{
-		Dsn:         "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
-		Release:     "storage-node@2.0",
-		Environment: GO_ENV,
+		Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
+		Release:          "storage-node@2.0",
+		Environment:      GO_ENV,
+		AttachStacktrace: true,
 	})
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)
 	}
+	defer sentry.Flush(5 * time.Second)
 
 	defer catchError()
 	defer models.Close()
@@ -77,6 +80,8 @@ func setEnvPlans() {
 func catchError() {
 	// Capture the error
 	if r := recover(); r != nil {
+		sentry.CurrentHub().Recover(r)
+
 		buff := bytes.NewBufferString("")
 		buff.Write(debug.Stack())
 		stacks := strings.Split(buff.String(), "\n")
