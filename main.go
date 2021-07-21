@@ -23,7 +23,7 @@ var VERSION string
 func main() {
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
-		Release:          GO_ENV + "@" + VERSION,
+		Release:          VERSION,
 		Environment:      GO_ENV,
 		AttachStacktrace: true,
 	})

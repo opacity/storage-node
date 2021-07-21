@@ -16,8 +16,7 @@ phases:
   build:
     on-failure: ABORT
     commands:
-      - SVERSION=`sentry-cli releases propose-version`
-      - VERSION="${GO_ENV}@${SVERSION}"
+      - VERSION=`sentry-cli releases propose-version`
       - sentry-cli releases new "$VERSION"
       - git remote remove origin
       - git remote add origin https://github.com/opacity/storage-node.git
@@ -25,6 +24,7 @@ phases:
       - echo $VERSION > .version
       - echo $GO_ENV > .go_env
       - sentry-cli releases finalize "$VERSION"
+      - sentry-cli releases deploys "$VERSION" new -e $GO_ENV
 artifacts:
   files:
     - '**/*'
