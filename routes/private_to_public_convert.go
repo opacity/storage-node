@@ -370,7 +370,6 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 	uploadPartNumber := 1
 	uploadPart := make([]byte, 0)
 	sentrySpanUpload := sentryMainSpan.StartChild("upload")
-	defer sentrySpanUpload.Finish()
 	sentrySpanUpload.SetTag("upload-file-size", strconv.Itoa(decryptProgress.FileSize))
 
 	generateThumbnail, firstRun := true, true
@@ -427,6 +426,8 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
 				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType, sentrySpanUpload)
 			}
+
+			sentrySpanUpload.Finish()
 			completedParts = append(completedParts, completedPart)
 			break
 		}
