@@ -15,6 +15,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/disintegration/imaging"
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -259,15 +260,17 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	}
 
 	var g errgroup.Group
+	sentryMainSpan := sentry.TransactionFromContext(c.Request.Context())
+
 	g.Go(func() error {
-		return UploadPublicFileAndGenerateThumb(decryptProgress, hash)
+		return UploadPublicFileAndGenerateThumb(decryptProgress, hash, sentryMainSpan)
 	})
 	g.Go(func() error {
-		return ReadAndDecryptPrivateFile(downloadProgress, decryptProgress)
+		return ReadAndDecryptPrivateFile(downloadProgress, decryptProgress, sentryMainSpan)
 	})
 
 	g.Go(func() error {
-		return DownloadPrivateFile(hash, encryptionKey, numberOfParts, realSize, downloadProgress)
+		return DownloadPrivateFile(hash, encryptionKey, numberOfParts, realSize, downloadProgress, sentryMainSpan)
 	})
 
 	if err := g.Wait(); err != nil {
@@ -318,7 +321,9 @@ func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err er
 	return
 }
 
-func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress) error {
+func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress, sentryMainSpan *sentry.Span) error {
+	sentrySpanDownload := sentryMainSpan.StartChild("download")
+	defer sentrySpanDownload.Finish()
 	for i := 0; i < numberOfParts; i++ {
 		offset := i * DefaultPartSize
 		limit := offset + DefaultPartSize
@@ -358,12 +363,15 @@ func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncry
 	return nil
 }
 
-func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string) (err error) {
+func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string, sentryMainSpan *sentry.Span) (err error) {
 	awsKey := models.GetFileDataPublicKey(hash)
 	uploadID := new(string)
 	var completedParts []*s3.CompletedPart
 	uploadPartNumber := 1
 	uploadPart := make([]byte, 0)
+	sentrySpanUpload := sentryMainSpan.StartChild("upload")
+	defer sentrySpanUpload.Finish()
+	sentrySpanUpload.SetTag("upload-file-size", strconv.Itoa(decryptProgress.FileSize))
 
 	generateThumbnail, firstRun := true, true
 	partForThumbnailBuf := make([]byte, 0)
@@ -417,7 +425,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 
 			if generateThumbnail {
 				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
-				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType)
+				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType, sentrySpanUpload)
 			}
 			completedParts = append(completedParts, completedPart)
 			break
@@ -432,7 +440,10 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 
 }
 
-func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgress *DecryptProgress) error {
+func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgress *DecryptProgress, sentryMainSpan *sentry.Span) error {
+	sentrySpanDecrypt := sentryMainSpan.StartChild("decryption")
+	sentrySpanDecrypt.SetTag("encrypted-file-size", strconv.Itoa(decryptProgress.SizeWithEncryption))
+	defer sentrySpanDecrypt.Finish()
 	for {
 		b := make([]byte, bytes.MinRead)
 
@@ -453,11 +464,12 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 			break
 		}
 	}
-
 	return nil
 }
 
-func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentType string) error {
+func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentType string, sentryMainSpan *sentry.Span) error {
+	sentrySpanGenerateThumbnail := sentryMainSpan.StartChild("thumbnail-generation")
+	sentrySpanGenerateThumbnail.SetTag("content-type", fileContentType)
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
 	buf := bytes.NewBuffer(imageBytes)
 	image, err := imaging.Decode(buf)
@@ -476,6 +488,8 @@ func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentT
 	if err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, fileContentType); err != nil {
 		return err
 	}
+
+	defer sentrySpanGenerateThumbnail.Finish()
 
 	return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)
 }
