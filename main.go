@@ -22,8 +22,8 @@ var VERSION string
 
 func main() {
 	tracesSampleRate := 0.3
-	// keep all traces on dev for better overview
-	if GO_ENV == "dev2" {
+	// keep all traces on dev2 and localhost (for dev)
+	if GO_ENV == "dev2" || GO_ENV == "localhost" {
 		tracesSampleRate = 1
 	}
 	err := sentry.Init(sentry.ClientOptions{

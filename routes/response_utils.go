@@ -121,9 +121,10 @@ func OkResponse(c *gin.Context, response interface{}) error {
 
 func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 	injectToRecoverFromPanic := func(c *gin.Context) {
-		span := sentry.StartSpan(c, c.Request.URL.String(),
+		span := sentry.StartSpan(c.Request.Context(), c.Request.URL.String(),
 			sentry.TransactionName(c.Request.URL.String()))
 		setUpSession(c)
+		c.Request = c.Request.Clone(span.Context())
 
 		defer func() {
 			// Capture the error
@@ -148,8 +149,7 @@ func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 			}
 		}()
 
-		// we don't care about this error as it can be a response body
-		f(c)
+		f(c) // we don't care about this returned error as it can be a response body
 		defer span.Finish()
 	}
 	return gin.HandlerFunc(injectToRecoverFromPanic)
