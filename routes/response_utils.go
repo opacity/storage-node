@@ -18,6 +18,11 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
+type GenericRequest struct {
+	requestBody
+	verification
+}
+
 const noAccountWithThatID = "no account with that id"
 
 const REQUEST_UUID = "request_uuid"
@@ -121,8 +126,6 @@ func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 		defer func() {
 			// Capture the error
 			if r := recover(); r != nil {
-				sentry.CurrentHub().Recover(r)
-
 				utils.SlackLogError(fmt.Sprintf("recover from err %v", r))
 
 				buff := bytes.NewBufferString("")
@@ -136,15 +139,14 @@ func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 				getLogger(c).Error(fmt.Sprintf("[StorageNode]recover from err %v\nRunning on thread: %s,\nStack: \n%v\n", r, threadId, strings.Join(stacks, "\n")))
 
 				if err, ok := r.(error); ok {
-					c.AbortWithStatusJSON(http.StatusInternalServerError, err)
+					InternalErrorResponse(c, err)
 				} else {
-					c.AbortWithStatusJSON(http.StatusInternalServerError, fmt.Errorf("unknown error: %v", r))
+					InternalErrorResponse(c, fmt.Errorf("unknown error: %v", r))
 				}
-				utils.Metrics_500_Response_Counter.Inc()
-
 			}
 		}()
 
+		// we don't care about this error as it can be a response body
 		f(c)
 	}
 	return gin.HandlerFunc(injectToRecoverFromPanic)

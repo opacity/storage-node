@@ -26,12 +26,12 @@ func main() {
 		Release:          VERSION,
 		Environment:      GO_ENV,
 		AttachStacktrace: true,
+		BeforeSend:       sentryOpacityBeforeSend,
 	})
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)
 	}
 	defer sentry.Flush(5 * time.Second)
-
 	defer catchError()
 	defer models.Close()
 
@@ -76,6 +76,24 @@ func setEnvPlans() {
 	}
 
 	utils.CreatePlanMetrics()
+}
+
+func sentryOpacityBeforeSend(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+	if event.Request != nil {
+		req := routes.GenericRequest{}
+
+		if err := json.Unmarshal([]byte(event.Request.Data), &req); err == nil {
+			if len(event.Exception) > 0 {
+				frames := event.Exception[0].Stacktrace.Frames
+				// do not include http/gin-gonic and the Sentry throw funcs ones
+				event.Exception[0].Stacktrace.Frames = frames[6 : len(frames)-3]
+			}
+
+			event.Request.Data = req.RequestBody
+		}
+	}
+
+	return event
 }
 
 func catchError() {
