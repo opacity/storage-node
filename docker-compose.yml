@@ -8,7 +8,7 @@ services:
     ports:
       - 9090:9090
     volumes:
-      - prometheus_data:/prometheus
+      - ../storage-node-data/prometheus_data:/prometheus
     entrypoint: ./prometheus/entrypoint.sh ${ADMIN_USER} ${ADMIN_PASSWORD}
       # nginx will be listening on port 12321
       # must create /etc/nginx/sites-available/prometheus-proxy, symbolically link it in /etc/nginx/sites-enabled,
@@ -28,7 +28,7 @@ services:
       - 8090:8090
     restart: "always"
     volumes:
-      - influxdb_data:/var/lib/influxdb
+      - ../storage-node-data/influxdb_data:/var/lib/influxdb
       - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
       - ./influxdb/prometheus.iql:/docker-entrypoint-initdb.d/prometheus.iql:ro
     environment:
@@ -59,7 +59,7 @@ services:
 #    ports:
 #      - 3100:3100
 #    volumes:
-#      - grafana_data:/var/lib/grafana
+#      - ../storage-node-data/grafana_data:/var/lib/grafana
 #    networks:
 #      - promnet
 
@@ -74,8 +74,8 @@ services:
     - "db"
     volumes:
     - ".:/go/src/github.com/opacity/storage-node"
-    - "./data/badger/prod:/var/lib/badger/prod"
-    - "./data/badger/test:/var/lib/badger/test"
+    - "../storage-node-data/badger/prod:/var/lib/badger/prod"
+    - "../storage-node-data/badger/test:/var/lib/badger/test"
     working_dir: "/go/src/github.com/opacity/storage-node"
     command: >
       bash -c "
@@ -89,11 +89,11 @@ services:
         go get github.com/codegangsta/gin
         if [ -z ${DEBUG} ]; then
           echo \"Starting Storage node in PROD mode\";
-          go build -ldflags='-X main.GO_ENV=${GO_ENV}' -o ./bin/storage-node && chmod +x ./bin/storage-node;
+          go build -ldflags='-X main.GO_ENV=${GO_ENV} -X main.VERSION=${VERSION}' -o ./bin/storage-node && chmod +x ./bin/storage-node;
           ./bin/storage-node;
         else
           echo \"Starting Storage node in DEV mode\";
-          gin --buildArgs \"-ldflags '-X main.GO_ENV=${GO_ENV}'\" run main.go
+          gin --buildArgs \"-ldflags '-X main.GO_ENV=${GO_ENV} -X main.VERSION=${VERSION}'\" run main.go
         fi
       "
     networks:
@@ -113,7 +113,7 @@ services:
     ports:
       - "33060:3306"
     volumes:
-      - "./data/db/mysql:/var/lib/mysql"
+      - "../storage-node-data/db/mysql:/var/lib/mysql"
     networks:
       - dbnet
 
@@ -128,5 +128,6 @@ networks:
 volumes:
   prometheus_data: {}
   influxdb_data: {}
+  prometheus_data: {}
 # grafana_data: {}
 

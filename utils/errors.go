@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	"github.com/getsentry/sentry-go"
 )
 
 /*PanicOnError panics if an error was passed in*/
@@ -63,6 +65,7 @@ func LogIfError(err error, extraInfo map[string]interface{}) {
 	if err == nil {
 		return
 	}
+	sentry.CaptureException(err)
 	SlackLogError(err.Error())
 	fmt.Println(err)
 	fmt.Println(extraInfo)

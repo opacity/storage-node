@@ -117,6 +117,9 @@ func getObject(bucketName, objectKey, downloadRange string, cached bool) (string
 	}
 
 	output, err := svc.s3.GetObject(input)
+	if err != nil {
+		return "", err
+	}
 
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(output.Body)

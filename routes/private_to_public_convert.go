@@ -260,19 +260,20 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	}
 
 	var g errgroup.Group
+	sentryMainSpan := sentry.TransactionFromContext(c.Request.Context())
+
 	g.Go(func() error {
-		return UploadPublicFileAndGenerateThumb(decryptProgress, hash)
+		return UploadPublicFileAndGenerateThumb(decryptProgress, hash, sentryMainSpan)
 	})
 	g.Go(func() error {
-		return ReadAndDecryptPrivateFile(downloadProgress, decryptProgress)
+		return ReadAndDecryptPrivateFile(downloadProgress, decryptProgress, sentryMainSpan)
 	})
 
 	g.Go(func() error {
-		return DownloadPrivateFile(hash, numberOfParts, realSize, downloadProgress)
+		return DownloadPrivateFile(hash, encryptionKey, numberOfParts, realSize, downloadProgress, sentryMainSpan)
 	})
 
 	if err := g.Wait(); err != nil {
-		sentry.CaptureException(err)
 		return InternalErrorResponse(c, err)
 	}
 
@@ -284,13 +285,11 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byte, err error) {
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
 	aesgcm, err := cipher.NewGCMWithNonceSize(block, NonceByteLength)
 	if err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
@@ -302,7 +301,6 @@ func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byt
 	cipherText := append(rawData, tag...)
 	decryptedData, err = aesgcm.Open(nil, nonce, cipherText, nil)
 	if err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
@@ -312,20 +310,20 @@ func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byt
 func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
 	decryptedByteData, err := DecryptWithNonceSize(key, data)
 	if err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
 	err = json.Unmarshal(decryptedByteData, &fileMetadata)
 	if err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
 	return
 }
 
-func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress) error {
+func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress, sentryMainSpan *sentry.Span) error {
+	sentrySpanDownload := sentryMainSpan.StartChild("download")
+	defer sentrySpanDownload.Finish()
 	for i := 0; i < numberOfParts; i++ {
 		offset := i * DefaultPartSize
 		limit := offset + DefaultPartSize
@@ -337,7 +335,6 @@ func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, d
 		downloadRange := "bytes=" + strconv.Itoa(offset) + "-" + strconv.Itoa(limit-1)
 		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(fileID), downloadRange, false)
 		if err != nil {
-			sentry.CaptureException(err)
 			return err
 		}
 
@@ -346,7 +343,6 @@ func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, d
 			fileChunk, err := fileChunkObjOutput.Body.Read(b)
 
 			if err != nil && err != io.EOF {
-				sentry.CaptureException(err)
 				return err
 			}
 
@@ -354,7 +350,6 @@ func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, d
 				b = b[:fileChunk]
 				_, err := downloadProgress.Write(b)
 				if err != nil && err != io.EOF {
-					sentry.CaptureException(err)
 					return err
 				}
 			}
@@ -368,12 +363,15 @@ func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, d
 	return nil
 }
 
-func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string) (err error) {
+func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string, sentryMainSpan *sentry.Span) (err error) {
 	awsKey := models.GetFileDataPublicKey(hash)
 	uploadID := new(string)
 	var completedParts []*s3.CompletedPart
 	uploadPartNumber := 1
 	uploadPart := make([]byte, 0)
+	sentrySpanUpload := sentryMainSpan.StartChild("upload")
+	defer sentrySpanUpload.Finish()
+	sentrySpanUpload.SetTag("upload-file-size", strconv.Itoa(decryptProgress.FileSize))
 
 	generateThumbnail, firstRun := true, true
 	partForThumbnailBuf := make([]byte, 0)
@@ -384,9 +382,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 		b := make([]byte, bytes.MinRead)
 		n := 0
 		n, err = decryptProgress.Read(b)
-
 		if err != nil && err != io.EOF {
-			sentry.CaptureException(err)
 			return
 		}
 
@@ -399,7 +395,6 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 				}
 				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
 				if err != nil {
-					sentry.CaptureException(err)
 					return
 				}
 				firstRun = false
@@ -430,7 +425,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 
 			if generateThumbnail {
 				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
-				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType)
+				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType, sentrySpanUpload)
 			}
 			completedParts = append(completedParts, completedPart)
 			break
@@ -438,7 +433,6 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 	}
 
 	if _, err = utils.CompleteMultiPartUpload(awsKey, *uploadID, completedParts); err != nil {
-		sentry.CaptureException(err)
 		return
 	}
 
@@ -446,13 +440,15 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 
 }
 
-func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgress *DecryptProgress) error {
+func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgress *DecryptProgress, sentryMainSpan *sentry.Span) error {
+	sentrySpanDecrypt := sentryMainSpan.StartChild("decryption")
+	sentrySpanDecrypt.SetTag("encrypted-file-size", strconv.Itoa(decryptProgress.SizeWithEncryption))
+	defer sentrySpanDecrypt.Finish()
 	for {
 		b := make([]byte, bytes.MinRead)
 
 		n, err := downloadProgress.Read(b)
 		if err != nil && err != io.EOF {
-			sentry.CaptureException(err)
 			return err
 		}
 
@@ -460,7 +456,6 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 			b = b[:n]
 			_, err := decryptProgress.Write(b)
 			if err != nil && err != io.EOF {
-				sentry.CaptureException(err)
 				return err
 			}
 		}
@@ -469,16 +464,16 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 			break
 		}
 	}
-
 	return nil
 }
 
-func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentType string) error {
+func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentType string, sentryMainSpan *sentry.Span) error {
+	sentrySpanGenerateThumbnail := sentryMainSpan.StartChild("thumbnail-generation")
+	sentrySpanGenerateThumbnail.SetTag("content-type", fileContentType)
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
 	buf := bytes.NewBuffer(imageBytes)
 	image, err := imaging.Decode(buf)
 	if err != nil {
-		sentry.CaptureException(err)
 		return err
 	}
 	newH := math.Round((float64(image.Bounds().Max.Y) / float64(image.Bounds().Max.X)) * 1024)
@@ -486,15 +481,15 @@ func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentT
 	thumbnailImage := imaging.Thumbnail(image, 1024, int(newH), imaging.MitchellNetravali)
 	distThumbnailWriter := new(bytes.Buffer)
 	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.JPEG, imaging.JPEGQuality(70)); err != nil {
-		sentry.CaptureException(err)
 		return err
 	}
 
 	distThumbnailString := distThumbnailWriter.String()
 	if err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, fileContentType); err != nil {
-		sentry.CaptureException(err)
 		return err
 	}
+
+	defer sentrySpanGenerateThumbnail.Finish()
 
 	return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)
 }
@@ -503,7 +498,6 @@ func getFileContentLength(fileID string) (int, error) {
 	resp, err := http.Head(models.GetBucketUrl() + fileID + "/file")
 
 	if err != nil {
-		sentry.CaptureException(err)
 		return 0, err
 	}
 
