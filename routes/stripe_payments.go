@@ -2,8 +2,9 @@ package routes
 
 import (
 	"errors"
-	"github.com/stripe/stripe-go"
 	"time"
+
+	"github.com/stripe/stripe-go"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -90,9 +91,9 @@ func createStripePayment(c *gin.Context) error {
 		// TODO remove if / when we decide to support Stripe for upgrade
 		return BadRequestResponse(c, errors.New("stripe not supported for upgrades"))
 
-		if err := verifyValidStorageLimit(request.createStripePaymentObject.StorageLimit, c); err != nil {
-			return err
-		}
+		// if err := verifyValidStorageLimit(request.createStripePaymentObject.StorageLimit, c); err != nil {
+		// 	return err
+		// }
 		//costInDollars, _ = account.UpgradeCostInUSD(request.createStripePaymentObject.StorageLimit,
 		//	request.createStripePaymentObject.DurationInMonths)
 	} else {
