@@ -21,29 +21,32 @@ var GO_ENV string
 var VERSION string
 
 func main() {
-	tracesSampleRate := 0.3
-	// keep all traces on dev2 and localhost (for dev)
-	if GO_ENV == "dev2" || GO_ENV == "localhost" {
-		tracesSampleRate = 1
+	if GO_ENV != "testing" {
+		tracesSampleRate := 0.3
+		// keep all traces on dev2 and localhost (for dev)
+		if GO_ENV == "dev2" || GO_ENV == "localhost" {
+			tracesSampleRate = 1
+		}
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
+			Release:          VERSION,
+			Environment:      GO_ENV,
+			AttachStacktrace: true,
+			TracesSampleRate: tracesSampleRate,
+			BeforeSend:       sentryOpacityBeforeSend,
+		})
+		if err != nil {
+			log.Fatalf("sentry.Init: %s", err)
+		}
+		defer sentry.Flush(5 * time.Second)
 	}
-	err := sentry.Init(sentry.ClientOptions{
-		Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
-		Release:          VERSION,
-		Environment:      GO_ENV,
-		AttachStacktrace: true,
-		TracesSampleRate: tracesSampleRate,
-		BeforeSend:       sentryOpacityBeforeSend,
-	})
-	if err != nil {
-		log.Fatalf("sentry.Init: %s", err)
-	}
-	defer sentry.Flush(5 * time.Second)
+
 	defer catchError()
 	defer models.Close()
 
 	utils.SetLive()
 	services.SetWallet()
-	err = services.InitStripe()
+	err := services.InitStripe()
 	utils.PanicOnError(err)
 
 	utils.SlackLog("Begin to restart service!")
