@@ -21,11 +21,17 @@ var GO_ENV string
 var VERSION string
 
 func main() {
+	tracesSampleRate := 0.3
+	// keep all traces on dev for better overview
+	if GO_ENV == "dev2" {
+		tracesSampleRate = 1
+	}
 	err := sentry.Init(sentry.ClientOptions{
 		Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
 		Release:          VERSION,
 		Environment:      GO_ENV,
 		AttachStacktrace: true,
+		TracesSampleRate: tracesSampleRate,
 		BeforeSend:       sentryOpacityBeforeSend,
 	})
 	if err != nil {
