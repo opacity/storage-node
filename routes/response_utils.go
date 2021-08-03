@@ -121,7 +121,7 @@ func OkResponse(c *gin.Context, response interface{}) error {
 
 func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 	injectToRecoverFromPanic := func(c *gin.Context) {
-		span := sentry.StartSpan(c.Request.Context(), c.Request.URL.String(),
+		span := sentry.StartSpan(c.Request.Context(), c.Request.Method,
 			sentry.TransactionName(c.Request.URL.String()),
 		)
 

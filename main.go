@@ -28,8 +28,7 @@ func main() {
 			tracesSampleRate = 1
 		}
 		err := sentry.Init(sentry.ClientOptions{
-			// Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
-			Dsn:              "https://207742fd53c04bfd8e138fb46ee77b3f@o920906.ingest.sentry.io/5875169",
+			Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
 			Release:          VERSION,
 			Environment:      GO_ENV,
 			AttachStacktrace: true,

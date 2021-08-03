@@ -8,13 +8,13 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"math"
 	"net/http"
+	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/disintegration/imaging"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -29,16 +29,6 @@ const (
 	BlockOverhead    = TagByteLength + NonceByteLength
 	DefaultPartSize  = 80 * (DefaultBlockSize + BlockOverhead)
 )
-
-func getAcceptedMimeTypesThumbnail() []string {
-	return []string{
-		"image/jpeg",
-		"image/png",
-		"image/gif",
-		"image/tiff",
-		"image/bmp",
-	}
-}
 
 type DownloadProgress struct {
 	RawProgress        int
@@ -375,7 +365,6 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 	generateThumbnail, firstRun := true, true
 	partForThumbnailBuf := make([]byte, 0)
 	fileContentType := ""
-	aceptedMimeTypesThumbnail := getAcceptedMimeTypesThumbnail()
 
 	for {
 		b := make([]byte, bytes.MinRead)
@@ -389,9 +378,6 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 			b = b[:n]
 			if generateThumbnail && firstRun {
 				fileContentType = http.DetectContentType(b)
-				if !mimeTypeContains(aceptedMimeTypesThumbnail, fileContentType) {
-					generateThumbnail = false
-				}
 				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
 				if err != nil {
 					return
@@ -468,31 +454,61 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 	return nil
 }
 
-func generatePublicShareThumbnail(fileID string, imageBytes []byte, fileContentType string, sentryMainSpan *sentry.Span) error {
+func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentType string, sentryMainSpan *sentry.Span) error {
 	sentrySpanGenerateThumbnail := sentryMainSpan.StartChild("thumbnail-generation")
 	sentrySpanGenerateThumbnail.SetTag("content-type", fileContentType)
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
-	buf := bytes.NewBuffer(imageBytes)
-	image, err := imaging.Decode(buf)
+	// buf := bytes.NewBuffer(fileBytes)
+
+	ffprobeVideoDurationCmd := exec.Command("ffprobe",
+		"-show_entries",
+		"format=duration",
+		"-v", "quiet",
+		"-of", "csv=p=0",
+		"-",
+	)
+
+	ffprobeVideoDurationCmd.Stdin = bytes.NewBuffer(fileBytes)
+	videoDurationOutput, err := ffprobeVideoDurationCmd.CombinedOutput()
+	videoDurationString := strings.TrimSpace(string(videoDurationOutput))
+	videoDurationFloat32, _ := strconv.ParseFloat(videoDurationString, 32)
+	videoDuration := int(videoDurationFloat32)
+	cutVideoDuration := videoDuration / 5
+	// check(err) // check properly
+
+	ffmpegThumbnailCmd := exec.Command("ffmpeg",
+		"-y",
+		"-ss", strconv.Itoa(cutVideoDuration),
+		"-skip_frame", "nokey",
+		"-i", "pipe:0",
+		"-vsync", "0",
+		"-vf", "scale=1024:-1",
+		"-f", "image2",
+		"-q:v", "0",
+		"-frames:v", "1",
+		"pipe:1")
+	if cutVideoDuration == 0 {
+		ffmpegThumbnailCmd.Args = RemoveIndexFromSliceString(ffmpegThumbnailCmd.Args, 2)
+		ffmpegThumbnailCmd.Args = RemoveIndexFromSliceString(ffmpegThumbnailCmd.Args, 2)
+	}
+	ffmpegThumbnailCmd.Stdin = bytes.NewBuffer(fileBytes)
+	ffmpegThumbnailCmdOutput, err := ffmpegThumbnailCmd.Output()
 	if err != nil {
 		return err
 	}
-	newH := math.Round((float64(image.Bounds().Max.Y) / float64(image.Bounds().Max.X)) * 1024)
 
-	thumbnailImage := imaging.Thumbnail(image, 1024, int(newH), imaging.MitchellNetravali)
-	distThumbnailWriter := new(bytes.Buffer)
-	if err = imaging.Encode(distThumbnailWriter, thumbnailImage, imaging.JPEG, imaging.JPEGQuality(70)); err != nil {
-		return err
-	}
-
-	distThumbnailString := distThumbnailWriter.String()
-	if err = utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, fileContentType); err != nil {
+	// thumbnail is always image/jpeg
+	if err = utils.SetDefaultBucketObject(thumbnailKey, string(ffmpegThumbnailCmdOutput), "image/jpeg"); err != nil {
 		return err
 	}
 
 	defer sentrySpanGenerateThumbnail.Finish()
 
 	return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)
+}
+
+func RemoveIndexFromSliceString(s []string, index int) []string {
+	return append(s[:index], s[index+1:]...)
 }
 
 func getFileContentLength(fileID string) (int, error) {
@@ -509,13 +525,4 @@ func getFileContentLength(fileID string) (int, error) {
 	}
 
 	return 0, err
-}
-
-func mimeTypeContains(mimeTypes []string, mimeType string) bool {
-	for _, t := range mimeTypes {
-		if t == mimeType {
-			return true
-		}
-	}
-	return false
 }
