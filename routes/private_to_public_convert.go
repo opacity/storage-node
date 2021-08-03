@@ -30,16 +30,6 @@ const (
 	DefaultPartSize  = 80 * (DefaultBlockSize + BlockOverhead)
 )
 
-func getAcceptedImageMimeTypesThumbnail() []string {
-	return []string{
-		"image/jpeg",
-		"image/png",
-		"image/gif",
-		"image/tiff",
-		"image/bmp",
-	}
-}
-
 type DownloadProgress struct {
 	RawProgress        int
 	SizeWithEncryption int
@@ -376,7 +366,6 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 	generateThumbnail, firstRun := true, true
 	partForThumbnailBuf := make([]byte, 0)
 	fileContentType := ""
-	// acceptedImageMimeTypesThumbnail := getAcceptedImageMimeTypesThumbnail()
 
 	for {
 		b := make([]byte, bytes.MinRead)
@@ -390,9 +379,6 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 			b = b[:n]
 			if generateThumbnail && firstRun {
 				fileContentType = http.DetectContentType(b)
-				// if !mimeTypeContains(acceptedImageMimeTypesThumbnail, fileContentType) {
-				// 	generateThumbnail = false
-				// }
 				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
 				if err != nil {
 					return
@@ -538,13 +524,4 @@ func getFileContentLength(fileID string) (int, error) {
 	}
 
 	return 0, err
-}
-
-func mimeTypeContains(mimeTypes []string, mimeType string) bool {
-	for _, t := range mimeTypes {
-		if t == mimeType {
-			return true
-		}
-	}
-	return false
 }
