@@ -93,18 +93,13 @@ var Env StorageNodeEnv
 
 func initEnv(filenames ...string) {
 	go_env := os.Getenv("GO_ENV")
-	if go_env == "localhost" {
+	if go_env == "localhost" || go_env == "testing" {
 		err := godotenv.Load(filenames...)
 		if err != nil {
 			log.Fatal("error loading environment variables from the .env file")
 		}
-		if err != nil {
-			lookupErr := tryLookUp()
-			if lookupErr != nil {
-				log.Fatal("error loading environment variables: " + CollectErrors([]error{err, lookupErr}).Error())
-			}
-			return
-		}
+		// Overwrite from the environment
+		tryLookUp()
 	} else {
 		SetEnvFromParamStore(go_env)
 	}
