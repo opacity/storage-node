@@ -86,13 +86,13 @@ services:
           free -m;
         done;
         echo ${DEBUG}
+        go get github.com/codegangsta/gin
         if [ -z ${DEBUG} ]; then
           echo \"Starting Storage node in PROD mode\";
           go build -ldflags='-X main.GO_ENV=${GO_ENV} -X main.VERSION=${VERSION}' -o ./bin/storage-node && chmod +x ./bin/storage-node;
           ./bin/storage-node;
         else
           echo \"Starting Storage node in DEV mode\";
-          go get github.com/codegangsta/gin
           gin --buildArgs \"-ldflags '-X main.GO_ENV=${GO_ENV} -X main.VERSION=${VERSION}'\" run main.go
         fi
       "
