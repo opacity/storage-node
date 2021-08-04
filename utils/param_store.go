@@ -29,7 +29,7 @@ func SetEnvFromParamStore(go_env string) {
 	newParamStoreSession()
 
 	params, err := paramStoreSvc.paramStore.GetParametersByPath(&ssm.GetParametersByPathInput{
-		Path:           aws.String("/" + go_env + "/"),
+		Path:           aws.String("/storage-node/" + go_env + "/"),
 		Recursive:      aws.Bool(true),
 		WithDecryption: aws.Bool(true),
 	})
