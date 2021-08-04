@@ -96,8 +96,7 @@ func initEnv(filenames ...string) {
 	if err != nil {
 		log.Fatal("error loading environment variables from the .env file")
 	}
-	if go_env == "localhost" || go_env == "testing" {
-
+	if go_env == "localhost" || go_env == "test" {
 		// Overwrite from the environment
 		lookupErr := tryLookUp()
 		if lookupErr != nil {
