@@ -25,7 +25,7 @@ func newParamStoreSession() {
 	}
 }
 
-func LoadAllParams(go_env string) {
+func SetEnvFromParamStore(go_env string) {
 	newParamStoreSession()
 
 	params, err := paramStoreSvc.paramStore.GetParametersByPath(&ssm.GetParametersByPathInput{

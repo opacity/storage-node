@@ -59,10 +59,8 @@ type StorageNodeEnv struct {
 	EnableJobs bool `env:"ENABLE_JOB" envDefault:"false"`
 
 	// Aws configuration
-	BucketName         string `env:"AWS_BUCKET_NAME,notEmpty"`
-	AwsRegion          string `env:"AWS_REGION,notEmpty"`
-	AwsAccessKeyID     string `env:"AWS_ACCESS_KEY_ID,notEmpty"`
-	AwsSecretAccessKey string `env:"AWS_SECRET_ACCESS_KEY,notEmpty"`
+	BucketName string `env:"AWS_BUCKET_NAME,notEmpty"`
+	AwsRegion  string `env:"AWS_REGION,notEmpty"`
 
 	// How long the user has to pay for their account before we delete it
 	AccountRetentionDays int `env:"ACCOUNT_RETENTION_DAYS" envDefault:"7"`
@@ -94,22 +92,27 @@ type StorageNodeEnv struct {
 var Env StorageNodeEnv
 
 func initEnv(filenames ...string) {
-	// Load ENV variables
-	err := godotenv.Load(filenames...)
-	if err != nil {
-		lookupErr := tryLookUp()
-		if lookupErr != nil {
-			log.Fatal("Error loading environment variables: " + CollectErrors([]error{err, lookupErr}).Error())
+	go_env := os.Getenv("GO_ENV")
+	if go_env == "localhost" {
+		err := godotenv.Load(filenames...)
+		if err != nil {
+			log.Fatal("error loading environment variables from the .env file")
 		}
-		return
+		if err != nil {
+			lookupErr := tryLookUp()
+			if lookupErr != nil {
+				log.Fatal("error loading environment variables: " + CollectErrors([]error{err, lookupErr}).Error())
+			}
+			return
+		}
+	} else {
+		SetEnvFromParamStore(go_env)
 	}
 
 	storageNodeEnv := StorageNodeEnv{}
-	env.Parse(&storageNodeEnv)
 
-	if storageNodeEnv.EncryptionKey == "" {
-		log.Fatal("must set an encryption key in the .env file")
-	}
+	err := env.Parse(&storageNodeEnv)
+	PanicOnError(err)
 
 	Env = storageNodeEnv
 }
@@ -124,9 +127,9 @@ func SetLive() {
 
 /*SetTesting sets the testing environment*/
 func SetTesting(filenames ...string) {
-	initEnv(filenames...)
 	// Overwrite the GoEnv variable, just to make sure we are in test mode
 	Env.GoEnv = "test"
+	initEnv(filenames...)
 	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
 	LogIfError(err, nil)
 	Env.DatabaseURL = Env.TestDatabaseURL
@@ -169,8 +172,6 @@ func tryLookUp() error {
 	mainWalletPrivateKey := AppendLookupErrors("MAIN_WALLET_PRIVATE_KEY", &collectedErrors)
 	bucketName := AppendLookupErrors("AWS_BUCKET_NAME", &collectedErrors)
 	awsRegion := AppendLookupErrors("AWS_REGION", &collectedErrors)
-	awsAccessKeyID := AppendLookupErrors("AWS_ACCESS_KEY_ID", &collectedErrors)
-	awsSecretAccessKey := AppendLookupErrors("AWS_SECRET_ACCESS_KEY", &collectedErrors)
 	adminUser := AppendLookupErrors("ADMIN_USER", &collectedErrors)
 	adminPassword := AppendLookupErrors("ADMIN_PASSWORD", &collectedErrors)
 	stripeKeyTest := AppendLookupErrors("STRIPE_KEY_TEST", &collectedErrors)
@@ -207,8 +208,6 @@ func tryLookUp() error {
 		StripeRetentionDays:  stripeRetentionDays,
 		AwsRegion:            awsRegion,
 		BucketName:           bucketName,
-		AwsAccessKeyID:       awsAccessKeyID,
-		AwsSecretAccessKey:   awsSecretAccessKey,
 		AdminUser:            adminUser,
 		AdminPassword:        adminPassword,
 		StripeKeyTest:        stripeKeyTest,
