@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -28,17 +29,37 @@ func newParamStoreSession() {
 func SetEnvFromParamStore(go_env string) {
 	newParamStoreSession()
 
-	params, err := paramStoreSvc.paramStore.GetParametersByPath(&ssm.GetParametersByPathInput{
+	params, nextToken := getParametersByPath("", go_env)
+	setEnvParamsFromStore(params)
+
+	for nextToken != nil {
+		params, nextToken = getParametersByPath(*nextToken, go_env)
+		setEnvParamsFromStore(params)
+	}
+}
+
+func getParametersByPath(nextToken, go_env string) ([]*ssm.Parameter, *string) {
+	parametersBypathInput := &ssm.GetParametersByPathInput{
 		Path:           aws.String("/storage-node/" + go_env + "/"),
 		Recursive:      aws.Bool(true),
 		WithDecryption: aws.Bool(true),
-	})
+	}
+
+	if nextToken != "" {
+		parametersBypathInput.SetNextToken(nextToken)
+	}
+	paramResp, err := paramStoreSvc.paramStore.GetParametersByPath(parametersBypathInput)
+	fmt.Println(len(paramResp.Parameters))
 	if err != nil {
 		PanicOnError(err)
 	}
 
-	for _, param := range params.Parameters {
+	return paramResp.Parameters, paramResp.NextToken
+}
+
+func setEnvParamsFromStore(params []*ssm.Parameter) {
+	for _, param := range params {
 		paramFQDName := strings.Split(*param.Name, "/")
-		os.Setenv(*param.Name, paramFQDName[len(paramFQDName)-1])
+		os.Setenv(paramFQDName[len(paramFQDName)-1], *param.Value)
 	}
 }
