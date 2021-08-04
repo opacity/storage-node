@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"os"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -21,6 +23,10 @@ var GO_ENV string
 var VERSION string
 
 func main() {
+	if GO_ENV == "" {
+		utils.PanicOnError(errors.New("the GO_ENV variable is not set; application can not run"))
+	}
+	os.Setenv("GO_ENV", GO_ENV)
 	if GO_ENV != "testing" {
 		tracesSampleRate := 0.3
 		// keep all traces on dev2 and localhost (for dev)
