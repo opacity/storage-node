@@ -43,26 +43,26 @@ type StorageNodeEnv struct {
 	DatabaseURL     string `envDefault:""`
 
 	// Key to encrypt the eth private keys that we store in the accounts table
-	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:""`
+	EncryptionKey string `env:"ENCRYPTION_KEY,notEmpty"`
 
 	// Go environment
-	GoEnv   string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
-	Version string `env:"VERSION" envDefault:"VERSION not SET!"`
+	GoEnv   string `env:"GO_ENV" envDefault:"localhost"`
+	Version string `env:"VERSION" envDefault:"localhost"`
 
 	// Payment stuff
-	ContractAddress      string `env:"TOKEN_CONTRACT_ADDRESS" envDefault:""`
-	EthNodeURL           string `env:"ETH_NODE_URL" envDefault:""`
-	MainWalletAddress    string `env:"MAIN_WALLET_ADDRESS" envDefault:""`
-	MainWalletPrivateKey string `env:"MAIN_WALLET_PRIVATE_KEY" envDefault:""`
+	ContractAddress      string `env:"TOKEN_CONTRACT_ADDRESS,notEmpty"`
+	EthNodeURL           string `env:"ETH_NODE_URL,notEmpty"`
+	MainWalletAddress    string `env:"MAIN_WALLET_ADDRESS,notEmpty"`
+	MainWalletPrivateKey string `env:"MAIN_WALLET_PRIVATE_KEY,notEmpty"`
 
 	// Whether the jobs should run
 	EnableJobs bool `env:"ENABLE_JOB" envDefault:"false"`
 
 	// Aws configuration
-	BucketName         string `env:"AWS_BUCKET_NAME" envDefault:""`
-	AwsRegion          string `env:"AWS_REGION" envDefault:""`
-	AwsAccessKeyID     string `env:"AWS_ACCESS_KEY_ID" envDefault:""`
-	AwsSecretAccessKey string `env:"AWS_SECRET_ACCESS_KEY" envDefault:""`
+	BucketName         string `env:"AWS_BUCKET_NAME,notEmpty"`
+	AwsRegion          string `env:"AWS_REGION,notEmpty"`
+	AwsAccessKeyID     string `env:"AWS_ACCESS_KEY_ID,notEmpty"`
+	AwsSecretAccessKey string `env:"AWS_SECRET_ACCESS_KEY,notEmpty"`
 
 	// How long the user has to pay for their account before we delete it
 	AccountRetentionDays int `env:"ACCOUNT_RETENTION_DAYS" envDefault:"7"`
@@ -71,8 +71,8 @@ type StorageNodeEnv struct {
 	StripeRetentionDays int `env:"STRIPE_RETENTION_DAYS" envDefault:"30"`
 
 	// Basic auth creds
-	AdminUser     string `env:"ADMIN_USER" envDefault:""`
-	AdminPassword string `env:"ADMIN_PASSWORD" envDefault:""`
+	AdminUser     string `env:"ADMIN_USER,notEmpty"`
+	AdminPassword string `env:"ADMIN_PASSWORD,notEmpty"`
 
 	// Debug purpose
 	DisplayName   string `env:"DISPLAY_NAME" envDefault:"storage-node-test"`
