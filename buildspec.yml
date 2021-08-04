@@ -23,6 +23,7 @@ phases:
       - sentry-cli releases set-commits "$VERSION" --auto --ignore-missing --ignore-empty
       - echo "VERSION=\"$VERSION\"" >> .env
       - echo "GO_ENV=\"$GO_ENV\"" >> .env
+      - echo "AWS_REGION=\"$AWS_REGION\"" >> .env
       - echo "DEBUG=\"$DEBUG\"" >> .env
       - sentry-cli releases finalize "$VERSION"
       - sentry-cli releases deploys "$VERSION" new -e $GO_ENV
