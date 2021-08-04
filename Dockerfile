@@ -7,6 +7,7 @@ RUN go version
 RUN apt-get update
 RUN apt-get install -y -q --no-install-recommends default-mysql-client
 RUN apt-get install -y -q --no-install-recommends netcat
+RUN apt-get install -y -q --no-install-recommends ffmpeg
 RUN apt autoremove -y
 RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/*
