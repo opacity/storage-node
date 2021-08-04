@@ -27,7 +27,6 @@ func main() {
 		utils.PanicOnError(errors.New("the GO_ENV variable is not set; application can not run"))
 	}
 	os.Setenv("GO_ENV", GO_ENV)
-	os.Setenv("VERSION", VERSION)
 	if GO_ENV != "testing" {
 		tracesSampleRate := 0.3
 		// keep all traces on dev2 and localhost (for dev)
