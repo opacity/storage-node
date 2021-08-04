@@ -230,10 +230,7 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 			},
 		}
 		deleteErr = svc.DeleteObjects(deleteInput)
-		if deleteErr != nil {
-			return false
-		}
-		return true
+		return deleteErr == nil
 	})
 
 	if deleteErr != nil {
