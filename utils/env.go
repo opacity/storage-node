@@ -73,7 +73,6 @@ type StorageNodeEnv struct {
 	AdminPassword string `env:"ADMIN_PASSWORD,notEmpty"`
 
 	// Debug purpose
-	DisplayName   string `env:"DISPLAY_NAME" envDefault:"storage-node-test"`
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
 	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
 
