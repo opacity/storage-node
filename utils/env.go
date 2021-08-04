@@ -99,7 +99,10 @@ func initEnv(filenames ...string) {
 			log.Fatal("error loading environment variables from the .env file")
 		}
 		// Overwrite from the environment
-		tryLookUp()
+		lookupErr := tryLookUp()
+		if lookupErr != nil {
+			log.Print("error loading environment variables: " + CollectErrors([]error{err, lookupErr}).Error())
+		}
 	} else {
 		SetEnvFromParamStore(go_env)
 	}
