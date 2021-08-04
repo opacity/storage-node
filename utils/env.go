@@ -126,6 +126,7 @@ func SetLive() {
 func SetTesting(filenames ...string) {
 	// Overwrite the GoEnv variable, just to make sure we are in test mode
 	Env.GoEnv = "test"
+	os.Setenv("GO_ENV", Env.GoEnv)
 	initEnv(filenames...)
 	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
 	LogIfError(err, nil)
