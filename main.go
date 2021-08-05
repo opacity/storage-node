@@ -19,15 +19,15 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-var GO_ENV string
-var VERSION string
+var GO_ENV = "localhost"
+var VERSION = "local"
 
 func main() {
 	if GO_ENV == "" {
 		utils.PanicOnError(errors.New("the GO_ENV variable is not set; application can not run"))
 	}
 	os.Setenv("GO_ENV", GO_ENV)
-	if GO_ENV != "testing" {
+	if GO_ENV != "test" {
 		tracesSampleRate := 0.3
 		// keep all traces on dev2 and localhost (for dev)
 		if GO_ENV == "dev2" || GO_ENV == "localhost" {
