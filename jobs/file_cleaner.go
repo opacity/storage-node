@@ -30,16 +30,14 @@ func (f fileCleaner) Run() {
 		return
 	}
 
+	var metadataIDs, fileIDs []string
 	for _, file := range files {
-		utils.LogIfError(models.DeleteCompletedUploadIndexes(file.FileID), nil)
+		metadataIDs = append(metadataIDs, models.GetFileMetadataKey(file.FileID))
+		fileIDs = append(fileIDs, file.FileID)
 	}
 
-	var ids []string
-	for _, file := range files {
-		ids = append(ids, models.GetFileMetadataKey(file.FileID))
-	}
-	err = utils.DeleteDefaultBucketObjects(ids)
-	utils.LogIfError(err, nil)
+	utils.LogIfError(models.DeleteAllCompletedUploadIndexes(fileIDs), nil)
+	utils.LogIfError(utils.DeleteDefaultBucketObjects(metadataIDs), nil)
 }
 
 func (f fileCleaner) Runnable() bool {
