@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/meirf/gopart"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -42,9 +43,8 @@ func GetAllExpiredCompletedFiles(expiredTime time.Time) ([]string, error) {
 }
 
 func DeleteAllCompletedFiles(fileIDs []string) error {
-	fileIDsChunks := utils.SliceStringChunks(fileIDs, 5000)
-	for _, fileIDsChunk := range fileIDsChunks {
-		if err := DB.Where(fileIDsChunk).Delete(CompletedFile{}).Error; err != nil {
+	for fileIDsRange := range gopart.Partition(len(fileIDs), 5000) {
+		if err := DB.Where(fileIDs[fileIDsRange.Low:fileIDsRange.High]).Delete(CompletedFile{}).Error; err != nil {
 			return err
 		}
 	}
