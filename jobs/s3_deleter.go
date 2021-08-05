@@ -15,7 +15,7 @@ func (e s3Deleter) Name() string {
 }
 
 func (e s3Deleter) ScheduleInterval() string {
-	return "@midnight"
+	return "@every 5s"
 }
 
 func (e s3Deleter) Run() {
@@ -35,24 +35,32 @@ func (e s3Deleter) Run() {
 		publicSharesThumbnail = append(publicSharesThumbnail, models.GetPublicThumbnailKey(fileID))
 	}
 
-	if err := utils.DeleteDefaultBucketObjects(fileDatas); err != nil {
-		utils.LogIfError(err, nil)
-		return
+	if len(fileDatas) > 0 {
+		if err := utils.DeleteDefaultBucketObjects(fileDatas); err != nil {
+			utils.LogIfError(err, nil)
+			return
+		}
 	}
 
-	if err := utils.DeleteDefaultBucketObjects(metadatas); err != nil {
-		utils.LogIfError(err, nil)
-		return
+	if len(metadatas) > 0 {
+		if err := utils.DeleteDefaultBucketObjects(metadatas); err != nil {
+			utils.LogIfError(err, nil)
+			return
+		}
 	}
 
-	if err := utils.DeleteDefaultBucketObjects(publicShares); err != nil {
-		utils.LogIfError(err, nil)
-		return
+	if len(publicShares) > 0 {
+		if err := utils.DeleteDefaultBucketObjects(publicShares); err != nil {
+			utils.LogIfError(err, nil)
+			return
+		}
 	}
 
-	if err := utils.DeleteDefaultBucketObjects(publicSharesThumbnail); err != nil {
-		utils.LogIfError(err, nil)
-		return
+	if len(publicSharesThumbnail) > 0 {
+		if err := utils.DeleteDefaultBucketObjects(publicSharesThumbnail); err != nil {
+			utils.LogIfError(err, nil)
+			return
+		}
 	}
 
 	err = models.DeleteAllCompletedFiles(fileIDs)
