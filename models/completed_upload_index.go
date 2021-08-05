@@ -36,6 +36,16 @@ func DeleteCompletedUploadIndexes(fileID string) error {
 	return DB.Where("file_id = ?", fileID).Delete(&CompletedUploadIndex{}).Error
 }
 
+func DeleteAllCompletedUploadIndexes(fileIDs []string) error {
+	fileIDsChunks := utils.SliceStringChunks(fileIDs, 5000)
+	for _, fileIDsChunk := range fileIDsChunks {
+		if err := DB.Where("file_id IN (?)", fileIDsChunk).Delete(&CompletedUploadIndex{}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func GetCompletedUploadProgress(fileID string) (int, error) {
 	var count int
 	err := DB.Model(&CompletedUploadIndex{}).Where("file_id = ?", fileID).Count(&count).Error

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -43,7 +42,13 @@ func GetAllExpiredCompletedFiles(expiredTime time.Time) ([]string, error) {
 }
 
 func DeleteAllCompletedFiles(fileIDs []string) error {
-	return DB.Where(fileIDs).Delete(CompletedFile{}).Error
+	fileIDsChunks := utils.SliceStringChunks(fileIDs, 5000)
+	for _, fileIDsChunk := range fileIDsChunks {
+		if err := DB.Where(fileIDsChunk).Delete(CompletedFile{}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func GetTotalFileSizeInByte() (int64, error) {
@@ -83,7 +88,7 @@ func UpdateExpiredAt(fileHandles []string, key string, newExpiredAtTime time.Tim
 		return db.Error
 	}
 	if db.RowsAffected != int64(len(fileHandles)) {
-		return errors.New(fmt.Sprintf("Expected to affect %d rows in UpdateExpiredAt but actually affected %d rows", len(fileHandles), db.RowsAffected))
+		return fmt.Errorf("expected to affect %d rows in UpdateExpiredAt but actually affected %d rows", len(fileHandles), db.RowsAffected)
 	}
 	return nil
 }
