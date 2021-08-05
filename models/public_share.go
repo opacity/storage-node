@@ -58,6 +58,16 @@ func (publicShare *PublicShare) RemovePublicShare() error {
 	return DB.Delete(&publicShare).Error
 }
 
+func RemovePublicSharesByIds(fileIDs []string) error {
+	fileIDsChunks := utils.SliceStringChunks(fileIDs, 5000)
+	for _, fileIDsChunk := range fileIDsChunks {
+		if err := DB.Where("file_id IN (?)", fileIDsChunk).Delete(PublicShare{}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func CreatePublicShare(createShortlinkObj CreateShortlinkObj) (PublicShare, error) {
 	shortID, err := shortid.Generate()
 	if err != nil {
