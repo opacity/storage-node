@@ -68,6 +68,10 @@ func RemovePublicSharesByIds(fileIDs []string) error {
 	return nil
 }
 
+func RemovePublicSharesById(fileID string) error {
+	return DB.Where("file_id = ?", fileID).Delete(PublicShare{}).Error
+}
+
 func CreatePublicShare(createShortlinkObj CreateShortlinkObj) (PublicShare, error) {
 	shortID, err := shortid.Generate()
 	if err != nil {

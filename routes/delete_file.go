@@ -95,5 +95,9 @@ func DeleteFileByID(fileID, publicKey string, account models.Account, c *gin.Con
 		return err
 	}
 
+	if err := models.RemovePublicSharesById(fileID); err != nil {
+		return err
+	}
+
 	return nil
 }
