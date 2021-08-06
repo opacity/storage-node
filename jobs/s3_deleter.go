@@ -15,7 +15,7 @@ func (e s3Deleter) Name() string {
 }
 
 func (e s3Deleter) ScheduleInterval() string {
-	return "@every 5s"
+	return "@midnight"
 }
 
 func (e s3Deleter) Run() {
