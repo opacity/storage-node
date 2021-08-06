@@ -9,7 +9,7 @@ import (
 
 	"strconv"
 
-	"github.com/caarlos0/env"
+	"github.com/caarlos0/env/v6"
 	"github.com/joho/godotenv"
 )
 
@@ -43,26 +43,24 @@ type StorageNodeEnv struct {
 	DatabaseURL     string `envDefault:""`
 
 	// Key to encrypt the eth private keys that we store in the accounts table
-	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:""`
+	EncryptionKey string `env:"ENCRYPTION_KEY,notEmpty"`
 
 	// Go environment
-	GoEnv   string `env:"GO_ENV" envDefault:"GO_ENV not set!"`
-	Version string `env:"VERSION" envDefault:"VERSION not SET!"`
+	GoEnv   string `env:"GO_ENV" envDefault:"localhost"`
+	Version string `env:"VERSION" envDefault:"localhost"`
 
 	// Payment stuff
-	ContractAddress      string `env:"TOKEN_CONTRACT_ADDRESS" envDefault:""`
-	EthNodeURL           string `env:"ETH_NODE_URL" envDefault:""`
-	MainWalletAddress    string `env:"MAIN_WALLET_ADDRESS" envDefault:""`
-	MainWalletPrivateKey string `env:"MAIN_WALLET_PRIVATE_KEY" envDefault:""`
+	ContractAddress      string `env:"TOKEN_CONTRACT_ADDRESS,notEmpty"`
+	EthNodeURL           string `env:"ETH_NODE_URL,notEmpty"`
+	MainWalletAddress    string `env:"MAIN_WALLET_ADDRESS,notEmpty"`
+	MainWalletPrivateKey string `env:"MAIN_WALLET_PRIVATE_KEY,notEmpty"`
 
 	// Whether the jobs should run
 	EnableJobs bool `env:"ENABLE_JOB" envDefault:"false"`
 
 	// Aws configuration
-	BucketName         string `env:"AWS_BUCKET_NAME" envDefault:""`
-	AwsRegion          string `env:"AWS_REGION" envDefault:""`
-	AwsAccessKeyID     string `env:"AWS_ACCESS_KEY_ID" envDefault:""`
-	AwsSecretAccessKey string `env:"AWS_SECRET_ACCESS_KEY" envDefault:""`
+	BucketName string `env:"AWS_BUCKET_NAME,notEmpty"`
+	AwsRegion  string `env:"AWS_REGION,notEmpty"`
 
 	// How long the user has to pay for their account before we delete it
 	AccountRetentionDays int `env:"ACCOUNT_RETENTION_DAYS" envDefault:"7"`
@@ -71,11 +69,10 @@ type StorageNodeEnv struct {
 	StripeRetentionDays int `env:"STRIPE_RETENTION_DAYS" envDefault:"30"`
 
 	// Basic auth creds
-	AdminUser     string `env:"ADMIN_USER" envDefault:""`
-	AdminPassword string `env:"ADMIN_PASSWORD" envDefault:""`
+	AdminUser     string `env:"ADMIN_USER,notEmpty"`
+	AdminPassword string `env:"ADMIN_PASSWORD,notEmpty"`
 
 	// Debug purpose
-	DisplayName   string `env:"DISPLAY_NAME" envDefault:"storage-node-test"`
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
 	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
 
@@ -94,22 +91,25 @@ type StorageNodeEnv struct {
 var Env StorageNodeEnv
 
 func initEnv(filenames ...string) {
-	// Load ENV variables
+	go_env := os.Getenv("GO_ENV")
 	err := godotenv.Load(filenames...)
 	if err != nil {
+		log.Fatal("error loading environment variables from the .env file")
+	}
+	if go_env == "localhost" || go_env == "test" {
+		// Overwrite from the environment
 		lookupErr := tryLookUp()
 		if lookupErr != nil {
-			log.Fatal("Error loading environment variables: " + CollectErrors([]error{err, lookupErr}).Error())
+			log.Print("error loading environment variables: " + CollectErrors([]error{err, lookupErr}).Error())
 		}
-		return
+	} else {
+		SetEnvFromParamStore(go_env)
 	}
 
 	storageNodeEnv := StorageNodeEnv{}
-	env.Parse(&storageNodeEnv)
 
-	if storageNodeEnv.EncryptionKey == "" {
-		log.Fatal("must set an encryption key in the .env file")
-	}
+	err = env.Parse(&storageNodeEnv)
+	PanicOnError(err)
 
 	Env = storageNodeEnv
 }
@@ -124,9 +124,10 @@ func SetLive() {
 
 /*SetTesting sets the testing environment*/
 func SetTesting(filenames ...string) {
-	initEnv(filenames...)
 	// Overwrite the GoEnv variable, just to make sure we are in test mode
 	Env.GoEnv = "test"
+	os.Setenv("GO_ENV", Env.GoEnv)
+	initEnv(filenames...)
 	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
 	LogIfError(err, nil)
 	Env.DatabaseURL = Env.TestDatabaseURL
@@ -169,8 +170,6 @@ func tryLookUp() error {
 	mainWalletPrivateKey := AppendLookupErrors("MAIN_WALLET_PRIVATE_KEY", &collectedErrors)
 	bucketName := AppendLookupErrors("AWS_BUCKET_NAME", &collectedErrors)
 	awsRegion := AppendLookupErrors("AWS_REGION", &collectedErrors)
-	awsAccessKeyID := AppendLookupErrors("AWS_ACCESS_KEY_ID", &collectedErrors)
-	awsSecretAccessKey := AppendLookupErrors("AWS_SECRET_ACCESS_KEY", &collectedErrors)
 	adminUser := AppendLookupErrors("ADMIN_USER", &collectedErrors)
 	adminPassword := AppendLookupErrors("ADMIN_PASSWORD", &collectedErrors)
 	stripeKeyTest := AppendLookupErrors("STRIPE_KEY_TEST", &collectedErrors)
@@ -207,8 +206,6 @@ func tryLookUp() error {
 		StripeRetentionDays:  stripeRetentionDays,
 		AwsRegion:            awsRegion,
 		BucketName:           bucketName,
-		AwsAccessKeyID:       awsAccessKeyID,
-		AwsSecretAccessKey:   awsSecretAccessKey,
 		AdminUser:            adminUser,
 		AdminPassword:        adminPassword,
 		StripeKeyTest:        stripeKeyTest,
