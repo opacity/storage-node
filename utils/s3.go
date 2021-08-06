@@ -301,6 +301,7 @@ func deleteObjects(bucketName string, objectKeys []string) error {
 		}
 		input.Delete = &s3.Delete{
 			Objects: objIdentifier,
+			Quiet:   aws.Bool(true),
 		}
 
 		if err := svc.DeleteObjects(input); err != nil {

@@ -4,6 +4,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/jinzhu/gorm"
+	"github.com/meirf/gopart"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -34,6 +35,15 @@ func CreateCompletedUploadIndex(fileID string, index int, etag string) error {
 
 func DeleteCompletedUploadIndexes(fileID string) error {
 	return DB.Where("file_id = ?", fileID).Delete(&CompletedUploadIndex{}).Error
+}
+
+func DeleteAllCompletedUploadIndexes(fileIDs []string) error {
+	for fileIDsRange := range gopart.Partition(len(fileIDs), 5000) {
+		if err := DB.Where("file_id IN (?)", fileIDs[fileIDsRange.Low:fileIDsRange.High]).Delete(&CompletedUploadIndex{}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func GetCompletedUploadProgress(fileID string) (int, error) {
