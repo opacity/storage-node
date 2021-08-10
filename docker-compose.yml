@@ -26,7 +26,7 @@ services:
       - 8083:8083
       - 8086:8086
       - 8090:8090
-    restart: "always"
+    restart: always
     volumes:
       - ../storage-node-data/influxdb_data:/var/lib/influxdb
       - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
@@ -65,13 +65,14 @@ services:
 
   app:
     build: "."
-    restart: "always"
+    restart: always
     ports:
     - ${APP_PORT:-3000}:3000
     env_file:
       - ".env"
     depends_on:
     - "db"
+    - "sia"
     volumes:
     - ".:/go/src/github.com/opacity/storage-node"
     - "../storage-node-data/badger/prod:/var/lib/badger/prod"
@@ -99,13 +100,13 @@ services:
     networks:
       - promnet
       - dbnet
+      - sia
 
   db:
     container_name: mysql
     image: mysql:5.7
-    restart: "always"
+    restart: always
     command: --sql_mode=''
-    # command: mysqld --sql_mode=''
     environment:
       - MYSQL_DATABASE=test
       - MYSQL_ROOT_USER=root
@@ -117,6 +118,21 @@ services:
     networks:
       - dbnet
 
+  sia:
+    container_name: sia
+    image: nebulouslabs/sia
+    env_file:
+      - ".env"
+    ports:
+      - 127.0.0.1:9980:9980
+      - 9981:9981
+      - 9982:9982
+      - 9983:9983
+      - 9984:9984
+    volumes:
+      - ../storage-node-data/sia-data:/sia-data
+    restart: always 
+
 # In order for each service to connect to each other, They need to be on the same
 # network and use name like "app", "db", "prometheus" for reference. Ex: "db:3306", "app:3000".
 networks:
@@ -124,10 +140,11 @@ networks:
     driver: bridge
   dbnet:
     driver: bridge
+  sia:
+    driver: bridge
 
 volumes:
   prometheus_data: {}
   influxdb_data: {}
-  prometheus_data: {}
 # grafana_data: {}
 
