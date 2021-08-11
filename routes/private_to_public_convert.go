@@ -5,7 +5,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -172,13 +171,9 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 	return lenToRead, nil
 }
 
-type FileMetadata struct {
-	Size     int    `json:"size"`
-	FileName string `json:"name"`
-}
-
 type PrivateToPublicObj struct {
 	FileHandle string `json:"fileHandle" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a deterministically created file handle"`
+	Size       int    `json:"size" binding:"required"`
 }
 
 func (v *PrivateToPublicReq) getObjectRef() interface{} {
@@ -194,6 +189,7 @@ func (v *PrivateToPublicReq) getObjectRef() interface{} {
 // @description requestBody should be a stringified version of:
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
+// @description 	"size": "the size of the encrypted file",
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -216,21 +212,12 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	key := request.privateToPublicObj.FileHandle[64:]
 	encryptionKey, _ := hex.DecodeString(key)
 
-	fileMetadata, err := utils.GetDefaultBucketObject(models.GetFileMetadataKey(hash), false)
-	if err != nil {
-		return NotFoundResponse(c, errors.New("the data does not exist"))
-	}
-
 	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(hash)) {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 
-	decryptedMetadata, err := DecryptMetadata(encryptionKey, []byte(fileMetadata))
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
 	realSize, err := getFileContentLength(hash)
-	fileSize := decryptedMetadata.Size
+	fileSize := request.privateToPublicObj.Size
 
 	if err != nil {
 		return InternalErrorResponse(c, err)
@@ -290,20 +277,6 @@ func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byt
 
 	cipherText := append(rawData, tag...)
 	decryptedData, err = aesgcm.Open(nil, nonce, cipherText, nil)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
-	decryptedByteData, err := DecryptWithNonceSize(key, data)
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(decryptedByteData, &fileMetadata)
 	if err != nil {
 		return
 	}
@@ -458,7 +431,6 @@ func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentTy
 	sentrySpanGenerateThumbnail := sentryMainSpan.StartChild("thumbnail-generation")
 	sentrySpanGenerateThumbnail.SetTag("content-type", fileContentType)
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
-	// buf := bytes.NewBuffer(fileBytes)
 
 	ffprobeVideoDurationCmd := exec.Command("ffprobe",
 		"-show_entries",
@@ -470,11 +442,13 @@ func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentTy
 
 	ffprobeVideoDurationCmd.Stdin = bytes.NewBuffer(fileBytes)
 	videoDurationOutput, err := ffprobeVideoDurationCmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
 	videoDurationString := strings.TrimSpace(string(videoDurationOutput))
 	videoDurationFloat32, _ := strconv.ParseFloat(videoDurationString, 32)
 	videoDuration := int(videoDurationFloat32)
 	cutVideoDuration := videoDuration / 5
-	// check(err) // check properly
 
 	ffmpegThumbnailCmd := exec.Command("ffmpeg",
 		"-y",
