@@ -151,8 +151,11 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
+      size:
+        type: integer
     required:
     - fileHandle
+    - size
     type: object
   routes.PrivateToPublicReq:
     properties:
@@ -1715,19 +1718,19 @@ paths:
       consumes:
       - application/json
       description: |-
-        check the renewalV2 status
+        check the renewal status
         requestBody should be a stringified version of (values are just examples):
         {
         "metadataKeys": "["someKey", "someOtherKey]",
         "fileHandles": "["someHandle", "someOtherHandle]",
         }
       parameters:
-      - description: check renewalV2 status object
+      - description: check renewal status object
         in: body
-        name: checkRenewalV2StatusReq
+        name: checkRenewalStatusReq
         required: true
         schema:
-          $ref: '#/definitions/routes.checkRenewalV2StatusReq'
+          $ref: '#/definitions/routes.checkRenewalStatusReq'
       produces:
       - application/json
       responses:
@@ -1747,7 +1750,7 @@ paths:
           description: some information about the internal error
           schema:
             type: string
-      summary: check the renewalV2 status
+      summary: check the renewal status
   /api/v1/renew/invoice:
     post:
       consumes:
@@ -1758,19 +1761,19 @@ paths:
         {
         }
       parameters:
-      - description: get renewalV2 invoice object
+      - description: get renewal invoice object
         in: body
-        name: getRenewalV2AccountInvoiceReq
+        name: getRenewalAccountInvoiceReq
         required: true
         schema:
-          $ref: '#/definitions/routes.getRenewalV2AccountInvoiceReq'
+          $ref: '#/definitions/routes.getRenewalAccountInvoiceReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.getRenewalV2AccountInvoiceRes'
+            $ref: '#/definitions/routes.getRenewalAccountInvoiceRes'
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -2393,6 +2396,7 @@ paths:
         requestBody should be a stringified version of:
         {
         "fileHandle": "a deterministically created file handle",
+        "size": "the size of the encrypted file",
         }
       parameters:
       - description: an object to do the conversion of a private file to a public
