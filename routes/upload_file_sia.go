@@ -69,6 +69,6 @@ func uploadFileSia(c *gin.Context) error {
 	}
 
 	return OkResponse(c, StatusRes{
-		Status: "Sia file uploaded",
+		Status: "Sia file started uploading",
 	})
 }

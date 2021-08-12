@@ -38,6 +38,7 @@ func Connect(dbURL string) {
 	// List all the schema
 	DB.AutoMigrate(&Account{})
 	DB.AutoMigrate(&File{})
+	DB.AutoMigrate(&SiaProgressFile{})
 	DB.AutoMigrate(&S3ObjectLifeCycle{})
 	DB.AutoMigrate(&CompletedFile{})
 	DB.AutoMigrate(&CompletedUploadIndex{})
