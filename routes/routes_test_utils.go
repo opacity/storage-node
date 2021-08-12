@@ -244,7 +244,7 @@ func confirmVerifyFailedForTest(t *testing.T, w *httptest.ResponseRecorder) {
 	abortIfNotTesting(t)
 
 	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.Contains(t, w.Body.String(), SignatureDidNotMatchResponse)
+	assert.Contains(t, w.Body.String(), signatureDidNotMatchResponse)
 }
 
 func httpPostFormRequestHelperForTest(t *testing.T, path string, post interface{}, form map[string]string, formFile map[string]string, routerVersion string) *httptest.ResponseRecorder {

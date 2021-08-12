@@ -52,18 +52,17 @@ func uploadFileSia(c *gin.Context) error {
 	}
 
 	fileID := request.uploadFileSiaObj.FileHandle
-	permissionHashKey := getPermissionHashKeyForBadger(models.GetFileMetadataKey(fileID))
 
-	permissionHashInKV, _, err := utils.GetValueFromKV(permissionHashKey)
+	siaProgressFile, err := models.GetSiaProgressFileById(fileID)
 	if err != nil {
-		return ForbiddenResponse(c, errors.New(SignatureDidNotMatchResponse))
+		return NotFoundResponse(c, errors.New("sia file upload was not initialised"))
 	}
 
-	if err := verifyPermissions(request.PublicKey, fileID, permissionHashInKV, c); err != nil {
+	if err := verifyPermissions(request.PublicKey, fileID, siaProgressFile.ModifierHash, c); err != nil {
 		return err
 	}
 
-	// @TODO: Set TTL somehow
+	// @TODO: Set TTL somehow; cron job?
 	if err := utils.UploadSiaFile(request.fileData, fileID, false); err != nil {
 		return InternalErrorResponse(c, err)
 	}
