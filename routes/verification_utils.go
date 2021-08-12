@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	signatureDidNotMatchResponse = "signature did not match"
+	SignatureDidNotMatchResponse = "signature did not match"
 	errVerifying                 = "error verifying signature"
 	marshalError                 = "bad request, unable to marshal request body: "
 	notAuthorizedResponse        = "you are not authorized to access or modify this resource"
@@ -233,7 +233,7 @@ func verifyRequest(hash []byte, verificationData verification, c *gin.Context) e
 	}
 
 	if verified != true {
-		return ForbiddenResponse(c, errors.New(signatureDidNotMatchResponse))
+		return ForbiddenResponse(c, errors.New(SignatureDidNotMatchResponse))
 	}
 	return nil
 }
