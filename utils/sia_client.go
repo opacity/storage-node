@@ -41,11 +41,20 @@ func UploadSiaFile(fileData, fileSiaPath string, deleteIfExisting bool) error {
 	return nil
 }
 
-func SiaFileMetadataByPath(fileSiaPath string) (sia_api.RenterFile, error) {
+func GetSiaFileMetadataByPath(fileSiaPath string) (sia_api.RenterFile, error) {
 	siaPath, err := sia_modules.NewSiaPath(fileSiaPath)
 	if err != nil {
 		return sia_api.RenterFile{}, err
 	}
 
 	return siaClient.RenterFileGet(siaPath)
+}
+
+func DeleteSiaFile(fileSiaPath string) error {
+	siaPath, err := sia_modules.NewSiaPath(fileSiaPath)
+	if err != nil {
+		return err
+	}
+
+	return siaClient.RenterFileDeletePost(siaPath)
 }
