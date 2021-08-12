@@ -71,6 +71,10 @@ func FileNotFoundResponse(c *gin.Context, fileId string) error {
 	return NotFoundResponse(c, fmt.Errorf("no file with that id: %s", fileId))
 }
 
+func SiaFileNotInitialised(c *gin.Context) error {
+	return NotFoundResponse(c, errors.New("sia file upload was not initialised"))
+}
+
 func ForbiddenResponse(c *gin.Context, err error) error {
 	c.AbortWithStatusJSON(http.StatusForbidden, err.Error())
 	utils.Metrics_403_Response_Counter.Inc()

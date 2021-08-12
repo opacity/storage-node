@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"errors"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -55,7 +53,7 @@ func uploadFileSia(c *gin.Context) error {
 
 	siaProgressFile, err := models.GetSiaProgressFileById(fileID)
 	if err != nil {
-		return NotFoundResponse(c, errors.New("sia file upload was not initialised"))
+		return SiaFileNotInitialised(c)
 	}
 
 	if err := verifyPermissions(request.PublicKey, fileID, siaProgressFile.ModifierHash, c); err != nil {
