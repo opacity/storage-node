@@ -97,8 +97,11 @@ const (
 )
 
 const (
-	/*V2Path is a router group for the v1 version of storage node*/
+	/*V2Path is a router group for the v2 version of storage node*/
 	V2Path = "/api/v2"
+
+	/*Sia is a router group for Sia paths*/
+	SiaPathPrefix = "/sia"
 
 	/*AccountUpgradeV2InvoicePath is the path for getting an invoice to upgrade an account*/
 	AccountUpgradeV2InvoicePath = "/upgrade/invoice"
@@ -289,6 +292,11 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	publicShareRouterGroup.POST(CreateShortLinkPath, CreateShortlinkHandler())
 	publicShareRouterGroup.POST(PublicShareViewsCountPath, ViewsCountHandler())
 	publicShareRouterGroup.POST(PublicShareRevokePath, RevokePublicShareHandler())
+
+	siaRouterGroup := v2Router.Group(SiaPathPrefix)
+	siaRouterGroup.POST(InitUploadPath, InitFileSiaUploadHandler())
+	siaRouterGroup.POST(UploadPath, UploadFileSiaHandler())
+	siaRouterGroup.POST(UploadStatusPath, CheckUploadStatusSiaHandler())
 
 	v2Router.POST(DeleteV2Path, DeleteFilesHandler())
 }
