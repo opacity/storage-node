@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"time"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -73,18 +73,19 @@ func initFileSiaUploadWithRequest(request InitFileSiaUploadReq, c *gin.Context) 
 		return err
 	}
 
-	ttl := time.Until(account.ExpirationDate())
-	metadataKey := models.GetFileMetadataKey(request.initFileSiaUploadObj.FileHandle)
-	modifierHash, err := getPermissionHash(request.PublicKey, request.initFileSiaUploadObj.FileHandle, c)
+	fileID := request.initFileSiaUploadObj.FileHandle
+	modifierHash, err := getPermissionHash(request.PublicKey, fileID, c)
 	if err != nil {
 		return err
 	}
 
-	if err := utils.BatchSet(&utils.KVPairs{
-		metadataKey: request.MetadataAsFile,
-		getPermissionHashKeyForBadger(metadataKey): modifierHash,
-	}, ttl); err != nil {
-		return InternalErrorResponse(c, err)
+	siaProgressFile := models.SiaProgressFile{
+		FileID:       fileID,
+		ExpiredAt:    account.ExpirationDate(),
+		ModifierHash: modifierHash,
+	}
+	if err := siaProgressFile.SaveSiaProgressFile(); err != nil {
+		return InternalErrorResponse(c, errors.New("something wrong happened"))
 	}
 
 	return OkResponse(c, StatusRes{
