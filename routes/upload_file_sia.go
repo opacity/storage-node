@@ -25,7 +25,7 @@ func (v *UploadFileSiaReq) getObjectRef() interface{} {
 
 // UploadFileSiaHandler godoc
 // @Summary upload a Sia file
-// @Description upload a Sia file via a stream
+// @Description upload a Sia file via a form
 // @Accept mpfd
 // @Produce json
 // @Param UploadFileSiaReq body routes.UploadFileSiaReq true "an object to upload a Sia file"
@@ -63,5 +63,12 @@ func uploadFileSia(c *gin.Context) error {
 		return err
 	}
 
-	return utils.UploadSiaFile(request.fileData, fileID, false)
+	// @TODO: Set TTL somehow
+	if err := utils.UploadSiaFile(request.fileData, fileID, false); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	return OkResponse(c, StatusRes{
+		Status: "Sia file uploaded",
+	})
 }
