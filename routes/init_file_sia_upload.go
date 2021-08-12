@@ -37,8 +37,8 @@ func (v *InitFileSiaUploadReq) getObjectRef() interface{} {
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
-// @Failure 500 {string} string "some information about the internal error"
 // @Failure 403 {string} string "signature did not match"
+// @Failure 500 {string} string "some information about the internal error"
 // @Router /api/v2/sia/init-upload [post]
 /*InitFileSiaUploadHandler is a handler for the user to start the upload of a Sia file*/
 func InitFileSiaUploadHandler() gin.HandlerFunc {
@@ -73,10 +73,16 @@ func initFileSiaUploadWithRequest(request InitFileSiaUploadReq, c *gin.Context) 
 		return err
 	}
 
-	// @TODO: This might not be needed, but store it for the moment
 	ttl := time.Until(account.ExpirationDate())
+	metadataKey := models.GetFileMetadataKey(request.initFileSiaUploadObj.FileHandle)
+	modifierHash, err := getPermissionHash(request.PublicKey, request.initFileSiaUploadObj.FileHandle, c)
+	if err != nil {
+		return err
+	}
+
 	if err := utils.BatchSet(&utils.KVPairs{
-		models.GetFileMetadataKey(request.initFileSiaUploadObj.FileHandle): request.MetadataAsFile,
+		metadataKey: request.MetadataAsFile,
+		getPermissionHashKeyForBadger(metadataKey): modifierHash,
 	}, ttl); err != nil {
 		return InternalErrorResponse(c, err)
 	}
