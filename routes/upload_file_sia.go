@@ -47,7 +47,6 @@ func uploadFileSia(c *gin.Context) error {
 	defer c.Request.Body.Close()
 
 	request := UploadFileSiaReq{}
-
 	if err := verifyAndParseFormRequest(&request, c); err != nil {
 		return err
 	}
@@ -64,10 +63,5 @@ func uploadFileSia(c *gin.Context) error {
 		return err
 	}
 
-	return UploadSiaFile(fileID, request.fileData)
-}
-
-func UploadSiaFile(fileID string, fileData string) error {
-
-	return nil
+	return utils.UploadSiaFile(request.fileData, fileID, false)
 }
