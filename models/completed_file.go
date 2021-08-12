@@ -23,7 +23,7 @@ type CompletedFile struct {
 	UpdatedAt      time.Time       `json:"updatedAt"`
 	ExpiredAt      time.Time       `json:"expiredAt"`
 	FileSizeInByte int64           `json:"fileSizeInByte"`
-	ContainerID    FileStorageType `json:"containerID" validate:"required, gte=1" gorm:"default:1"`
+	StorageType    FileStorageType `json:"storageType" validate:"required, gte=1" gorm:"default:1"`
 	ModifierHash   string          `json:"modifierHash" validate:"required,len=64" minLength:"64" maxLength:"64"`
 	ApiVersion     int             `json:"apiVersion" validate:"omitempty,gte=1" gorm:"default:1"`
 }
