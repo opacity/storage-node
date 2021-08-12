@@ -85,6 +85,51 @@ definitions:
     required:
     - fileID
     type: object
+  routes.InitFileSiaUploadObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+      fileSizeInByte:
+        example: 200000000000006
+        type: integer
+    required:
+    - fileHandle
+    - fileSizeInByte
+    type: object
+  routes.InitFileSiaUploadReq:
+    properties:
+      initFileSiaUploadObj:
+        $ref: '#/definitions/routes.InitFileSiaUploadObj'
+        type: object
+      metadataAsFile:
+        type: string
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - metadataAsFile
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.InitFileUploadObj:
     properties:
       endIndex:
@@ -280,6 +325,48 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.UploadFileSiaObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+    required:
+    - fileHandle
+    type: object
+  routes.UploadFileSiaReq:
+    properties:
+      fileData:
+        example: a binary string of the file data
+        type: string
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+      uploadFileSiaObj:
+        $ref: '#/definitions/routes.UploadFileSiaObj'
+        type: object
+    required:
+    - fileData
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.UploadStatusObj:
     properties:
       fileHandle:
@@ -312,6 +399,34 @@ definitions:
         type: string
       uploadStatusObj:
         $ref: '#/definitions/routes.UploadStatusObj'
+        type: object
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
+  routes.UploadStatusSiaReq:
+    properties:
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+      uploadStatusSiaObj:
+        $ref: '#/definitions/routes.UploadFileSiaObj'
         type: object
     required:
     - publicKey
@@ -1718,19 +1833,19 @@ paths:
       consumes:
       - application/json
       description: |-
-        check the renewal status
+        check the renewalV2 status
         requestBody should be a stringified version of (values are just examples):
         {
         "metadataKeys": "["someKey", "someOtherKey]",
         "fileHandles": "["someHandle", "someOtherHandle]",
         }
       parameters:
-      - description: check renewal status object
+      - description: check renewalV2 status object
         in: body
-        name: checkRenewalStatusReq
+        name: checkRenewalV2StatusReq
         required: true
         schema:
-          $ref: '#/definitions/routes.checkRenewalStatusReq'
+          $ref: '#/definitions/routes.checkRenewalV2StatusReq'
       produces:
       - application/json
       responses:
@@ -1750,7 +1865,7 @@ paths:
           description: some information about the internal error
           schema:
             type: string
-      summary: check the renewal status
+      summary: check the renewalV2 status
   /api/v1/renew/invoice:
     post:
       consumes:
@@ -1761,19 +1876,19 @@ paths:
         {
         }
       parameters:
-      - description: get renewal invoice object
+      - description: get renewalV2 invoice object
         in: body
-        name: getRenewalAccountInvoiceReq
+        name: getRenewalV2AccountInvoiceReq
         required: true
         schema:
-          $ref: '#/definitions/routes.getRenewalAccountInvoiceReq'
+          $ref: '#/definitions/routes.getRenewalV2AccountInvoiceReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.getRenewalAccountInvoiceRes'
+            $ref: '#/definitions/routes.getRenewalV2AccountInvoiceRes'
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -2545,6 +2660,122 @@ paths:
           schema:
             type: string
       summary: get views count
+  /api/v2/sia/init-upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        start a Sia file upload
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        "fileSizeInByte": "200000000000006",
+        }
+      parameters:
+      - description: an object to start a Sia file upload
+        in: body
+        name: InitFileSiaUploadReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.InitFileSiaUploadReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: start a Sia file upload
+  /api/v2/sia/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        upload a Sia file via a form
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        }
+      parameters:
+      - description: an object to upload a Sia file
+        in: body
+        name: UploadFileSiaReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UploadFileSiaReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            $ref: '#/definitions/string'
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: upload a Sia file
+  /api/v2/sia/upload-status:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        check status of a Sia upload
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        }
+      parameters:
+      - description: an object to poll upload status for a Sia file
+        in: body
+        name: UploadStatusSiaReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UploadStatusSiaReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: file or account not found
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: check status of a Sia upload
   /api/v2/upload-public:
     post:
       consumes:

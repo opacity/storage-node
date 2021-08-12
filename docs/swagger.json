@@ -494,22 +494,22 @@
         },
         "/api/v1/renew": {
             "post": {
-                "description": "check the renewal status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
+                "description": "check the renewalV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "check the renewal status",
+                "summary": "check the renewalV2 status",
                 "parameters": [
                     {
-                        "description": "check renewal status object",
-                        "name": "checkRenewalStatusReq",
+                        "description": "check renewalV2 status object",
+                        "name": "checkRenewalV2StatusReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.checkRenewalStatusReq"
+                            "$ref": "#/definitions/routes.checkRenewalV2StatusReq"
                         }
                     }
                 ],
@@ -553,12 +553,12 @@
                 "summary": "get an invoice to renew an account",
                 "parameters": [
                     {
-                        "description": "get renewal invoice object",
-                        "name": "getRenewalAccountInvoiceReq",
+                        "description": "get renewalV2 invoice object",
+                        "name": "getRenewalV2AccountInvoiceReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.getRenewalAccountInvoiceReq"
+                            "$ref": "#/definitions/routes.getRenewalV2AccountInvoiceReq"
                         }
                     }
                 ],
@@ -566,7 +566,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.getRenewalAccountInvoiceRes"
+                            "$ref": "#/definitions/routes.getRenewalV2AccountInvoiceRes"
                         }
                     },
                     "400": {
@@ -1580,6 +1580,159 @@
                 }
             }
         },
+        "/api/v2/sia/init-upload": {
+            "post": {
+                "description": "start a Sia file upload\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"fileSizeInByte\": \"200000000000006\",\n}",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "start a Sia file upload",
+                "parameters": [
+                    {
+                        "description": "an object to start a Sia file upload",
+                        "name": "InitFileSiaUploadReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.InitFileSiaUploadReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/sia/upload": {
+            "post": {
+                "description": "upload a Sia file via a form\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "upload a Sia file",
+                "parameters": [
+                    {
+                        "description": "an object to upload a Sia file",
+                        "name": "UploadFileSiaReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.UploadFileSiaReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "$ref": "#/definitions/string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/sia/upload-status": {
+            "post": {
+                "description": "check status of a Sia upload\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "check status of a Sia upload",
+                "parameters": [
+                    {
+                        "description": "an object to poll upload status for a Sia file",
+                        "name": "UploadStatusSiaReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.UploadStatusSiaReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "file or account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/upload-public": {
             "post": {
                 "description": "upload a chunk of a file. The first partIndex must be 1. The storage for this file does not count\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"partIndex\": 1,\n}",
@@ -1807,6 +1960,60 @@
                 "fileID": {
                     "type": "string",
                     "example": "the handle of the file"
+                }
+            }
+        },
+        "routes.InitFileSiaUploadObj": {
+            "type": "object",
+            "required": [
+                "fileHandle",
+                "fileSizeInByte"
+            ],
+            "properties": {
+                "fileHandle": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "a deterministically created file handle"
+                },
+                "fileSizeInByte": {
+                    "type": "integer",
+                    "example": 200000000000006
+                }
+            }
+        },
+        "routes.InitFileSiaUploadReq": {
+            "type": "object",
+            "required": [
+                "metadataAsFile",
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "initFileSiaUploadObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.InitFileSiaUploadObj"
+                },
+                "metadataAsFile": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
                 }
             }
         },
@@ -2049,6 +2256,56 @@
                 }
             }
         },
+        "routes.UploadFileSiaObj": {
+            "type": "object",
+            "required": [
+                "fileHandle"
+            ],
+            "properties": {
+                "fileHandle": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "minLength": 64,
+                    "example": "a deterministically created file handle"
+                }
+            }
+        },
+        "routes.UploadFileSiaReq": {
+            "type": "object",
+            "required": [
+                "fileData",
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "fileData": {
+                    "type": "string",
+                    "example": "a binary string of the file data"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                },
+                "uploadFileSiaObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.UploadFileSiaObj"
+                }
+            }
+        },
         "routes.UploadStatusObj": {
             "type": "object",
             "required": [
@@ -2091,6 +2348,37 @@
                 "uploadStatusObj": {
                     "type": "object",
                     "$ref": "#/definitions/routes.UploadStatusObj"
+                }
+            }
+        },
+        "routes.UploadStatusSiaReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                },
+                "uploadStatusSiaObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.UploadFileSiaObj"
                 }
             }
         },
