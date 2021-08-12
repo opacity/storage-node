@@ -141,6 +141,7 @@ func SetTesting(filenames ...string) {
 func runInitializations() {
 	InitKvStore()
 	newS3Session()
+	InitSiaClient()
 }
 
 /*IsTestEnv returns whether we are in the test environment*/
