@@ -72,6 +72,7 @@ func checkUploadStatusSia(c *gin.Context) error {
 			FileSizeInByte: int64(siaFileMetadata.File.Filesize),
 			ModifierHash:   siaProgressFile.ModifierHash,
 			StorageType:    models.Sia,
+			ApiVersion:     2,
 		}
 		if err := models.DB.Save(&completedFile).Error; err != nil {
 			utils.DeleteSiaFile(completedFile.FileID)
