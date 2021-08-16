@@ -1,11 +1,11 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/meirf/gopart"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -43,7 +43,12 @@ func GetAllExpiredCompletedFiles(expiredTime time.Time) ([]string, error) {
 }
 
 func DeleteAllCompletedFiles(fileIDs []string) error {
-	return DB.Where(fileIDs).Delete(CompletedFile{}).Error
+	for fileIDsRange := range gopart.Partition(len(fileIDs), 5000) {
+		if err := DB.Where(fileIDs[fileIDsRange.Low:fileIDsRange.High]).Delete(CompletedFile{}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func GetTotalFileSizeInByte() (int64, error) {
@@ -83,7 +88,7 @@ func UpdateExpiredAt(fileHandles []string, key string, newExpiredAtTime time.Tim
 		return db.Error
 	}
 	if db.RowsAffected != int64(len(fileHandles)) {
-		return errors.New(fmt.Sprintf("Expected to affect %d rows in UpdateExpiredAt but actually affected %d rows", len(fileHandles), db.RowsAffected))
+		return fmt.Errorf("expected to affect %d rows in UpdateExpiredAt but actually affected %d rows", len(fileHandles), db.RowsAffected)
 	}
 	return nil
 }

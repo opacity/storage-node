@@ -40,12 +40,12 @@ func SlackLogWithLevel(message string, level LogLevel) {
 
 	attachment := map[string]string{
 		"color": getLogLevelColor(level),
-		"text":  Env.DisplayName + ": " + message,
+		"text":  "storage-node-" + Env.GoEnv + ": " + message,
 	}
 
 	values := map[string]interface{}{
 		"attachments": []map[string]string{attachment},
-		"username":    Env.DisplayName,
+		"username":    "storage-node-" + Env.GoEnv,
 		"icon_emoji":  ":ghost:",
 	}
 

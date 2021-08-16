@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
+	"github.com/meirf/gopart"
 	"github.com/opacity/storage-node/utils"
 	"github.com/teris-io/shortid"
 )
@@ -56,6 +57,19 @@ func (publicShare *PublicShare) UpdateViewsCount() error {
 // RemovePublicShare removes a public share (revokes it)
 func (publicShare *PublicShare) RemovePublicShare() error {
 	return DB.Delete(&publicShare).Error
+}
+
+func RemovePublicSharesByIds(fileIDs []string) error {
+	for fileIDsRange := range gopart.Partition(len(fileIDs), 5000) {
+		if err := DB.Where("file_id IN (?)", fileIDs[fileIDsRange.Low:fileIDsRange.High]).Delete(PublicShare{}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func RemovePublicSharesById(fileID string) error {
+	return DB.Where("file_id = ?", fileID).Delete(PublicShare{}).Error
 }
 
 func CreatePublicShare(createShortlinkObj CreateShortlinkObj) (PublicShare, error) {

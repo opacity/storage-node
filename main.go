@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"os"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -17,27 +19,40 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-var GO_ENV string
-var VERSION string
+var GO_ENV = "localhost"
+var VERSION = "local"
 
 func main() {
-	err := sentry.Init(sentry.ClientOptions{
-		Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
-		Release:          VERSION,
-		Environment:      GO_ENV,
-		AttachStacktrace: true,
-	})
-	if err != nil {
-		log.Fatalf("sentry.Init: %s", err)
+	if GO_ENV == "" {
+		utils.PanicOnError(errors.New("the GO_ENV variable is not set; application can not run"))
 	}
-	defer sentry.Flush(5 * time.Second)
+	os.Setenv("GO_ENV", GO_ENV)
+	if GO_ENV != "test" {
+		tracesSampleRate := 0.3
+		// keep all traces on dev2 and localhost (for dev)
+		if GO_ENV == "dev2" || GO_ENV == "localhost" {
+			tracesSampleRate = 1
+		}
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
+			Release:          VERSION,
+			Environment:      GO_ENV,
+			AttachStacktrace: true,
+			TracesSampleRate: tracesSampleRate,
+			BeforeSend:       sentryOpacityBeforeSend,
+		})
+		if err != nil {
+			log.Fatalf("sentry.Init: %s", err)
+		}
+		defer sentry.Flush(5 * time.Second)
+	}
 
 	defer catchError()
 	defer models.Close()
 
 	utils.SetLive()
 	services.SetWallet()
-	err = services.InitStripe()
+	err := services.InitStripe()
 	utils.PanicOnError(err)
 
 	utils.SlackLog("Begin to restart service!")
@@ -76,6 +91,24 @@ func setEnvPlans() {
 	}
 
 	utils.CreatePlanMetrics()
+}
+
+func sentryOpacityBeforeSend(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+	if event.Request != nil {
+		req := routes.GenericRequest{}
+
+		if err := json.Unmarshal([]byte(event.Request.Data), &req); err == nil {
+			if len(event.Exception) > 0 {
+				frames := event.Exception[0].Stacktrace.Frames
+				// do not include http/gin-gonic and the Sentry throw funcs ones
+				event.Exception[0].Stacktrace.Frames = frames[6 : len(frames)-3]
+			}
+
+			event.Request.Data = req.RequestBody
+		}
+	}
+
+	return event
 }
 
 func catchError() {

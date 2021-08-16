@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go v1.25.48
 	github.com/bamzi/jobrunner v0.0.0-20161019143021-273175f8b6eb
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
-	github.com/caarlos0/env v3.5.0+incompatible
+	github.com/caarlos0/env/v6 v6.6.2
 	github.com/cespare/cp v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/denisenkom/go-mssqldb v0.0.0-20190204142019-df6d76eb9289 // indirect
@@ -18,18 +18,17 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/edsrzf/mmap-go v1.0.0 // indirect
 	github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 // indirect
-	github.com/ethereum/go-ethereum v1.9.23
+	github.com/ethereum/go-ethereum v1.9.25
 	github.com/fjl/memsize v0.0.0-20180929194037-2a09253e352a // indirect
-	github.com/getsentry/sentry-go v0.11.0 // indirect
+	github.com/getsentry/sentry-go v0.11.0
 	github.com/gin-contrib/cors v0.0.0-20190301062745-f9e10995c85a
-	github.com/gin-gonic/gin v1.4.0
+	github.com/gin-gonic/gin v1.7.0
 	github.com/go-openapi/spec v0.20.3 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/validator/v10 v10.5.0
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/google/uuid v1.1.1
-	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/jinzhu/gorm v1.9.2
 	github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a // indirect
 	github.com/jinzhu/now v1.0.0 // indirect
@@ -54,7 +53,6 @@ require (
 	github.com/swaggo/gin-swagger v1.2.0
 	github.com/swaggo/swag v1.6.4
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125
-	github.com/ugorji/go v1.1.7 // indirect
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb // indirect
 	golang.org/x/net v0.0.0-20210331212208-0fccb6fa2b5c // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -63,6 +61,5 @@ require (
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
-	gopkg.in/go-playground/validator.v8 v8.18.2
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
 )

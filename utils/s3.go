@@ -41,15 +41,10 @@ func init() {
 }
 
 func newS3Session() {
-	hasAwsCredentials := len(Env.AwsAccessKeyID) > 0 && len(Env.AwsSecretAccessKey) > 0 &&
-		len(Env.BucketName) > 0 && len(Env.AwsRegion) > 0
-	// Stub out the S3 if we don't have S3 access right.
-	if hasAwsCredentials {
-		svc = &s3Wrapper{
-			s3: s3.New(session.Must(session.NewSession())),
-		}
-	} else {
-		svc = &s3Wrapper{}
+	svc = &s3Wrapper{
+		s3: s3.New(session.Must(session.NewSessionWithOptions(session.Options{
+			SharedConfigState: session.SharedConfigEnable,
+		}))),
 	}
 }
 
@@ -230,10 +225,7 @@ func deleteObjectKeys(bucketName string, objectKeyPrefix string) error {
 			},
 		}
 		deleteErr = svc.DeleteObjects(deleteInput)
-		if deleteErr != nil {
-			return false
-		}
-		return true
+		return deleteErr == nil
 	})
 
 	if deleteErr != nil {
@@ -309,6 +301,7 @@ func deleteObjects(bucketName string, objectKeys []string) error {
 		}
 		input.Delete = &s3.Delete{
 			Objects: objIdentifier,
+			Quiet:   aws.Bool(true),
 		}
 
 		if err := svc.DeleteObjects(input); err != nil {
