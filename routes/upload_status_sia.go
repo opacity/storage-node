@@ -9,22 +9,12 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type UploadStatusSiaReq struct {
-	verification
-	requestBody
-	uploadStatusSiaObj UploadFileSiaObj
-}
-
-func (v *UploadStatusSiaReq) getObjectRef() interface{} {
-	return &v.uploadStatusSiaObj
-}
-
 // CheckUploadStatusSiaHandler godoc
 // @Summary check status of a Sia upload
 // @Description check status of a Sia upload
 // @Accept json
 // @Produce json
-// @Param UploadStatusSiaReq body routes.UploadStatusSiaReq true "an object to poll upload status for a Sia file"
+// @Param UploadStatusReq body routes.UploadStatusReq true "an object to poll upload status for a Sia file"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
@@ -41,7 +31,7 @@ func CheckUploadStatusSiaHandler() gin.HandlerFunc {
 }
 
 func checkUploadStatusSia(c *gin.Context) error {
-	request := UploadStatusSiaReq{}
+	request := UploadStatusReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
@@ -52,13 +42,13 @@ func checkUploadStatusSia(c *gin.Context) error {
 		return err
 	}
 
-	fileID := request.uploadStatusSiaObj.FileHandle
+	fileID := request.uploadStatusObj.FileHandle
 	siaProgressFile, err := models.GetSiaProgressFileById(fileID)
 	if err != nil {
 		return SiaFileNotInitialised(c)
 	}
 
-	if err := verifyPermissions(request.PublicKey, request.uploadStatusSiaObj.FileHandle, siaProgressFile.ModifierHash, c); err != nil {
+	if err := verifyPermissions(request.PublicKey, fileID, siaProgressFile.ModifierHash, c); err != nil {
 		return err
 	}
 
@@ -68,8 +58,11 @@ func checkUploadStatusSia(c *gin.Context) error {
 	}
 
 	siaFileMetadata, siaFileMetadataErr := utils.GetSiaFileMetadataByPath(fileID)
-	if err != nil || strings.Contains(siaFileMetadataErr.Error(), "path does not exist") {
-		return InternalErrorResponse(c, errors.New("sia file was not uploaded"))
+	if err != nil {
+		if strings.Contains(siaFileMetadataErr.Error(), "path does not exist") {
+			return NotFoundResponse(c, errors.New("sia file was not uploaded"))
+		}
+		return InternalErrorResponse(c, err)
 	}
 
 	if siaFileMetadata.File.Available {
@@ -95,6 +88,8 @@ func checkUploadStatusSia(c *gin.Context) error {
 		errSql := models.DB.Delete(&completedFile).Error
 		return InternalErrorResponse(c, utils.CollectErrors([]error{err, errSia, errSql}))
 	}
+
+	models.DB.Delete(&siaProgressFile)
 
 	return OkResponse(c, fileUploadCompletedRes)
 }

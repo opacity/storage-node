@@ -9,8 +9,8 @@ import (
 )
 
 type InitFileSiaUploadObj struct {
-	FileHandle     string `form:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-	FileSizeInByte int64  `form:"fileSizeInByte" validate:"required" example:"200000000000006"`
+	FileSizeInByte int64 `form:"fileSizeInByte" validate:"required" example:"200000000000006"`
+	GenericUploadObj
 }
 
 type InitFileSiaUploadReq struct {

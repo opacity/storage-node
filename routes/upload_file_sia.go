@@ -6,15 +6,11 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type UploadFileSiaObj struct {
-	FileHandle string `form:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-}
-
 type UploadFileSiaReq struct {
 	verification
 	requestBody
-	fileData         string `formFile:"fileData" validate:"required" example:"a binary string of the file data"`
-	uploadFileSiaObj UploadFileSiaObj
+	FileData         string `formFile:"fileData" validate:"required" example:"a binary string of the file data"`
+	uploadFileSiaObj GenericUploadObj
 }
 
 func (v *UploadFileSiaReq) getObjectRef() interface{} {
@@ -61,9 +57,13 @@ func uploadFileSia(c *gin.Context) error {
 	}
 
 	// @TODO: Set TTL somehow; cron job?
-	if err := utils.UploadSiaFile(request.fileData, fileID, false); err != nil {
-		return InternalErrorResponse(c, err)
-	}
+	// Handle in async
+	// if err := utils.UploadSiaFile(request.FileData, fileID, false); err != nil {
+	// 	return InternalErrorResponse(c, err)
+	// }
+
+	// Fire and forget
+	go utils.UploadSiaFile(request.FileData, fileID, false)
 
 	return OkResponse(c, StatusRes{
 		Status: "Sia file started uploading",

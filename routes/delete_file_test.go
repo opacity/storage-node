@@ -121,7 +121,9 @@ func createAccountAndUploadFile(t *testing.T, fileCount int) (models.Account, []
 	fileIDs := make([]string, 0)
 	for i := 0; i < fileCount; i++ {
 		initBody := InitFileUploadObj{
-			FileHandle:     utils.GenerateFileHandle(),
+			GenericUploadObj: GenericUploadObj{
+				FileHandle: utils.GenerateFileHandle(),
+			},
 			EndIndex:       models.FirstChunkIndex,
 			FileSizeInByte: 26214400,
 		}
@@ -139,8 +141,10 @@ func createAccountAndUploadFile(t *testing.T, fileCount int) (models.Account, []
 		initFileUploadWithRequest(initReq, c)
 
 		uploadBody := UploadFileObj{
-			FileHandle: initBody.FileHandle,
-			PartIndex:  initBody.EndIndex,
+			GenericUploadObj: GenericUploadObj{
+				FileHandle: initBody.FileHandle,
+			},
+			PartIndex: initBody.EndIndex,
 		}
 		chunkData := ReturnChunkDataForTest(t)
 		request := ReturnValidUploadFileReqForTest(t, uploadBody, privateKey)
@@ -150,11 +154,11 @@ func createAccountAndUploadFile(t *testing.T, fileCount int) (models.Account, []
 		w := UploadFileHelperForTest(t, request, UploadPath, "v1")
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		uploadStatusObj := UploadStatusObj{
+		genericUploadObj := GenericUploadObj{
 			FileHandle: initBody.FileHandle,
 		}
 
-		v, b = returnValidVerificationAndRequestBody(t, uploadStatusObj, privateKey)
+		v, b = returnValidVerificationAndRequestBody(t, genericUploadObj, privateKey)
 		uploadStatusReq := UploadStatusReq{
 			verification: v,
 			requestBody:  b,

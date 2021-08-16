@@ -11,8 +11,8 @@ import (
 )
 
 type UploadFileObj struct {
-	FileHandle string `form:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-	PartIndex  int    `form:"partIndex" validate:"required,gte=1" example:"1"`
+	GenericUploadObj
+	PartIndex int `form:"partIndex" validate:"required,gte=1" example:"1"`
 }
 
 type UploadFileReq struct {
