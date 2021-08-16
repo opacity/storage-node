@@ -27,7 +27,7 @@ type Account struct {
 	CreatedAt                time.Time         `json:"createdAt"`
 	UpdatedAt                time.Time         `json:"updatedAt"`
 	MonthsInSubscription     int               `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription
-	StorageLocation          string            `json:"storageLocation" validate:"omitempty,url"`                                                                           // where their files live, on S3 or elsewhere
+	StorageLocation          FileStorageType   `json:"storageLocation" validate:"omitempty,gte=1"`                                                                         // where their files live, on S3 or elsewhere
 	StorageLimit             StorageLimitType  `json:"storageLimit" validate:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
 	StorageUsedInByte        int64             `json:"storageUsedInByte" validate:"gte=0" example:"30"`                                                                    // how much storage they have used, in B
 	EthAddress               string            `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to

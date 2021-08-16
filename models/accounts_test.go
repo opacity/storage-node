@@ -29,7 +29,7 @@ func returnValidAccount() Account {
 	return Account{
 		AccountID:            accountID,
 		MonthsInSubscription: DefaultMonthsPerSubscription,
-		StorageLocation:      "https://createdInModelsAccountsTest.com/12345",
+		StorageLocation:      S3,
 		StorageLimit:         BasicStorageLimit,
 		StorageUsedInByte:    10 * 1e9,
 		PaymentStatus:        InitialPaymentInProgress,
@@ -85,9 +85,9 @@ func Test_Not_Enough_Months_Fails(t *testing.T) {
 	}
 }
 
-func Test_StorageLocation_Invalid_URL_Fails(t *testing.T) {
+func Test_StorageLocation_Invalid_Fails(t *testing.T) {
 	account := returnValidAccount()
-	account.StorageLocation = "wrong"
+	account.StorageLocation = -3
 
 	if err := utils.Validator.Struct(account); err == nil {
 		t.Fatalf("account should have failed validation")
