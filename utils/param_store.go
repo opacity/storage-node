@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -49,7 +48,7 @@ func getParametersByPath(nextToken, go_env string) ([]*ssm.Parameter, *string) {
 		parametersBypathInput.SetNextToken(nextToken)
 	}
 	paramResp, err := paramStoreSvc.paramStore.GetParametersByPath(parametersBypathInput)
-	fmt.Println(len(paramResp.Parameters))
+
 	if err != nil {
 		PanicOnError(err)
 	}

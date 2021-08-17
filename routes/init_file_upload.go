@@ -7,9 +7,9 @@ import (
 )
 
 type InitFileUploadObj struct {
-	FileHandle     string `form:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-	FileSizeInByte int64  `form:"fileSizeInByte" validate:"required" example:"200000000000006"`
-	EndIndex       int    `form:"endIndex" validate:"required" example:"2"`
+	GenericFileActionObj
+	FileSizeInByte int64 `form:"fileSizeInByte" validate:"required" example:"200000000000006"`
+	EndIndex       int   `form:"endIndex" validate:"required" example:"2"`
 }
 
 type InitFileUploadReq struct {
@@ -70,7 +70,7 @@ func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error 
 		return err
 	}
 
-	if err := checkHaveEnoughStorageSpace(account, request.initFileUploadObj.FileSizeInByte, c); err != nil {
+	if err := CheckHaveEnoughStorageSpace(account, request.initFileUploadObj.FileSizeInByte, c); err != nil {
 		return err
 	}
 
@@ -106,7 +106,7 @@ func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error 
 	})
 }
 
-func checkHaveEnoughStorageSpace(account models.Account, fileSizeInByte int64, c *gin.Context) error {
+func CheckHaveEnoughStorageSpace(account models.Account, fileSizeInByte int64, c *gin.Context) error {
 	plannedInGB := (float64(fileSizeInByte) + float64(account.StorageUsedInByte)) / 1e9
 	if plannedInGB > float64(account.StorageLimit) {
 		return AccountNotEnoughSpaceResponse(c)

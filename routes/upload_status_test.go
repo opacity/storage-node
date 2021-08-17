@@ -47,6 +47,7 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 		FileID:         uploadObj.FileHandle,
 		FileSizeInByte: 100,
 		ModifierHash:   utils.RandHexString(64),
+		StorageType:    models.S3,
 	}
 	assert.Nil(t, models.DB.Create(&compeletedFile).Error)
 	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), "hello world!", ""))
@@ -98,18 +99,18 @@ func Test_IncorrectPermission(t *testing.T) {
 	assert.Contains(t, w.Body.String(), notAuthorizedResponse)
 }
 
-func generateUploadStatusRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (UploadStatusReq, UploadStatusObj) {
+func generateUploadStatusRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (UploadStatusReq, GenericFileActionObj) {
 	return createUploadStatusRequest(t, utils.GenerateFileHandle(), privateKey)
 }
 
-func createUploadStatusRequest(t *testing.T, fileId string, privateKey *ecdsa.PrivateKey) (UploadStatusReq, UploadStatusObj) {
-	uploadStatusObj := UploadStatusObj{
+func createUploadStatusRequest(t *testing.T, fileId string, privateKey *ecdsa.PrivateKey) (UploadStatusReq, GenericFileActionObj) {
+	genericUploadObj := GenericFileActionObj{
 		FileHandle: fileId,
 	}
-	v, b := returnValidVerificationAndRequestBody(t, uploadStatusObj, privateKey)
+	v, b := returnValidVerificationAndRequestBody(t, genericUploadObj, privateKey)
 	req := UploadStatusReq{
 		verification: v,
 		requestBody:  b,
 	}
-	return req, uploadStatusObj
+	return req, genericUploadObj
 }

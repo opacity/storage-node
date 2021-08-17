@@ -9,14 +9,23 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
+type FileStorageType int
+
+const (
+	S3 FileStorageType = iota + 1
+	Sia
+	Skynet
+)
+
 type CompletedFile struct {
-	FileID         string    `gorm:"primary_key" json:"fileID" validate:"required,len=64" minLength:"64" maxLength:"64"`
-	CreatedAt      time.Time `json:"createdAt"`
-	UpdatedAt      time.Time `json:"updatedAt"`
-	ExpiredAt      time.Time `json:"expiredAt"`
-	FileSizeInByte int64     `json:"fileSizeInByte"`
-	ModifierHash   string    `json:"modifierHash" validate:"required,len=64" minLength:"64" maxLength:"64"`
-	ApiVersion     int       `json:"apiVersion" validate:"omitempty,gte=1" gorm:"default:1"`
+	FileID         string          `gorm:"primary_key" json:"fileID" validate:"required,len=64" minLength:"64" maxLength:"64"`
+	CreatedAt      time.Time       `json:"createdAt"`
+	UpdatedAt      time.Time       `json:"updatedAt"`
+	ExpiredAt      time.Time       `json:"expiredAt"`
+	FileSizeInByte int64           `json:"fileSizeInByte" validate:"required"`
+	StorageType    FileStorageType `json:"storageType" validate:"required,gte=1" gorm:"default:1"`
+	ModifierHash   string          `json:"modifierHash" validate:"required,len=64" minLength:"64" maxLength:"64"`
+	ApiVersion     int             `json:"apiVersion" validate:"omitempty,gte=1" gorm:"default:1"`
 }
 
 /*BeforeCreate - callback called before the row is created*/

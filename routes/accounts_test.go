@@ -45,7 +45,7 @@ func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.Priva
 	return models.Account{
 		AccountID:            accountId,
 		MonthsInSubscription: models.DefaultMonthsPerSubscription,
-		StorageLocation:      "https://createdInRoutesAccountsTest.com/12345",
+		StorageLocation:      models.S3,
 		StorageLimit:         models.BasicStorageLimit,
 		StorageUsedInByte:    10 * 1e9,
 		PaymentStatus:        models.InitialPaymentInProgress,

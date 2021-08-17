@@ -48,7 +48,8 @@ type accountGetObj struct {
 	CreatedAt             time.Time               `json:"createdAt"`
 	UpdatedAt             time.Time               `json:"updatedAt"`
 	ExpirationDate        time.Time               `json:"expirationDate" validate:"required"`
-	MonthsInSubscription  int                     `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription
+	MonthsInSubscription  int                     `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`
+	StorageLocation       models.FileStorageType  `json:"storageLocation" validate:"omitempty,gte=1"`                                                                         // where their files live, on S3 or elsewhere
 	StorageLimit          models.StorageLimitType `json:"storageLimit" validate:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
 	StorageUsed           float64                 `json:"storageUsed" validate:"" example:"30"`                                                                               // how much storage they have used, in GB
 	EthAddress            string                  `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
@@ -298,6 +299,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		MonthsInSubscription:  account.MonthsInSubscription,
 		StorageLimit:          account.StorageLimit,
 		StorageUsed:           float64(account.StorageUsedInByte) / 1e9,
+		StorageLocation:       account.StorageLocation,
 		EthAddress:            account.EthAddress,
 		Cost:                  cost,
 		ApiVersion:            account.ApiVersion,

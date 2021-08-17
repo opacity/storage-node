@@ -42,6 +42,9 @@ type StorageNodeEnv struct {
 	TestDatabaseURL string `env:"TEST_DATABASE_URL" envDefault:""`
 	DatabaseURL     string `envDefault:""`
 
+	// Sia
+	SiaApiPassword string `env:"SIA_API_PASSWORD,notEmpty"`
+
 	// Key to encrypt the eth private keys that we store in the accounts table
 	EncryptionKey string `env:"ENCRYPTION_KEY,notEmpty"`
 
@@ -138,6 +141,7 @@ func SetTesting(filenames ...string) {
 func runInitializations() {
 	InitKvStore()
 	newS3Session()
+	InitSiaClient()
 }
 
 /*IsTestEnv returns whether we are in the test environment*/
@@ -163,6 +167,7 @@ func tryLookUp() error {
 	var collectedErrors []error
 	prodDBUrl := AppendLookupErrors("PROD_DATABASE_URL", &collectedErrors)
 	testDBUrl := AppendLookupErrors("TEST_DATABASE_URL", &collectedErrors)
+	siaApiPassword := AppendLookupErrors("SIA_API_PASSWORD", &collectedErrors)
 	encryptionKey := AppendLookupErrors("ENCRYPTION_KEY", &collectedErrors)
 	contractAddress := AppendLookupErrors("TOKEN_CONTRACT_ADDRESS", &collectedErrors)
 	ethNodeURL := AppendLookupErrors("ETH_NODE_URL", &collectedErrors)
@@ -197,6 +202,7 @@ func tryLookUp() error {
 	serverEnv := StorageNodeEnv{
 		ProdDatabaseURL:      prodDBUrl,
 		TestDatabaseURL:      testDBUrl,
+		SiaApiPassword:       siaApiPassword,
 		EncryptionKey:        encryptionKey,
 		ContractAddress:      contractAddress,
 		EthNodeURL:           ethNodeURL,

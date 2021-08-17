@@ -23,6 +23,10 @@ type GenericRequest struct {
 	verification
 }
 
+type GenericFileActionObj struct {
+	FileHandle string `json:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
+}
+
 const noAccountWithThatID = "no account with that id"
 
 const REQUEST_UUID = "request_uuid"
@@ -69,6 +73,10 @@ func AccountNotFoundResponse(c *gin.Context, id string) error {
 
 func FileNotFoundResponse(c *gin.Context, fileId string) error {
 	return NotFoundResponse(c, fmt.Errorf("no file with that id: %s", fileId))
+}
+
+func SiaFileNotInitialised(c *gin.Context) error {
+	return NotFoundResponse(c, errors.New("sia file upload was not initialised"))
 }
 
 func ForbiddenResponse(c *gin.Context, err error) error {

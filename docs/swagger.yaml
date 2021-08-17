@@ -85,6 +85,61 @@ definitions:
     required:
     - fileID
     type: object
+  routes.GenericFileActionObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+    required:
+    - fileHandle
+    type: object
+  routes.InitFileSiaUploadObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+      fileSizeInByte:
+        example: 200000000000006
+        type: integer
+    required:
+    - fileHandle
+    - fileSizeInByte
+    type: object
+  routes.InitFileSiaUploadReq:
+    properties:
+      initFileSiaUploadObj:
+        $ref: '#/definitions/routes.InitFileSiaUploadObj'
+        type: object
+      metadataAsFile:
+        type: string
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - metadataAsFile
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.InitFileUploadObj:
     properties:
       endIndex:
@@ -151,8 +206,11 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
+      size:
+        type: integer
     required:
     - fileHandle
+    - size
     type: object
   routes.PrivateToPublicReq:
     properties:
@@ -277,15 +335,37 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.UploadStatusObj:
+  routes.UploadFileSiaReq:
     properties:
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 64
-        minLength: 64
+      fileData:
+        example: a binary string of the file data
         type: string
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+      uploadFileSiaObj:
+        $ref: '#/definitions/routes.GenericFileActionObj'
+        type: object
     required:
-    - fileHandle
+    - fileData
+    - publicKey
+    - requestBody
+    - signature
     type: object
   routes.UploadStatusReq:
     properties:
@@ -308,7 +388,7 @@ definitions:
         minLength: 128
         type: string
       uploadStatusObj:
-        $ref: '#/definitions/routes.UploadStatusObj'
+        $ref: '#/definitions/routes.GenericFileActionObj'
         type: object
     required:
     - publicKey
@@ -2393,6 +2473,7 @@ paths:
         requestBody should be a stringified version of:
         {
         "fileHandle": "a deterministically created file handle",
+        "size": "the size of the encrypted file",
         }
       parameters:
       - description: an object to do the conversion of a private file to a public
@@ -2541,6 +2622,154 @@ paths:
           schema:
             type: string
       summary: get views count
+  /api/v2/sia/download:
+    post:
+      consumes:
+      - application/json
+      description: download a Sia file
+      parameters:
+      - description: file info object
+        in: body
+        name: routes.GenericFileActionObj
+        required: true
+        schema:
+          $ref: '#/definitions/routes.GenericFileActionObj'
+      produces:
+      - '*/*'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/string'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: such data does not exist
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: download a Sia file
+  /api/v2/sia/init-upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        start a Sia file upload
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        "fileSizeInByte": "200000000000006",
+        }
+      parameters:
+      - description: an object to start a Sia file upload
+        in: body
+        name: InitFileSiaUploadReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.InitFileSiaUploadReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: start a Sia file upload
+  /api/v2/sia/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: |-
+        upload a Sia file via a form
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        }
+      parameters:
+      - description: an object to upload a Sia file
+        in: body
+        name: UploadFileSiaReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UploadFileSiaReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            $ref: '#/definitions/string'
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: upload a Sia file
+  /api/v2/sia/upload-status:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        check status of a Sia upload
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        }
+      parameters:
+      - description: an object to poll upload status for a Sia file
+        in: body
+        name: UploadStatusReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UploadStatusReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: signature did not match
+          schema:
+            type: string
+        "404":
+          description: file or account not found
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: check status of a Sia upload
   /api/v2/upload-public:
     post:
       consumes:

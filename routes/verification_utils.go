@@ -181,7 +181,7 @@ func readFileFromForm(fileTag string, r *http.Request) (string, error) {
 	}()
 
 	if err != nil {
-		return "", fmt.Errorf("Unable to get file %v from POST form", fileTag)
+		return "", fmt.Errorf("unable to get file %v from POST form", fileTag)
 	}
 	var fileBytes bytes.Buffer
 	if _, err := io.Copy(&fileBytes, multiFile); err != nil {
