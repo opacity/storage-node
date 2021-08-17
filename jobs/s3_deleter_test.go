@@ -22,25 +22,31 @@ func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 	models.DeleteCompletedFilesForTest(t)
 
 	s := models.CompletedFile{
-		FileID:       s1FileID,
-		ModifierHash: utils.GenerateFileHandle(),
-		ExpiredAt:    time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC), // past
+		FileID:         s1FileID,
+		ModifierHash:   utils.GenerateFileHandle(),
+		ExpiredAt:      time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC), // past
+		StorageType:    models.S3,
+		FileSizeInByte: 123,
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
 	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s1FileID), "foo1", ""))
 
 	s = models.CompletedFile{
-		FileID:       s2FileID,
-		ModifierHash: utils.GenerateFileHandle(),
-		ExpiredAt:    time.Now().Add(-24 * time.Hour * 61), // past
+		FileID:         s2FileID,
+		ModifierHash:   utils.GenerateFileHandle(),
+		ExpiredAt:      time.Now().Add(-24 * time.Hour * 61), // past
+		StorageType:    models.S3,
+		FileSizeInByte: 123,
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
 	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s2FileID), "foo2", ""))
 
 	s = models.CompletedFile{
-		FileID:       s3FileID,
-		ModifierHash: utils.GenerateFileHandle(),
-		ExpiredAt:    time.Now().Add(-24 * time.Hour * 59), // past, but not old enough to be deleted
+		FileID:         s3FileID,
+		ModifierHash:   utils.GenerateFileHandle(),
+		ExpiredAt:      time.Now().Add(-24 * time.Hour * 59), // past, but not old enough to be deleted
+		StorageType:    models.S3,
+		FileSizeInByte: 123,
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
 	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s3FileID), "foo3", ""))
