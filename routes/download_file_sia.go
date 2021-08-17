@@ -27,7 +27,7 @@ func (v *DownloadSiaFileReq) getObjectRef() interface{} {
 // @Param routes.GenericFileActionObj body routes.GenericFileActionObj true "file info object"
 // @Accept json
 // @Produce */*
-// @Success 200 {string}
+// @Success 200 {object} string
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "such data does not exist"
 // @Failure 500 {string} string "some information about the internal error"

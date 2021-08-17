@@ -85,6 +85,16 @@ definitions:
     required:
     - fileID
     type: object
+  routes.GenericFileActionObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+    required:
+    - fileHandle
+    type: object
   routes.InitFileSiaUploadObj:
     properties:
       fileHandle:
@@ -325,16 +335,6 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.UploadFileSiaObj:
-    properties:
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 64
-        minLength: 64
-        type: string
-    required:
-    - fileHandle
-    type: object
   routes.UploadFileSiaReq:
     properties:
       fileData:
@@ -359,23 +359,13 @@ definitions:
         minLength: 128
         type: string
       uploadFileSiaObj:
-        $ref: '#/definitions/routes.UploadFileSiaObj'
+        $ref: '#/definitions/routes.GenericFileActionObj'
         type: object
     required:
     - fileData
     - publicKey
     - requestBody
     - signature
-    type: object
-  routes.UploadStatusObj:
-    properties:
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 64
-        minLength: 64
-        type: string
-    required:
-    - fileHandle
     type: object
   routes.UploadStatusReq:
     properties:
@@ -398,35 +388,7 @@ definitions:
         minLength: 128
         type: string
       uploadStatusObj:
-        $ref: '#/definitions/routes.UploadStatusObj'
-        type: object
-    required:
-    - publicKey
-    - requestBody
-    - signature
-    type: object
-  routes.UploadStatusSiaReq:
-    properties:
-      publicKey:
-        example: a 66-character public key
-        maxLength: 66
-        minLength: 66
-        type: string
-      requestBody:
-        example: look at description for example
-        type: string
-      signature:
-        description: |-
-          signature without 0x prefix is broken into
-          R: sig[0:63]
-          S: sig[64:127]
-        example: a 128 character string created when you signed the request with your
-          private key or account handle
-        maxLength: 128
-        minLength: 128
-        type: string
-      uploadStatusSiaObj:
-        $ref: '#/definitions/routes.UploadFileSiaObj'
+        $ref: '#/definitions/routes.GenericFileActionObj'
         type: object
     required:
     - publicKey
@@ -2660,6 +2622,38 @@ paths:
           schema:
             type: string
       summary: get views count
+  /api/v2/sia/download:
+    post:
+      consumes:
+      - application/json
+      description: download a Sia file
+      parameters:
+      - description: file info object
+        in: body
+        name: routes.GenericFileActionObj
+        required: true
+        schema:
+          $ref: '#/definitions/routes.GenericFileActionObj'
+      produces:
+      - '*/*'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/string'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: such data does not exist
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: download a Sia file
   /api/v2/sia/init-upload:
     post:
       consumes:
@@ -2748,10 +2742,10 @@ paths:
       parameters:
       - description: an object to poll upload status for a Sia file
         in: body
-        name: UploadStatusSiaReq
+        name: UploadStatusReq
         required: true
         schema:
-          $ref: '#/definitions/routes.UploadStatusSiaReq'
+          $ref: '#/definitions/routes.UploadStatusReq'
       produces:
       - application/json
       responses:
