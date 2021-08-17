@@ -23,7 +23,7 @@ type GenericRequest struct {
 	verification
 }
 
-type GenericUploadObj struct {
+type GenericFileActionObj struct {
 	FileHandle string `json:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
 }
 

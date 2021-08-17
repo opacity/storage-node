@@ -11,7 +11,7 @@ import (
 )
 
 type UploadFileObj struct {
-	GenericUploadObj
+	GenericFileActionObj
 	PartIndex int `form:"partIndex" validate:"required,gte=1" example:"1"`
 }
 

@@ -28,7 +28,7 @@ func ReturnValidUploadFileBodyForTest(t *testing.T) UploadFileObj {
 	abortIfNotTesting(t)
 
 	return UploadFileObj{
-		GenericUploadObj: GenericUploadObj{
+		GenericFileActionObj: GenericFileActionObj{
 			FileHandle: utils.GenerateFileHandle(),
 		},
 		PartIndex: models.FirstChunkIndex,

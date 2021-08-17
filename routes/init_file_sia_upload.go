@@ -10,7 +10,7 @@ import (
 
 type InitFileSiaUploadObj struct {
 	FileSizeInByte int64 `form:"fileSizeInByte" validate:"required" example:"200000000000006"`
-	GenericUploadObj
+	GenericFileActionObj
 }
 
 type InitFileSiaUploadReq struct {

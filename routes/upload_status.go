@@ -9,7 +9,7 @@ import (
 type UploadStatusReq struct {
 	verification
 	requestBody
-	uploadStatusObj GenericUploadObj
+	uploadStatusObj GenericFileActionObj
 }
 
 type missingChunksRes struct {

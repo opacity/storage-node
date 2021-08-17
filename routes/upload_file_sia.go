@@ -10,7 +10,7 @@ type UploadFileSiaReq struct {
 	verification
 	requestBody
 	FileData         string `formFile:"fileData" validate:"required" example:"a binary string of the file data"`
-	uploadFileSiaObj GenericUploadObj
+	uploadFileSiaObj GenericFileActionObj
 }
 
 func (v *UploadFileSiaReq) getObjectRef() interface{} {

@@ -99,12 +99,12 @@ func Test_IncorrectPermission(t *testing.T) {
 	assert.Contains(t, w.Body.String(), notAuthorizedResponse)
 }
 
-func generateUploadStatusRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (UploadStatusReq, GenericUploadObj) {
+func generateUploadStatusRequest(t *testing.T, privateKey *ecdsa.PrivateKey) (UploadStatusReq, GenericFileActionObj) {
 	return createUploadStatusRequest(t, utils.GenerateFileHandle(), privateKey)
 }
 
-func createUploadStatusRequest(t *testing.T, fileId string, privateKey *ecdsa.PrivateKey) (UploadStatusReq, GenericUploadObj) {
-	genericUploadObj := GenericUploadObj{
+func createUploadStatusRequest(t *testing.T, fileId string, privateKey *ecdsa.PrivateKey) (UploadStatusReq, GenericFileActionObj) {
+	genericUploadObj := GenericFileActionObj{
 		FileHandle: fileId,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, genericUploadObj, privateKey)

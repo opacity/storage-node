@@ -7,7 +7,7 @@ import (
 )
 
 type InitFileUploadObj struct {
-	GenericUploadObj
+	GenericFileActionObj
 	FileSizeInByte int64 `form:"fileSizeInByte" validate:"required" example:"200000000000006"`
 	EndIndex       int   `form:"endIndex" validate:"required" example:"2"`
 }

@@ -121,7 +121,7 @@ func createAccountAndUploadFile(t *testing.T, fileCount int) (models.Account, []
 	fileIDs := make([]string, 0)
 	for i := 0; i < fileCount; i++ {
 		initBody := InitFileUploadObj{
-			GenericUploadObj: GenericUploadObj{
+			GenericFileActionObj: GenericFileActionObj{
 				FileHandle: utils.GenerateFileHandle(),
 			},
 			EndIndex:       models.FirstChunkIndex,
@@ -141,7 +141,7 @@ func createAccountAndUploadFile(t *testing.T, fileCount int) (models.Account, []
 		initFileUploadWithRequest(initReq, c)
 
 		uploadBody := UploadFileObj{
-			GenericUploadObj: GenericUploadObj{
+			GenericFileActionObj: GenericFileActionObj{
 				FileHandle: initBody.FileHandle,
 			},
 			PartIndex: initBody.EndIndex,
@@ -154,7 +154,7 @@ func createAccountAndUploadFile(t *testing.T, fileCount int) (models.Account, []
 		w := UploadFileHelperForTest(t, request, UploadPath, "v1")
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		genericUploadObj := GenericUploadObj{
+		genericUploadObj := GenericFileActionObj{
 			FileHandle: initBody.FileHandle,
 		}
 
