@@ -297,6 +297,7 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	siaRouterGroup.POST(InitUploadPath, InitFileSiaUploadHandler())
 	siaRouterGroup.POST(UploadPath, UploadFileSiaHandler())
 	siaRouterGroup.POST(UploadStatusPath, CheckUploadStatusSiaHandler())
+	siaRouterGroup.POST(DownloadPath, DownloadFileSiaHandler())
 
 	v2Router.POST(DeleteV2Path, DeleteFilesHandler())
 }

@@ -58,3 +58,7 @@ func DeleteSiaFile(fileSiaPath string) error {
 
 	return siaClient.RenterFileDeletePost(siaPath)
 }
+
+func GetSiaAddress() string {
+	return siaClient.Address
+}
