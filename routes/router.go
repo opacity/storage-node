@@ -320,6 +320,8 @@ func setupAdminPaths(router *gin.Engine) {
 	})
 	g.POST("/delete", AdminDeleteFileHandler())
 
+	g.GET("/sia-stats", jobs.AdminSiaStatsHandler)
+
 	setupAdminPlansPaths(g)
 
 	// Load template file location relative to the current working directory

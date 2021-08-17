@@ -62,3 +62,11 @@ func DeleteSiaFile(fileSiaPath string) error {
 func GetSiaAddress() string {
 	return siaClient.Address
 }
+
+func GetSiaRenter() sia_api.RenterGET {
+	rg, err := siaClient.RenterGet()
+	if err != nil {
+		LogIfError(err, nil)
+	}
+	return rg
+}
