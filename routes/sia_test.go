@@ -27,7 +27,7 @@ func Test_SiaUpload(t *testing.T) {
 
 	// init-upload
 	siaInitUploadObj := InitFileSiaUploadObj{
-		GenericUploadObj: GenericUploadObj{
+		GenericFileActionObj: GenericFileActionObj{
 			FileHandle: fileHandle,
 		},
 		FileSizeInByte: 1024,
@@ -55,10 +55,10 @@ func Test_SiaUpload(t *testing.T) {
 		"fileData": uploadFileContent,
 	}
 
-	UploadFileSiaObj := GenericUploadObj{
+	genericFileActionObj := GenericFileActionObj{
 		FileHandle: fileHandle,
 	}
-	v, b = returnValidVerificationAndRequestBody(t, UploadFileSiaObj, privateKey)
+	v, b = returnValidVerificationAndRequestBody(t, genericFileActionObj, privateKey)
 	uploadReq := UploadFileSiaReq{
 		verification: v,
 		requestBody:  b,
@@ -69,7 +69,7 @@ func Test_SiaUpload(t *testing.T) {
 	assert.Equal(t, http.StatusOK, uploadW.Code)
 
 	// Status
-	genericUploadObj := GenericUploadObj{
+	genericUploadObj := GenericFileActionObj{
 		FileHandle: fileHandle,
 	}
 	v, b = returnValidVerificationAndRequestBody(t, genericUploadObj, privateKey)
