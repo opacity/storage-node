@@ -58,11 +58,11 @@ func checkUploadStatusSia(c *gin.Context) error {
 	}
 
 	siaFileMetadata, siaFileMetadataErr := utils.GetSiaFileMetadataByPath(fileID)
-	if err != nil {
+	if siaFileMetadataErr != nil {
 		if strings.Contains(siaFileMetadataErr.Error(), "path does not exist") {
 			return NotFoundResponse(c, errors.New("sia file was not uploaded"))
 		}
-		return InternalErrorResponse(c, err)
+		return InternalErrorResponse(c, siaFileMetadataErr)
 	}
 
 	if siaFileMetadata.File.Available {
