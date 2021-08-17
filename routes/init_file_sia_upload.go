@@ -50,6 +50,10 @@ func initFileSiaUploadWithContext(c *gin.Context) error {
 		return ServiceUnavailableResponse(c, maintenanceError)
 	}
 
+	if !utils.IsSiaSynced() {
+		return ServiceUnavailableResponse(c, errors.New("sia consensus is not synced"))
+	}
+
 	request := InitFileSiaUploadReq{}
 
 	if err := verifyAndParseFormRequest(&request, c); err != nil {
