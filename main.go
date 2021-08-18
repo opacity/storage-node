@@ -27,10 +27,10 @@ func main() {
 		utils.PanicOnError(errors.New("the GO_ENV variable is not set; application can not run"))
 	}
 	os.Setenv("GO_ENV", GO_ENV)
-	if GO_ENV != "test" {
+	if GO_ENV == "production" || GO_ENV == "dev2" {
 		tracesSampleRate := 0.3
-		// keep all traces on dev2 and localhost (for dev)
-		if GO_ENV == "dev2" || GO_ENV == "localhost" {
+		// keep all traces on dev2
+		if GO_ENV == "dev2" {
 			tracesSampleRate = 1
 		}
 		err := sentry.Init(sentry.ClientOptions{

@@ -24,10 +24,14 @@ func (v *DownloadSiaFileReq) getObjectRef() interface{} {
 // DownloadFileSiaHandler godoc
 // @Summary download a Sia file
 // @Description download a Sia file
-// @Param routes.GenericFileActionObj body routes.GenericFileActionObj true "file info object"
+// @Param routes.DownloadSiaFileReq body routes.DownloadSiaFileReq true "file info object"
 // @Accept json
 // @Produce */*
-// @Success 200 {object} string
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"fileHandle": "a deterministically created file handle",
+// @description }
+// @Success 200 {string} string ""
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "such data does not exist"
 // @Failure 500 {string} string "some information about the internal error"
