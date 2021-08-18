@@ -1582,7 +1582,7 @@
         },
         "/api/v2/sia/download": {
             "post": {
-                "description": "download a Sia file",
+                "description": "download a Sia file\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -1593,11 +1593,11 @@
                 "parameters": [
                     {
                         "description": "file info object",
-                        "name": "routes.GenericFileActionObj",
+                        "name": "routes.DownloadSiaFileReq",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/routes.GenericFileActionObj"
+                            "$ref": "#/definitions/routes.DownloadSiaFileReq"
                         }
                     }
                 ],
@@ -1605,7 +1605,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/string"
+                            "type": "string"
                         }
                     },
                     "400": {
@@ -1715,7 +1715,7 @@
                     "403": {
                         "description": "signature did not match",
                         "schema": {
-                            "$ref": "#/definitions/string"
+                            "type": "string"
                         }
                     },
                     "500": {
@@ -2009,6 +2009,37 @@
                 "fileID": {
                     "type": "string",
                     "example": "the handle of the file"
+                }
+            }
+        },
+        "routes.DownloadSiaFileReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "genericFileActionObj": {
+                    "type": "object",
+                    "$ref": "#/definitions/routes.GenericFileActionObj"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
                 }
             }
         },
@@ -2515,7 +2546,6 @@
                     "example": 200
                 },
                 "monthsInSubscription": {
-                    "description": "number of months in their subscription",
                     "type": "integer",
                     "example": 12
                 },
@@ -2523,6 +2553,10 @@
                     "description": "how much storage they are allowed, in GB",
                     "type": "integer",
                     "example": 100
+                },
+                "storageLocation": {
+                    "description": "where their files live, on S3 or elsewhere",
+                    "type": "integer"
                 },
                 "storageUsed": {
                     "description": "how much storage they have used, in GB",

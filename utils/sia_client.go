@@ -62,3 +62,12 @@ func DeleteSiaFile(fileSiaPath string) error {
 func GetSiaAddress() string {
 	return siaClient.Address
 }
+
+func IsSiaSynced() bool {
+	cg, err := siaClient.ConsensusGet()
+	if err != nil {
+		LogIfError(err, nil)
+	}
+
+	return cg.Synced
+}

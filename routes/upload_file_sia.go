@@ -29,7 +29,7 @@ func (v *UploadFileSiaReq) getObjectRef() interface{} {
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
-// @Failure 403 {object} string "signature did not match"
+// @Failure 403 {string} string "signature did not match"
 // @Failure 500 {string} string "some information about the internal error"
 // @Router /api/v2/sia/upload [post]
 /*UploadFileSiaHandler is a handler for the user to upload a Sia file*/

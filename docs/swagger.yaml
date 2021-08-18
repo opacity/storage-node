@@ -85,6 +85,34 @@ definitions:
     required:
     - fileID
     type: object
+  routes.DownloadSiaFileReq:
+    properties:
+      genericFileActionObj:
+        $ref: '#/definitions/routes.GenericFileActionObj'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.GenericFileActionObj:
     properties:
       fileHandle:
@@ -489,12 +517,14 @@ definitions:
         example: 200
         type: integer
       monthsInSubscription:
-        description: number of months in their subscription
         example: 12
         type: integer
       storageLimit:
         description: how much storage they are allowed, in GB
         example: 100
+        type: integer
+      storageLocation:
+        description: where their files live, on S3 or elsewhere
         type: integer
       storageUsed:
         description: how much storage they have used, in GB
@@ -2626,21 +2656,26 @@ paths:
     post:
       consumes:
       - application/json
-      description: download a Sia file
+      description: |-
+        download a Sia file
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "a deterministically created file handle",
+        }
       parameters:
       - description: file info object
         in: body
-        name: routes.GenericFileActionObj
+        name: routes.DownloadSiaFileReq
         required: true
         schema:
-          $ref: '#/definitions/routes.GenericFileActionObj'
+          $ref: '#/definitions/routes.DownloadSiaFileReq'
       produces:
       - '*/*'
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/string'
+            type: string
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -2723,7 +2758,7 @@ paths:
         "403":
           description: signature did not match
           schema:
-            $ref: '#/definitions/string'
+            type: string
         "500":
           description: some information about the internal error
           schema:
