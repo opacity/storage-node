@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"strings"
 
 	sia_modules "gitlab.com/NebulousLabs/Sia/modules"
@@ -23,6 +24,14 @@ func InitSiaClient() {
 
 	opts.Password = Env.SiaApiPassword
 	siaClient = sia_client.New(opts)
+}
+
+func IsSiaClientInit() error {
+	if siaClient == nil {
+		return errors.New("sia client is not initialized.")
+	}
+
+	return nil
 }
 
 func UploadSiaFile(fileData, fileSiaPath string, deleteIfExisting bool) error {
