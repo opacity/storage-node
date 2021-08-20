@@ -80,6 +80,14 @@ func GetSiaRenter() sia_api.RenterGET {
 	return rg
 }
 
+func GetWalletInfo() sia_api.WalletGET {
+	wallet, err := siaClient.WalletGet()
+	if err != nil {
+		LogIfError(err, nil)
+	}
+	return wallet
+}
+
 func IsSiaSynced() bool {
 	cg, err := siaClient.ConsensusGet()
 	if err != nil {
