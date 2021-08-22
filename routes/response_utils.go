@@ -27,6 +27,16 @@ type GenericFileActionObj struct {
 	FileHandle string `json:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
 }
 
+type GenericSiaFileReq struct {
+	verification
+	requestBody
+	genericFileActionObj GenericFileActionObj
+}
+
+func (v *GenericSiaFileReq) getObjectRef() interface{} {
+	return &v.genericFileActionObj
+}
+
 const noAccountWithThatID = "no account with that id"
 
 const REQUEST_UUID = "request_uuid"
