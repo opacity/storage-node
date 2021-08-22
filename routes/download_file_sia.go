@@ -11,20 +11,10 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type DownloadSiaFileReq struct {
-	verification
-	requestBody
-	genericFileActionObj GenericFileActionObj
-}
-
-func (v *DownloadSiaFileReq) getObjectRef() interface{} {
-	return &v.genericFileActionObj
-}
-
 // DownloadFileSiaHandler godoc
 // @Summary download a Sia file
 // @Description download a Sia file
-// @Param routes.DownloadSiaFileReq body routes.DownloadSiaFileReq true "file info object"
+// @Param routes.GenericSiaFileReq body routes.GenericSiaFileReq true "file info object"
 // @Accept json
 // @Produce */*
 // @description requestBody should be a stringified version of (values are just examples):
@@ -42,7 +32,7 @@ func DownloadFileSiaHandler() gin.HandlerFunc {
 }
 
 func downloadFileSia(c *gin.Context) error {
-	request := DownloadSiaFileReq{}
+	request := GenericSiaFileReq{}
 
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err

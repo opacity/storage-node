@@ -85,7 +85,17 @@ definitions:
     required:
     - fileID
     type: object
-  routes.DownloadSiaFileReq:
+  routes.GenericFileActionObj:
+    properties:
+      fileHandle:
+        example: a deterministically created file handle
+        maxLength: 64
+        minLength: 64
+        type: string
+    required:
+    - fileHandle
+    type: object
+  routes.GenericSiaFileReq:
     properties:
       genericFileActionObj:
         $ref: '#/definitions/routes.GenericFileActionObj'
@@ -112,16 +122,6 @@ definitions:
     - publicKey
     - requestBody
     - signature
-    type: object
-  routes.GenericFileActionObj:
-    properties:
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 64
-        minLength: 64
-        type: string
-    required:
-    - fileHandle
     type: object
   routes.InitFileSiaUploadObj:
     properties:
@@ -1825,19 +1825,19 @@ paths:
       consumes:
       - application/json
       description: |-
-        check the renewalV2 status
+        check the renewal status
         requestBody should be a stringified version of (values are just examples):
         {
         "metadataKeys": "["someKey", "someOtherKey]",
         "fileHandles": "["someHandle", "someOtherHandle]",
         }
       parameters:
-      - description: check renewalV2 status object
+      - description: check renewal status object
         in: body
-        name: checkRenewalV2StatusReq
+        name: checkRenewalStatusReq
         required: true
         schema:
-          $ref: '#/definitions/routes.checkRenewalV2StatusReq'
+          $ref: '#/definitions/routes.checkRenewalStatusReq'
       produces:
       - application/json
       responses:
@@ -1857,7 +1857,7 @@ paths:
           description: some information about the internal error
           schema:
             type: string
-      summary: check the renewalV2 status
+      summary: check the renewal status
   /api/v1/renew/invoice:
     post:
       consumes:
@@ -1868,19 +1868,19 @@ paths:
         {
         }
       parameters:
-      - description: get renewalV2 invoice object
+      - description: get renewal invoice object
         in: body
-        name: getRenewalV2AccountInvoiceReq
+        name: getRenewalAccountInvoiceReq
         required: true
         schema:
-          $ref: '#/definitions/routes.getRenewalV2AccountInvoiceReq'
+          $ref: '#/definitions/routes.getRenewalAccountInvoiceReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.getRenewalV2AccountInvoiceRes'
+            $ref: '#/definitions/routes.getRenewalAccountInvoiceRes'
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -2652,6 +2652,39 @@ paths:
           schema:
             type: string
       summary: get views count
+  /api/v2/sia/delete:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        delete a Sia file
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "fileHandle": "the handle of the file",
+        }
+      parameters:
+      - description: file info object
+        in: body
+        name: routes.GenericSiaFileReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.GenericSiaFileReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.deleteFileRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: delete a Sia file
   /api/v2/sia/download:
     post:
       consumes:
@@ -2665,10 +2698,10 @@ paths:
       parameters:
       - description: file info object
         in: body
-        name: routes.DownloadSiaFileReq
+        name: routes.GenericSiaFileReq
         required: true
         schema:
-          $ref: '#/definitions/routes.DownloadSiaFileReq'
+          $ref: '#/definitions/routes.GenericSiaFileReq'
       produces:
       - '*/*'
       responses:
