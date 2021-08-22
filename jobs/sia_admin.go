@@ -12,18 +12,24 @@ func AdminSiaStatsHandler(c *gin.Context) {
 	walletInfo := utils.GetWalletInfo()
 	totalSpent, unspentAllocated, unspentUnallocated := rg.FinancialMetrics.SpendingBreakdown()
 
+	unspentUnallocatedFloat, _ := unspentUnallocated.Float64()
+	allowanceFundsFloat, _ := rg.Settings.Allowance.Funds.Float64()
+
+	unspentUnallocatedOutOfAllowancePerc := (unspentUnallocatedFloat / allowanceFundsFloat) * 100
+
 	c.JSON(200, map[string]interface{}{
-		"SiaCoin Confirmed Balance":    walletInfo.ConfirmedSiacoinBalance,
-		"SiaCoin Confirmed Balance SC": walletInfo.ConfirmedSiacoinBalance.HumanString(),
-		"Allowance":                    rg.Settings.Allowance.Funds,
-		"Allowance SC":                 rg.Settings.Allowance.Funds.HumanString(),
-		"Total Spent":                  totalSpent,
-		"Total Spent SC":               totalSpent.HumanString(),
-		"Unspent Allocated":            unspentAllocated,
-		"Unspent Allocated SC":         unspentAllocated.HumanString(),
-		"Unspent Unallocated":          unspentUnallocated,
-		"Unspent Unallocated SC":       unspentUnallocated.HumanString(),
-		"Renter":                       rg,
+		"unspentUnallocatedOutOfAllowancePerc": unspentUnallocatedOutOfAllowancePerc,
+		"Wallet Confirmed Balance":             walletInfo.ConfirmedSiacoinBalance,
+		"Wallet Confirmed Balance SC":          walletInfo.ConfirmedSiacoinBalance.HumanString(),
+		"Allowance":                            rg.Settings.Allowance.Funds,
+		"Allowance SC":                         rg.Settings.Allowance.Funds.HumanString(),
+		"Total Spent":                          totalSpent,
+		"Total Spent SC":                       totalSpent.HumanString(),
+		"Unspent Allocated":                    unspentAllocated,
+		"Unspent Allocated SC":                 unspentAllocated.HumanString(),
+		"Unspent Unallocated":                  unspentUnallocated,
+		"Unspent Unallocated SC":               unspentUnallocated.HumanString(),
+		"Renter":                               rg,
 	})
 }
 
@@ -37,7 +43,6 @@ func (s siaAdmin) ScheduleInterval() string {
 
 func (s siaAdmin) Run() {
 	utils.SlackLog("running " + s.Name())
-	// rg := utils.GetSiaRenter()
 
 }
 
