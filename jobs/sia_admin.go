@@ -1,6 +1,9 @@
 package jobs
 
 import (
+	"fmt"
+
+	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/utils"
 )
@@ -12,24 +15,18 @@ func AdminSiaStatsHandler(c *gin.Context) {
 	walletInfo := utils.GetWalletInfo()
 	totalSpent, unspentAllocated, unspentUnallocated := rg.FinancialMetrics.SpendingBreakdown()
 
-	unspentUnallocatedFloat, _ := unspentUnallocated.Float64()
-	allowanceFundsFloat, _ := rg.Settings.Allowance.Funds.Float64()
-
-	unspentUnallocatedOutOfAllowancePerc := (unspentUnallocatedFloat / allowanceFundsFloat) * 100
-
 	c.JSON(200, map[string]interface{}{
-		"unspentUnallocatedOutOfAllowancePerc": unspentUnallocatedOutOfAllowancePerc,
-		"Wallet Confirmed Balance":             walletInfo.ConfirmedSiacoinBalance,
-		"Wallet Confirmed Balance SC":          walletInfo.ConfirmedSiacoinBalance.HumanString(),
-		"Allowance":                            rg.Settings.Allowance.Funds,
-		"Allowance SC":                         rg.Settings.Allowance.Funds.HumanString(),
-		"Total Spent":                          totalSpent,
-		"Total Spent SC":                       totalSpent.HumanString(),
-		"Unspent Allocated":                    unspentAllocated,
-		"Unspent Allocated SC":                 unspentAllocated.HumanString(),
-		"Unspent Unallocated":                  unspentUnallocated,
-		"Unspent Unallocated SC":               unspentUnallocated.HumanString(),
-		"Renter":                               rg,
+		"Wallet Confirmed Balance":    walletInfo.ConfirmedSiacoinBalance,
+		"Wallet Confirmed Balance SC": walletInfo.ConfirmedSiacoinBalance.HumanString(),
+		"Allowance":                   rg.Settings.Allowance.Funds,
+		"Allowance SC":                rg.Settings.Allowance.Funds.HumanString(),
+		"Total Spent":                 totalSpent,
+		"Total Spent SC":              totalSpent.HumanString(),
+		"Unspent Allocated":           unspentAllocated,
+		"Unspent Allocated SC":        unspentAllocated.HumanString(),
+		"Unspent Unallocated":         unspentUnallocated,
+		"Unspent Unallocated SC":      unspentUnallocated.HumanString(),
+		"Renter":                      rg,
 	})
 }
 
@@ -44,6 +41,19 @@ func (s siaAdmin) ScheduleInterval() string {
 func (s siaAdmin) Run() {
 	utils.SlackLog("running " + s.Name())
 
+	rg := utils.GetSiaRenter()
+	walletInfo := utils.GetWalletInfo()
+	totalSpent, _, _ := rg.FinancialMetrics.SpendingBreakdown()
+
+	unspentUnallocatedFloat, _ := totalSpent.Float64()
+	unspentAllocatedFloat, _ := totalSpent.Float64()
+	allowanceFundsFloat, _ := rg.Settings.Allowance.Funds.Float64()
+
+	unspentUnallocatedOutOfAllowancePerc := ((unspentUnallocatedFloat + unspentAllocatedFloat) / allowanceFundsFloat) * 100
+
+	if unspentUnallocatedOutOfAllowancePerc <= 25 {
+		sentry.CaptureMessage(fmt.Sprintf("Sia unspent funds are getting low (below 25%%): %.2f; Wallet confirmed balance is %s", unspentUnallocatedFloat+unspentAllocatedFloat, walletInfo.ConfirmedSiacoinBalance.HumanString()))
+	}
 }
 
 func (s siaAdmin) Runnable() bool {
