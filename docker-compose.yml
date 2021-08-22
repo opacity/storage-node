@@ -131,7 +131,9 @@ services:
       - 9984:9984
     volumes:
       - ../storage-node-data/sia-data:/sia-data
-    restart: always 
+    restart: always
+    networks:
+      - sia 
 
 # In order for each service to connect to each other, They need to be on the same
 # network and use name like "app", "db", "prometheus" for reference. Ex: "db:3306", "app:3000".

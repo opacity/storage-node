@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"strings"
 
 	sia_modules "gitlab.com/NebulousLabs/Sia/modules"
@@ -22,7 +23,18 @@ func InitSiaClient() {
 	}
 
 	opts.Password = Env.SiaApiPassword
+	if Env.GoEnv != "localhost" {
+		opts.Address = "sia:9980"
+	}
 	siaClient = sia_client.New(opts)
+}
+
+func IsSiaClientInit() error {
+	if siaClient == nil {
+		return errors.New("sia client is not initialized")
+	}
+
+	return nil
 }
 
 func UploadSiaFile(fileData, fileSiaPath string, deleteIfExisting bool) error {
@@ -61,6 +73,22 @@ func DeleteSiaFile(fileSiaPath string) error {
 
 func GetSiaAddress() string {
 	return siaClient.Address
+}
+
+func GetSiaRenter() sia_api.RenterGET {
+	rg, err := siaClient.RenterGet()
+	if err != nil {
+		LogIfError(err, nil)
+	}
+	return rg
+}
+
+func GetWalletInfo() sia_api.WalletGET {
+	wallet, err := siaClient.WalletGet()
+	if err != nil {
+		LogIfError(err, nil)
+	}
+	return wallet
 }
 
 func IsSiaSynced() bool {
