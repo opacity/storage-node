@@ -23,12 +23,15 @@ func InitSiaClient() {
 	}
 
 	opts.Password = Env.SiaApiPassword
+	if Env.GoEnv != "localhost" {
+		opts.Address = "sia:9980"
+	}
 	siaClient = sia_client.New(opts)
 }
 
 func IsSiaClientInit() error {
 	if siaClient == nil {
-		return errors.New("sia client is not initialized.")
+		return errors.New("sia client is not initialized")
 	}
 
 	return nil
