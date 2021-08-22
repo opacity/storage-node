@@ -2,6 +2,7 @@ package routes
 
 import (
 	"errors"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -85,7 +86,7 @@ func initFileSiaUploadWithRequest(request InitFileSiaUploadReq, c *gin.Context) 
 
 	siaProgressFile := models.SiaProgressFile{
 		FileID:       fileID,
-		ExpiredAt:    account.ExpirationDate(),
+		ExpiredAt:    time.Now().Add(24 * time.Hour),
 		ModifierHash: modifierHash,
 	}
 	if err := siaProgressFile.SaveSiaProgressFile(); err != nil {
