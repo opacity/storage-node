@@ -51,6 +51,16 @@ func GetAllExpiredCompletedFilesByStorageType(expiredTime time.Time, storageType
 	return fileIDs, nil
 }
 
+func GetAllExpiredCompletedFiles(expiredTime time.Time) ([]CompletedFile, error) {
+	files := []CompletedFile{}
+	if err := DB.Where("expired_at < ?", expiredTime).Find(&files).Error; err != nil {
+		utils.LogIfError(err, nil)
+		return nil, err
+	}
+
+	return files, nil
+}
+
 func DeleteAllCompletedFiles(fileIDs []string) error {
 	for fileIDsRange := range gopart.Partition(len(fileIDs), 5000) {
 		if err := DB.Where(fileIDs[fileIDsRange.Low:fileIDsRange.High]).Delete(CompletedFile{}).Error; err != nil {

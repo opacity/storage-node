@@ -47,7 +47,7 @@ func ScheduleBackgroundJobs() {
 	jobrunner.Start()
 	jobs := []BackgroundRunnable{
 		&pingStdOut{counter: 1},
-		s3Deleter{},
+		expiredCompletedFilesDeleter{},
 		s3ExpireAccess{},
 		metricCollector{},
 		unpaidAccountDeleter{},
