@@ -38,9 +38,9 @@ func (completedFile *CompletedFile) BeforeUpdate(scope *gorm.Scope) error {
 	return utils.Validator.Struct(completedFile)
 }
 
-func GetAllExpiredCompletedFiles(expiredTime time.Time) ([]string, error) {
+func GetAllExpiredCompletedFilesByStorageType(expiredTime time.Time, storageType FileStorageType) ([]string, error) {
 	files := []CompletedFile{}
-	if err := DB.Where("expired_at < ?", expiredTime).Find(&files).Error; err != nil {
+	if err := DB.Where("expired_at < ? AND storage_type = ?", expiredTime, storageType).Find(&files).Error; err != nil {
 		utils.LogIfError(err, nil)
 		return nil, err
 	}
