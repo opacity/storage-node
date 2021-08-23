@@ -30,6 +30,10 @@ func GetSiaProgressFileById(fileID string) (SiaProgressFile, error) {
 	return siaProgressFile, err
 }
 
+func DeleteAllExpiredSiaProgressFiles(expiredTime time.Time) error {
+	return DB.Where("expired_at < ?", expiredTime).Delete(SiaProgressFile{}).Error
+}
+
 func (siaProgressFile *SiaProgressFile) SaveSiaProgressFile() error {
 	return DB.Save(&siaProgressFile).Error
 }

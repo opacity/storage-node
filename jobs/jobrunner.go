@@ -58,6 +58,7 @@ func ScheduleBackgroundJobs() {
 		renewalDeleter{},
 		expiredAccountDeleter{},
 		siaAdmin{},
+		siaProgressExpiredDeleter{},
 	}
 
 	for _, s := range jobs {
