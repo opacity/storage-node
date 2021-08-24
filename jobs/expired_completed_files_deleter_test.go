@@ -9,12 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Init_S3_Deleter(t *testing.T) {
+func Test_Init_Expired_Completed_Files_Deleter(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
 }
 
-func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
+func Test_DeleteAllExpiredCompletedFilesS3(t *testing.T) {
 	s1FileID := utils.GenerateFileHandle()
 	s2FileID := utils.GenerateFileHandle()
 	s3FileID := utils.GenerateFileHandle()
@@ -51,7 +51,7 @@ func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {
 	assert.Nil(t, models.DB.Create(&s).Error)
 	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s3FileID), "foo3", ""))
 
-	testSubject := s3Deleter{}
+	testSubject := expiredCompletedFilesDeleter{}
 	testSubject.Run()
 
 	result := []models.CompletedFile{}

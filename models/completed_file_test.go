@@ -42,7 +42,7 @@ func Test_GetAllExpiredCompletedFiles(t *testing.T) {
 	}
 	assert.Nil(t, DB.Create(&s).Error)
 
-	f, err := GetAllExpiredCompletedFiles(time.Date(2011, 1, 1, 12, 0, 0, 0, time.UTC))
+	f, err := GetAllExpiredCompletedFilesByStorageType(time.Date(2011, 1, 1, 12, 0, 0, 0, time.UTC), S3)
 	assert.Nil(t, err)
 
 	assert.True(t, f[0] == firstExpired || f[0] == secondExpired)
@@ -69,12 +69,12 @@ func Test_DeleteAllCompletedFiles(t *testing.T) {
 	}
 	assert.Nil(t, DB.Create(&s2).Error)
 
-	f, _ := GetAllExpiredCompletedFiles(time.Date(2003, 1, 1, 12, 0, 0, 0, time.UTC))
+	f, _ := GetAllExpiredCompletedFilesByStorageType(time.Date(2003, 1, 1, 12, 0, 0, 0, time.UTC), S3)
 	assert.True(t, len(f) == 2)
 
 	assert.Nil(t, DeleteAllCompletedFiles([]string{s1.FileID, s2.FileID}))
 
-	f, _ = GetAllExpiredCompletedFiles(time.Date(2003, 1, 1, 12, 0, 0, 0, time.UTC))
+	f, _ = GetAllExpiredCompletedFilesByStorageType(time.Date(2003, 1, 1, 12, 0, 0, 0, time.UTC), S3)
 	assert.True(t, len(f) == 0)
 }
 
