@@ -7,7 +7,7 @@ require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/aristanetworks/goarista v0.0.0-20190308231643-e9fb69a13f45 // indirect
-	github.com/aws/aws-sdk-go v1.25.48
+	github.com/aws/aws-sdk-go v1.38.20
 	github.com/bamzi/jobrunner v0.0.0-20161019143021-273175f8b6eb
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
 	github.com/caarlos0/env/v6 v6.6.2
@@ -53,6 +53,7 @@ require (
 	github.com/swaggo/gin-swagger v1.2.0
 	github.com/swaggo/swag v1.6.4
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125
+	github.com/u2takey/ffmpeg-go v0.3.0
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb // indirect
 	golang.org/x/net v0.0.0-20210331212208-0fccb6fa2b5c // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
