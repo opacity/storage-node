@@ -361,6 +361,9 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 				}
 				firstRun = false
 				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
+				if err != nil {
+					return
+				}
 			}
 
 			uploadPart = append(uploadPart, b...)
@@ -382,9 +385,10 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 		}
 
 		if err == io.EOF {
-			completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber)
-			if uploadError != nil {
+			completedPart, err := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber)
+			if err != nil {
 				utils.AbortMultiPartUpload(awsKey, *uploadID)
+				return err
 			}
 
 			if generateThumbnail {
