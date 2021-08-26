@@ -355,7 +355,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 		if n != 0 {
 			b = b[:n]
 			if firstRun {
-				fileContentType := mimetype.Detect(b).String()
+				fileContentType = mimetype.Detect(b).String()
 				if ct, _ := SplitMime(fileContentType); ct == "image" || ct == "video" {
 					generateThumbnail = true
 				}
