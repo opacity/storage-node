@@ -1380,7 +1380,7 @@
         },
         "/api/v2/public-share/convert": {
             "post": {
-                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"size\": \"the size of the encrypted file\",\n}",
+                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -2229,8 +2229,7 @@
         "routes.PrivateToPublicObj": {
             "type": "object",
             "required": [
-                "fileHandle",
-                "size"
+                "fileHandle"
             ],
             "properties": {
                 "fileHandle": {
@@ -2238,9 +2237,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a deterministically created file handle"
-                },
-                "size": {
-                    "type": "integer"
                 }
             }
         },
