@@ -16,6 +16,7 @@ import (
 	"sync"
 
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -380,7 +381,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 		if n != 0 {
 			b = b[:n]
 			if firstRun {
-				fileContentType = http.DetectContentType(b)
+				fileContentType := mimetype.Detect(b).String()
 				if ct, _ := SplitMime(fileContentType); ct == "image" || ct == "video" {
 					generateThumbnail = true
 				}
