@@ -34,6 +34,11 @@ const (
 	DefaultPartSize  = 80 * (DefaultBlockSize + BlockOverhead)
 )
 
+type FileMetadata struct {
+	Size     int    `json:"size"`
+	FileName string `json:"name"`
+}
+
 type DownloadProgress struct {
 	RawProgress        int
 	SizeWithEncryption int
@@ -177,8 +182,8 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 }
 
 type PrivateToPublicObj struct {
-	FileHandle string `json:"fileHandle" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a deterministically created file handle"`
-	Size       int    `json:"size" binding:"required"`
+	FileHandle string `json:"fileHandle" validate:"required,len=128" minLength:"128" maxLength:"128" example:"a deterministically created file handle"`
+	// Size       int    `json:"size" validate:"required"` // "size": "the size of the encrypted file",
 }
 
 func (v *PrivateToPublicReq) getObjectRef() interface{} {
@@ -194,7 +199,7 @@ func (v *PrivateToPublicReq) getObjectRef() interface{} {
 // @description requestBody should be a stringified version of:
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
-// @description 	"size": "the size of the encrypted file",
+// @description
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -221,8 +226,18 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 
+	fileMetadata, err := utils.GetDefaultBucketObject(models.GetFileMetadataKey(hash), false)
+	if err != nil {
+		return NotFoundResponse(c, errors.New("the data does not exist"))
+	}
+
+	decryptedMetadata, err := DecryptMetadata(encryptionKey, []byte(fileMetadata))
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
 	realSize, err := getFileContentLength(hash)
-	fileSize := request.privateToPublicObj.Size
+	fileSize := decryptedMetadata.Size
 
 	if err != nil {
 		return InternalErrorResponse(c, err)
@@ -541,4 +556,18 @@ func getFileContentLength(fileID string) (int, error) {
 	}
 
 	return 0, err
+}
+
+func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
+	decryptedByteData, err := DecryptWithNonceSize(key, data)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(decryptedByteData, &fileMetadata)
+	if err != nil {
+		return
+	}
+
+	return
 }
