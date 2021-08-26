@@ -5,20 +5,25 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/getsentry/sentry-go"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 	"golang.org/x/sync/errgroup"
+
+	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
 const (
@@ -335,7 +340,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 	sentrySpanUpload := sentryMainSpan.StartChild("upload")
 	sentrySpanUpload.SetTag("upload-file-size", strconv.Itoa(decryptProgress.FileSize))
 
-	generateThumbnail, firstRun := true, true
+	generateThumbnail, firstRun := false, true
 	partForThumbnailBuf := make([]byte, 0)
 	fileContentType := ""
 
@@ -349,14 +354,15 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 
 		if n != 0 {
 			b = b[:n]
-			if generateThumbnail && firstRun {
-				fileContentType = http.DetectContentType(b)
-				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
-				if err != nil {
-					return
+			if firstRun {
+				fileContentType := mimetype.Detect(b).String()
+				if ct, _ := SplitMime(fileContentType); ct == "image" || ct == "video" {
+					generateThumbnail = true
 				}
 				firstRun = false
+				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
 			}
+
 			uploadPart = append(uploadPart, b...)
 
 			if int64(len(uploadPart)) == utils.MinMultiPartSize {
@@ -430,55 +436,87 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentType string, sentryMainSpan *sentry.Span) error {
 	sentrySpanGenerateThumbnail := sentryMainSpan.StartChild("thumbnail-generation")
 	sentrySpanGenerateThumbnail.SetTag("content-type", fileContentType)
-	thumbnailKey := models.GetPublicThumbnailKey(fileID)
+	defer sentrySpanGenerateThumbnail.Finish()
 
+	thumbnailKey := models.GetPublicThumbnailKey(fileID)
+	ct, _ := SplitMime(fileContentType)
 	ffprobeVideoDurationCmd := exec.Command("ffprobe",
-		"-show_entries",
-		"format=duration",
+		"-f", "image2pipe",
 		"-v", "quiet",
-		"-of", "csv=p=0",
+		"-show_format",
+		"-show_streams",
+		"-of", "json",
 		"-",
 	)
 
+	if ct == "video" {
+		ffprobeVideoDurationCmd.Args = RemoveIndexFromSliceString(ffprobeVideoDurationCmd.Args, 1)
+		ffprobeVideoDurationCmd.Args = RemoveIndexFromSliceString(ffprobeVideoDurationCmd.Args, 1)
+	}
+
 	ffprobeVideoDurationCmd.Stdin = bytes.NewBuffer(fileBytes)
-	videoDurationOutput, err := ffprobeVideoDurationCmd.CombinedOutput()
-	if err != nil {
-		return err
+	videoDurationOutput, _ := ffprobeVideoDurationCmd.Output()
+	type inputProbeInfo struct {
+		Streams []struct {
+			CodecType string `json:"codec_type"`
+			Width     int    `json:"width"`
+			Duration  string `json:"duration"`
+		} `json:"streams"`
 	}
-	videoDurationString := strings.TrimSpace(string(videoDurationOutput))
+	iProbeInfo := &inputProbeInfo{}
+	json.Unmarshal(videoDurationOutput, iProbeInfo)
+	videoDurationString := ""
+	videoWidth := 0
+
+	for _, s := range iProbeInfo.Streams {
+		if s.CodecType == "video" {
+			videoDurationString = s.Duration
+			videoWidth = s.Width
+		}
+	}
+
 	videoDurationFloat32, _ := strconv.ParseFloat(videoDurationString, 32)
-	videoDuration := int(videoDurationFloat32)
-	cutVideoDuration := videoDuration / 5
 
-	ffmpegThumbnailCmd := exec.Command("ffmpeg",
-		"-y",
-		"-ss", strconv.Itoa(cutVideoDuration),
-		"-skip_frame", "nokey",
-		"-i", "pipe:0",
-		"-vsync", "0",
-		"-vf", "scale=1024:-1",
-		"-f", "image2",
-		"-q:v", "0",
-		"-frames:v", "1",
-		"pipe:1")
-	if cutVideoDuration == 0 {
-		ffmpegThumbnailCmd.Args = RemoveIndexFromSliceString(ffmpegThumbnailCmd.Args, 2)
-		ffmpegThumbnailCmd.Args = RemoveIndexFromSliceString(ffmpegThumbnailCmd.Args, 2)
+	buf := bytes.NewBuffer(nil)
+
+	ffmpegOutputArgs := ffmpeg.KwArgs{
+		"frames:v": 1,
+		"q:v":      2,
+		"f":        "image2pipe",
+		"ss":       fmt.Sprintf("%.1f", videoDurationFloat32/5),
 	}
-	ffmpegThumbnailCmd.Stdin = bytes.NewBuffer(fileBytes)
-	ffmpegThumbnailCmdOutput, err := ffmpegThumbnailCmd.Output()
+	if videoWidth >= 1024 {
+		ffmpegOutputArgs["filter:v"] = "scale='1024:-1'" // don't upscale
+	}
+
+	ffmpegInputArgs := ffmpeg.KwArgs{
+		"loglevel": "error",
+	}
+
+	if ct == "image" {
+		ffmpegInputArgs["f"] = "image2pipe"
+	}
+
+	err := ffmpeg.Input("pipe:0", ffmpegInputArgs).
+		Output("pipe:1", ffmpegOutputArgs).
+		OverWriteOutput().
+		WithInput(bytes.NewBuffer(fileBytes)).
+		WithOutput(buf, os.Stdout).
+		Run()
+
 	if err != nil {
 		return err
 	}
 
-	// thumbnail is always image/jpeg
-	if err = utils.SetDefaultBucketObject(thumbnailKey, string(ffmpegThumbnailCmdOutput), "image/jpeg"); err != nil {
-		return err
+	if buf.Len() != 0 {
+		// thumbnail is always image/jpeg
+		if err := utils.SetDefaultBucketObject(thumbnailKey, buf.String(), "image/jpeg"); err != nil {
+			return err
+		}
+		return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)
 	}
 
-	defer sentrySpanGenerateThumbnail.Finish()
-
-	return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)
+	return nil
 }
 
 func RemoveIndexFromSliceString(s []string, index int) []string {

@@ -7,7 +7,7 @@ require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/aristanetworks/goarista v0.0.0-20190308231643-e9fb69a13f45 // indirect
-	github.com/aws/aws-sdk-go v1.25.48
+	github.com/aws/aws-sdk-go v1.38.20
 	github.com/bamzi/jobrunner v0.0.0-20161019143021-273175f8b6eb
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32 // indirect
 	github.com/caarlos0/env/v6 v6.6.2
@@ -20,6 +20,7 @@ require (
 	github.com/erikstmartin/go-testdb v0.0.0-20160219214506-8d10e4a1bae5 // indirect
 	github.com/ethereum/go-ethereum v1.9.25
 	github.com/fjl/memsize v0.0.0-20180929194037-2a09253e352a // indirect
+	github.com/gabriel-vasile/mimetype v1.3.1
 	github.com/getsentry/sentry-go v0.11.0
 	github.com/gin-contrib/cors v0.0.0-20190301062745-f9e10995c85a
 	github.com/gin-gonic/gin v1.7.0
@@ -52,10 +53,10 @@ require (
 	github.com/swaggo/gin-swagger v1.2.0
 	github.com/swaggo/swag v1.6.4
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125
+	github.com/u2takey/ffmpeg-go v0.3.0
 	gitlab.com/NebulousLabs/Sia v1.5.6
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210403161142-5e06dd20ab57 // indirect
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
