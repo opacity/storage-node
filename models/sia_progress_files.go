@@ -7,7 +7,6 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-// @TODO: Handle Sia file expiration; via cron job? past 60? 30? days after expiration?
 type SiaProgressFile struct {
 	FileID       string    `gorm:"primary_key" json:"fileID" validate:"required,len=64" minLength:"64" maxLength:"64"`
 	CreatedAt    time.Time `json:"createdAt"`

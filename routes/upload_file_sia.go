@@ -56,12 +56,6 @@ func uploadFileSia(c *gin.Context) error {
 		return err
 	}
 
-	// @TODO: Set TTL somehow; cron job?
-	// Handle in async
-	// if err := utils.UploadSiaFile(request.FileData, fileID, false); err != nil {
-	// 	return InternalErrorResponse(c, err)
-	// }
-
 	// Fire and forget
 	go utils.UploadSiaFile(request.FileData, fileID, false)
 
