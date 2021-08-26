@@ -9,8 +9,7 @@ RUN apt-get clean
 RUN rm -rf /var/lib/apt/lists/*
 
 RUN curl -O -L https://aws-codedeploy-deployments-dev.s3.us-east-2.amazonaws.com/ffmpeg-4.2.2-opacity-amd64.tar.xz
-RUN unar ffmpeg-4.2.2-opacity-amd64.tar.xz && \
-      cd ffmpeg-4.2.2-opacity-amd64 && mv ff* /usr/local/bin/
+RUN unar ffmpeg-4.2.2-opacity-amd64.tar.xz && cd ffmpeg-4.2.2-opacity-amd64 && chmod a+x * && mv ff* /usr/local/bin/
 
 RUN mkdir -p "$GOPATH/src/github.com/opacity/storage-node"
 WORKDIR "$GOPATH/src/github.com/opacity/storage-node"
