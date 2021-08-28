@@ -43,16 +43,18 @@ func (s siaAdmin) Run() {
 
 	rg := utils.GetSiaRenter()
 	walletInfo := utils.GetWalletInfo()
-	totalSpent, _, _ := rg.FinancialMetrics.SpendingBreakdown()
+	_, _, unspentUnallocated := rg.FinancialMetrics.SpendingBreakdown()
 
-	unspentUnallocatedFloat, _ := totalSpent.Float64()
-	unspentAllocatedFloat, _ := totalSpent.Float64()
+	unspentUnallocatedFloat, _ := unspentUnallocated.Float64()
 	allowanceFundsFloat, _ := rg.Settings.Allowance.Funds.Float64()
 
-	unspentUnallocatedOutOfAllowancePerc := ((unspentUnallocatedFloat + unspentAllocatedFloat) / allowanceFundsFloat) * 100
+	unspentUnallocatedOutOfAllowancePerc := (unspentUnallocatedFloat / allowanceFundsFloat) * 100
 
-	if unspentUnallocatedOutOfAllowancePerc <= 25 {
-		sentry.CaptureMessage(fmt.Sprintf("Sia unspent funds are getting low (below 25%%): %.2f; Wallet confirmed balance is %s", unspentUnallocatedFloat+unspentAllocatedFloat, walletInfo.ConfirmedSiacoinBalance.HumanString()))
+	if unspentUnallocatedOutOfAllowancePerc <= 15 {
+		sentry.CaptureMessage(fmt.Sprintf("Sia unspent unallocated funds are getting low (below 25%% of allowance): %.2f | %s; Wallet confirmed balance is %s. Allowance should be increased.",
+			unspentUnallocatedOutOfAllowancePerc,
+			unspentUnallocated.HumanString(),
+			walletInfo.ConfirmedSiacoinBalance.HumanString()))
 	}
 }
 
