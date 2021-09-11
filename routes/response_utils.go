@@ -121,14 +121,15 @@ func OkResponse(c *gin.Context, response interface{}) error {
 
 func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 	injectToRecoverFromPanic := func(c *gin.Context) {
+		sentryOptions := sentry.ContinueFromRequest(c.Request)
+
 		span := sentry.StartSpan(c.Request.Context(), c.Request.Method,
 			sentry.TransactionName(c.Request.URL.String()),
+			sentryOptions,
 		)
-
 		span.Status = sentry.SpanStatusOK
+
 		setUpSession(c)
-		c.Request = c.Request.Clone(span.Context())
-		sentry.ContinueFromRequest(c.Request)
 
 		defer func() {
 			// Capture the error

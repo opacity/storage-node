@@ -231,3 +231,25 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 	// check that from the account's perspective, it is still unpaid
 	assert.Equal(t, models.InitialPaymentInProgress, account.PaymentStatus)
 }
+
+func Test_UpdateApiVersion(t *testing.T) {
+	account, privateKey := returnValidAccountAndPrivateKey(t)
+	validReq := returnValidGetAccountReq(t, accountGetReqObj{
+		Timestamp: time.Now().Unix(),
+	}, privateKey)
+	account.ApiVersion = 1
+	account.StorageLocation = "1"
+
+	if err := models.DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	w := httpPostRequestHelperForTest(t, AccountUpdateApiVersion, "v2", validReq)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "account apiVersion updated to v2")
+
+	updatedAccount, err := models.GetAccountById(account.AccountID)
+	assert.Nil(t, err)
+	assert.Equal(t, updatedAccount.ApiVersion, 2)
+}
