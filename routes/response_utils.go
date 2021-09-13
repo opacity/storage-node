@@ -130,6 +130,8 @@ func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 		span.Status = sentry.SpanStatusOK
 
 		setUpSession(c)
+		c.Request = c.Request.Clone(span.Context())
+		sentry.ContinueFromRequest(c.Request)
 
 		defer func() {
 			// Capture the error
