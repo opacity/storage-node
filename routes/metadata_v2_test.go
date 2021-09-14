@@ -472,3 +472,45 @@ func Test_Delete_MetadataV2_Success(t *testing.T) {
 	assert.Equal(t, int64(0), accountFromDB.TotalMetadataSizeInBytes)
 	assert.Equal(t, 0, accountFromDB.TotalFolders)
 }
+
+func Test_Delete_MetadataMultipleV2_Success(t *testing.T) {
+	setupTests(t)
+	numberOfMetadatas := 10
+	accountID, privateKey := generateValidateAccountId(t)
+	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
+	publicKeyBin, _ := hex.DecodeString(publicKey)
+
+	generatedMetadataV2Keys, generatedMetadatasSize := GenerateMetadataMultipleV2(publicKeyBin, numberOfMetadatas, t)
+
+	deleteMetadataV2Obj := metadataMultipleV2KeyObject{
+		MetadataV2Keys: generatedMetadataV2Keys,
+		Timestamp:      time.Now().Unix(),
+	}
+	v, b := returnValidVerificationAndRequestBody(t, deleteMetadataV2Obj, privateKey)
+
+	post := metadataMultipleV2KeyReq{
+		verification: v,
+		requestBody: requestBody{
+			RequestBody: b.RequestBody,
+		},
+	}
+
+	account := CreatePaidAccountForTest(t, accountID)
+	account.TotalFolders = numberOfMetadatas
+	account.TotalMetadataSizeInBytes = generatedMetadatasSize
+	err := models.DB.Save(&account).Error
+	assert.Nil(t, err)
+
+	accountFromDB, _ := models.GetAccountById(account.AccountID)
+	assert.Equal(t, generatedMetadatasSize, accountFromDB.TotalMetadataSizeInBytes)
+	assert.Equal(t, numberOfMetadatas, accountFromDB.TotalFolders)
+
+	w := httpPostRequestHelperForTest(t, MetadataMultipleV2DeletePath, "v2", post)
+
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), metadataV2DeletedRes.Status)
+	accountFromDB, _ = models.GetAccountById(account.AccountID)
+	assert.Equal(t, int64(0), accountFromDB.TotalMetadataSizeInBytes)
+	assert.Equal(t, 0, accountFromDB.TotalFolders)
+}

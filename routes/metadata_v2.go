@@ -641,7 +641,8 @@ func deleteMetadataMultipleV2(c *gin.Context) error {
 	countOldMetadatasV2 := 0
 	var deleteKvKeys utils.KVKeys
 	for _, metadataV2Key := range requestBodyParsed.MetadataV2Keys {
-		permissionHashInBadgerKey := getPermissionHashV2KeyForBadger(metadataV2Key)
+		metadataV2KeyBinsString := string(metadataV2KeyBins[metadataV2Key])
+		permissionHashInBadgerKey := getPermissionHashV2KeyForBadger(metadataV2KeyBinsString)
 		if permissionHashInBadger, ok := (*permissionHashKvPairs)[permissionHashInBadgerKey]; ok {
 			if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBins[metadataV2Key], permissionHashInBadger, c); err != nil {
 				return err
@@ -649,10 +650,10 @@ func deleteMetadataMultipleV2(c *gin.Context) error {
 			deleteKvKeys = append(deleteKvKeys, permissionHashInBadgerKey)
 		}
 
-		if oldMetadataV2, ok := (*oldMetadatasV2)[metadataV2Key]; ok {
+		if oldMetadataV2, ok := (*oldMetadatasV2)[metadataV2KeyBinsString]; ok {
 			lenOldMetadatasV2 += len(oldMetadataV2)
 			countOldMetadatasV2++
-			deleteKvKeys = append(deleteKvKeys, string(metadataV2KeyBins[metadataV2Key]))
+			deleteKvKeys = append(deleteKvKeys, metadataV2KeyBinsString)
 		}
 	}
 
