@@ -558,6 +558,9 @@ func deleteMetadataV2(c *gin.Context) error {
 	}
 
 	oldMetadataV2, _, err := utils.GetValueFromKV(string(metadataV2KeyBin))
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
 
 	if err := account.RemoveMetadata(int64(len(oldMetadataV2))); err != nil {
 		return InternalErrorResponse(c, err)
