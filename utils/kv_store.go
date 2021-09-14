@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"time"
 
-	"fmt"
-
 	"os"
 
 	"github.com/dgraph-io/badger"
@@ -155,8 +153,6 @@ func BatchGet(ks *KVKeys) (kvs *KVPairs, err error) {
 			if err != nil {
 				return err
 			}
-
-			fmt.Println(item.UserMeta())
 
 			val := ""
 			if item != nil {
