@@ -308,6 +308,12 @@ func (account *Account) CanRemoveMetadata() bool {
 	return intendedNumberOfMetadatas >= 0
 }
 
+/*CanRemoveMetadataMultiple checks if an account can delete multiple metadatas*/
+func (account *Account) CanRemoveMetadataMultiple(numberOfMetadatas int) bool {
+	intendedNumberOfMetadatas := account.TotalFolders - numberOfMetadatas
+	return intendedNumberOfMetadatas >= 0
+}
+
 /*CanUpdateMetadata deducts the old size of a metadata, adds the size of the new value the user has sent,
 and makes sure the intended total metadata size is below the amount the user is allowed to have*/
 func (account *Account) CanUpdateMetadata(oldMetadataSizeInBytes, newMetadataSizeInBytes int64) bool {
@@ -359,6 +365,20 @@ func (account *Account) RemoveMetadata(oldMetadataSizeInBytes int64) error {
 	if account.CanUpdateMetadata(oldMetadataSizeInBytes, 0) && account.CanRemoveMetadata() {
 		account.TotalMetadataSizeInBytes = account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes
 		account.TotalFolders--
+		err = DB.Model(account).Updates(map[string]interface{}{
+			"total_folders":                account.TotalFolders,
+			"total_metadata_size_in_bytes": account.TotalMetadataSizeInBytes,
+		}).Error
+	}
+	return err
+}
+
+/*RemoveMetadata removes multiple metadata and their size from TotalMetadataSizeInBytes*/
+func (account *Account) RemoveMetadataMultiple(oldMetadataSizeInBytes int64, numberOfMetadatas int) error {
+	err := errors.New("cannot remove metadata or its size")
+	if account.CanUpdateMetadata(oldMetadataSizeInBytes, 0) && account.CanRemoveMetadataMultiple(numberOfMetadatas) {
+		account.TotalMetadataSizeInBytes = account.TotalMetadataSizeInBytes - oldMetadataSizeInBytes
+		account.TotalFolders -= numberOfMetadatas
 		err = DB.Model(account).Updates(map[string]interface{}{
 			"total_folders":                account.TotalFolders,
 			"total_metadata_size_in_bytes": account.TotalMetadataSizeInBytes,
