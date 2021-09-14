@@ -1099,6 +1099,48 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.metadataMultipleV2KeyObject:
+    properties:
+      metadataV2Keys:
+        example:
+        - public keys for the metadataV2 encoded to base64url
+        items:
+          type: string
+        type: array
+      timestamp:
+        type: integer
+    required:
+    - metadataV2Keys
+    - timestamp
+    type: object
+  routes.metadataMultipleV2KeyReq:
+    properties:
+      metadataMultipleV2KeyObject:
+        $ref: '#/definitions/routes.metadataMultipleV2KeyObject'
+        type: object
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
+        type: string
+      requestBody:
+        example: look at description for example
+        type: string
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
+    required:
+    - publicKey
+    - requestBody
+    - signature
+    type: object
   routes.metadataV2KeyObject:
     properties:
       metadataV2Key:
@@ -1715,19 +1757,19 @@ paths:
       consumes:
       - application/json
       description: |-
-        check the renewalV2 status
+        check the renewal status
         requestBody should be a stringified version of (values are just examples):
         {
         "metadataKeys": "["someKey", "someOtherKey]",
         "fileHandles": "["someHandle", "someOtherHandle]",
         }
       parameters:
-      - description: check renewalV2 status object
+      - description: check renewal status object
         in: body
-        name: checkRenewalV2StatusReq
+        name: checkRenewalStatusReq
         required: true
         schema:
-          $ref: '#/definitions/routes.checkRenewalV2StatusReq'
+          $ref: '#/definitions/routes.checkRenewalStatusReq'
       produces:
       - application/json
       responses:
@@ -1747,7 +1789,7 @@ paths:
           description: some information about the internal error
           schema:
             type: string
-      summary: check the renewalV2 status
+      summary: check the renewal status
   /api/v1/renew/invoice:
     post:
       consumes:
@@ -1758,19 +1800,19 @@ paths:
         {
         }
       parameters:
-      - description: get renewalV2 invoice object
+      - description: get renewal invoice object
         in: body
-        name: getRenewalV2AccountInvoiceReq
+        name: getRenewalAccountInvoiceReq
         required: true
         schema:
-          $ref: '#/definitions/routes.getRenewalV2AccountInvoiceReq'
+          $ref: '#/definitions/routes.getRenewalAccountInvoiceReq'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.getRenewalV2AccountInvoiceRes'
+            $ref: '#/definitions/routes.getRenewalAccountInvoiceRes'
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
           schema:
@@ -2283,6 +2325,49 @@ paths:
           schema:
             type: string
       summary: delete a metadataV2
+  /api/v2/metadata/delete-multiple:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "metadataV2Keys": ["public key for the metadataV2 encoded to base64", "another public key for the metadataV2 encoded to base64", "..."],
+        "timestamp": 1557346389
+        }
+      parameters:
+      - description: object for endpoint that only needs an array of metadataV2Keys
+          and timestamp
+        in: body
+        name: metadataMultipleV2KeyReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.metadataMultipleV2KeyReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: bad request, incorrect key length
+          schema:
+            type: string
+        "403":
+          description: subscription expired, or the invoice resonse
+          schema:
+            type: string
+        "404":
+          description: account not found
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: delete multiple metadataV2, if a key is not found, it won't be treated
+        as an error
   /api/v2/metadata/get:
     post:
       consumes:

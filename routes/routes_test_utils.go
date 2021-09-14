@@ -3,6 +3,7 @@ package routes
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"math/big"
@@ -396,4 +397,68 @@ func abortIfNotTesting(t *testing.T) {
 	if !utils.IsTestEnv() {
 		assert.Fail(t, "should only be calling this method while testing")
 	}
+}
+
+func GenerateMetadataV2(publicKeyBin []byte, t *testing.T) (testMetadataV2Key string, testMetadataV2Value string) {
+	abortIfNotTesting(t)
+
+	ttl := utils.TestValueTimeToLive
+
+	testMetadataV2Key = utils.GenerateMetadataV2Key()
+	testMetadataV2Value = utils.GenerateMetadataV2Key()
+	testMetadataV2KeyBin, err := base64.URLEncoding.DecodeString(testMetadataV2Key)
+	if err != nil {
+		t.Fatalf("error decoding metadata v2 key")
+	}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin, c)
+	permissionHashKey := getPermissionHashV2KeyForBadger(string(testMetadataV2KeyBin))
+
+	if err := utils.BatchSet(&utils.KVPairs{
+		string(testMetadataV2KeyBin): testMetadataV2Value,
+		permissionHashKey:            permissionHash,
+	}, ttl); err != nil {
+		t.Fatalf("there should not have been an error while saving the metadata v2 test values")
+	}
+
+	return
+}
+
+func GenerateMetadataMultipleV2(publicKeyBin []byte, numberOfMetadatas int, t *testing.T) (metadataV2Keys []string, generatedMetadatasSizeInt64 int64) {
+	abortIfNotTesting(t)
+
+	if numberOfMetadatas < 1 {
+		t.Fatalf("can't generate 0 metadatas")
+	}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	metadataKvPairs := utils.KVPairs{}
+	generatedMetadatasSize := 0
+
+	for i := 0; i < numberOfMetadatas; i++ {
+		testMetadataV2Key := utils.GenerateMetadataV2Key()
+		testMetadataV2Value := utils.GenerateMetadataV2Key()
+		generatedMetadatasSize += len(testMetadataV2Value)
+
+		testMetadataV2KeyBin, err := base64.URLEncoding.DecodeString(testMetadataV2Key)
+		if err != nil {
+			t.Fatalf("error decoding metadata v2 key")
+		}
+		testMetadataV2KeyBinString := string(testMetadataV2KeyBin)
+		metadataKvPairs[testMetadataV2KeyBinString] = testMetadataV2Value
+		metadataV2Keys = append(metadataV2Keys, testMetadataV2Key)
+
+		permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin, c)
+		permissionHashKey := getPermissionHashV2KeyForBadger(testMetadataV2KeyBinString)
+		metadataKvPairs[permissionHashKey] = permissionHash
+	}
+
+	if err := utils.BatchSet(&metadataKvPairs, utils.TestValueTimeToLive*10); err != nil {
+		t.Fatalf("there should not have been an error while saving the metadata v2 test values")
+	}
+
+	generatedMetadatasSizeInt64 = int64(generatedMetadatasSize)
+
+	return
 }

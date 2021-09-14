@@ -151,7 +151,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
 	}, privateKey)
-	//	// Add account to DB
+	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
