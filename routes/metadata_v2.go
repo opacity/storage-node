@@ -46,7 +46,7 @@ type metadataV2KeyObject struct {
 }
 
 type metadataMultipleV2KeyObject struct {
-	MetadataV2Keys []string `json:"metadataV2Keys" validate:"required,gt=0,,dive,base64url" example:"public keys for the metadataV2 encoded to base64url"`
+	MetadataV2Keys []string `json:"metadataV2Keys" validate:"gt=0,required,dive,base64url" example:"public keys for the metadataV2 encoded to base64url"`
 	Timestamp      int64    `json:"timestamp" validate:"required"`
 }
 
