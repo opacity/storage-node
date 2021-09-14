@@ -3,6 +3,7 @@ package routes
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"math/big"
@@ -396,4 +397,30 @@ func abortIfNotTesting(t *testing.T) {
 	if !utils.IsTestEnv() {
 		assert.Fail(t, "should only be calling this method while testing")
 	}
+}
+
+func GenerateMetadataV2(publicKeyBin []byte, t *testing.T) (testMetadataV2Key string, testMetadataV2Value string) {
+	abortIfNotTesting(t)
+
+	ttl := utils.TestValueTimeToLive
+
+	testMetadataV2Key = utils.GenerateMetadataV2Key()
+	testMetadataV2Value = utils.GenerateMetadataV2Key()
+	testMetadataV2KeyBin, err := base64.URLEncoding.DecodeString(testMetadataV2Key)
+	if err != nil {
+		t.Fatalf("error decoding metadata v2 key")
+	}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin, c)
+	permissionHashKey := getPermissionHashV2KeyForBadger(string(testMetadataV2KeyBin))
+
+	if err := utils.BatchSet(&utils.KVPairs{
+		string(testMetadataV2KeyBin): testMetadataV2Value,
+		permissionHashKey:            permissionHash,
+	}, ttl); err != nil {
+		t.Fatalf("there should not have been an error while saving the metadata v2 test values")
+	}
+
+	return
 }
