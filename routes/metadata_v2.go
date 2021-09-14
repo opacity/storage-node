@@ -45,10 +45,21 @@ type metadataV2KeyObject struct {
 	Timestamp     int64  `json:"timestamp" validate:"required"`
 }
 
+type metadataMultipleV2KeyObject struct {
+	MetadataV2Key []string `json:"metadataV2Key" validate:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
+	Timestamp     int64    `json:"timestamp" validate:"required"`
+}
+
 type metadataV2KeyReq struct {
 	verification
 	requestBody
 	metadataV2KeyObject metadataV2KeyObject
+}
+
+type metadataMultipleV2KeyReq struct {
+	verification
+	requestBody
+	metadataMultipleV2KeyObject metadataMultipleV2KeyObject
 }
 
 type metadataV2PublicKeyReq struct {
@@ -75,6 +86,10 @@ func (v *updateMetadataV2Req) getObjectRef() interface{} {
 
 func (v *metadataV2KeyReq) getObjectRef() interface{} {
 	return &v.metadataV2KeyObject
+}
+
+func (v *metadataMultipleV2KeyReq) getObjectRef() interface{} {
+	return &v.metadataMultipleV2KeyObject
 }
 
 // GetMetadataV2Handler godoc
@@ -149,8 +164,8 @@ func UpdateMetadataV2Handler() gin.HandlerFunc {
 
 // DeleteMetadataV2Handler godoc
 // @Summary delete a metadataV2
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param metadataV2KeyReq body routes.metadataV2KeyReq true "object for endpoints that only need metadataV2Key and timestamp"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
@@ -168,6 +183,29 @@ func UpdateMetadataV2Handler() gin.HandlerFunc {
 /*DeleteMetadataV2Handler is a handler for deleting a metadataV2*/
 func DeleteMetadataV2Handler() gin.HandlerFunc {
 	return ginHandlerFunc(deleteMetadataV2)
+}
+
+// DeleteMetadataMultipleV2Handler godoc
+// @Summary delete multiple metadataV2
+// @Accept json
+// @Produce json
+// @Param metadataMultipleV2KeyReq body routes.metadataMultipleV2KeyReq true "object for endpoints that only need metadataV2Key and timestamp"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"metadataV2Key": ["public key for the metadataV2 encoded to base64", "another public key for the metadataV2 encoded to base64", "..."],
+// @description 	"timestamp": 1557346389
+// @description }
+// @Success 200 {object} routes.StatusRes
+// @Failure 404 {string} string "account not found"
+// @Failure 403 {string} string "subscription expired, or the invoice resonse"
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 400 {string} string "bad request, unable to parse b64: (with the error)"
+// @Failure 400 {string} string "bad request, incorrect key length"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v2/metadata/delete-multiple [post]
+/*DeleteMetadataMultipleV2Handler is a handler for deleting a metadataV2*/
+func DeleteMetadataMultipleV2Handler() gin.HandlerFunc {
+	return ginHandlerFunc(deleteMetadataMultipleV2)
 }
 
 func getMetadataV2(c *gin.Context) error {
@@ -530,6 +568,32 @@ func deleteMetadataV2(c *gin.Context) error {
 		permissionHashKey,
 	}); err != nil {
 		return InternalErrorResponse(c, err)
+	}
+
+	return OkResponse(c, metadataV2DeletedRes)
+}
+
+func deleteMetadataMultipleV2(c *gin.Context) error {
+	request := metadataMultipleV2KeyReq{}
+
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyIfPaidWithContext(account, c); err != nil {
+		return err
+	}
+
+	requestBodyParsed := metadataMultipleV2KeyObject{}
+
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
+		return err
 	}
 
 	return OkResponse(c, metadataV2DeletedRes)
