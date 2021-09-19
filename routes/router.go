@@ -130,6 +130,9 @@ const (
 	/*MetadataV2DeletePath is the path for deleting a metadata*/
 	MetadataV2DeletePath = "/metadata/delete"
 
+	/*MetadataMultipleV2DeletePath is the path for deleting multiple metadata*/
+	MetadataMultipleV2DeletePath = "/metadata/delete-multiple"
+
 	/*InitUploadPublicPath is the path for initiating the upload of files for public sharing*/
 	InitUploadPublicPath = "/init-upload-public"
 
@@ -273,6 +276,7 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	v2Router.POST(MetadataV2GetPath, GetMetadataV2Handler())
 	v2Router.POST(MetadataV2GetPublicPath, GetMetadataV2PublicHandler())
 	v2Router.POST(MetadataV2DeletePath, DeleteMetadataV2Handler())
+	v2Router.POST(MetadataMultipleV2DeletePath, DeleteMetadataMultipleV2Handler())
 
 	v2Router.POST(InitUploadPublicPath, InitFileUploadPublicHandler())
 	v2Router.POST(UploadPublicPath, UploadFilePublicHandler())

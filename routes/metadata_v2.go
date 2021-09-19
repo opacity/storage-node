@@ -17,11 +17,12 @@ import (
 )
 
 const metadataIncorrectKeyLength = "bad request, incorrect key length"
+const MetadataExpirationOffset = 24 * time.Hour * 60
 
 // must be sorted alphabetically for JSON marshaling/stringifying
 type updateMetadataV2Object struct {
 	IsPublic         bool     `json:"isPublic"`
-	MetadataV2Edges  []string `json:"metadataV2Edges" validate:"required,dive,required,base64url,len=12" example:"the edges to add to your account metadataV2 encoded to base64url"`
+	MetadataV2Edges  []string `json:"metadataV2Edges" validate:"required,dive,base64url,len=12" example:"the edges to add to your account metadataV2 encoded to base64url"`
 	MetadataV2Key    string   `json:"metadataV2Key" validate:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
 	MetadataV2Sig    string   `json:"metadataV2Sig" validate:"required,base64url,len=88" example:"a signature encoded to base64url confirming the metadata change, the publickey will be a key for the metadataV2"`
 	MetadataV2Vertex string   `json:"metadataV2Vertex" validate:"required,base64url" example:"the vertex to add to your account metadataV2 encoded to base64url"`
@@ -45,10 +46,21 @@ type metadataV2KeyObject struct {
 	Timestamp     int64  `json:"timestamp" validate:"required"`
 }
 
+type metadataMultipleV2KeyObject struct {
+	MetadataV2Keys []string `json:"metadataV2Keys" validate:"gt=0,required,dive,base64url" example:"public keys for the metadataV2 encoded to base64url"`
+	Timestamp      int64    `json:"timestamp" validate:"required"`
+}
+
 type metadataV2KeyReq struct {
 	verification
 	requestBody
 	metadataV2KeyObject metadataV2KeyObject
+}
+
+type metadataMultipleV2KeyReq struct {
+	verification
+	requestBody
+	metadataMultipleV2KeyObject metadataMultipleV2KeyObject
 }
 
 type metadataV2PublicKeyReq struct {
@@ -75,6 +87,10 @@ func (v *updateMetadataV2Req) getObjectRef() interface{} {
 
 func (v *metadataV2KeyReq) getObjectRef() interface{} {
 	return &v.metadataV2KeyObject
+}
+
+func (v *metadataMultipleV2KeyReq) getObjectRef() interface{} {
+	return &v.metadataMultipleV2KeyObject
 }
 
 // GetMetadataV2Handler godoc
@@ -149,8 +165,8 @@ func UpdateMetadataV2Handler() gin.HandlerFunc {
 
 // DeleteMetadataV2Handler godoc
 // @Summary delete a metadataV2
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param metadataV2KeyReq body routes.metadataV2KeyReq true "object for endpoints that only need metadataV2Key and timestamp"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
@@ -168,6 +184,29 @@ func UpdateMetadataV2Handler() gin.HandlerFunc {
 /*DeleteMetadataV2Handler is a handler for deleting a metadataV2*/
 func DeleteMetadataV2Handler() gin.HandlerFunc {
 	return ginHandlerFunc(deleteMetadataV2)
+}
+
+// DeleteMetadataMultipleV2Handler godoc
+// @Summary delete multiple metadataV2, if a key is not found, it won't be treated as an error
+// @Accept json
+// @Produce json
+// @Param metadataMultipleV2KeyReq body routes.metadataMultipleV2KeyReq true "object for endpoint that only needs an array of metadataV2Keys and timestamp"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description 	"metadataV2Keys": ["public key for the metadataV2 encoded to base64", "another public key for the metadataV2 encoded to base64", "..."],
+// @description 	"timestamp": 1557346389
+// @description }
+// @Success 200 {object} routes.StatusRes
+// @Failure 404 {string} string "account not found"
+// @Failure 403 {string} string "subscription expired, or the invoice resonse"
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 400 {string} string "bad request, unable to parse b64: (with the error)"
+// @Failure 400 {string} string "bad request, incorrect key length"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v2/metadata/delete-multiple [post]
+/*DeleteMetadataMultipleV2Handler is a handler for deleting a metadataV2*/
+func DeleteMetadataMultipleV2Handler() gin.HandlerFunc {
+	return ginHandlerFunc(deleteMetadataMultipleV2)
 }
 
 func getMetadataV2(c *gin.Context) error {
@@ -322,14 +361,15 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
+	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
+	// be deleted too soon
+	ttl := time.Until(time.Now().Add(MetadataExpirationOffset))
 	oldMetadataV2, _, err := utils.GetValueFromKV(string(metadataV2KeyBin))
 
 	if err != nil {
 		if err = account.IncrementMetadataCount(); err != nil {
 			return ForbiddenResponse(c, err)
 		}
-
-		ttl := time.Until(account.ExpirationDate())
 
 		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin, c)
 		permissionHashKey := getPermissionHashV2KeyForBadger(string(metadataV2KeyBin))
@@ -453,8 +493,6 @@ func updateMetadataV2(c *gin.Context) error {
 		return ForbiddenResponse(c, err)
 	}
 
-	ttl := time.Until(account.ExpirationDate())
-
 	if err := utils.BatchSet(&utils.KVPairs{
 		string(metadataV2KeyBin): newMetadataV2,
 		permissionHashKey:        permissionHashInBadger,
@@ -520,6 +558,9 @@ func deleteMetadataV2(c *gin.Context) error {
 	}
 
 	oldMetadataV2, _, err := utils.GetValueFromKV(string(metadataV2KeyBin))
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
 
 	if err := account.RemoveMetadata(int64(len(oldMetadataV2))); err != nil {
 		return InternalErrorResponse(c, err)
@@ -529,6 +570,98 @@ func deleteMetadataV2(c *gin.Context) error {
 		string(metadataV2KeyBin),
 		permissionHashKey,
 	}); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	return OkResponse(c, metadataV2DeletedRes)
+}
+
+func deleteMetadataMultipleV2(c *gin.Context) error {
+	request := metadataMultipleV2KeyReq{}
+
+	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
+		err = fmt.Errorf("bad request, unable to parse request body: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyIfPaidWithContext(account, c); err != nil {
+		return err
+	}
+
+	requestBodyParsed := metadataMultipleV2KeyObject{}
+
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
+		return err
+	}
+
+	publicKeyBin, err := hex.DecodeString(request.PublicKey)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse hex: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	metadataV2KeyBins := make(map[string][]byte, len(requestBodyParsed.MetadataV2Keys))
+
+	var metadataKvKeys utils.KVKeys
+	var permissionHashKvKeys utils.KVKeys
+
+	for _, metadataV2Key := range requestBodyParsed.MetadataV2Keys {
+		metadataV2KeyBin, err := base64.URLEncoding.DecodeString(metadataV2Key)
+		if err != nil {
+			err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+			return BadRequestResponse(c, err)
+		}
+
+		if cap(metadataV2KeyBin) != 33 {
+			return BadRequestResponse(c, errors.New(metadataIncorrectKeyLength))
+		}
+
+		metadataV2KeyBins[metadataV2Key] = metadataV2KeyBin
+		metadataKvKeys = append(metadataKvKeys, string(metadataV2KeyBin))
+
+		permissionHashKey := getPermissionHashV2KeyForBadger(string(metadataV2KeyBin))
+		permissionHashKvKeys = append(permissionHashKvKeys, permissionHashKey)
+	}
+
+	permissionHashKvPairs, err := utils.BatchGet(&permissionHashKvKeys)
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+	oldMetadatasV2, err := utils.BatchGet(&metadataKvKeys)
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	lenOldMetadatasV2 := 0
+	countOldMetadatasV2 := 0
+	var deleteKvKeys utils.KVKeys
+	for _, metadataV2Key := range requestBodyParsed.MetadataV2Keys {
+		metadataV2KeyBinsString := string(metadataV2KeyBins[metadataV2Key])
+		permissionHashInBadgerKey := getPermissionHashV2KeyForBadger(metadataV2KeyBinsString)
+		if permissionHashInBadger, ok := (*permissionHashKvPairs)[permissionHashInBadgerKey]; ok {
+			if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBins[metadataV2Key], permissionHashInBadger, c); err != nil {
+				return err
+			}
+			deleteKvKeys = append(deleteKvKeys, permissionHashInBadgerKey)
+		}
+
+		if oldMetadataV2, ok := (*oldMetadatasV2)[metadataV2KeyBinsString]; ok {
+			lenOldMetadatasV2 += len(oldMetadataV2)
+			countOldMetadatasV2++
+			deleteKvKeys = append(deleteKvKeys, metadataV2KeyBinsString)
+		}
+	}
+
+	if err := account.RemoveMetadataMultiple(int64(lenOldMetadatasV2), countOldMetadatasV2); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	if err = utils.BatchDelete(&deleteKvKeys); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 

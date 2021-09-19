@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -433,17 +434,17 @@ func Test_Delete_MetadataV2_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T
 }
 
 func Test_Delete_MetadataV2_Success(t *testing.T) {
-	t.SkipNow()
+	accountID, privateKey := generateValidateAccountId(t)
+	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
+	publicKeyBin, _ := hex.DecodeString(publicKey)
 
-	testMetadataV2Key := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
-	testMetadataV2Value := "someValue"
+	testMetadataV2Key, testMetadataV2Value := GenerateMetadataV2(publicKeyBin, t)
 
 	deleteMetadataV2Obj := metadataV2KeyObject{
 		MetadataV2Key: testMetadataV2Key,
 		Timestamp:     time.Now().Unix(),
 	}
-
-	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, deleteMetadataV2Obj)
+	v, b := returnValidVerificationAndRequestBody(t, deleteMetadataV2Obj, privateKey)
 
 	post := metadataV2KeyReq{
 		verification: v,
@@ -452,7 +453,6 @@ func Test_Delete_MetadataV2_Success(t *testing.T) {
 		},
 	}
 
-	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
 	account.TotalFolders = 1
 	account.TotalMetadataSizeInBytes = int64(len(testMetadataV2Value))
@@ -463,21 +463,49 @@ func Test_Delete_MetadataV2_Success(t *testing.T) {
 	assert.Equal(t, int64(len(testMetadataV2Value)), accountFromDB.TotalMetadataSizeInBytes)
 	assert.Equal(t, 1, accountFromDB.TotalFolders)
 
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	w := httpPostRequestHelperForTest(t, MetadataV2DeletePath, "v2", post)
 
-	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataV2Key, c)
-	permissionHashKey := getPermissionHashKeyForBadger(testMetadataV2Key)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), metadataV2DeletedRes.Status)
+	accountFromDB, _ = models.GetAccountById(account.AccountID)
+	assert.Equal(t, int64(0), accountFromDB.TotalMetadataSizeInBytes)
+	assert.Equal(t, 0, accountFromDB.TotalFolders)
+}
 
-	ttl := time.Until(account.ExpirationDate())
+func Test_Delete_MetadataMultipleV2_Success(t *testing.T) {
+	setupTests(t)
+	numberOfMetadatas := 10
+	accountID, privateKey := generateValidateAccountId(t)
+	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
+	publicKeyBin, _ := hex.DecodeString(publicKey)
 
-	if err := utils.BatchSet(&utils.KVPairs{
-		testMetadataV2Key: testMetadataV2Value,
-		permissionHashKey: permissionHash,
-	}, ttl); err != nil {
-		t.Fatalf("there should not have been an error")
+	generatedMetadataV2Keys, generatedMetadatasSize := GenerateMetadataMultipleV2(publicKeyBin, numberOfMetadatas, t)
+
+	deleteMetadataV2Obj := metadataMultipleV2KeyObject{
+		MetadataV2Keys: generatedMetadataV2Keys,
+		Timestamp:      time.Now().Unix(),
+	}
+	v, b := returnValidVerificationAndRequestBody(t, deleteMetadataV2Obj, privateKey)
+
+	post := metadataMultipleV2KeyReq{
+		verification: v,
+		requestBody: requestBody{
+			RequestBody: b.RequestBody,
+		},
 	}
 
-	w := httpPostRequestHelperForTest(t, MetadataV2DeletePath, "v2", post)
+	account := CreatePaidAccountForTest(t, accountID)
+	account.TotalFolders = numberOfMetadatas
+	account.TotalMetadataSizeInBytes = generatedMetadatasSize
+	err := models.DB.Save(&account).Error
+	assert.Nil(t, err)
+
+	accountFromDB, _ := models.GetAccountById(account.AccountID)
+	assert.Equal(t, generatedMetadatasSize, accountFromDB.TotalMetadataSizeInBytes)
+	assert.Equal(t, numberOfMetadatas, accountFromDB.TotalFolders)
+
+	w := httpPostRequestHelperForTest(t, MetadataMultipleV2DeletePath, "v2", post)
 
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)

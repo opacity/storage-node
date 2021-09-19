@@ -335,7 +335,7 @@ func setMetadata(c *gin.Context) error {
 		return ForbiddenResponse(c, err)
 	}
 
-	ttl := time.Until(account.ExpirationDate())
+	ttl := time.Until(account.ExpirationDate().Add(MetadataExpirationOffset))
 
 	if err := utils.BatchSet(&utils.KVPairs{
 		requestBodyParsed.MetadataKey: requestBodyParsed.Metadata,
@@ -378,7 +378,7 @@ func createMetadata(c *gin.Context) error {
 		return err
 	}
 
-	ttl := time.Until(account.ExpirationDate())
+	ttl := time.Until(account.ExpirationDate().Add(MetadataExpirationOffset))
 
 	permissionHash, err := getPermissionHash(request.PublicKey, requestBodyParsed.MetadataKey, c)
 	if err != nil {
