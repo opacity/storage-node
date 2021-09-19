@@ -61,7 +61,7 @@ func (v *checkRenewalV2StatusReq) getObjectRef() interface{} {
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/renew/invoice [post]
+// @Router /api/v2/renew/invoice [post]
 /*GetAccountRenewalV2InvoiceHandler is a handler for getting an invoice to renew an account*/
 func GetAccountRenewalV2InvoiceHandler() gin.HandlerFunc {
 	return ginHandlerFunc(getAccountRenewalV2Invoice)
@@ -82,7 +82,7 @@ func GetAccountRenewalV2InvoiceHandler() gin.HandlerFunc {
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/renew [post]
+// @Router /api/v2/renew [post]
 /*CheckRenewalV2StatusHandler is a handler for checking the renewalV2 status*/
 func CheckRenewalV2StatusHandler() gin.HandlerFunc {
 	return ginHandlerFunc(checkRenewalV2Status)
