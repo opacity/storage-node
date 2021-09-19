@@ -80,7 +80,6 @@ var (
 	EthWrapper                     Eth
 	client                         *ethclient.Client
 	mtx                            sync.Mutex
-	chainId                        = params.MainnetChainConfig.ChainID
 	addressNonceMap                AddressToNonceMap
 	MainWalletAddress              common.Address
 	MainWalletPrivateKey           *ecdsa.PrivateKey
@@ -278,6 +277,10 @@ func transferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAd
 	tx := types.NewTransaction(nonce, toAddr, amount, GasLimitETHSend, gasPrice, nil)
 
 	// signer
+	chainId := params.MainnetChainConfig.ChainID
+	if utils.Env.GoEnv != "production" {
+		chainId = params.GoerliChainConfig.ChainID
+	}
 	signer := types.NewEIP155Signer(chainId)
 
 	// sign transaction
