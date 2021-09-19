@@ -17,6 +17,7 @@ import (
 )
 
 const metadataIncorrectKeyLength = "bad request, incorrect key length"
+const MetadataExpirationOffset = 24 * time.Hour * 60
 
 // must be sorted alphabetically for JSON marshaling/stringifying
 type updateMetadataV2Object struct {
@@ -360,14 +361,15 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
+	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
+	// be deleted too soon
+	ttl := time.Until(time.Now().Add(MetadataExpirationOffset))
 	oldMetadataV2, _, err := utils.GetValueFromKV(string(metadataV2KeyBin))
 
 	if err != nil {
 		if err = account.IncrementMetadataCount(); err != nil {
 			return ForbiddenResponse(c, err)
 		}
-
-		ttl := time.Until(account.ExpirationDate())
 
 		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin, c)
 		permissionHashKey := getPermissionHashV2KeyForBadger(string(metadataV2KeyBin))
@@ -490,8 +492,6 @@ func updateMetadataV2(c *gin.Context) error {
 	if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadataV2)), int64(len(newMetadataV2))); err != nil {
 		return ForbiddenResponse(c, err)
 	}
-
-	ttl := time.Until(account.ExpirationDate())
 
 	if err := utils.BatchSet(&utils.KVPairs{
 		string(metadataV2KeyBin): newMetadataV2,

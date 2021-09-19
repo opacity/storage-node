@@ -3,12 +3,13 @@ package routes
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"math/big"
-	"time"
 )
 
 type getUpgradeAccountInvoiceObject struct {
@@ -238,7 +239,7 @@ func upgradeAccountAndUpdateExpireDates(account models.Account, request checkUpg
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
 	metadatasErr := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate().Add(24*time.Hour*60), c)
+		request.verification.PublicKey, account.ExpirationDate().Add(MetadataExpirationOffset), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }

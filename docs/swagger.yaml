@@ -2626,6 +2626,80 @@ paths:
           schema:
             type: string
       summary: get views count
+  /api/v2/renew:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        check the renewalV2 status
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "metadataKeys": "["someKey", "someOtherKey]",
+        "fileHandles": "["someHandle", "someOtherHandle]",
+        }
+      parameters:
+      - description: check renewalV2 status object
+        in: body
+        name: checkRenewalV2StatusReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.checkRenewalV2StatusReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: check the renewalV2 status
+  /api/v2/renew/invoice:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        get an invoice to renew an account
+        requestBody should be a stringified version of (values are just examples):
+        {
+        }
+      parameters:
+      - description: get renewalV2 invoice object
+        in: body
+        name: getRenewalV2AccountInvoiceReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.getRenewalV2AccountInvoiceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.getRenewalV2AccountInvoiceRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: get an invoice to renew an account
   /api/v2/upload-public:
     post:
       consumes:
