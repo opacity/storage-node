@@ -363,7 +363,8 @@ func updateMetadataV2(c *gin.Context) error {
 
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
-	ttl := time.Until(time.Now().Add(MetadataExpirationOffset))
+	ttl := time.Until(account.ExpirationDate().Add(MetadataExpirationOffset))
+
 	oldMetadataV2, _, err := utils.GetValueFromKV(string(metadataV2KeyBin))
 
 	if err != nil {
@@ -503,7 +504,7 @@ func updateMetadataV2(c *gin.Context) error {
 	return OkResponse(c, updateMetadataV2Res{
 		MetadataV2Key:  request.updateMetadataV2Object.MetadataV2Key,
 		MetadataV2:     newMetadataV2,
-		ExpirationDate: account.ExpirationDate(),
+		ExpirationDate: account.ExpirationDate().Add(MetadataExpirationOffset),
 	})
 }
 
