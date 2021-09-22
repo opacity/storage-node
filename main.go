@@ -47,8 +47,8 @@ func main() {
 	defer models.Close()
 
 	utils.SetLive()
-	services.SetWallet()
-	err := services.InitStripe()
+
+	err := services.InitStripe(utils.Env.StripeKeyProd)
 	utils.PanicOnError(err)
 
 	utils.SlackLog("Begin to restart service!")
@@ -99,7 +99,7 @@ func migrateEnvWallets() {
 		ethMainWallet := models.SmartContract{
 			Network:                   "ethereum",
 			NetworkIDuint:             1,
-			Address:                   utils.Env.ContractAddress,
+			ContractAddressString:     utils.Env.ContractAddress,
 			NodeURL:                   utils.Env.EthNodeURL,
 			WalletAddressString:       utils.Env.MainWalletAddress,
 			WalletPrivateKeyEncrypted: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.MainWalletPrivateKey),
@@ -108,7 +108,7 @@ func migrateEnvWallets() {
 		polygonMainWallet := models.SmartContract{
 			Network:                   "polygon",
 			NetworkIDuint:             137,
-			Address:                   utils.Env.PolygonContractAddress,
+			ContractAddressString:     utils.Env.PolygonContractAddress,
 			NodeURL:                   utils.Env.PolygonNodeURL,
 			WalletAddressString:       utils.Env.PolygonMainWalletAddress,
 			WalletPrivateKeyEncrypted: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.PolygonMainWalletPrivateKey),

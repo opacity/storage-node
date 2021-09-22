@@ -38,7 +38,7 @@ func getSmartContractsWithContext(c *gin.Context) error {
 	for _, sc := range smartContracts {
 		scResp = append(scResp, SmartContractRespEntity{
 			Network: sc.Network,
-			Address: sc.Address,
+			Address: sc.ContractAddressString,
 		})
 	}
 

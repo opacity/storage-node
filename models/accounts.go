@@ -208,7 +208,7 @@ func upgradeCost(costOfCurrentPlan, baseCostOfHigherPlan float64, account *Accou
 /*GetTotalCostInWei gets the total cost in wei for a subscription*/
 func (account *Account) GetTotalCostInWei() *big.Int {
 	float64Cost, _ := account.Cost()
-	return utils.ConvertToWeiUnit(big.NewFloat(float64Cost))
+	return services.ConvertToWeiUnit(big.NewFloat(float64Cost))
 }
 
 /*CheckIfPaid returns whether the account has been paid for*/

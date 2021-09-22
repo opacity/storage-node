@@ -3,11 +3,12 @@ package models
 import (
 	"encoding/hex"
 	"errors"
+	"math/big"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"math/big"
-	"time"
 )
 
 type Upgrade struct {
@@ -126,7 +127,7 @@ func (upgrade *Upgrade) CheckIfPaid() (bool, error) {
 
 /*GetTotalCostInWei gets the total cost in wei for an upgrade*/
 func (upgrade *Upgrade) GetTotalCostInWei() *big.Int {
-	return utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost))
+	return services.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost))
 }
 
 /*GetUpgradesByPaymentStatus gets upgrades based on the payment status passed in*/

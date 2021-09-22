@@ -146,7 +146,7 @@ func setupTests(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
 	gin.SetMode(gin.TestMode)
-	err := services.InitStripe()
+	err := services.InitStripe(utils.Env.StripeKeyTest)
 	assert.Nil(t, err)
 }
 

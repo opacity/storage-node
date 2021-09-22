@@ -4,10 +4,11 @@ import (
 	"errors"
 	"time"
 
+	"math/big"
+
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"math/big"
 )
 
 /*StripePayment defines a model for managing a credit card payment*/
@@ -136,7 +137,7 @@ func (stripePayment *StripePayment) SendAccountOPCT() error {
 func (stripePayment *StripePayment) SendUpgradeOPCT(account Account, newStorageLimit int) error {
 	upgrade, _ := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
 
-	costInWei := utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost))
+	costInWei := services.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost))
 
 	success, _, _ := EthWrapper.TransferToken(
 		services.MainWalletAddress,

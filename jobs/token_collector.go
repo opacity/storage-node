@@ -1,10 +1,11 @@
 package jobs
 
 import (
+	"time"
+
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"time"
 )
 
 type tokenCollector struct{}
@@ -45,7 +46,7 @@ func (t tokenCollector) Run() {
 }
 
 func (t tokenCollector) Runnable() bool {
-	err := services.SetWallet()
+	err := services.SetWallets()
 	utils.LogIfError(err, nil)
 	return models.DB != nil && err == nil
 }

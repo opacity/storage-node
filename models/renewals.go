@@ -3,11 +3,12 @@ package models
 import (
 	"encoding/hex"
 	"errors"
+	"math/big"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"math/big"
-	"time"
 )
 
 type Renewal struct {
@@ -109,7 +110,7 @@ func (renewal *Renewal) CheckIfPaid() (bool, error) {
 
 /*GetTotalCostInWei gets the total cost in wei for an renewal*/
 func (renewal *Renewal) GetTotalCostInWei() *big.Int {
-	return utils.ConvertToWeiUnit(big.NewFloat(renewal.OpctCost))
+	return services.ConvertToWeiUnit(big.NewFloat(renewal.OpctCost))
 }
 
 /*GetRenewalsByPaymentStatus gets renewals based on the payment status passed in*/

@@ -208,7 +208,7 @@ func checkUpgradeV2Status(c *gin.Context) error {
 	//}
 
 	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgradeV2.EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(upgradeV2.OpctCost)))
+		services.ConvertToWeiUnit(big.NewFloat(upgradeV2.OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
