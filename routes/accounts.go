@@ -255,7 +255,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	paid, err := account.CheckIfPaid()
 
 	if !paid && err == nil {
-		pending, err = account.CheckIfPending()
+		pending = account.CheckIfPending()
 	}
 
 	cost, _ := account.Cost()

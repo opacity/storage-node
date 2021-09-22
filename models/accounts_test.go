@@ -23,7 +23,7 @@ import (
 )
 
 func returnValidAccount() Account {
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 	accountID := utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890"))
 
 	return Account{
@@ -423,37 +423,34 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 func Test_CheckIfPending_Is_Pending(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPending = func(address common.Address) bool {
+		return true
 	}
 
-	pending, err := account.CheckIfPending()
+	pending := account.CheckIfPending()
 	assert.True(t, pending)
-	assert.Nil(t, err)
 }
 
 func Test_CheckIfPending_Is_Not_Pending(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPending = func(address common.Address) bool {
+		return false
 	}
 
-	pending, err := account.CheckIfPending()
+	pending := account.CheckIfPending()
 	assert.False(t, pending)
-	assert.Nil(t, err)
 }
 
 func Test_CheckIfPending_Error_While_Checking(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address) (bool, error) {
-		return false, errors.New("some error")
+	BackendManager.CheckIfPending = func(address common.Address) bool {
+		return false
 	}
 
-	pending, err := account.CheckIfPending()
+	pending := account.CheckIfPending()
 	assert.False(t, pending)
-	assert.NotNil(t, err)
 	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
 }
 

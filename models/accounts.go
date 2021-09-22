@@ -226,7 +226,7 @@ func (account *Account) CheckIfPaid() (bool, error) {
 }
 
 /*CheckIfPending returns whether a transaction is pending to the address*/
-func (account *Account) CheckIfPending() (bool, error) {
+func (account *Account) CheckIfPending() bool {
 	return BackendManager.CheckIfPending(services.StringToAddress(account.EthAddress))
 }
 

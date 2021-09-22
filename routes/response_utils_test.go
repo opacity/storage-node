@@ -61,7 +61,7 @@ func Test_verifyIfPaidWithContext_stripe_payment_has_been_paid(t *testing.T) {
 		return false, nil
 	}
 
-	stripeToken := services.RandTestStripeToken()
+	stripeToken := models.RandTestStripeToken()
 	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken, account.AccountID)
 
 	stripePayment := models.StripePayment{

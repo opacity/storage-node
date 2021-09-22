@@ -115,11 +115,7 @@ func getAccountUpgradeV2Invoice(c *gin.Context) error {
 		//request.getUpgradeV2AccountInvoiceObject.DurationInMonths)
 		account.MonthsInSubscription)
 
-	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
-	if err != nil {
-		err = fmt.Errorf("error generating upgradeV2 wallet:  %v", err)
-		return BadRequestResponse(c, err)
-	}
+	ethAddr, privKey := services.GenerateWallet()
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
