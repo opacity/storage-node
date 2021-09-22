@@ -24,7 +24,7 @@ import (
 type Eth struct {
 	client                         *ethclient.Client
 	mtx                            sync.Mutex
-	addressNonceMap                map[common.Address]uint64
+	AddressNonceMap                map[common.Address]uint64
 	MainWalletAddress              common.Address
 	MainWalletPrivateKey           *ecdsa.PrivateKey
 	DefaultGasPrice                *big.Int
@@ -35,6 +35,8 @@ type Eth struct {
 	ContractAddress                common.Address
 	NodeUrl                        string
 }
+
+var EthWrappers map[uint]Eth
 
 /*TokenCallMsg is the message to send to the ETH blockchain to do token transactions*/
 type TokenCallMsg struct {
@@ -55,44 +57,6 @@ const (
 	// ETH Gas Limit
 	GasLimitETHSend uint64 = 21000
 )
-
-var EthWrappers map[uint]Eth
-
-/*EthWrapper is an instance of our ethereum wrapper*/
-var EthWrapper Eth
-
-func init() {
-	defaultGasPrice := ConvertGweiToWei(big.NewInt(80))
-	EthWrapper = Eth{
-		// GenerateWallet:                 generateWallet,
-		// TransferToken:                  transferToken,
-		// TransferETH:                    transferETH,
-		// GetTokenBalance:                getTokenBalance,
-		// GetETHBalance:                  getETHBalance,
-		// CheckForPendingTokenTxs:        checkForPendingTokenTxs,
-		addressNonceMap:                make(map[common.Address]uint64),
-		DefaultGasPrice:                ConvertGweiToWei(big.NewInt(80)),
-		DefaultGasForPaymentCollection: new(big.Int).Mul(defaultGasPrice, big.NewInt(int64(GasLimitTokenSend))),
-		SlowGasPrice:                   ConvertGweiToWei(big.NewInt(80)),
-		FastGasPrice:                   ConvertGweiToWei(big.NewInt(145)),
-	}
-
-}
-
-/*SetWallet gets the address and private key for storage node's main wallet*/
-func SetWallets() error {
-	// var err error
-	// if utils.Env.MainWalletPrivateKey == "" || utils.Env.MainWalletAddress == "" {
-	// 	err = errors.New("need MainWalletAddress and MainWalletPrivateKey for storage node's main wallet")
-	// 	utils.LogIfError(err, nil)
-	// 	utils.PanicOnError(err)
-	// }
-	// MainWalletAddress = common.HexToAddress(utils.Env.MainWalletAddress)
-	// MainWalletPrivateKey, err = StringToPrivateKey(utils.Env.MainWalletPrivateKey)
-	// utils.LogIfError(err, nil)
-	// return err
-	return nil
-}
 
 // Shared client provides access to the underlying Ethereum client
 func (eth *Eth) SharedClient() (c *ethclient.Client) {
@@ -117,7 +81,7 @@ func (eth *Eth) SharedClient() (c *ethclient.Client) {
 }
 
 // Generate an Ethereum address and private key
-func (eth *Eth) GenerateWallet() (addr common.Address, privateKey string) {
+func GenerateWallet() (addr common.Address, privateKey string) {
 	ethAccount, err := crypto.GenerateKey()
 	if err != nil {
 		panic(err)
@@ -125,7 +89,7 @@ func (eth *Eth) GenerateWallet() (addr common.Address, privateKey string) {
 	addr = crypto.PubkeyToAddress(ethAccount.PublicKey)
 	privateKey = hex.EncodeToString(ethAccount.D.Bytes())
 	if privateKey[0] == '0' || len(privateKey) != 64 || len(addr) != 20 {
-		return eth.GenerateWallet()
+		return GenerateWallet()
 	}
 	return addr, privateKey
 }
@@ -245,7 +209,7 @@ func (eth *Eth) TransferETH(fromAddress common.Address, fromPrivKey *ecdsa.Priva
 	// send transaction
 	err = client.SendTransaction(ctx, signedTx)
 	if err != nil {
-		panic(fmt.Errorf("error sending transaction from %s to %s.  Error:  %v\n",
+		panic(fmt.Errorf("error sending transaction from %s to %s.  Error:  %v",
 			fromAddress.String(), signedTx.To().String(), err))
 	}
 
@@ -280,23 +244,23 @@ func (eth *Eth) CheckForPendingTokenTxs(address common.Address) bool {
 most recent nonces.  This is to prevent us from accidentally using a nonce that is already in the process
 of being used, for a particular address.*/
 func (eth *Eth) RemoveFromAddressNonceMap(address common.Address) {
-	if _, ok := eth.addressNonceMap[address]; ok && address != eth.MainWalletAddress {
-		delete(eth.addressNonceMap, address)
+	if _, ok := eth.AddressNonceMap[address]; ok && address != eth.MainWalletAddress {
+		delete(eth.AddressNonceMap, address)
 	}
 }
 
 /*ReturnLastNonceFromMap returns the latest nonce from the addressNonceMap for a particular
 address.*/
 func (eth *Eth) ReturnLastNonceFromMap(address common.Address) (uint64, bool) {
-	if _, ok := eth.addressNonceMap[address]; ok {
-		return eth.addressNonceMap[address], true
+	if _, ok := eth.AddressNonceMap[address]; ok {
+		return eth.AddressNonceMap[address], true
 	}
 	return uint64(0), false
 }
 
 /*UpdateLastNonceInMap updates the last nonce in the addressNonceMap for an address*/
 func (eth *Eth) UpdateLastNonceInMap(address common.Address, lastNonce uint64) {
-	eth.addressNonceMap[address] = lastNonce
+	eth.AddressNonceMap[address] = lastNonce
 }
 
 // SuggestGasPrice retrieves the currently suggested gas price to allow a timely

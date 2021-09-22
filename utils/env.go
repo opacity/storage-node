@@ -98,8 +98,6 @@ type StorageNodeEnv struct {
 /*Env is the environment for a particular node while the application is running*/
 var Env StorageNodeEnv
 
-var EthWrappers map[uint]services.Eth
-
 func initEnv(filenames ...string) {
 	go_env := os.Getenv("GO_ENV")
 	err := godotenv.Load(filenames...)

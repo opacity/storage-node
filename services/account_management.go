@@ -21,7 +21,7 @@ type CheckIfPaid func(common.Address, *big.Int) (bool, error)
 
 /*CheckIfPending defines the required parameters and return values for
 an instance of AccountManagement's CheckIfPending method*/
-type CheckIfPending func(common.Address) (bool, error)
+type CheckIfPending func(common.Address) bool
 
 /*BackendManagement is an instance of AccountManagement which we will use
 for backend-managed subscriptions*/
@@ -43,6 +43,6 @@ func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int) (bo
 	return tokenBalance.Cmp(amount) >= 0, nil
 }
 
-func checkIfBackendSubscriptionPaymentPending(address common.Address) (bool, error) {
+func checkIfBackendSubscriptionPaymentPending(address common.Address) bool {
 	return EthWrapper.CheckForPendingTokenTxs(address)
 }

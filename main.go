@@ -6,11 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/big"
 	"os"
 	"runtime/debug"
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/getsentry/sentry-go"
 	"github.com/opacity/storage-node/jobs"
 	"github.com/opacity/storage-node/models"
@@ -66,6 +68,28 @@ func main() {
 	}
 
 	routes.CreateRoutes()
+}
+
+func SetWallets() {
+	smartContracts := []models.SmartContract{}
+	models.DB.Find(&smartContracts)
+
+	defaultGasPrice := services.ConvertGweiToWei(big.NewInt(80))
+
+	for _, smartContract := range smartContracts {
+		// singletons
+		services.EthWrappers[smartContract.ID] = services.Eth{
+			AddressNonceMap:                make(map[common.Address]uint64),
+			DefaultGasPrice:                services.ConvertGweiToWei(big.NewInt(80)),
+			DefaultGasForPaymentCollection: new(big.Int).Mul(defaultGasPrice, big.NewInt(int64(services.GasLimitTokenSend))),
+			SlowGasPrice:                   services.ConvertGweiToWei(big.NewInt(80)),
+			FastGasPrice:                   services.ConvertGweiToWei(big.NewInt(145)),
+
+			ChainId:         smartContract.NetworkID,
+			ContractAddress: smartContract.ContractAddress,
+			NodeUrl:         smartContract.NodeURL,
+		}
+	}
 }
 
 func setEnvPlans() {
