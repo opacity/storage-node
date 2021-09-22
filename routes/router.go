@@ -172,7 +172,7 @@ const (
 
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
 
-var maintenanceError = errors.New("maintenance in progress, currently rejecting writes")
+var errMaintenance = errors.New("maintenance in progress, currently rejecting writes")
 
 // StatusRes ...
 type StatusRes struct {
