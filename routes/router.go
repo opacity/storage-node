@@ -165,6 +165,9 @@ const (
 
 	/*DeletePath is the path for deleting files, allowing multiple deletions*/
 	DeleteV2Path = "/delete"
+
+	/*SmartContractsV2Path is the path for getting smart contracts addresses and related data*/
+	SmartContractsV2Path = "/smart-contracts"
 )
 
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
@@ -295,6 +298,8 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	publicShareRouterGroup.POST(PublicShareRevokePath, RevokePublicShareHandler())
 
 	v2Router.POST(DeleteV2Path, DeleteFilesHandler())
+
+	v2Router.GET(SmartContractsV2Path, SmartContractsHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {
