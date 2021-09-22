@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -24,4 +25,15 @@ func (sc *SmartContract) AfterFind(tx *gorm.DB) (err error) {
 	privateKeyDencrypted := utils.DecryptWithoutNonce(utils.Env.EncryptionKey, sc.WalletPrivateKey)
 	sc.WalletPrivateKey = privateKeyDencrypted
 	return
+}
+
+func GetAllSmartContracts() ([]SmartContract, error) {
+	sc := []SmartContract{}
+	scResults := DB.Find(&sc)
+
+	if scResults.RowsAffected == 0 {
+		return sc, errors.New("no smart contracts are configured")
+	}
+
+	return sc, nil
 }
