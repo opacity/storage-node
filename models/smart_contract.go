@@ -1,29 +1,39 @@
 package models
 
 import (
+	"crypto/ecdsa"
 	"errors"
+	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jinzhu/gorm"
+	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 )
 
 /* Defines the smart contracts address and related data */
 type SmartContract struct {
-	ID               uint `gorm:"primary_key" `
-	Network          string
-	NetworkID        uint
-	Address          string
-	NodeURL          string
-	WalletAddress    string
-	WalletPrivateKey string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	ID                        uint `gorm:"primary_key" `
+	Network                   string
+	NetworkIDuint             uint `gorm:"column:network_id"`
+	Address                   string
+	NodeURL                   string
+	WalletAddressString       string `gorm:"column:wallet_address"`
+	WalletPrivateKeyEncrypted string `gorm:"column:wallet_private_key"`
+	CreatedAt                 time.Time
+	UpdatedAt                 time.Time
+
+	NetworkID        *big.Int          `gorm:"-"`
+	WalletAddress    common.Address    `gorm:"-"`
+	WalletPrivateKey *ecdsa.PrivateKey `gorm:"-"`
 }
 
 func (sc *SmartContract) AfterFind(tx *gorm.DB) (err error) {
-	privateKeyDencrypted := utils.DecryptWithoutNonce(utils.Env.EncryptionKey, sc.WalletPrivateKey)
-	sc.WalletPrivateKey = privateKeyDencrypted
+	sc.NetworkID = big.NewInt(int64(sc.NetworkIDuint))
+	sc.WalletAddress = services.StringToAddress(sc.WalletAddressString)
+	sc.WalletPrivateKey, err = services.StringToPrivateKey(utils.DecryptWithoutNonce(utils.Env.EncryptionKey, sc.WalletPrivateKeyEncrypted))
+	utils.LogIfError(err, nil)
 	return
 }
 

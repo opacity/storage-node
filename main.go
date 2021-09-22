@@ -97,29 +97,29 @@ func migrateEnvWallets() {
 
 	if walletsResults.RowsAffected == 0 {
 		ethMainWallet := models.SmartContract{
-			Network:          "ethereum",
-			NetworkID:        1,
-			Address:          utils.Env.ContractAddress,
-			NodeURL:          utils.Env.EthNodeURL,
-			WalletAddress:    utils.Env.MainWalletAddress,
-			WalletPrivateKey: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.MainWalletPrivateKey),
+			Network:                   "ethereum",
+			NetworkIDuint:             1,
+			Address:                   utils.Env.ContractAddress,
+			NodeURL:                   utils.Env.EthNodeURL,
+			WalletAddressString:       utils.Env.MainWalletAddress,
+			WalletPrivateKeyEncrypted: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.MainWalletPrivateKey),
 		}
 
 		polygonMainWallet := models.SmartContract{
-			Network:          "polygon",
-			NetworkID:        137,
-			Address:          utils.Env.PolygonContractAddress,
-			NodeURL:          utils.Env.PolygonNodeURL,
-			WalletAddress:    utils.Env.PolygonMainWalletAddress,
-			WalletPrivateKey: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.PolygonMainWalletPrivateKey),
+			Network:                   "polygon",
+			NetworkIDuint:             137,
+			Address:                   utils.Env.PolygonContractAddress,
+			NodeURL:                   utils.Env.PolygonNodeURL,
+			WalletAddressString:       utils.Env.PolygonMainWalletAddress,
+			WalletPrivateKeyEncrypted: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.PolygonMainWalletPrivateKey),
 		}
 
 		if GO_ENV != "production" {
 			ethMainWallet.Network = "goerli"
-			ethMainWallet.NetworkID = 5
+			ethMainWallet.NetworkIDuint = 5
 
 			polygonMainWallet.Network = "mumbai"
-			polygonMainWallet.NetworkID = 80001
+			polygonMainWallet.NetworkIDuint = 80001
 		}
 		models.DB.Model(&utils.PlanInfo{}).Create(&ethMainWallet)
 		models.DB.Model(&utils.PlanInfo{}).Create(&polygonMainWallet)
