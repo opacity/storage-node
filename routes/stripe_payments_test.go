@@ -9,7 +9,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/models"
-	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,7 +25,7 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 	CreateUnpaidAccountForTest(t, accountID)
 
 	stripeTokenBody := createStripePaymentObject{
-		StripeToken: services.RandTestStripeToken(),
+		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
@@ -58,7 +57,7 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 	assert.Nil(t, err)
 
 	stripeTokenBody := createStripePaymentObject{
-		StripeToken: services.RandTestStripeToken(),
+		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
@@ -86,7 +85,7 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 	CreatePaidAccountForTest(t, accountID)
 
 	stripeTokenBody := createStripePaymentObject{
-		StripeToken: services.RandTestStripeToken(),
+		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
@@ -117,7 +116,7 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 	assert.Nil(t, err)
 
 	stripeTokenBody := createStripePaymentObject{
-		StripeToken: services.RandTestStripeToken(),
+		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
@@ -145,7 +144,7 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 	CreateUnpaidAccountForTest(t, accountID)
 
 	stripeTokenBody := createStripePaymentObject{
-		StripeToken: services.RandTestStripeToken(),
+		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)

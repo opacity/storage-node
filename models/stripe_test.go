@@ -1,7 +1,6 @@
 package models
 
 import (
-	"math/rand"
 	"testing"
 
 	"github.com/opacity/storage-node/services"
@@ -9,19 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stripe/stripe-go"
 )
-
-var testTokens = []string{
-	`tok_visa`,
-	`tok_visa_debit`,
-	`tok_mastercard`,
-	`tok_mastercard_debit`,
-	`tok_mastercard_prepaid`,
-	`tok_amex`,
-	`tok_discover`,
-	`tok_diners`,
-	`tok_jcb`,
-	`tok_unionpay`,
-}
 
 func Test_Stripe_Init(t *testing.T) {
 	utils.SetTesting("../.env")
@@ -55,8 +41,4 @@ func Test_CheckChargePaid(t *testing.T) {
 	paid, err := services.CheckChargePaid(c.ID)
 	assert.Nil(t, err)
 	assert.True(t, paid)
-}
-
-func RandTestStripeToken() string {
-	return testTokens[rand.Intn(len(testTokens))]
 }

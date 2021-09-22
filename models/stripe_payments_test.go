@@ -33,14 +33,14 @@ func returnValidUpgradeStripePaymentForTest() (StripePayment, Upgrade, Account) 
 
 func returnStripePaymentForTestForAccount(account Account) StripePayment {
 	return StripePayment{
-		StripeToken: services.RandTestStripeToken(),
+		StripeToken: RandTestStripeToken(),
 		AccountID:   account.AccountID,
 	}
 }
 
 func returnStripePaymentForTestForUpgrade(upgrade Upgrade) StripePayment {
 	return StripePayment{
-		StripeToken:    services.RandTestStripeToken(),
+		StripeToken:    RandTestStripeToken(),
 		AccountID:      upgrade.AccountID,
 		UpgradePayment: true,
 	}

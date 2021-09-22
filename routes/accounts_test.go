@@ -209,7 +209,7 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 		return false, nil
 	}
 
-	stripeToken := services.RandTestStripeToken()
+	stripeToken := RandTestStripeToken()
 	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken, account.AccountID)
 
 	stripePayment := models.StripePayment{

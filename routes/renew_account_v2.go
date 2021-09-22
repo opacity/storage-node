@@ -175,7 +175,7 @@ func checkRenewalV2Status(c *gin.Context) error {
 	}
 
 	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewalV2s[0].EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(renewalV2s[0].OpctCost)))
+		services.ConvertToWeiUnit(big.NewFloat(renewalV2s[0].OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
