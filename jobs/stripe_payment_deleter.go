@@ -25,6 +25,6 @@ func (s stripePaymentDeleter) Run() {
 }
 
 func (s stripePaymentDeleter) Runnable() bool {
-	err := services.SetWallet()
+	err := services.SetWallets()
 	return models.DB != nil && err == nil
 }

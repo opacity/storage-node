@@ -28,11 +28,6 @@ func Test_Stripe_Init(t *testing.T) {
 }
 
 func Test_CreateCharge(t *testing.T) {
-	if utils.Env.StripeKey != utils.Env.StripeKeyTest {
-		t.Fatalf("wrong stripe key")
-		return
-	}
-
 	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 
@@ -41,11 +36,6 @@ func Test_CreateCharge(t *testing.T) {
 }
 
 func Test_CheckChargeStatus(t *testing.T) {
-	if utils.Env.StripeKey != utils.Env.StripeKeyTest {
-		t.Fatalf("wrong stripe key")
-		return
-	}
-
 	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 

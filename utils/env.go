@@ -11,6 +11,7 @@ import (
 
 	"github.com/caarlos0/env/v6"
 	"github.com/joho/godotenv"
+	"github.com/opacity/storage-node/services"
 )
 
 const defaultAccountRetentionDays = 7
@@ -89,7 +90,6 @@ type StorageNodeEnv struct {
 	// Stripe Keys
 	StripeKeyTest string `env:"STRIPE_KEY_TEST" envDefault:"Unknown"`
 	StripeKeyProd string `env:"STRIPE_KEY_PROD" envDefault:"Unknown"`
-	StripeKey     string `envDefault:"Unknown"`
 
 	// Whether accepting credit cards is enabled
 	EnableCreditCards bool `env:"ENABLE_CREDIT_CARDS" envDefault:"false"`
@@ -97,6 +97,8 @@ type StorageNodeEnv struct {
 
 /*Env is the environment for a particular node while the application is running*/
 var Env StorageNodeEnv
+
+var EthWrappers map[uint]services.Eth
 
 func initEnv(filenames ...string) {
 	go_env := os.Getenv("GO_ENV")
@@ -126,7 +128,6 @@ func initEnv(filenames ...string) {
 func SetLive() {
 	initEnv()
 	Env.DatabaseURL = Env.ProdDatabaseURL
-	Env.StripeKey = Env.StripeKeyProd
 	runInitializations()
 }
 
@@ -139,7 +140,7 @@ func SetTesting(filenames ...string) {
 	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
 	LogIfError(err, nil)
 	Env.DatabaseURL = Env.TestDatabaseURL
-	Env.StripeKey = Env.StripeKeyTest
+	services.InitStripe(Env.StripeKeyTest)
 	runInitializations()
 }
 
