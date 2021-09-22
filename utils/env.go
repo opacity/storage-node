@@ -49,11 +49,19 @@ type StorageNodeEnv struct {
 	GoEnv   string `env:"GO_ENV" envDefault:"localhost"`
 	Version string `env:"VERSION" envDefault:"localhost"`
 
+	// @TODO: BEGIN: remove this after first run with wallets in DB
 	// Payment stuff
 	ContractAddress      string `env:"TOKEN_CONTRACT_ADDRESS,notEmpty"`
 	EthNodeURL           string `env:"ETH_NODE_URL,notEmpty"`
 	MainWalletAddress    string `env:"MAIN_WALLET_ADDRESS,notEmpty"`
 	MainWalletPrivateKey string `env:"MAIN_WALLET_PRIVATE_KEY,notEmpty"`
+
+	// Polygon payment stuff
+	PolygonContractAddress      string `env:"POLYGON_TOKEN_CONTRACT_ADDRESS,notEmpty"`
+	PolygonNodeURL              string `env:"POLYGON_NODE_URL,notEmpty"`
+	PolygonMainWalletAddress    string `env:"POLYGON_WALLET_ADDRESS,notEmpty"`
+	PolygonMainWalletPrivateKey string `env:"POLYGON_WALLET_PRIVATE_KEY,notEmpty"`
+	// @TODO: END: remove this after first run with wallets in DB
 
 	// Whether the jobs should run
 	EnableJobs bool `env:"ENABLE_JOB" envDefault:"false"`
@@ -166,8 +174,14 @@ func tryLookUp() error {
 	encryptionKey := AppendLookupErrors("ENCRYPTION_KEY", &collectedErrors)
 	contractAddress := AppendLookupErrors("TOKEN_CONTRACT_ADDRESS", &collectedErrors)
 	ethNodeURL := AppendLookupErrors("ETH_NODE_URL", &collectedErrors)
+	// @TODO: BEGIN: remove this after first run with wallets in DB
 	mainWalletAddress := AppendLookupErrors("MAIN_WALLET_ADDRESS", &collectedErrors)
 	mainWalletPrivateKey := AppendLookupErrors("MAIN_WALLET_PRIVATE_KEY", &collectedErrors)
+	polygonContractAddress := AppendLookupErrors("POLYGON_TOKEN_CONTRACT_ADDRESS", &collectedErrors)
+	polygonNodeURL := AppendLookupErrors("POLYGON_NODE_URL", &collectedErrors)
+	polygonMainWalletAddress := AppendLookupErrors("POLYGON_WALLET_ADDRESS", &collectedErrors)
+	polygonMainWalletPrivateKey := AppendLookupErrors("POLYGON_WALLET_PRIVATE_KEY", &collectedErrors)
+	// @TODO: END: remove this after first run with wallets in DB
 	bucketName := AppendLookupErrors("AWS_BUCKET_NAME", &collectedErrors)
 	awsRegion := AppendLookupErrors("AWS_REGION", &collectedErrors)
 	adminUser := AppendLookupErrors("ADMIN_USER", &collectedErrors)
@@ -195,22 +209,26 @@ func tryLookUp() error {
 	enableCreditCards := enableCreditCardsStr == "true"
 
 	serverEnv := StorageNodeEnv{
-		ProdDatabaseURL:      prodDBUrl,
-		TestDatabaseURL:      testDBUrl,
-		EncryptionKey:        encryptionKey,
-		ContractAddress:      contractAddress,
-		EthNodeURL:           ethNodeURL,
-		MainWalletAddress:    mainWalletAddress,
-		MainWalletPrivateKey: mainWalletPrivateKey,
-		AccountRetentionDays: accountRetentionDays,
-		StripeRetentionDays:  stripeRetentionDays,
-		AwsRegion:            awsRegion,
-		BucketName:           bucketName,
-		AdminUser:            adminUser,
-		AdminPassword:        adminPassword,
-		StripeKeyTest:        stripeKeyTest,
-		StripeKeyProd:        stripeKeyProd,
-		EnableCreditCards:    enableCreditCards,
+		ProdDatabaseURL:             prodDBUrl,
+		TestDatabaseURL:             testDBUrl,
+		EncryptionKey:               encryptionKey,
+		ContractAddress:             contractAddress,
+		EthNodeURL:                  ethNodeURL,
+		MainWalletAddress:           mainWalletAddress,
+		MainWalletPrivateKey:        mainWalletPrivateKey,
+		PolygonContractAddress:      polygonContractAddress,
+		PolygonNodeURL:              polygonNodeURL,
+		PolygonMainWalletAddress:    polygonMainWalletAddress,
+		PolygonMainWalletPrivateKey: polygonMainWalletPrivateKey,
+		AccountRetentionDays:        accountRetentionDays,
+		StripeRetentionDays:         stripeRetentionDays,
+		AwsRegion:                   awsRegion,
+		BucketName:                  bucketName,
+		AdminUser:                   adminUser,
+		AdminPassword:               adminPassword,
+		StripeKeyTest:               stripeKeyTest,
+		StripeKeyProd:               stripeKeyProd,
+		EnableCreditCards:           enableCreditCards,
 	}
 
 	Env = serverEnv

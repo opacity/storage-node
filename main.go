@@ -58,6 +58,7 @@ func main() {
 	}
 
 	setEnvPlans()
+	migrateEnvWallets()
 
 	jobs.StartupJobs()
 	if utils.Env.EnableJobs {
@@ -87,6 +88,42 @@ func setEnvPlans() {
 	}
 
 	utils.CreatePlanMetrics()
+}
+
+// @TODO: remove this after first run with wallets in DB
+func migrateEnvWallets() {
+	wallets := []models.SmartContract{}
+	walletsResults := models.DB.Find(&wallets)
+
+	if walletsResults.RowsAffected == 0 {
+		ethMainWallet := models.SmartContract{
+			Network:          "ethereum",
+			NetworkID:        1,
+			Address:          utils.Env.ContractAddress,
+			NodeURL:          utils.Env.EthNodeURL,
+			WalletAddress:    utils.Env.MainWalletAddress,
+			WalletPrivateKey: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.MainWalletPrivateKey),
+		}
+
+		polygonMainWallet := models.SmartContract{
+			Network:          "polygon",
+			NetworkID:        137,
+			Address:          utils.Env.PolygonContractAddress,
+			NodeURL:          utils.Env.PolygonNodeURL,
+			WalletAddress:    utils.Env.PolygonMainWalletAddress,
+			WalletPrivateKey: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.PolygonMainWalletPrivateKey),
+		}
+
+		if GO_ENV != "production" {
+			ethMainWallet.Network = "goerli"
+			ethMainWallet.NetworkID = 5
+
+			polygonMainWallet.Network = "mumbai"
+			polygonMainWallet.NetworkID = 80001
+		}
+		models.DB.Model(&utils.PlanInfo{}).Create(&ethMainWallet)
+		models.DB.Model(&utils.PlanInfo{}).Create(&polygonMainWallet)
+	}
 }
 
 func sentryOpacityBeforeSend(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
