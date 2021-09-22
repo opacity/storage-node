@@ -28,7 +28,7 @@ func Test_KVStore_MassBatchSet(t *testing.T) {
 	assert.Nil(t, err)
 
 	kvs, _ := BatchGet(&KVKeys{strconv.Itoa(guessedMaxBatchSize - 1)})
-	AssertTrue(len(*kvs) == 1, t, "Expect only an item")
+	assert.True(t, len(*kvs) == 1, "expect only an item")
 }
 
 func Test_KVStoreGetValueFromKV(t *testing.T) {
@@ -60,7 +60,7 @@ func Test_KVStoreBatchGet(t *testing.T) {
 	kvs, err := BatchGet(&KVKeys{"key"})
 	assert.Nil(t, err)
 
-	AssertTrue(len(*kvs) == 1, t, "")
+	assert.True(t, len(*kvs) == 1)
 	assert.Nil(t, err)
 }
 
@@ -73,7 +73,7 @@ func Test_KVStoreBatchGet_WithMissingKey(t *testing.T) {
 	kvs, err := BatchGet(&KVKeys{"key", "unknownKey"})
 	assert.Nil(t, err)
 
-	AssertTrue(len(*kvs) == 1, t, "")
+	assert.True(t, len(*kvs) == 1)
 	assert.Equal(t, "opacity", (*kvs)["key"])
 }
 
@@ -85,7 +85,7 @@ func Test_KVStore_MassBatchGet(t *testing.T) {
 	assert.Nil(t, err)
 
 	kvs, _ := BatchGet(getKeys(guessedMaxBatchSize))
-	AssertTrue(len(*kvs) == guessedMaxBatchSize, t, "")
+	assert.True(t, len(*kvs) == guessedMaxBatchSize)
 }
 
 func Test_KVStoreBatchDelete(t *testing.T) {
@@ -99,7 +99,7 @@ func Test_KVStoreBatchDelete(t *testing.T) {
 
 	kvs, err := BatchGet(&KVKeys{"key1"})
 	assert.Nil(t, err)
-	AssertTrue(len(*kvs) == 0, t, "")
+	assert.True(t, len(*kvs) == 0)
 }
 
 func Test_KVStore_MassBatchDelete(t *testing.T) {
@@ -124,7 +124,7 @@ func Test_KVStore_RemoveAllKvStoreData(t *testing.T) {
 	InitKvStore()
 	kvs, _ := BatchGet(getKeys(2))
 
-	AssertTrue(len(*kvs) == 0, t, "")
+	assert.True(t, len(*kvs) == 0)
 }
 
 func getKvPairs(count int) *KVPairs {
