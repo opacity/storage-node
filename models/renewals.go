@@ -138,7 +138,7 @@ func handleRenewalThatNeedsGas(renewal Renewal, networkID uint) error {
 	paid, _ := renewal.CheckIfPaid(networkID)
 	var transferErr error
 	if paid {
-		_, _, _, transferErr = services.EthWrappers[networkID].TransferETH(
+		_, _, _, transferErr = services.EthOpsWrapper.TransferETH(services.EthWrappers[networkID],
 			services.EthWrappers[networkID].MainWalletAddress,
 			services.EthWrappers[networkID].MainWalletPrivateKey,
 			services.StringToAddress(renewal.EthAddress),
@@ -154,7 +154,8 @@ func handleRenewalThatNeedsGas(renewal Renewal, networkID uint) error {
 /*handleRenewalReceivingGas checks whether the gas has arrived and transitions the renewal to the next payment
 status if so.*/
 func handleRenewalReceivingGas(renewal Renewal, networkID uint) error {
-	ethBalance := services.EthWrappers[networkID].GetETHBalance(services.StringToAddress(renewal.EthAddress))
+	ethBalance := services.EthOpsWrapper.GetETHBalance(services.EthWrappers[networkID],
+		services.StringToAddress(renewal.EthAddress))
 	if ethBalance.Cmp(big.NewInt(0)) > 0 {
 		SetRenewalsToNextPaymentStatus([]Renewal{renewal})
 	}
@@ -164,8 +165,10 @@ func handleRenewalReceivingGas(renewal Renewal, networkID uint) error {
 /*handleRenewalReadyForCollection will attempt to retrieve the tokens from the renewal's payment address and set the
 renewal's payment status to the next status if there are no errors.*/
 func handleRenewalReadyForCollection(renewal Renewal, networkID uint) error {
-	tokenBalance := services.EthWrappers[networkID].GetTokenBalance(services.StringToAddress(renewal.EthAddress))
-	ethBalance := services.EthWrappers[networkID].GetETHBalance(services.StringToAddress(renewal.EthAddress))
+	tokenBalance := services.EthOpsWrapper.GetTokenBalance(services.EthWrappers[networkID],
+		services.StringToAddress(renewal.EthAddress))
+	ethBalance := services.EthOpsWrapper.GetETHBalance(services.EthWrappers[networkID],
+		services.StringToAddress(renewal.EthAddress))
 	keyInBytes, decryptErr := utils.DecryptWithErrorReturn(
 		utils.Env.EncryptionKey,
 		renewal.EthPrivateKey,
@@ -185,7 +188,7 @@ func handleRenewalReadyForCollection(renewal Renewal, networkID uint) error {
 		return errors.New("got negative balance for ethBalance")
 	}
 
-	success, _, _ := services.EthWrappers[networkID].TransferToken(
+	success, _, _ := services.EthOpsWrapper.TransferToken(services.EthWrappers[networkID],
 		services.StringToAddress(renewal.EthAddress),
 		privateKey,
 		services.EthWrappers[networkID].MainWalletAddress,
@@ -201,7 +204,8 @@ func handleRenewalReadyForCollection(renewal Renewal, networkID uint) error {
 /*handleRenewalWithCollectionInProgress will check the token balance of an renewal's payment address.  If the balance
 is zero, it means the collection has succeeded and the payment status is set to the next status*/
 func handleRenewalWithCollectionInProgress(renewal Renewal, networkID uint) error {
-	balance := services.EthWrappers[networkID].GetTokenBalance(services.StringToAddress(renewal.EthAddress))
+	balance := services.EthOpsWrapper.GetTokenBalance(services.EthWrappers[networkID],
+		services.StringToAddress(renewal.EthAddress))
 	if balance.Cmp(big.NewInt(0)) == 0 {
 		SetRenewalsToNextPaymentStatus([]Renewal{renewal})
 	}

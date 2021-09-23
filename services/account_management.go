@@ -36,7 +36,7 @@ func init() {
 
 func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 	var tokenBalance *big.Int
-	if tokenBalance = EthWrappers[networkID].GetTokenBalance(address); tokenBalance == big.NewInt(-1) {
+	if tokenBalance = EthOpsWrapper.GetTokenBalance(EthWrappers[networkID], address); tokenBalance == big.NewInt(-1) {
 		return false, errors.New("could not get balance")
 	}
 
@@ -44,5 +44,5 @@ func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int, net
 }
 
 func checkIfBackendSubscriptionPaymentPending(address common.Address, networkID uint) bool {
-	return EthWrappers[networkID].CheckForPendingTokenTxs(address)
+	return EthOpsWrapper.CheckForPendingTokenTxs(EthWrappers[networkID], address)
 }

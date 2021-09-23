@@ -115,7 +115,7 @@ func (stripePayment *StripePayment) SendAccountOPCT(networkID uint) error {
 
 	costInWei := account.GetTotalCostInWei()
 
-	success, _, _ := services.EthWrappers[networkID].TransferToken(
+	success, _, _ := services.EthOpsWrapper.TransferToken(services.EthWrappers[networkID],
 		services.EthWrappers[networkID].MainWalletAddress,
 		services.EthWrappers[networkID].MainWalletPrivateKey,
 		services.StringToAddress(account.EthAddress),
@@ -139,7 +139,7 @@ func (stripePayment *StripePayment) SendUpgradeOPCT(account Account, newStorageL
 
 	costInWei := services.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost))
 
-	success, _, _ := services.EthWrappers[networkID].TransferToken(
+	success, _, _ := services.EthOpsWrapper.TransferToken(services.EthWrappers[networkID],
 		services.EthWrappers[networkID].MainWalletAddress,
 		services.EthWrappers[networkID].MainWalletPrivateKey,
 		services.StringToAddress(upgrade.EthAddress),
