@@ -51,7 +51,7 @@ type SpaceReport struct {
 type Invoice struct {
 	Cost       float64 `json:"cost" validate:"omitempty,gte=0" example:"1.56"`
 	EthAddress string  `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"`
-	NetworkID  uint    `json:"networkId" validate:"omitempty,gte=1" example:"1"`
+	NetworkID  uint    `json:"networkId" validate:"omitempty,gte=0" example:"1"`
 }
 
 /*StorageLimitType defines a type for the storage limits*/

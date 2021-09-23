@@ -28,6 +28,7 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		NetworkID:   utils.TestNetworkID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -60,6 +61,7 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		NetworkID:   utils.TestNetworkID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -88,6 +90,7 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		NetworkID:   utils.TestNetworkID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -119,6 +122,7 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		NetworkID:   utils.TestNetworkID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -147,6 +151,7 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		NetworkID:   utils.TestNetworkID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 

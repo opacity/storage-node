@@ -117,7 +117,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) 
 	_, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: 0,
+		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -130,7 +130,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: 0,
+		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 	//	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -152,7 +152,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: 0,
+		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -175,7 +175,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsExpi
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: 0,
+		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 	//	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -203,7 +203,7 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: 0,
+		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 	//	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -241,7 +241,7 @@ func Test_UpdateApiVersion(t *testing.T) {
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: 0,
+		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 	account.ApiVersion = 1
 	account.StorageLocation = "1"

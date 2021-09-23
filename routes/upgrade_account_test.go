@@ -61,6 +61,7 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Success(t *testi
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		MetadataKeys:     []string{utils.GenerateFileHandle()},
 		FileHandles:      []string{utils.GenerateFileHandle()},
+		NetworkID:        utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeStatusObj)
@@ -118,6 +119,8 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Success(t *testi
 }
 
 func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Still_Pending(t *testing.T) {
+	setupTests(t)
+
 	models.DeleteAccountsForTest(t)
 	models.DeleteUpgradesForTest(t)
 	models.DeleteStripePaymentsForTest(t)
@@ -129,6 +132,7 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Still_Pending(t 
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		MetadataKeys:     []string{utils.GenerateFileHandle()},
 		FileHandles:      []string{utils.GenerateFileHandle()},
+		NetworkID:        utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeStatusObj)
@@ -273,6 +277,7 @@ func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		MetadataKeys:     []string{utils.GenerateFileHandle()},
 		FileHandles:      []string{utils.GenerateFileHandle()},
+		NetworkID:        utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeStatusObj)

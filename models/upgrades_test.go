@@ -275,7 +275,7 @@ func Test_Upgrade_CheckIfPaid_Has_Paid(t *testing.T) {
 		t.Fatalf("should have upgrade account but didn't: " + err.Error())
 	}
 
-	paid, err := upgrade.CheckIfPaid(0)
+	paid, err := upgrade.CheckIfPaid(utils.TestNetworkID)
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -295,7 +295,7 @@ func Test_Upgrade_CheckIfPaid_Not_Paid(t *testing.T) {
 		t.Fatalf("should have upgrade account but didn't: " + err.Error())
 	}
 
-	paid, err := upgrade.CheckIfPaid(0)
+	paid, err := upgrade.CheckIfPaid(utils.TestNetworkID)
 	assert.False(t, paid)
 	assert.Nil(t, err)
 
@@ -315,7 +315,7 @@ func Test_Upgrade_CheckIfPaid_Error_While_Checking(t *testing.T) {
 		t.Fatalf("should have upgrade account but didn't: " + err.Error())
 	}
 
-	paid, err := upgrade.CheckIfPaid(0)
+	paid, err := upgrade.CheckIfPaid(utils.TestNetworkID)
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 

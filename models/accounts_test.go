@@ -369,7 +369,7 @@ func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid(0)
+	paid, err := account.CheckIfPaid(utils.TestNetworkID)
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -390,7 +390,7 @@ func Test_CheckIfPaid_Not_Paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid(0)
+	paid, err := account.CheckIfPaid(utils.TestNetworkID)
 	assert.False(t, paid)
 	assert.Nil(t, err)
 
@@ -411,7 +411,7 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid(0)
+	paid, err := account.CheckIfPaid(utils.TestNetworkID)
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 
@@ -427,7 +427,7 @@ func Test_CheckIfPending_Is_Pending(t *testing.T) {
 		return true
 	}
 
-	pending := account.CheckIfPending(0)
+	pending := account.CheckIfPending(utils.TestNetworkID)
 	assert.True(t, pending)
 }
 
@@ -438,7 +438,7 @@ func Test_CheckIfPending_Is_Not_Pending(t *testing.T) {
 		return false
 	}
 
-	pending := account.CheckIfPending(0)
+	pending := account.CheckIfPending(utils.TestNetworkID)
 	assert.False(t, pending)
 }
 
@@ -449,7 +449,7 @@ func Test_CheckIfPending_Error_While_Checking(t *testing.T) {
 		return false
 	}
 
-	pending := account.CheckIfPending(0)
+	pending := account.CheckIfPending(utils.TestNetworkID)
 	assert.False(t, pending)
 	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
 }
@@ -1418,7 +1418,7 @@ func verifyPaymentStatusExpectations(t *testing.T,
 	assert.Equal(t, startingStatus, accountFromDB.PaymentStatus)
 
 	// call method under test
-	methodUnderTest(accountFromDB, 0)
+	methodUnderTest(accountFromDB, utils.TestNetworkID)
 
 	// grab the account from the DB
 	accountFromDB, _ = GetAccountById(account.AccountID)

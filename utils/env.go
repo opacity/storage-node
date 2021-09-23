@@ -4,18 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"math/big"
 
 	"os"
 
 	"strconv"
 
 	"github.com/caarlos0/env/v6"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
 	"github.com/opacity/storage-node/services"
 )
 
 const defaultAccountRetentionDays = 7
 const defaultStripeRetentionDays = 30
+const TestNetworkID = 999
 
 const DefaultPlansJson = `{
 	"10":{"name":"Free","cost":0,"costInUSD":0.00,"storageInGB":10,"maxFolders":200,"maxMetadataSizeInMB":20},
@@ -147,7 +150,19 @@ func SetTesting(filenames ...string) {
 		CheckForPendingTokenTxs: services.CheckForPendingTokenTxsWrapper,
 	}
 	services.EthWrappers = make(map[uint]*services.Eth)
-	services.EthWrappers[0] = &services.Eth{}
+	defaultGasPrice := services.ConvertGweiToWei(big.NewInt(80))
+
+	services.EthWrappers[TestNetworkID] = &services.Eth{
+		AddressNonceMap:                make(map[common.Address]uint64),
+		DefaultGasPrice:                services.ConvertGweiToWei(big.NewInt(80)),
+		DefaultGasForPaymentCollection: new(big.Int).Mul(defaultGasPrice, big.NewInt(int64(services.GasLimitTokenSend))),
+		SlowGasPrice:                   services.ConvertGweiToWei(big.NewInt(80)),
+		FastGasPrice:                   services.ConvertGweiToWei(big.NewInt(145)),
+
+		ChainId:         big.NewInt(TestNetworkID),
+		ContractAddress: services.StringToAddress(Env.ContractAddress),
+		NodeUrl:         Env.EthNodeURL,
+	}
 
 	services.InitStripe(Env.StripeKeyTest)
 	runInitializations()

@@ -22,7 +22,7 @@ type checkUpgradeStatusObject struct {
 	FileHandles      []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
 	StorageLimit     int      `json:"storageLimit" validate:"required,gte=128" minimum:"128" example:"128"`
 	DurationInMonths int      `json:"durationInMonths" validate:"required,gte=1" minimum:"1" example:"12"`
-	NetworkID        uint     `json:"networkId" validate:"required,gte=1" example:"1"`
+	NetworkID        uint     `json:"networkId" validate:"required,gte=0" example:"1"`
 }
 
 type getUpgradeAccountInvoiceReq struct {

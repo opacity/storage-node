@@ -221,7 +221,7 @@ func Test_Renewal_CheckIfPaid_Has_Paid(t *testing.T) {
 		t.Fatalf("should have renewal account but didn't: " + err.Error())
 	}
 
-	paid, err := renewal.CheckIfPaid(0)
+	paid, err := renewal.CheckIfPaid(utils.TestNetworkID)
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -241,7 +241,7 @@ func Test_Renewal_CheckIfPaid_Not_Paid(t *testing.T) {
 		t.Fatalf("should have renewal account but didn't: " + err.Error())
 	}
 
-	paid, err := renewal.CheckIfPaid(0)
+	paid, err := renewal.CheckIfPaid(utils.TestNetworkID)
 	assert.False(t, paid)
 	assert.Nil(t, err)
 
@@ -261,7 +261,7 @@ func Test_Renewal_CheckIfPaid_Error_While_Checking(t *testing.T) {
 		t.Fatalf("should have renewal account but didn't: " + err.Error())
 	}
 
-	paid, err := renewal.CheckIfPaid(0)
+	paid, err := renewal.CheckIfPaid(utils.TestNetworkID)
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 

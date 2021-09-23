@@ -64,6 +64,7 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Success(t *t
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		MetadataKeys:     []string{utils.GenerateMetadataV2Key()},
 		FileHandles:      []string{utils.GenerateMetadataV2Key()},
+		NetworkID:        utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeV2StatusObj)
@@ -132,6 +133,7 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Still_Pendin
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		MetadataKeys:     []string{utils.GenerateMetadataV2Key()},
 		FileHandles:      []string{utils.GenerateMetadataV2Key()},
+		NetworkID:        utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeV2StatusObj)
@@ -278,6 +280,7 @@ func Test_CheckUpgradeV2StatusHandler_Multiple_UpgradeV2s(t *testing.T) {
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		MetadataKeys:     []string{utils.GenerateMetadataV2Key()},
 		FileHandles:      []string{utils.GenerateMetadataV2Key()},
+		NetworkID:        utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeV2StatusObj)

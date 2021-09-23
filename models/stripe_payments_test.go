@@ -182,7 +182,7 @@ func Test_SendAccountOPCT(t *testing.T) {
 	}
 
 	assert.Equal(t, OpctTxNotStarted, stripePayment.OpctTxStatus)
-	err := stripePayment.SendAccountOPCT(0)
+	err := stripePayment.SendAccountOPCT(utils.TestNetworkID)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
 }
@@ -201,7 +201,7 @@ func Test_SendUpgradeOPCT(t *testing.T) {
 	}
 
 	assert.Equal(t, OpctTxNotStarted, stripePayment.OpctTxStatus)
-	err := stripePayment.SendUpgradeOPCT(account, int(ProfessionalStorageLimit), 0)
+	err := stripePayment.SendUpgradeOPCT(account, int(ProfessionalStorageLimit), utils.TestNetworkID)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
 }
@@ -220,7 +220,7 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_complete(t *testing.T)
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	txSuccess, err := stripePayment.CheckAccountCreationOPCTTransaction(0)
+	txSuccess, err := stripePayment.CheckAccountCreationOPCTTransaction(utils.TestNetworkID)
 	assert.True(t, txSuccess)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxSuccess, stripePayment.OpctTxStatus)
@@ -241,7 +241,7 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_incomplete(t *testing.
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	success, err := stripePayment.CheckAccountCreationOPCTTransaction(0)
+	success, err := stripePayment.CheckAccountCreationOPCTTransaction(utils.TestNetworkID)
 	assert.Nil(t, err)
 	assert.False(t, success)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
@@ -261,7 +261,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit), 0)
+	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit), utils.TestNetworkID)
 	assert.True(t, success)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxSuccess, stripePayment.OpctTxStatus)
@@ -282,7 +282,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit), 0)
+	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit), utils.TestNetworkID)
 	assert.Nil(t, err)
 	assert.False(t, success)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
@@ -305,7 +305,7 @@ func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
 		return true, "", 1
 	}
 
-	stripePayment.RetryIfTimedOut(0)
+	stripePayment.RetryIfTimedOut(utils.TestNetworkID)
 
 	assert.False(t, retryOccurred)
 }
@@ -329,7 +329,7 @@ func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
 		return true, "", 1
 	}
 
-	stripePayment.RetryIfTimedOut(0)
+	stripePayment.RetryIfTimedOut(utils.TestNetworkID)
 
 	assert.True(t, retryOccurred)
 }

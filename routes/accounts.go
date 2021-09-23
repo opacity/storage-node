@@ -62,7 +62,7 @@ type accountGetObj struct {
 
 type accountGetReqObj struct {
 	Timestamp int64 `json:"timestamp" validate:"required"`
-	NetworkID uint  `json:"networkId" validate:"required,gte=1" example:"1"`
+	NetworkID uint  `json:"networkId" validate:"required,gte=0" example:"1"`
 }
 
 type getAccountDataReq struct {

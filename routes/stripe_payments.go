@@ -23,7 +23,7 @@ type createStripePaymentObject struct {
 	Timestamp        int64  `json:"timestamp" validate:"required"`
 	UpgradeAccount   bool   `json:"upgradeAccount"`
 	StorageLimit     int    `json:"storageLimit" validate:"omitempty,gte=128" minimum:"128" example:"128"`
-	DurationInMonths int    `json:"durationInMonths" validate:"omitempty,gte=1" minimum:"1" example:"12"`
+	DurationInMonths int    `json:"durationInMonths" validate:"omitempty,gte=0" minimum:"1" example:"12"`
 }
 
 type createStripePaymentReq struct {

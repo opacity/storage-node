@@ -82,6 +82,7 @@ func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Success(t *testi
 	checkRenewalV2StatusObj := checkRenewalV2StatusObject{
 		MetadataKeys: []string{utils.GenerateMetadataV2Key()},
 		FileHandles:  []string{utils.GenerateMetadataV2Key()},
+		NetworkID:    utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkRenewalV2StatusObj)
@@ -146,6 +147,7 @@ func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Still_Pending(t 
 	checkRenewalV2StatusObj := checkRenewalV2StatusObject{
 		MetadataKeys: []string{utils.GenerateMetadataV2Key()},
 		FileHandles:  []string{utils.GenerateMetadataV2Key()},
+		NetworkID:    utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkRenewalV2StatusObj)
