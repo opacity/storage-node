@@ -369,7 +369,7 @@ func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid(networkID)
+	paid, err := account.CheckIfPaid(0)
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -390,7 +390,7 @@ func Test_CheckIfPaid_Not_Paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid()
+	paid, err := account.CheckIfPaid(0)
 	assert.False(t, paid)
 	assert.Nil(t, err)
 
@@ -411,7 +411,7 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid()
+	paid, err := account.CheckIfPaid(0)
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 
@@ -427,7 +427,7 @@ func Test_CheckIfPending_Is_Pending(t *testing.T) {
 		return true
 	}
 
-	pending := account.CheckIfPending()
+	pending := account.CheckIfPending(0)
 	assert.True(t, pending)
 }
 
@@ -438,7 +438,7 @@ func Test_CheckIfPending_Is_Not_Pending(t *testing.T) {
 		return false
 	}
 
-	pending := account.CheckIfPending()
+	pending := account.CheckIfPending(0)
 	assert.False(t, pending)
 }
 
@@ -449,7 +449,7 @@ func Test_CheckIfPending_Error_While_Checking(t *testing.T) {
 		return false
 	}
 
-	pending := account.CheckIfPending()
+	pending := account.CheckIfPending(0)
 	assert.False(t, pending)
 	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
 }
@@ -1165,7 +1165,7 @@ func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.TransferETH = func(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey,
+	services.EthOpsWrapper.TransferETH = func(ethWrapper *services.Eth, fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey,
 		toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
 		// not returning anything important for the first three return values because
 		// handleAccountThatNeedsGas only cares about the 4th return value which will
@@ -1174,7 +1174,6 @@ func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {
 	}
 
 	verifyPaymentStatusExpectations(t, account, InitialPaymentReceived, GasTransferInProgress, handleAccountThatNeedsGas)
-
 }
 
 func Test_handleAccountThatNeedsGas_transfer_error(t *testing.T) {
@@ -1185,7 +1184,7 @@ func Test_handleAccountThatNeedsGas_transfer_error(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.TransferETH = func(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey,
+	services.EthOpsWrapper.TransferETH = func(ethWrapper *services.Eth, fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey,
 		toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
 		// not returning anything important for the first three return values because
 		// handleAccountThatNeedsGas only cares about the 4th return value which will
@@ -1205,7 +1204,7 @@ func Test_handleAccountReceivingGas_gas_received(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetETHBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
 
@@ -1221,7 +1220,7 @@ func Test_handleAccountReceivingGas_gas_not_received(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetETHBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(-1)
 	}
 
@@ -1237,13 +1236,13 @@ func Test_handleAccountReadyForCollection_transfer_success(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetETHBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
-	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetTokenBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
-	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		// all that handleAccountReadyForCollection cares about is the first return value
 		return true, "", 1
@@ -1260,13 +1259,13 @@ func Test_handleAccountReadyForCollection_transfer_failed(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetETHBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
-	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetTokenBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
-	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		// all that handleAccountReadyForCollection cares about is the first return value
 		return false, "", 1
@@ -1284,7 +1283,7 @@ func Test_handleAccountWithCollectionInProgress_balance_not_found(t *testing.T) 
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetTokenBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
 
@@ -1299,7 +1298,7 @@ func Test_handleAccountWithCollectionInProgress_balance_found(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetTokenBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(0)
 	}
 
@@ -1411,7 +1410,7 @@ func verifyPaymentStatusExpectations(t *testing.T,
 	account Account,
 	startingStatus PaymentStatusType,
 	endingStatus PaymentStatusType,
-	methodUnderTest func(Account) error) {
+	methodUnderTest func(Account, uint) error) {
 	// grab the account from the DB
 	accountFromDB, _ := GetAccountById(account.AccountID)
 
@@ -1419,7 +1418,7 @@ func verifyPaymentStatusExpectations(t *testing.T,
 	assert.Equal(t, startingStatus, accountFromDB.PaymentStatus)
 
 	// call method under test
-	methodUnderTest(accountFromDB)
+	methodUnderTest(accountFromDB, 0)
 
 	// grab the account from the DB
 	accountFromDB, _ = GetAccountById(account.AccountID)

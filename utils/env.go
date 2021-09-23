@@ -138,6 +138,16 @@ func SetTesting(filenames ...string) {
 	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
 	LogIfError(err, nil)
 	Env.DatabaseURL = Env.TestDatabaseURL
+
+	services.EthOpsWrapper = services.EthOps{
+		TransferToken:           services.TransferTokenWrapper,
+		TransferETH:             services.TransferETHWrapper,
+		GetTokenBalance:         services.GetTokenBalanceWrapper,
+		GetETHBalance:           services.GetETHBalanceWrapper,
+		CheckForPendingTokenTxs: services.CheckForPendingTokenTxsWrapper,
+	}
+	services.EthWrappers[0] = &services.Eth{}
+
 	services.InitStripe(Env.StripeKeyTest)
 	runInitializations()
 }
