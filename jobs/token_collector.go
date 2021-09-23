@@ -46,47 +46,60 @@ func (t tokenCollector) Run() {
 }
 
 func (t tokenCollector) Runnable() bool {
-	err := services.SetWallets()
-	utils.LogIfError(err, nil)
-	return models.DB != nil && err == nil
+	// @TODO: investigate this
+	// err := services.SetWallets()
+	// utils.LogIfError(err, nil)
+	// return models.DB != nil && err == nil
+	return models.DB != nil
 }
 
 func runAccountsCollectionSequence(accounts []models.Account) {
 	for _, account := range accounts {
-		err := models.AccountCollectionFunctions[account.PaymentStatus](account)
 		cost, _ := account.Cost()
-		utils.LogIfError(err, map[string]interface{}{
-			"message":        "error running token collection functions on account",
-			"eth_address":    account.EthAddress,
-			"account_id":     account.AccountID,
-			"payment_status": models.PaymentStatusMap[account.PaymentStatus],
-			"cost":           cost,
-		})
+		// Try to get the tokens from all the networks
+		for networkID := range services.EthWrappers {
+			err := models.AccountCollectionFunctions[account.PaymentStatus](account, networkID)
+			utils.LogIfError(err, map[string]interface{}{
+				"message":        "error running token collection functions on account",
+				"network_id":     networkID,
+				"eth_address":    account.EthAddress,
+				"account_id":     account.AccountID,
+				"payment_status": models.PaymentStatusMap[account.PaymentStatus],
+				"cost":           cost,
+			})
+		}
+
 	}
 }
 
 func runUpgradesCollectionSequence(upgrades []models.Upgrade) {
 	for _, upgrade := range upgrades {
-		err := models.UpgradeCollectionFunctions[upgrade.PaymentStatus](upgrade)
-		utils.LogIfError(err, map[string]interface{}{
-			"message":        "error running token collection functions on upgrade",
-			"eth_address":    upgrade.EthAddress,
-			"account_id":     upgrade.AccountID,
-			"payment_status": models.PaymentStatusMap[upgrade.PaymentStatus],
-			"cost":           upgrade.OpctCost,
-		})
+		// Try to get the tokens from all the networks
+		for networkID := range services.EthWrappers {
+			err := models.UpgradeCollectionFunctions[upgrade.PaymentStatus](upgrade, networkID)
+			utils.LogIfError(err, map[string]interface{}{
+				"message":        "error running token collection functions on upgrade",
+				"eth_address":    upgrade.EthAddress,
+				"account_id":     upgrade.AccountID,
+				"payment_status": models.PaymentStatusMap[upgrade.PaymentStatus],
+				"cost":           upgrade.OpctCost,
+			})
+		}
 	}
 }
 
 func runRenewalsCollectionSequence(renewals []models.Renewal) {
 	for _, renewal := range renewals {
-		err := models.RenewalCollectionFunctions[renewal.PaymentStatus](renewal)
-		utils.LogIfError(err, map[string]interface{}{
-			"message":        "error running token collection functions on renewal",
-			"eth_address":    renewal.EthAddress,
-			"account_id":     renewal.AccountID,
-			"payment_status": models.PaymentStatusMap[renewal.PaymentStatus],
-			"cost":           renewal.OpctCost,
-		})
+		// Try to get the tokens from all the networks
+		for networkID := range services.EthWrappers {
+			err := models.RenewalCollectionFunctions[renewal.PaymentStatus](renewal, networkID)
+			utils.LogIfError(err, map[string]interface{}{
+				"message":        "error running token collection functions on renewal",
+				"eth_address":    renewal.EthAddress,
+				"account_id":     renewal.AccountID,
+				"payment_status": models.PaymentStatusMap[renewal.PaymentStatus],
+				"cost":           renewal.OpctCost,
+			})
+		}
 	}
 }

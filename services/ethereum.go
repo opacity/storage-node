@@ -36,7 +36,7 @@ type Eth struct {
 	NodeUrl                        string
 }
 
-var EthWrappers map[uint]Eth
+var EthWrappers map[uint]*Eth
 
 /*TokenCallMsg is the message to send to the ETH blockchain to do token transactions*/
 type TokenCallMsg struct {
@@ -115,7 +115,7 @@ func (eth *Eth) GetTokenBalance(address common.Address) *big.Int {
 // Check balance from a valid ethereum network address
 func (eth *Eth) GetETHBalance(addr common.Address) *big.Int {
 	// connect ethereum client
-	client := eth.SharedClient()
+	client := (*eth).SharedClient()
 
 	balance, err := client.BalanceAt(context.Background(), addr, nil)
 	if err != nil {
@@ -169,7 +169,7 @@ func (eth *Eth) TransferToken(from common.Address, privateKey *ecdsa.PrivateKey,
 }
 
 // Transfer funds from main wallet
-func (eth *Eth) TransferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64) {
+func (eth *Eth) TransferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
 	client := eth.SharedClient()
 
 	// initialize the context
@@ -191,7 +191,8 @@ func (eth *Eth) TransferETH(fromAddress common.Address, fromPrivKey *ecdsa.Priva
 
 	// amount is greater than balance, return error
 	if amount.Uint64() > balance.Uint64() {
-		panic(fmt.Errorf("balance too low to proceed, send ETH to: %v", fromAddress.Hex()))
+		return types.Transactions{}, "", -1, fmt.Errorf("balance too low to proceed, send ETH to: %v",
+			fromAddress.Hex())
 	}
 
 	// create new transaction
@@ -209,8 +210,8 @@ func (eth *Eth) TransferETH(fromAddress common.Address, fromPrivKey *ecdsa.Priva
 	// send transaction
 	err = client.SendTransaction(ctx, signedTx)
 	if err != nil {
-		panic(fmt.Errorf("error sending transaction from %s to %s.  Error:  %v",
-			fromAddress.String(), signedTx.To().String(), err))
+		return types.Transactions{}, "", -1, fmt.Errorf("error sending transaction from %s to %s.  Error:  %v",
+			fromAddress.String(), signedTx.To().String(), err)
 	}
 
 	// pull signed transaction(s)
@@ -221,7 +222,7 @@ func (eth *Eth) TransferETH(fromAddress common.Address, fromPrivKey *ecdsa.Priva
 	}
 
 	// return signed transactions
-	return signedTxs, signedTx.Hash().Hex(), int64(signedTx.Nonce())
+	return signedTxs, signedTx.Hash().Hex(), int64(signedTx.Nonce()), nil
 }
 
 func (eth *Eth) CheckForPendingTokenTxs(address common.Address) bool {
@@ -260,14 +261,14 @@ func (eth *Eth) ReturnLastNonceFromMap(address common.Address) (uint64, bool) {
 
 /*UpdateLastNonceInMap updates the last nonce in the addressNonceMap for an address*/
 func (eth *Eth) UpdateLastNonceInMap(address common.Address, lastNonce uint64) {
-	eth.AddressNonceMap[address] = lastNonce
+	(*eth).AddressNonceMap[address] = lastNonce
 }
 
 // SuggestGasPrice retrieves the currently suggested gas price to allow a timely
 // execution for new transaction
-func (eth Eth) GetGasPrice() (*big.Int, error) {
+func (eth *Eth) GetGasPrice() (*big.Int, error) {
 	// if QAing, un-comment out the line immediately below to hard-code a high gwei value for fast txs
-	return eth.DefaultGasPrice, nil
+	return (*eth).DefaultGasPrice, nil
 
 	client := eth.SharedClient()
 

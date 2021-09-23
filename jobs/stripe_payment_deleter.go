@@ -2,7 +2,6 @@ package jobs
 
 import (
 	"github.com/opacity/storage-node/models"
-	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -25,6 +24,7 @@ func (s stripePaymentDeleter) Run() {
 }
 
 func (s stripePaymentDeleter) Runnable() bool {
-	err := services.SetWallets()
-	return models.DB != nil && err == nil
+	// @TODO: investigate this, why is wallet needed here?
+	// err := services.SetWallets()
+	return models.DB != nil
 }

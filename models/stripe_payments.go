@@ -107,7 +107,7 @@ func (stripePayment *StripePayment) CheckChargePaid() (bool, error) {
 }
 
 /*SendAccountOPCT sends OPCT to the account associated with a stripe payment. */
-func (stripePayment *StripePayment) SendAccountOPCT() error {
+func (stripePayment *StripePayment) SendAccountOPCT(networkID uint) error {
 	account, err := GetAccountById(stripePayment.AccountID)
 	if err != nil {
 		return err
@@ -115,12 +115,12 @@ func (stripePayment *StripePayment) SendAccountOPCT() error {
 
 	costInWei := account.GetTotalCostInWei()
 
-	success, _, _ := EthWrapper.TransferToken(
-		services.MainWalletAddress,
-		services.MainWalletPrivateKey,
+	success, _, _ := services.EthWrappers[networkID].TransferToken(
+		services.EthWrappers[networkID].MainWalletAddress,
+		services.EthWrappers[networkID].MainWalletPrivateKey,
 		services.StringToAddress(account.EthAddress),
 		*costInWei,
-		services.SlowGasPrice)
+		services.EthWrappers[networkID].SlowGasPrice)
 
 	if !success {
 		return errors.New("OPCT transaction failed")
@@ -134,17 +134,17 @@ func (stripePayment *StripePayment) SendAccountOPCT() error {
 }
 
 /*SendUpgradeOPCT sends OPCT to the account being upgraded, associated with a stripe payment. */
-func (stripePayment *StripePayment) SendUpgradeOPCT(account Account, newStorageLimit int) error {
+func (stripePayment *StripePayment) SendUpgradeOPCT(account Account, newStorageLimit int, networkID uint) error {
 	upgrade, _ := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
 
 	costInWei := services.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost))
 
-	success, _, _ := EthWrapper.TransferToken(
-		services.MainWalletAddress,
-		services.MainWalletPrivateKey,
+	success, _, _ := services.EthWrappers[networkID].TransferToken(
+		services.EthWrappers[networkID].MainWalletAddress,
+		services.EthWrappers[networkID].MainWalletPrivateKey,
 		services.StringToAddress(upgrade.EthAddress),
 		*costInWei,
-		services.SlowGasPrice)
+		services.EthWrappers[networkID].SlowGasPrice)
 
 	if !success {
 		return errors.New("OPCT transaction failed")
@@ -158,13 +158,13 @@ func (stripePayment *StripePayment) SendUpgradeOPCT(account Account, newStorageL
 }
 
 /*CheckAccountCreationOPCTTransaction checks the status of an OPCT payment to an account. */
-func (stripePayment *StripePayment) CheckAccountCreationOPCTTransaction() (bool, error) {
+func (stripePayment *StripePayment) CheckAccountCreationOPCTTransaction(networkID uint) (bool, error) {
 	account, err := GetAccountById(stripePayment.AccountID)
 	if err != nil {
 		return false, err
 	}
 
-	paid, err := account.CheckIfPaid()
+	paid, err := account.CheckIfPaid(networkID)
 	if err != nil {
 		return false, err
 	}
@@ -176,19 +176,19 @@ func (stripePayment *StripePayment) CheckAccountCreationOPCTTransaction() (bool,
 		return true, err
 	}
 
-	err = stripePayment.RetryIfTimedOut()
+	err = stripePayment.RetryIfTimedOut(networkID)
 
 	return false, err
 }
 
 /*CheckUpgradeOPCTTransaction checks the status of an OPCT payment to an upgrade. */
-func (stripePayment *StripePayment) CheckUpgradeOPCTTransaction(account Account, newStorageLimit int) (bool, error) {
+func (stripePayment *StripePayment) CheckUpgradeOPCTTransaction(account Account, newStorageLimit int, networkID uint) (bool, error) {
 	upgrade, err := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
 	if err != nil {
 		return false, err
 	}
 
-	paid, err := upgrade.CheckIfPaid()
+	paid, err := upgrade.CheckIfPaid(networkID)
 	if err != nil {
 		return false, err
 	}
@@ -200,17 +200,17 @@ func (stripePayment *StripePayment) CheckUpgradeOPCTTransaction(account Account,
 		return true, err
 	}
 
-	err = stripePayment.RetryIfTimedOut()
+	err = stripePayment.RetryIfTimedOut(networkID)
 
 	return false, err
 }
 
 /*RetryIfTimedOut retries an OPCT payment to an account if the transaction is timed out. */
-func (stripePayment *StripePayment) RetryIfTimedOut() error {
+func (stripePayment *StripePayment) RetryIfTimedOut(networkID uint) error {
 	targetTime := time.Now().Add(-1 * MinutesBeforeRetry * time.Minute)
 
 	if targetTime.After(stripePayment.UpdatedAt) {
-		return stripePayment.SendAccountOPCT()
+		return stripePayment.SendAccountOPCT(networkID)
 	}
 	return nil
 }

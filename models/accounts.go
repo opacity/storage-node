@@ -109,7 +109,7 @@ var PaymentStatusMap = make(map[PaymentStatusType]string)
 /*AccountCollectionFunctions maps a PaymentStatus to the method that should be run
 on an account of that status*/
 var AccountCollectionFunctions = make(map[PaymentStatusType]func(
-	account Account) error)
+	account Account, networdID uint) error)
 
 var InvalidStorageLimitError = errors.New("storage not offered in that increment in GB")
 
@@ -212,13 +212,13 @@ func (account *Account) GetTotalCostInWei() *big.Int {
 }
 
 /*CheckIfPaid returns whether the account has been paid for*/
-func (account *Account) CheckIfPaid() (bool, error) {
+func (account *Account) CheckIfPaid(networkID uint) (bool, error) {
 	if account.PaymentStatus >= InitialPaymentReceived {
 		return true, nil
 	}
 	costInWei := account.GetTotalCostInWei()
 	paid, err := BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress),
-		costInWei)
+		costInWei, networkID)
 	if paid {
 		SetAccountsToNextPaymentStatus([]Account{*(account)})
 	}
@@ -226,13 +226,13 @@ func (account *Account) CheckIfPaid() (bool, error) {
 }
 
 /*CheckIfPending returns whether a transaction is pending to the address*/
-func (account *Account) CheckIfPending() bool {
-	return BackendManager.CheckIfPending(services.StringToAddress(account.EthAddress))
+func (account *Account) CheckIfPending(networkID uint) bool {
+	return BackendManager.CheckIfPending(services.StringToAddress(account.EthAddress), networkID)
 }
 
 /*UseStorageSpaceInByte updates the account's StorageUsedInByte value*/
-func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
-	paid, err := account.CheckIfPaid()
+func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64, networkID uint) error {
+	paid, err := account.CheckIfPaid(networkID)
 	if err != nil {
 		return err
 	}
@@ -544,22 +544,22 @@ sets the account to the next payment status.
 
 Not calling SetAccountsToNextPaymentStatus here because CheckIfPaid calls it
 */
-func handleAccountWithPaymentInProgress(account Account) error {
-	_, err := account.CheckIfPaid()
+func handleAccountWithPaymentInProgress(account Account, networkID uint) error {
+	_, err := account.CheckIfPaid(networkID)
 	return err
 }
 
 /*handleAccountThatNeedsGas sends some ETH to an account that we will later need to collect tokens from and sets the
 account's payment status to the next status.*/
-func handleAccountThatNeedsGas(account Account) error {
-	paid, _ := account.CheckIfPaid()
+func handleAccountThatNeedsGas(account Account, networkID uint) error {
+	paid, _ := account.CheckIfPaid(networkID)
 	var transferErr error
 	if paid {
-		_, _, _, transferErr = EthWrapper.TransferETH(
-			services.MainWalletAddress,
-			services.MainWalletPrivateKey,
+		_, _, _, transferErr = services.EthWrappers[networkID].TransferETH(
+			services.EthWrappers[networkID].MainWalletAddress,
+			services.EthWrappers[networkID].MainWalletPrivateKey,
 			services.StringToAddress(account.EthAddress),
-			services.DefaultGasForPaymentCollection)
+			services.EthWrappers[networkID].DefaultGasForPaymentCollection)
 		if transferErr == nil {
 			SetAccountsToNextPaymentStatus([]Account{account})
 			return nil
@@ -570,8 +570,8 @@ func handleAccountThatNeedsGas(account Account) error {
 
 /*handleAccountReceivingGas checks whether the gas has arrived and transitions the account to the next payment
 status if so.*/
-func handleAccountReceivingGas(account Account) error {
-	ethBalance := EthWrapper.GetETHBalance(services.StringToAddress(account.EthAddress))
+func handleAccountReceivingGas(account Account, networkID uint) error {
+	ethBalance := services.EthWrappers[networkID].GetETHBalance(services.StringToAddress(account.EthAddress))
 	if ethBalance.Cmp(big.NewInt(0)) > 0 {
 		SetAccountsToNextPaymentStatus([]Account{account})
 	}
@@ -580,9 +580,9 @@ func handleAccountReceivingGas(account Account) error {
 
 /*handleAccountReadyForCollection will attempt to retrieve the tokens from the account's payment address and set the
 account's payment status to the next status if there are no errors.*/
-func handleAccountReadyForCollection(account Account) error {
-	tokenBalance := EthWrapper.GetTokenBalance(services.StringToAddress(account.EthAddress))
-	ethBalance := EthWrapper.GetETHBalance(services.StringToAddress(account.EthAddress))
+func handleAccountReadyForCollection(account Account, networkID uint) error {
+	tokenBalance := services.EthWrappers[networkID].GetTokenBalance(services.StringToAddress(account.EthAddress))
+	ethBalance := services.EthWrappers[networkID].GetETHBalance(services.StringToAddress(account.EthAddress))
 	keyInBytes, decryptErr := utils.DecryptWithErrorReturn(
 		utils.Env.EncryptionKey,
 		account.EthPrivateKey,
@@ -602,12 +602,12 @@ func handleAccountReadyForCollection(account Account) error {
 		return errors.New("got negative balance for ethBalance")
 	}
 
-	success, _, _ := EthWrapper.TransferToken(
+	success, _, _ := services.EthWrappers[networkID].TransferToken(
 		services.StringToAddress(account.EthAddress),
 		privateKey,
-		services.MainWalletAddress,
+		services.EthWrappers[networkID].MainWalletAddress,
 		*tokenBalance,
-		services.SlowGasPrice)
+		services.EthWrappers[networkID].SlowGasPrice)
 	if success {
 		SetAccountsToNextPaymentStatus([]Account{account})
 		return nil
@@ -617,8 +617,8 @@ func handleAccountReadyForCollection(account Account) error {
 
 /*handleAccountWithCollectionInProgress will check the token balance of an account's payment address.  If the balance
 is zero, it means the collection has succeeded and the payment status is set to the next status*/
-func handleAccountWithCollectionInProgress(account Account) error {
-	balance := EthWrapper.GetTokenBalance(services.StringToAddress(account.EthAddress))
+func handleAccountWithCollectionInProgress(account Account, networkID uint) error {
+	balance := services.EthWrappers[networkID].GetTokenBalance(services.StringToAddress(account.EthAddress))
 	if balance.Cmp(big.NewInt(0)) == 0 {
 		SetAccountsToNextPaymentStatus([]Account{account})
 	}
@@ -626,7 +626,7 @@ func handleAccountWithCollectionInProgress(account Account) error {
 }
 
 /*handleAccountAlreadyCollected does not do anything important and is here to prevent index out of range errors*/
-func handleAccountAlreadyCollected(account Account) error {
+func handleAccountAlreadyCollected(account Account, networkID uint) error {
 	return nil
 }
 

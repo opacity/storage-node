@@ -78,7 +78,7 @@ func SetWallets() {
 
 	for _, smartContract := range smartContracts {
 		// singletons
-		services.EthWrappers[smartContract.ID] = services.Eth{
+		services.EthWrappers[smartContract.ID] = &services.Eth{
 			AddressNonceMap:                make(map[common.Address]uint64),
 			DefaultGasPrice:                services.ConvertGweiToWei(big.NewInt(80)),
 			DefaultGasForPaymentCollection: new(big.Int).Mul(defaultGasPrice, big.NewInt(int64(services.GasLimitTokenSend))),

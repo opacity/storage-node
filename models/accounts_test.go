@@ -361,7 +361,7 @@ func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return true, nil
 	}
 
@@ -369,7 +369,7 @@ func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid()
+	paid, err := account.CheckIfPaid(networkID)
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -382,7 +382,7 @@ func Test_CheckIfPaid_Not_Paid(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 
@@ -403,7 +403,7 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, errors.New("some error")
 	}
 
@@ -423,7 +423,7 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 func Test_CheckIfPending_Is_Pending(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address) bool {
+	BackendManager.CheckIfPending = func(address common.Address, networkID uint) bool {
 		return true
 	}
 
@@ -434,7 +434,7 @@ func Test_CheckIfPending_Is_Pending(t *testing.T) {
 func Test_CheckIfPending_Is_Not_Pending(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address) bool {
+	BackendManager.CheckIfPending = func(address common.Address, networkID uint) bool {
 		return false
 	}
 
@@ -445,7 +445,7 @@ func Test_CheckIfPending_Is_Not_Pending(t *testing.T) {
 func Test_CheckIfPending_Error_While_Checking(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address) bool {
+	BackendManager.CheckIfPending = func(address common.Address, networkID uint) bool {
 		return false
 	}
 
@@ -1128,7 +1128,7 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return true, nil
 	}
 
@@ -1147,7 +1147,7 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 

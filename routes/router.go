@@ -13,7 +13,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/jobs"
-	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -32,9 +31,6 @@ import (
 
 var (
 	uptime time.Time
-
-	/*EthWrapper is a copy of services.EthWrapper*/
-	EthWrapper = services.EthWrapper
 )
 
 const (
