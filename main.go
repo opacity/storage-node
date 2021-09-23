@@ -162,6 +162,7 @@ func migrateEnvWallets() {
 		models.DB.Model(&utils.PlanInfo{}).Create(&ethMainWallet)
 		models.DB.Model(&utils.PlanInfo{}).Create(&polygonMainWallet)
 	}
+	SetWallets()
 }
 
 func sentryOpacityBeforeSend(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
