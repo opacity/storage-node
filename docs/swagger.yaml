@@ -41,6 +41,9 @@ definitions:
         maxLength: 42
         minLength: 42
         type: string
+      networkId:
+        example: 1
+        type: integer
     required:
     - ethAddress
     type: object
@@ -226,6 +229,13 @@ definitions:
     - signature
     type: object
   routes.SmartContractResp:
+    properties:
+      contracts:
+        items:
+          $ref: '#/definitions/routes.SmartContractRespEntity'
+        type: array
+    type: object
+  routes.SmartContractRespEntity:
     properties:
       address:
         type: string
@@ -444,9 +454,13 @@ definitions:
     type: object
   routes.accountGetReqObj:
     properties:
+      networkId:
+        example: 1
+        type: integer
       timestamp:
         type: integer
     required:
+    - networkId
     - timestamp
     type: object
   routes.accountUnpaidRes:
@@ -483,9 +497,13 @@ definitions:
         items:
           type: string
         type: array
+      networkId:
+        example: 1
+        type: integer
     required:
     - fileHandles
     - metadataKeys
+    - networkId
     type: object
   routes.checkRenewalStatusReq:
     properties:
@@ -529,9 +547,13 @@ definitions:
         items:
           type: string
         type: array
+      networkId:
+        example: 1
+        type: integer
     required:
     - fileHandles
     - metadataKeys
+    - networkId
     type: object
   routes.checkRenewalV2StatusReq:
     properties:
@@ -579,6 +601,9 @@ definitions:
         items:
           type: string
         type: array
+      networkId:
+        example: 1
+        type: integer
       storageLimit:
         example: 128
         minimum: 128
@@ -587,6 +612,7 @@ definitions:
     - durationInMonths
     - fileHandles
     - metadataKeys
+    - networkId
     - storageLimit
     type: object
   routes.checkUpgradeStatusReq:
@@ -635,6 +661,9 @@ definitions:
         items:
           type: string
         type: array
+      networkId:
+        example: 1
+        type: integer
       storageLimit:
         example: 128
         minimum: 128
@@ -643,6 +672,7 @@ definitions:
     - durationInMonths
     - fileHandles
     - metadataKeys
+    - networkId
     - storageLimit
     type: object
   routes.checkUpgradeV2StatusReq:
@@ -686,6 +716,9 @@ definitions:
         example: 12
         minimum: 1
         type: integer
+      networkId:
+        example: 1
+        type: integer
       storageLimit:
         example: 128
         minimum: 128
@@ -698,6 +731,7 @@ definitions:
       upgradeAccount:
         type: boolean
     required:
+    - networkId
     - stripeToken
     - timestamp
     type: object
@@ -1407,6 +1441,7 @@ paths:
         requestBody should be a stringified version of (values are just examples):
         {
         "timestamp": 1557346389
+        "networkId": 1
         }
       parameters:
       - description: account payment status check object
@@ -1769,6 +1804,7 @@ paths:
         {
         "metadataKeys": "["someKey", "someOtherKey]",
         "fileHandles": "["someHandle", "someOtherHandle]",
+        "networkId": 1,
         }
       parameters:
       - description: check renewal status object
@@ -1842,6 +1878,8 @@ paths:
         requestBody should be a stringified version of (values are just examples):
         {
         "stripeToken": "tok_KPte7942xySKBKyrBu11yEpf",
+        "networkId": 1,
+        "timestamp": 1659325302,
         }
       parameters:
       - description: stripe payment creation object
@@ -1886,6 +1924,7 @@ paths:
         "durationInMonths": 12,
         "metadataKeys": "["someKey", "someOtherKey]",
         "fileHandles": "["someHandle", "someOtherHandle]",
+        "networkId": 1,
         }
       parameters:
       - description: check upgrade status object
@@ -1964,6 +2003,7 @@ paths:
         "durationInMonths": 12,
         "metadataKeys": "["someKey", "someOtherKey]",
         "fileHandles": "["someHandle", "someOtherHandle]",
+        "networkId": 1,
         }
       parameters:
       - description: check upgradeV2 status object
@@ -2643,6 +2683,7 @@ paths:
         {
         "metadataKeys": "["someKey", "someOtherKey]",
         "fileHandles": "["someHandle", "someOtherHandle]",
+        "networkId": 1,
         }
       parameters:
       - description: check renewalV2 status object
