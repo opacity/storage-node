@@ -21,6 +21,15 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+// needed as singleton in order to change it during tests
+type EthOps struct {
+	GetTokenBalance
+	GetETHBalance
+	TransferToken
+	TransferETH
+	CheckForPendingTokenTxs
+}
+
 type Eth struct {
 	client                         *ethclient.Client
 	mtx                            sync.Mutex
@@ -36,7 +45,23 @@ type Eth struct {
 	NodeUrl                        string
 }
 
+/*GetTokenBalance - check Token balance of an address*/
+type GetTokenBalance func(ethWrapper *Eth, address common.Address) /*In Wei Unit*/ *big.Int
+
+/*GetETHBalance - check ETH balance of an address*/
+type GetETHBalance func(ethWrapper *Eth, address common.Address) /*In Wei Unit*/ *big.Int
+
+/*TransferToken - send Token from one account to another*/
+type TransferToken func(ethWrapper *Eth, fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, opctAmount big.Int, gasPrice *big.Int) (bool, string, int64)
+
+/*TransferETH - send ETH to an ethereum address*/
+type TransferETH func(ethWrapper *Eth, fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error)
+
+/*CheckForPendingTokenTxs - checks whether a pending token transaction exists*/
+type CheckForPendingTokenTxs func(*Eth, common.Address) bool
+
 var EthWrappers map[uint]*Eth
+var EthOpsWrapper EthOps
 
 /*TokenCallMsg is the message to send to the ETH blockchain to do token transactions*/
 type TokenCallMsg struct {
@@ -95,16 +120,16 @@ func GenerateWallet() (addr common.Address, privateKey string) {
 }
 
 // Check balance from a valid address
-func (eth *Eth) GetTokenBalance(address common.Address) *big.Int {
+func GetTokenBalanceWrapper(ethWrapper *Eth, address common.Address) *big.Int {
 	// connect ethereum client
-	client := eth.SharedClient()
+	client := ethWrapper.SharedClient()
 
 	// instance of the token contract
-	Opacity, err := NewOpacity(eth.ContractAddress, client)
+	Opacity, err := NewOpacity(ethWrapper.ContractAddress, client)
 	if err != nil {
 		panic(err)
 	}
-	callOpts := bind.CallOpts{Pending: false, From: eth.ContractAddress}
+	callOpts := bind.CallOpts{Pending: false, From: ethWrapper.ContractAddress}
 	balance, err := Opacity.BalanceOf(&callOpts, address)
 	if err != nil {
 		panic(err)
@@ -113,9 +138,9 @@ func (eth *Eth) GetTokenBalance(address common.Address) *big.Int {
 }
 
 // Check balance from a valid ethereum network address
-func (eth *Eth) GetETHBalance(addr common.Address) *big.Int {
+func GetETHBalanceWrapper(ethWrapper *Eth, addr common.Address) *big.Int {
 	// connect ethereum client
-	client := (*eth).SharedClient()
+	client := ethWrapper.SharedClient()
 
 	balance, err := client.BalanceAt(context.Background(), addr, nil)
 	if err != nil {
@@ -124,7 +149,7 @@ func (eth *Eth) GetETHBalance(addr common.Address) *big.Int {
 	return balance
 }
 
-func (eth *Eth) TransferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address, opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+func TransferTokenWrapper(ethWrapper *Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address, opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 	msg := TokenCallMsg{
 		From:       from,
 		To:         to,
@@ -133,14 +158,14 @@ func (eth *Eth) TransferToken(from common.Address, privateKey *ecdsa.PrivateKey,
 		PrivateKey: *privateKey,
 	}
 
-	client := eth.SharedClient()
-	Opacity, err := NewOpacity(eth.ContractAddress, client)
+	client := ethWrapper.SharedClient()
+	Opacity, err := NewOpacity(ethWrapper.ContractAddress, client)
 	if err != nil {
 		panic(err)
 	}
 
 	// @TODO: initialize transactor // may need to move this to a session based transactor
-	auth, err := bind.NewKeyedTransactorWithChainID(&msg.PrivateKey, eth.ChainId)
+	auth, err := bind.NewKeyedTransactorWithChainID(&msg.PrivateKey, ethWrapper.ChainId)
 	if err != nil {
 		panic(err)
 	}
@@ -169,8 +194,8 @@ func (eth *Eth) TransferToken(from common.Address, privateKey *ecdsa.PrivateKey,
 }
 
 // Transfer funds from main wallet
-func (eth *Eth) TransferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
-	client := eth.SharedClient()
+func TransferETHWrapper(ethWrapper *Eth, fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
+	client := ethWrapper.SharedClient()
 
 	// initialize the context
 	ctx, cancel := createContext()
@@ -178,15 +203,15 @@ func (eth *Eth) TransferETH(fromAddress common.Address, fromPrivKey *ecdsa.Priva
 
 	// generate nonce
 	nonce, _ := client.PendingNonceAt(ctx, fromAddress)
-	if lastNonce, inMap := eth.ReturnLastNonceFromMap(fromAddress); inMap && nonce <= lastNonce {
+	if lastNonce, inMap := ethWrapper.ReturnLastNonceFromMap(fromAddress); inMap && nonce <= lastNonce {
 		nonce = lastNonce + 1
 	}
 
-	eth.UpdateLastNonceInMap(fromAddress, nonce)
+	ethWrapper.UpdateLastNonceInMap(fromAddress, nonce)
 
-	gasPrice, _ := eth.GetGasPrice()
+	gasPrice, _ := ethWrapper.GetGasPrice()
 
-	balance := eth.GetETHBalance(fromAddress)
+	balance := GetETHBalanceWrapper(ethWrapper, fromAddress)
 	fmt.Printf("balance : %v\n", balance)
 
 	// amount is greater than balance, return error
@@ -199,7 +224,7 @@ func (eth *Eth) TransferETH(fromAddress common.Address, fromPrivKey *ecdsa.Priva
 	tx := types.NewTransaction(nonce, toAddr, amount, GasLimitETHSend, gasPrice, nil)
 
 	// signer
-	signer := types.NewEIP155Signer(eth.ChainId)
+	signer := types.NewEIP155Signer(ethWrapper.ChainId)
 
 	// sign transaction
 	signedTx, err := types.SignTx(tx, signer, fromPrivKey)
@@ -225,15 +250,15 @@ func (eth *Eth) TransferETH(fromAddress common.Address, fromPrivKey *ecdsa.Priva
 	return signedTxs, signedTx.Hash().Hex(), int64(signedTx.Nonce()), nil
 }
 
-func (eth *Eth) CheckForPendingTokenTxs(address common.Address) bool {
-	client := eth.SharedClient()
+func CheckForPendingTokenTxsWrapper(ethWrapper *Eth, address common.Address) bool {
+	client := ethWrapper.SharedClient()
 
 	// instance of the token contract
-	Opacity, err := NewOpacity(eth.ContractAddress, client)
+	Opacity, err := NewOpacity(ethWrapper.ContractAddress, client)
 	if err != nil {
 		panic(err)
 	}
-	callOpts := bind.CallOpts{Pending: true, From: eth.ContractAddress}
+	callOpts := bind.CallOpts{Pending: true, From: ethWrapper.ContractAddress}
 	balance, err := Opacity.BalanceOf(&callOpts, address)
 	if err != nil {
 		panic(err)

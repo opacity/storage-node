@@ -76,6 +76,14 @@ func SetWallets() {
 
 	defaultGasPrice := services.ConvertGweiToWei(big.NewInt(80))
 
+	services.EthOpsWrapper = services.EthOps{
+		TransferToken:           services.TransferTokenWrapper,
+		TransferETH:             services.TransferETHWrapper,
+		GetTokenBalance:         services.GetTokenBalanceWrapper,
+		GetETHBalance:           services.GetETHBalanceWrapper,
+		CheckForPendingTokenTxs: services.CheckForPendingTokenTxsWrapper,
+	}
+
 	for _, smartContract := range smartContracts {
 		// singletons
 		services.EthWrappers[smartContract.ID] = &services.Eth{
