@@ -21,6 +21,9 @@ type SmartContract struct {
 	NodeURL                   string
 	WalletAddressString       string `gorm:"column:wallet_address"`
 	WalletPrivateKeyEncrypted string `gorm:"column:wallet_private_key"`
+	DefaultGasPriceGwei       uint
+	SlowGasPriceGwei          uint
+	FastGasPriceGwei          uint
 	CreatedAt                 time.Time
 	UpdatedAt                 time.Time
 

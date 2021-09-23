@@ -135,6 +135,9 @@ func migrateEnvWallets() {
 			NodeURL:                   utils.Env.EthNodeURL,
 			WalletAddressString:       utils.Env.MainWalletAddress,
 			WalletPrivateKeyEncrypted: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.MainWalletPrivateKey),
+			DefaultGasPriceGwei:       80,
+			SlowGasPriceGwei:          80,
+			FastGasPriceGwei:          145,
 		}
 
 		polygonMainWallet := models.SmartContract{
@@ -144,6 +147,9 @@ func migrateEnvWallets() {
 			NodeURL:                   utils.Env.PolygonNodeURL,
 			WalletAddressString:       utils.Env.PolygonMainWalletAddress,
 			WalletPrivateKeyEncrypted: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.PolygonMainWalletPrivateKey),
+			DefaultGasPriceGwei:       80,
+			SlowGasPriceGwei:          80,
+			FastGasPriceGwei:          145,
 		}
 
 		if GO_ENV != "production" {
