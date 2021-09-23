@@ -581,7 +581,7 @@ func Test_Create_Metadata_Error_If_Unpaid_Account(t *testing.T) {
 		},
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 
@@ -696,7 +696,7 @@ func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 

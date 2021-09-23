@@ -19,7 +19,7 @@ func returnValidUpgrade() (Upgrade, Account) {
 	// Add account to DB
 	DB.Create(&account)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(utils.Env.Plans[1024].StorageInGB,
 		12)
@@ -267,7 +267,7 @@ func Test_Upgrade_SetUpgradesToNextPaymentStatus(t *testing.T) {
 func Test_Upgrade_CheckIfPaid_Has_Paid(t *testing.T) {
 	upgrade, _ := returnValidUpgrade()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return true, nil
 	}
 
@@ -275,7 +275,7 @@ func Test_Upgrade_CheckIfPaid_Has_Paid(t *testing.T) {
 		t.Fatalf("should have upgrade account but didn't: " + err.Error())
 	}
 
-	paid, err := upgrade.CheckIfPaid()
+	paid, err := upgrade.CheckIfPaid(0)
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -287,7 +287,7 @@ func Test_Upgrade_CheckIfPaid_Has_Paid(t *testing.T) {
 func Test_Upgrade_CheckIfPaid_Not_Paid(t *testing.T) {
 	upgrade, _ := returnValidUpgrade()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 
@@ -295,7 +295,7 @@ func Test_Upgrade_CheckIfPaid_Not_Paid(t *testing.T) {
 		t.Fatalf("should have upgrade account but didn't: " + err.Error())
 	}
 
-	paid, err := upgrade.CheckIfPaid()
+	paid, err := upgrade.CheckIfPaid(0)
 	assert.False(t, paid)
 	assert.Nil(t, err)
 
@@ -307,7 +307,7 @@ func Test_Upgrade_CheckIfPaid_Not_Paid(t *testing.T) {
 func Test_Upgrade_CheckIfPaid_Error_While_Checking(t *testing.T) {
 	upgrade, _ := returnValidUpgrade()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, errors.New("some error")
 	}
 
@@ -315,7 +315,7 @@ func Test_Upgrade_CheckIfPaid_Error_While_Checking(t *testing.T) {
 		t.Fatalf("should have upgrade account but didn't: " + err.Error())
 	}
 
-	paid, err := upgrade.CheckIfPaid()
+	paid, err := upgrade.CheckIfPaid(0)
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 

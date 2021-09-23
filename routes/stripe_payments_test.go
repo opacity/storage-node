@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/models"
+	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -35,10 +36,10 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 		requestBody:  b,
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
-	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return true, "", 1
 	}
@@ -67,7 +68,7 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 		requestBody:  b,
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 
@@ -95,7 +96,7 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 		requestBody:  b,
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return true, nil
 	}
 
@@ -126,7 +127,7 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 		requestBody:  b,
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 
@@ -154,10 +155,10 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 		requestBody:  b,
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
-	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return false, "", 1
 	}
@@ -200,10 +201,10 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 //		requestBody:  b,
 //	}
 //
-//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 //		return false, nil
 //	}
-//	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+//	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 //		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 //		return true, "", 1
 //	}

@@ -38,7 +38,7 @@ func Test_verifyIfPaidWithContext_account_opct_balance_has_arrived(t *testing.T)
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return true, nil
 	}
 
@@ -57,7 +57,7 @@ func Test_verifyIfPaidWithContext_stripe_payment_has_been_paid(t *testing.T) {
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 

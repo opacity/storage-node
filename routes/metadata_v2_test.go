@@ -362,7 +362,7 @@ func Test_Delete_MetadataV2_Fails_If_Unpaid(t *testing.T) {
 		Timestamp:     time.Now().Unix(),
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 

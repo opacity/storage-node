@@ -60,7 +60,7 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	completedFileStart, err := models.GetCompletedFileByFileID(checkRenewalStatusObj.FileHandles[0])
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return true, nil
 	}
 

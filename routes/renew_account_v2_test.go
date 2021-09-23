@@ -112,7 +112,7 @@ func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Success(t *testi
 	completedFileStart, err := models.GetCompletedFileByFileID(checkRenewalV2StatusObj.FileHandles[0])
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return true, nil
 	}
 
@@ -170,7 +170,7 @@ func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Still_Pending(t 
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, renewals[0].PaymentStatus)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 
@@ -203,7 +203,7 @@ func CreateRenewalV2ForTest(t *testing.T, account models.Account) models.Renewal
 func returnRenewalV2ForTest(t *testing.T, account models.Account) models.Renewal {
 	abortIfNotTesting(t)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	renewalCostInOPCT, _ := account.Cost()
 
