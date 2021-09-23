@@ -51,6 +51,7 @@ type SpaceReport struct {
 type Invoice struct {
 	Cost       float64 `json:"cost" validate:"omitempty,gte=0" example:"1.56"`
 	EthAddress string  `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"`
+	NetworkID  uint    `json:"networkId" validate:"omitempty,gte=1" example:"1"`
 }
 
 /*StorageLimitType defines a type for the storage limits*/
@@ -231,10 +232,14 @@ func (account *Account) CheckIfPending(networkID uint) bool {
 }
 
 /*UseStorageSpaceInByte updates the account's StorageUsedInByte value*/
-func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64, networkID uint) error {
-	paid, err := account.CheckIfPaid(networkID)
-	if err != nil {
-		return err
+func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
+	paid := false
+	var err error
+	for networkID := range services.EthWrappers {
+		paid, err = account.CheckIfPaid(networkID)
+		if err != nil {
+			return err
+		}
 	}
 	if paidWithCreditCard, _ := CheckForPaidStripePayment(account.AccountID); !paidWithCreditCard && !paid {
 		return errors.New("no payment. Unable to update the storage")

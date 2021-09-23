@@ -18,6 +18,7 @@ type getRenewalAccountInvoiceObject struct {
 type checkRenewalStatusObject struct {
 	MetadataKeys []string `json:"metadataKeys" validate:"required" example:"an array containing all your metadata keys"`
 	FileHandles  []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
+	NetworkID    uint     `json:"networkId" validate:"required,gte=1" example:"1"`
 }
 
 type getRenewalAccountInvoiceReq struct {
@@ -68,13 +69,14 @@ func GetAccountRenewalInvoiceHandler() gin.HandlerFunc {
 // CheckRenewalStatusHandler godoc
 // @Summary check the renewal status
 // @Description check the renewal status
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param checkRenewalStatusReq body routes.checkRenewalStatusReq true "check renewal status object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"metadataKeys": "["someKey", "someOtherKey]",
 // @description 	"fileHandles": "["someHandle", "someOtherHandle]",
+// @description   "networkId": 1,
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -109,11 +111,7 @@ func getAccountRenewalInvoice(c *gin.Context) error {
 
 	//renewalCostInUSD := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 
-	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
-	if err != nil {
-		err = fmt.Errorf("error generating renewal wallet:  %v", err)
-		return BadRequestResponse(c, err)
-	}
+	ethAddr, privKey := services.GenerateWallet()
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
@@ -175,7 +173,7 @@ func checkRenewalStatus(c *gin.Context) error {
 	}
 
 	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewals[0].EthAddress),
-		services.ConvertToWeiUnit(big.NewFloat(renewals[0].OpctCost)))
+		services.ConvertToWeiUnit(big.NewFloat(renewals[0].OpctCost)), request.checkRenewalStatusObject.NetworkID)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}

@@ -49,7 +49,7 @@ func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKe
 func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 	abortIfNotTesting(t)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	account := models.Account{
 		AccountID:            accountID,
@@ -67,7 +67,7 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
 		return false, nil
 	}
 
@@ -77,7 +77,7 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 	abortIfNotTesting(t)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	account := models.Account{
 		AccountID:            accountID,

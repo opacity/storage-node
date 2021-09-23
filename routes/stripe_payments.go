@@ -19,6 +19,7 @@ const (
 
 type createStripePaymentObject struct {
 	StripeToken      string `json:"stripeToken" validate:"required" example:"tok_KPte7942xySKBKyrBu11yEpf"`
+	NetworkID        uint   `json:"networkId" validate:"required,gte=1" example:"1"`
 	Timestamp        int64  `json:"timestamp" validate:"required"`
 	UpgradeAccount   bool   `json:"upgradeAccount"`
 	StorageLimit     int    `json:"storageLimit" validate:"omitempty,gte=128" minimum:"128" example:"128"`
@@ -58,6 +59,8 @@ func (v *createStripePaymentReq) getObjectRef() interface{} {
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"stripeToken": "tok_KPte7942xySKBKyrBu11yEpf",
+// @description   "networkId": 1,
+// @description 	"timestamp": 1659325302,
 // @description }
 // @Success 200 {object} routes.stripeDataRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -71,7 +74,6 @@ func CreateStripePaymentHandler() gin.HandlerFunc {
 }
 
 func createStripePayment(c *gin.Context) error {
-
 	if !utils.Env.EnableCreditCards && !utils.IsTestEnv() {
 		return ForbiddenResponse(c, errors.New("not accepting credit cards yet"))
 	}
@@ -115,7 +117,7 @@ func createStripePayment(c *gin.Context) error {
 	}
 
 	if !request.createStripePaymentObject.UpgradeAccount {
-		if err := stripePayment.SendAccountOPCT(); err != nil {
+		if err := stripePayment.SendAccountOPCT(request.createStripePaymentObject.NetworkID); err != nil {
 			return InternalErrorResponse(c, err)
 		}
 	} else {
@@ -172,7 +174,7 @@ func createChargeAndStripePayment(c *gin.Context, costInDollars float64, account
 }
 
 func payUpgradeCostWithStripe(c *gin.Context, stripePayment models.StripePayment, account models.Account, createStripePaymentObject createStripePaymentObject) error {
-	if err := stripePayment.SendUpgradeOPCT(account, createStripePaymentObject.StorageLimit); err != nil {
+	if err := stripePayment.SendUpgradeOPCT(account, createStripePaymentObject.StorageLimit, createStripePaymentObject.NetworkID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	var paid bool

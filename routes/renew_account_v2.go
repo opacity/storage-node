@@ -18,6 +18,7 @@ type getRenewalV2AccountInvoiceObject struct {
 type checkRenewalV2StatusObject struct {
 	MetadataKeys []string `json:"metadataKeys" validate:"required" example:"an array containing all your metadata keys"`
 	FileHandles  []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
+	NetworkID    uint     `json:"networkId" validate:"required,gte=1" example:"1"`
 }
 
 type getRenewalV2AccountInvoiceReq struct {
@@ -75,6 +76,7 @@ func GetAccountRenewalV2InvoiceHandler() gin.HandlerFunc {
 // @description {
 // @description 	"metadataKeys": "["someKey", "someOtherKey]",
 // @description 	"fileHandles": "["someHandle", "someOtherHandle]",
+// @description   "networkId": 1,
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -109,11 +111,7 @@ func getAccountRenewalV2Invoice(c *gin.Context) error {
 
 	//renewalV2CostInUSD := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 
-	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
-	if err != nil {
-		err = fmt.Errorf("error generating renewalV2 wallet:  %v", err)
-		return BadRequestResponse(c, err)
-	}
+	ethAddr, privKey := services.GenerateWallet()
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
@@ -175,7 +173,7 @@ func checkRenewalV2Status(c *gin.Context) error {
 	}
 
 	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewalV2s[0].EthAddress),
-		services.ConvertToWeiUnit(big.NewFloat(renewalV2s[0].OpctCost)))
+		services.ConvertToWeiUnit(big.NewFloat(renewalV2s[0].OpctCost)), request.checkRenewalV2StatusObject.NetworkID)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}

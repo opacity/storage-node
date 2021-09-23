@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/opacity/storage-node/models"
+	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 )
 
@@ -177,7 +178,10 @@ func setUpSession(c *gin.Context) {
 
 func verifyIfPaid(account models.Account) bool {
 	// Check if paid
-	paid, _ := account.CheckIfPaid()
+	paid := false
+	for networkID := range services.EthWrappers {
+		paid, _ = account.CheckIfPaid(networkID)
+	}
 	paidWithCreditCard, _ := models.CheckForPaidStripePayment(account.AccountID)
 
 	return paid || paidWithCreditCard
