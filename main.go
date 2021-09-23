@@ -140,27 +140,11 @@ func migrateEnvWallets() {
 			FastGasPriceGwei:          145,
 		}
 
-		polygonMainWallet := models.SmartContract{
-			Network:                   "polygon",
-			NetworkIDuint:             137,
-			ContractAddressString:     utils.Env.PolygonContractAddress,
-			NodeURL:                   utils.Env.PolygonNodeURL,
-			WalletAddressString:       utils.Env.PolygonMainWalletAddress,
-			WalletPrivateKeyEncrypted: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.PolygonMainWalletPrivateKey),
-			DefaultGasPriceGwei:       80,
-			SlowGasPriceGwei:          80,
-			FastGasPriceGwei:          145,
-		}
-
 		if GO_ENV != "production" {
 			ethMainWallet.Network = "goerli"
 			ethMainWallet.NetworkIDuint = 5
-
-			polygonMainWallet.Network = "mumbai"
-			polygonMainWallet.NetworkIDuint = 80001
 		}
 		models.DB.Model(&utils.PlanInfo{}).Create(&ethMainWallet)
-		models.DB.Model(&utils.PlanInfo{}).Create(&polygonMainWallet)
 	}
 	SetWallets()
 }
