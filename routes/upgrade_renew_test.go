@@ -30,6 +30,7 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	checkRenewalStatusObj := checkRenewalStatusObject{
 		MetadataKeys: []string{utils.GenerateFileHandle()},
 		FileHandles:  []string{utils.GenerateFileHandle()},
+		NetworkID:    0,
 	}
 
 	v, b, privateKey := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkRenewalStatusObj)

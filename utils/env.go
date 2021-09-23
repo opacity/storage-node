@@ -146,6 +146,7 @@ func SetTesting(filenames ...string) {
 		GetETHBalance:           services.GetETHBalanceWrapper,
 		CheckForPendingTokenTxs: services.CheckForPendingTokenTxsWrapper,
 	}
+	services.EthWrappers = make(map[uint]*services.Eth)
 	services.EthWrappers[0] = &services.Eth{}
 
 	services.InitStripe(Env.StripeKeyTest)
