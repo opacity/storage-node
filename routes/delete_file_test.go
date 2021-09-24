@@ -4,12 +4,10 @@ import (
 	"crypto/ecdsa"
 	"encoding/json"
 	"io/ioutil"
-	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -22,10 +20,6 @@ func Test_Init_Delete_Files(t *testing.T) {
 
 func Test_Successful_File_Deletion_Request(t *testing.T) {
 	cleanUpBeforeTest(t)
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return true, utils.TestNetworkID, nil
-	}
-
 	account, fileIDs, privateKey := createAccountAndUploadFile(t, 1)
 	fileID := fileIDs[0]
 	checkPrerequisites(t, account, fileID)
@@ -58,10 +52,6 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 
 func Test_Successful_Multiple_File_Deletion_Request(t *testing.T) {
 	cleanUpBeforeTest(t)
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return true, utils.TestNetworkID, nil
-	}
-
 	account, fileIDs, privateKey := createAccountAndUploadFile(t, 3)
 
 	for _, fileID := range fileIDs {

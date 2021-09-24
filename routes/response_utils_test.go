@@ -16,10 +16,6 @@ import (
 )
 
 func Test_verifyIfPaidWithContext_account_status_already_paid(t *testing.T) {
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return true, utils.TestNetworkID, nil
-	}
-
 	models.DeleteAccountsForTest(t)
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)

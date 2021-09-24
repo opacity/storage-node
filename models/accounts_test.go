@@ -472,10 +472,6 @@ func Test_CreateAndGet_Account(t *testing.T) {
 }
 
 func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return true, utils.TestNetworkID, nil
-	}
-
 	account := returnValidAccount()
 	account.PaymentStatus = PaymentRetrievalComplete
 	if err := DB.Create(&account).Error; err != nil {
@@ -499,9 +495,6 @@ func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
 }
 
 func Test_DeductSpaceUsed(t *testing.T) {
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return true, utils.TestNetworkID, nil
-	}
 	account := returnValidAccount()
 	account.PaymentStatus = PaymentRetrievalComplete
 	if err := DB.Create(&account).Error; err != nil {
@@ -527,10 +520,6 @@ func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
 }
 
 func Test_Space_Updates_at_Scale(t *testing.T) {
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return true, utils.TestNetworkID, nil
-	}
-
 	account := returnValidAccount()
 	account.StorageUsedInByte = 0
 	account.PaymentStatus = InitialPaymentReceived
@@ -1169,9 +1158,6 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 }
 
 func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return true, utils.TestNetworkID, nil
-	}
 	DeleteAccountsForTest(t)
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentReceived
