@@ -248,7 +248,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	pending := false
-	paid, _, err := account.CheckIfPaid()
+	paid, networkID, err := account.CheckIfPaid()
 
 	if !paid && err == nil {
 		pending = account.CheckIfPending()
@@ -304,6 +304,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	if res.PaymentStatus == Paid {
+		account.UpdateNetworkIdPaid(networkID)
 		return OkResponse(c, res)
 	}
 
