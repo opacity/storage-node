@@ -17,11 +17,11 @@ type AccountManagement struct {
 
 /*CheckIfPaid defines the required parameters and return values for
 an instance of AccountManagement's CheckIfPaid method*/
-type CheckIfPaid func(common.Address, *big.Int, uint) (bool, error)
+type CheckIfPaid func(common.Address, *big.Int) (bool, uint, error)
 
 /*CheckIfPending defines the required parameters and return values for
 an instance of AccountManagement's CheckIfPending method*/
-type CheckIfPending func(common.Address, uint) bool
+type CheckIfPending func(common.Address) bool
 
 /*BackendManagement is an instance of AccountManagement which we will use
 for backend-managed subscriptions*/
@@ -34,15 +34,23 @@ func init() {
 	}
 }
 
-func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int, networkID uint) (bool, error) {
+func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int) (bool, uint, error) {
 	var tokenBalance *big.Int
-	if tokenBalance = EthOpsWrapper.GetTokenBalance(EthWrappers[networkID], address); tokenBalance == big.NewInt(-1) {
-		return false, errors.New("could not get balance")
+	for networkID := range EthWrappers {
+		if tokenBalance = EthOpsWrapper.GetTokenBalance(EthWrappers[networkID], address); tokenBalance.Cmp(amount) >= 0 {
+			return true, networkID, nil
+		}
 	}
 
-	return tokenBalance.Cmp(amount) >= 0, nil
+	return false, 0, errors.New("could not get balance")
 }
 
-func checkIfBackendSubscriptionPaymentPending(address common.Address, networkID uint) bool {
-	return EthOpsWrapper.CheckForPendingTokenTxs(EthWrappers[networkID], address)
+func checkIfBackendSubscriptionPaymentPending(address common.Address) bool {
+	for networkID := range EthWrappers {
+		if EthOpsWrapper.CheckForPendingTokenTxs(EthWrappers[networkID], address) {
+			return true
+		}
+	}
+
+	return false
 }

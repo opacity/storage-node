@@ -23,7 +23,6 @@ type checkUpgradeV2StatusObject struct {
 	FileHandles      []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
 	StorageLimit     int      `json:"storageLimit" validate:"required,gte=128" minimum:"128" example:"128"`
 	DurationInMonths int      `json:"durationInMonths" validate:"required,gte=1" minimum:"1" example:"12"`
-	NetworkID        uint     `json:"networkId" validate:"required,gte=0" example:"1"`
 }
 
 type getUpgradeV2AccountInvoiceReq struct {
@@ -85,7 +84,6 @@ func GetAccountUpgradeV2InvoiceHandler() gin.HandlerFunc {
 // @description 	"durationInMonths": 12,
 // @description 	"metadataKeys": "["someKey", "someOtherKey]",
 // @description 	"fileHandles": "["someHandle", "someOtherHandle]",
-// @description   "networkId": 1,
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -205,8 +203,8 @@ func checkUpgradeV2Status(c *gin.Context) error {
 	//	}
 	//}
 
-	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgradeV2.EthAddress),
-		services.ConvertToWeiUnit(big.NewFloat(upgradeV2.OpctCost)), request.checkUpgradeV2StatusObject.NetworkID)
+	paid, _, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgradeV2.EthAddress),
+		services.ConvertToWeiUnit(big.NewFloat(upgradeV2.OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}

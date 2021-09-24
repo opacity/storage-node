@@ -19,7 +19,6 @@ const (
 
 type createStripePaymentObject struct {
 	StripeToken      string `json:"stripeToken" validate:"required" example:"tok_KPte7942xySKBKyrBu11yEpf"`
-	NetworkID        uint   `json:"networkId" validate:"required,gte=1" example:"1"`
 	Timestamp        int64  `json:"timestamp" validate:"required"`
 	UpgradeAccount   bool   `json:"upgradeAccount"`
 	StorageLimit     int    `json:"storageLimit" validate:"omitempty,gte=128" minimum:"128" example:"128"`
@@ -59,7 +58,6 @@ func (v *createStripePaymentReq) getObjectRef() interface{} {
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"stripeToken": "tok_KPte7942xySKBKyrBu11yEpf",
-// @description   "networkId": 1,
 // @description 	"timestamp": 1659325302,
 // @description }
 // @Success 200 {object} routes.stripeDataRes
@@ -106,7 +104,8 @@ func createStripePayment(c *gin.Context) error {
 		return ForbiddenResponse(c, errors.New("cannot create stripe charge for less than $0.50"))
 	}
 
-	if paid := verifyIfPaid(account); paid && !utils.FreeModeEnabled() && verifyAccountStillActive(account) &&
+	paid, networkID := verifyIfPaid(account)
+	if paid && !utils.FreeModeEnabled() && verifyAccountStillActive(account) &&
 		!request.createStripePaymentObject.UpgradeAccount {
 		return ForbiddenResponse(c, errors.New("account is already paid for"))
 	}
@@ -117,12 +116,11 @@ func createStripePayment(c *gin.Context) error {
 	}
 
 	if !request.createStripePaymentObject.UpgradeAccount {
-		if err := stripePayment.SendAccountOPCT(request.createStripePaymentObject.NetworkID); err != nil {
+		if err := stripePayment.SendAccountOPCT(networkID); err != nil {
 			return InternalErrorResponse(c, err)
 		}
 	} else {
-
-		if err := payUpgradeCostWithStripe(c, stripePayment, account, request.createStripePaymentObject); err != nil {
+		if err := payUpgradeCostWithStripe(c, stripePayment, account, request.createStripePaymentObject, networkID); err != nil {
 			return err
 		}
 	}
@@ -173,8 +171,8 @@ func createChargeAndStripePayment(c *gin.Context, costInDollars float64, account
 	return charge, stripePayment, nil
 }
 
-func payUpgradeCostWithStripe(c *gin.Context, stripePayment models.StripePayment, account models.Account, createStripePaymentObject createStripePaymentObject) error {
-	if err := stripePayment.SendUpgradeOPCT(account, createStripePaymentObject.StorageLimit, createStripePaymentObject.NetworkID); err != nil {
+func payUpgradeCostWithStripe(c *gin.Context, stripePayment models.StripePayment, account models.Account, createStripePaymentObject createStripePaymentObject, networkID uint) error {
+	if err := stripePayment.SendUpgradeOPCT(account, createStripePaymentObject.StorageLimit, networkID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	var paid bool

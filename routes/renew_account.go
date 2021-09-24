@@ -18,7 +18,6 @@ type getRenewalAccountInvoiceObject struct {
 type checkRenewalStatusObject struct {
 	MetadataKeys []string `json:"metadataKeys" validate:"required" example:"an array containing all your metadata keys"`
 	FileHandles  []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
-	NetworkID    uint     `json:"networkId" validate:"required,gte=0" example:"1"`
 }
 
 type getRenewalAccountInvoiceReq struct {
@@ -76,7 +75,6 @@ func GetAccountRenewalInvoiceHandler() gin.HandlerFunc {
 // @description {
 // @description 	"metadataKeys": "["someKey", "someOtherKey]",
 // @description 	"fileHandles": "["someHandle", "someOtherHandle]",
-// @description   "networkId": 1,
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -172,8 +170,8 @@ func checkRenewalStatus(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("no renewals found"))
 	}
 
-	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewals[0].EthAddress),
-		services.ConvertToWeiUnit(big.NewFloat(renewals[0].OpctCost)), request.checkRenewalStatusObject.NetworkID)
+	paid, _, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewals[0].EthAddress),
+		services.ConvertToWeiUnit(big.NewFloat(renewals[0].OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}

@@ -158,13 +158,13 @@ func (stripePayment *StripePayment) SendUpgradeOPCT(account Account, newStorageL
 }
 
 /*CheckAccountCreationOPCTTransaction checks the status of an OPCT payment to an account. */
-func (stripePayment *StripePayment) CheckAccountCreationOPCTTransaction(networkID uint) (bool, error) {
+func (stripePayment *StripePayment) CheckAccountCreationOPCTTransaction() (bool, error) {
 	account, err := GetAccountById(stripePayment.AccountID)
 	if err != nil {
 		return false, err
 	}
 
-	paid, err := account.CheckIfPaid(networkID)
+	paid, networkID, err := account.CheckIfPaid()
 	if err != nil {
 		return false, err
 	}
@@ -182,13 +182,13 @@ func (stripePayment *StripePayment) CheckAccountCreationOPCTTransaction(networkI
 }
 
 /*CheckUpgradeOPCTTransaction checks the status of an OPCT payment to an upgrade. */
-func (stripePayment *StripePayment) CheckUpgradeOPCTTransaction(account Account, newStorageLimit int, networkID uint) (bool, error) {
+func (stripePayment *StripePayment) CheckUpgradeOPCTTransaction(account Account, newStorageLimit int) (bool, error) {
 	upgrade, err := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
 	if err != nil {
 		return false, err
 	}
 
-	paid, err := upgrade.CheckIfPaid(networkID)
+	paid, networkID, err := upgrade.CheckIfPaid()
 	if err != nil {
 		return false, err
 	}

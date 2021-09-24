@@ -62,7 +62,6 @@ type accountGetObj struct {
 
 type accountGetReqObj struct {
 	Timestamp int64 `json:"timestamp" validate:"required"`
-	NetworkID uint  `json:"networkId" validate:"required,gte=0" example:"1"`
 }
 
 type getAccountDataReq struct {
@@ -122,7 +121,6 @@ func CreateAccountHandler() gin.HandlerFunc {
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
 // @description 	"timestamp": 1557346389
-// @description 	"networkId": 1
 // @description }
 // @Success 200 {object} routes.accountDataRes
 // @Success 200 {object} routes.accountUnpaidRes
@@ -249,12 +247,11 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		return err
 	}
 
-	networkID := request.accountGetReqObj.NetworkID
 	pending := false
-	paid, err := account.CheckIfPaid(networkID)
+	paid, _, err := account.CheckIfPaid()
 
 	if !paid && err == nil {
-		pending = account.CheckIfPending(networkID)
+		pending = account.CheckIfPending()
 	}
 
 	cost, _ := account.Cost()
@@ -268,7 +265,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		if err != nil {
 			return err
 		}
-		_, err = stripePayment.CheckAccountCreationOPCTTransaction(networkID)
+		_, err = stripePayment.CheckAccountCreationOPCTTransaction()
 		if err != nil {
 			return InternalErrorResponse(c, err)
 		}
@@ -315,7 +312,6 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 		Invoice: models.Invoice{
 			Cost:       cost,
 			EthAddress: account.EthAddress,
-			NetworkID:  networkID,
 		},
 	})
 }
