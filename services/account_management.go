@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -42,7 +41,7 @@ func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int) (bo
 		}
 	}
 
-	return false, 0, errors.New("could not get balance")
+	return false, 0, nil
 }
 
 func checkIfBackendSubscriptionPaymentPending(address common.Address) bool {
