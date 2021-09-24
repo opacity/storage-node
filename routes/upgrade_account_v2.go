@@ -203,7 +203,7 @@ func checkUpgradeV2Status(c *gin.Context) error {
 	//	}
 	//}
 
-	paid, _, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgradeV2.EthAddress),
+	paid, networkID, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgradeV2.EthAddress),
 		services.ConvertToWeiUnit(big.NewFloat(upgradeV2.OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
@@ -214,6 +214,9 @@ func checkUpgradeV2Status(c *gin.Context) error {
 		})
 	}
 	if err := models.DB.Model(&upgradeV2).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	if err := upgradeV2.UpdateNetworkIdPaid(networkID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	if err := upgradeV2AccountAndUpdateExpireDates(account, request, c); err != nil {

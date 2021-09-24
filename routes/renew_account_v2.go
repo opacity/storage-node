@@ -170,7 +170,7 @@ func checkRenewalV2Status(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("no renewalV2s found"))
 	}
 
-	paid, _, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewalV2s[0].EthAddress),
+	paid, networkID, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewalV2s[0].EthAddress),
 		services.ConvertToWeiUnit(big.NewFloat(renewalV2s[0].OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
@@ -188,6 +188,9 @@ func checkRenewalV2Status(c *gin.Context) error {
 	}
 
 	if err := models.DB.Model(&renewalV2s[0]).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	if err := renewalV2s[0].UpdateNetworkIdPaid(networkID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	if err := renewalV2AccountAndUpdateExpireDates(account, request, c); err != nil {

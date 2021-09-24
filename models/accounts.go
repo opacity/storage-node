@@ -39,6 +39,7 @@ type Account struct {
 	PaymentMethod            PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	Upgrades                 []Upgrade         `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
 	ExpiredAt                time.Time         `json:"expiredAt"`
+	NetworkIdPaid            uint              `json:"networkIdPaid"`
 }
 
 /*SpaceReport defines a model for capturing the space allotted compared to space used*/
@@ -153,6 +154,14 @@ func (account *Account) BeforeDelete(scope *gorm.Scope) error {
 	return nil
 }
 
+func (account *Account) AfterFind(tx *gorm.DB) (err error) {
+	if account.NetworkIdPaid == 0 {
+		// Support legacy accounts
+		account.NetworkIdPaid = 1
+	}
+	return
+}
+
 /*ExpirationDate returns the date the account expires*/
 func (account *Account) ExpirationDate() time.Time {
 	account.ExpiredAt = account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
@@ -213,12 +222,12 @@ func (account *Account) GetTotalCostInWei() *big.Int {
 
 /*CheckIfPaid returns whether the account has been paid for*/
 func (account *Account) CheckIfPaid() (bool, uint, error) {
+	if account.PaymentStatus >= InitialPaymentReceived {
+		return true, account.NetworkIdPaid, nil
+	}
+
 	costInWei := account.GetTotalCostInWei()
 	paid, networkID, err := BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress), costInWei)
-
-	if account.PaymentStatus >= InitialPaymentReceived {
-		return paid, networkID, err
-	}
 
 	if paid {
 		SetAccountsToNextPaymentStatus([]Account{*(account)})
@@ -414,6 +423,10 @@ func (account *Account) RenewAccount() error {
 		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription+12, 0),
 		"updated_at":             time.Now(),
 	}).Error
+}
+
+func (account *Account) UpdateNetworkIdPaid(networkID uint) error {
+	return DB.Model(&account).Update("network_id_paid", networkID).Error
 }
 
 func differenceInMonths(a, b time.Time) int {

@@ -26,7 +26,8 @@ type Upgrade struct {
 	PaymentMethod   PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	OpctCost        float64           `json:"opctCost" validate:"omitempty,gte=0" example:"1.56"`
 	//UsdCost          float64           `json:"usdcost" validate:"omitempty,gte=0" example:"39.99"`
-	DurationInMonths int `json:"durationInMonths" gorm:"default:12" validate:"required,gte=1" minimum:"1" example:"12"`
+	DurationInMonths int  `json:"durationInMonths" gorm:"default:12" validate:"required,gte=1" minimum:"1" example:"12"`
+	NetworkIdPaid    uint `json:"networkIdPaid"`
 }
 
 /*UpgradeCollectionFunctions maps a PaymentStatus to the method that should be run
@@ -60,6 +61,18 @@ func (upgrade *Upgrade) BeforeUpdate(scope *gorm.Scope) error {
 func (upgrade *Upgrade) BeforeDelete(scope *gorm.Scope) error {
 	DeleteStripePaymentIfExists(upgrade.AccountID)
 	return nil
+}
+
+func (upgrade *Upgrade) AfterFind(tx *gorm.DB) (err error) {
+	if upgrade.NetworkIdPaid == 0 {
+		// Support legacy upgrades
+		upgrade.NetworkIdPaid = 1
+	}
+	return
+}
+
+func (upgrade *Upgrade) UpdateNetworkIdPaid(networkID uint) error {
+	return DB.Model(&upgrade).Update("network_id_paid", networkID).Error
 }
 
 /*GetOrCreateUpgrade will either get or create an upgrade.  If the upgrade already existed it will update the OpctCost
@@ -114,12 +127,12 @@ func SetUpgradesToNextPaymentStatus(upgrades []Upgrade) {
 
 /*CheckIfPaid returns whether the upgrade has been paid for*/
 func (upgrade *Upgrade) CheckIfPaid() (bool, uint, error) {
+	if upgrade.PaymentStatus >= InitialPaymentReceived {
+		return true, upgrade.NetworkIdPaid, nil
+	}
+
 	costInWei := upgrade.GetTotalCostInWei()
 	paid, networkID, err := BackendManager.CheckIfPaid(services.StringToAddress(upgrade.EthAddress), costInWei)
-
-	if upgrade.PaymentStatus >= InitialPaymentReceived {
-		return paid, networkID, err
-	}
 
 	if paid {
 		SetUpgradesToNextPaymentStatus([]Upgrade{*(upgrade)})

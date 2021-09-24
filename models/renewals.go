@@ -24,7 +24,8 @@ type Renewal struct {
 	PaymentMethod PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	OpctCost      float64           `json:"opctCost" validate:"omitempty,gte=0" example:"1.56"`
 	//UsdCost          float64           `json:"usdcost" validate:"omitempty,gte=0" example:"39.99"`
-	DurationInMonths int `json:"durationInMonths" gorm:"default:12" validate:"required,gte=1" minimum:"1" example:"12"`
+	DurationInMonths int  `json:"durationInMonths" gorm:"default:12" validate:"required,gte=1" minimum:"1" example:"12"`
+	NetworkIdPaid    uint `json:"networkIdPaid"`
 }
 
 /*RenewalCollectionFunctions maps a PaymentStatus to the method that should be run
@@ -58,6 +59,14 @@ func (renewal *Renewal) BeforeUpdate(scope *gorm.Scope) error {
 func (renewal *Renewal) BeforeDelete(scope *gorm.Scope) error {
 	DeleteStripePaymentIfExists(renewal.AccountID)
 	return nil
+}
+
+func (renewal *Renewal) AfterFind(tx *gorm.DB) (err error) {
+	if renewal.NetworkIdPaid == 0 {
+		// Support legacy renewals
+		renewal.NetworkIdPaid = 1
+	}
+	return
 }
 
 /*GetOrCreateRenewal will either get or create an renewal.  If the renewal already existed it will update the OpctCost
@@ -97,12 +106,12 @@ func SetRenewalsToNextPaymentStatus(renewals []Renewal) {
 
 /*CheckIfPaid returns whether the renewal has been paid for*/
 func (renewal *Renewal) CheckIfPaid() (bool, uint, error) {
+	if renewal.PaymentStatus >= InitialPaymentReceived {
+		return true, renewal.NetworkIdPaid, nil
+	}
+
 	costInWei := renewal.GetTotalCostInWei()
 	paid, networkID, err := BackendManager.CheckIfPaid(services.StringToAddress(renewal.EthAddress), costInWei)
-
-	if renewal.PaymentStatus >= InitialPaymentReceived {
-		return paid, networkID, err
-	}
 
 	if paid {
 		SetRenewalsToNextPaymentStatus([]Renewal{*(renewal)})
@@ -122,6 +131,10 @@ func GetRenewalsByPaymentStatus(paymentStatus PaymentStatusType) []Renewal {
 		paymentStatus).Find(&renewals).Error
 	utils.LogIfError(err, nil)
 	return renewals
+}
+
+func (renewal *Renewal) UpdateNetworkIdPaid(networkID uint) error {
+	return DB.Model(&renewal).Update("network_id_paid", networkID).Error
 }
 
 /*handleRenewalWithPaymentInProgress checks if the user has paid for their renewal, and if so
