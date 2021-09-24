@@ -67,8 +67,8 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	return account

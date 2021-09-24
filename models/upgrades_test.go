@@ -267,15 +267,15 @@ func Test_Upgrade_SetUpgradesToNextPaymentStatus(t *testing.T) {
 func Test_Upgrade_CheckIfPaid_Has_Paid(t *testing.T) {
 	upgrade, _ := returnValidUpgrade()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	if err := DB.Create(&upgrade).Error; err != nil {
 		t.Fatalf("should have upgrade account but didn't: " + err.Error())
 	}
 
-	paid, err := upgrade.CheckIfPaid(utils.TestNetworkID)
+	paid, _, err := upgrade.CheckIfPaid()
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -287,15 +287,15 @@ func Test_Upgrade_CheckIfPaid_Has_Paid(t *testing.T) {
 func Test_Upgrade_CheckIfPaid_Not_Paid(t *testing.T) {
 	upgrade, _ := returnValidUpgrade()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	if err := DB.Create(&upgrade).Error; err != nil {
 		t.Fatalf("should have upgrade account but didn't: " + err.Error())
 	}
 
-	paid, err := upgrade.CheckIfPaid(utils.TestNetworkID)
+	paid, _, err := upgrade.CheckIfPaid()
 	assert.False(t, paid)
 	assert.Nil(t, err)
 
@@ -307,15 +307,15 @@ func Test_Upgrade_CheckIfPaid_Not_Paid(t *testing.T) {
 func Test_Upgrade_CheckIfPaid_Error_While_Checking(t *testing.T) {
 	upgrade, _ := returnValidUpgrade()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, errors.New("some error")
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, errors.New("some error")
 	}
 
 	if err := DB.Create(&upgrade).Error; err != nil {
 		t.Fatalf("should have upgrade account but didn't: " + err.Error())
 	}
 
-	paid, err := upgrade.CheckIfPaid(utils.TestNetworkID)
+	paid, _, err := upgrade.CheckIfPaid()
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 

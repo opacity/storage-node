@@ -1,9 +1,11 @@
 package routes
 
 import (
+	"math/big"
 	"net/http"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -17,6 +19,9 @@ func Test_Init_File_Upload_Public(t *testing.T) {
 }
 
 func Test_CreateInitFileUploadPulic(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	completedFile := models.CompletedFile{
 		FileID:         utils.GenerateFileHandle(),
 		ModifierHash:   utils.GenerateFileHandle(),

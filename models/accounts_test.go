@@ -361,15 +361,15 @@ func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid(utils.TestNetworkID)
+	paid, _, err := account.CheckIfPaid()
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -382,15 +382,15 @@ func Test_CheckIfPaid_Not_Paid(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid(utils.TestNetworkID)
+	paid, _, err := account.CheckIfPaid()
 	assert.False(t, paid)
 	assert.Nil(t, err)
 
@@ -403,15 +403,15 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, errors.New("some error")
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, errors.New("some error")
 	}
 
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid(utils.TestNetworkID)
+	paid, _, err := account.CheckIfPaid()
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 
@@ -423,33 +423,33 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 func Test_CheckIfPending_Is_Pending(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address, networkID uint) bool {
+	BackendManager.CheckIfPending = func(address common.Address) bool {
 		return true
 	}
 
-	pending := account.CheckIfPending(utils.TestNetworkID)
+	pending := account.CheckIfPending()
 	assert.True(t, pending)
 }
 
 func Test_CheckIfPending_Is_Not_Pending(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address, networkID uint) bool {
+	BackendManager.CheckIfPending = func(address common.Address) bool {
 		return false
 	}
 
-	pending := account.CheckIfPending(utils.TestNetworkID)
+	pending := account.CheckIfPending()
 	assert.False(t, pending)
 }
 
 func Test_CheckIfPending_Error_While_Checking(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address, networkID uint) bool {
+	BackendManager.CheckIfPending = func(address common.Address) bool {
 		return false
 	}
 
-	pending := account.CheckIfPending(utils.TestNetworkID)
+	pending := account.CheckIfPending()
 	assert.False(t, pending)
 	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
 }
@@ -472,6 +472,10 @@ func Test_CreateAndGet_Account(t *testing.T) {
 }
 
 func Test_HasEnoughSpaceToUploadFile(t *testing.T) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	account := returnValidAccount()
 	account.PaymentStatus = PaymentRetrievalComplete
 	if err := DB.Create(&account).Error; err != nil {
@@ -495,6 +499,9 @@ func Test_NoEnoughSpaceToUploadFile(t *testing.T) {
 }
 
 func Test_DeductSpaceUsed(t *testing.T) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	account := returnValidAccount()
 	account.PaymentStatus = PaymentRetrievalComplete
 	if err := DB.Create(&account).Error; err != nil {
@@ -520,6 +527,10 @@ func Test_DeductSpaceUsed_Too_Much_Deducted(t *testing.T) {
 }
 
 func Test_Space_Updates_at_Scale(t *testing.T) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	account := returnValidAccount()
 	account.StorageUsedInByte = 0
 	account.PaymentStatus = InitialPaymentReceived
@@ -1128,8 +1139,8 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	// grab the account from the DB
@@ -1147,8 +1158,8 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	// grab the account from the DB
@@ -1158,6 +1169,9 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 }
 
 func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	DeleteAccountsForTest(t)
 	account := returnValidAccount()
 	account.PaymentStatus = InitialPaymentReceived
@@ -1410,7 +1424,7 @@ func verifyPaymentStatusExpectations(t *testing.T,
 	account Account,
 	startingStatus PaymentStatusType,
 	endingStatus PaymentStatusType,
-	methodUnderTest func(Account, uint) error) {
+	methodUnderTest func(Account) error) {
 	// grab the account from the DB
 	accountFromDB, _ := GetAccountById(account.AccountID)
 
@@ -1418,7 +1432,7 @@ func verifyPaymentStatusExpectations(t *testing.T,
 	assert.Equal(t, startingStatus, accountFromDB.PaymentStatus)
 
 	// call method under test
-	methodUnderTest(accountFromDB, utils.TestNetworkID)
+	methodUnderTest(accountFromDB)
 
 	// grab the account from the DB
 	accountFromDB, _ = GetAccountById(account.AccountID)

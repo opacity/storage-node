@@ -215,12 +215,12 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_complete(t *testing.T)
 		t.Fatalf("should have created row but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	txSuccess, err := stripePayment.CheckAccountCreationOPCTTransaction(utils.TestNetworkID)
+	txSuccess, err := stripePayment.CheckAccountCreationOPCTTransaction()
 	assert.True(t, txSuccess)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxSuccess, stripePayment.OpctTxStatus)
@@ -236,12 +236,12 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_incomplete(t *testing.
 		t.Fatalf("should have created row but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	success, err := stripePayment.CheckAccountCreationOPCTTransaction(utils.TestNetworkID)
+	success, err := stripePayment.CheckAccountCreationOPCTTransaction()
 	assert.Nil(t, err)
 	assert.False(t, success)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
@@ -256,12 +256,12 @@ func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 		t.Fatalf("should have created row but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit), utils.TestNetworkID)
+	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit))
 	assert.True(t, success)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxSuccess, stripePayment.OpctTxStatus)
@@ -277,12 +277,12 @@ func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
 		t.Fatalf("should have created row but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit), utils.TestNetworkID)
+	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit))
 	assert.Nil(t, err)
 	assert.False(t, success)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)

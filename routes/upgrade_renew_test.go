@@ -30,7 +30,6 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	checkRenewalStatusObj := checkRenewalStatusObject{
 		MetadataKeys: []string{utils.GenerateFileHandle()},
 		FileHandles:  []string{utils.GenerateFileHandle()},
-		NetworkID:    utils.TestNetworkID,
 	}
 
 	v, b, privateKey := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkRenewalStatusObj)
@@ -61,8 +60,8 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	completedFileStart, err := models.GetCompletedFileByFileID(checkRenewalStatusObj.FileHandles[0])
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountRenewPath, "v1", checkRenewalStatusReq)
@@ -104,7 +103,6 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 		DurationInMonths: account.MonthsInSubscription,
 		MetadataKeys:     checkRenewalStatusObj.MetadataKeys,
 		FileHandles:      checkRenewalStatusObj.FileHandles,
-		NetworkID:        utils.TestNetworkID,
 	}
 
 	v, b = returnValidVerificationAndRequestBody(t, checkUpgradeStatusObj, privateKey)

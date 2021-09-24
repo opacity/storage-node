@@ -64,7 +64,6 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Success(t *t
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		MetadataKeys:     []string{utils.GenerateMetadataV2Key()},
 		FileHandles:      []string{utils.GenerateMetadataV2Key()},
-		NetworkID:        utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeV2StatusObj)
@@ -95,8 +94,8 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Success(t *t
 	completedFileStart, err := models.GetCompletedFileByFileID(checkUpgradeV2StatusObj.FileHandles[0])
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountUpgradeV2Path, "v1", checkUpgradeV2StatusReq)
@@ -133,7 +132,6 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Still_Pendin
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		MetadataKeys:     []string{utils.GenerateMetadataV2Key()},
 		FileHandles:      []string{utils.GenerateMetadataV2Key()},
-		NetworkID:        utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeV2StatusObj)
@@ -158,8 +156,8 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Still_Pendin
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountUpgradeV2Path, "v1", checkUpgradeV2StatusReq)
@@ -224,7 +222,7 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Still_Pendin
 //		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 //		return true, "", 1
 //	}
-//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
+//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
 //		return false, nil
 //	}
 //
@@ -280,7 +278,6 @@ func Test_CheckUpgradeV2StatusHandler_Multiple_UpgradeV2s(t *testing.T) {
 		DurationInMonths: models.DefaultMonthsPerSubscription,
 		MetadataKeys:     []string{utils.GenerateMetadataV2Key()},
 		FileHandles:      []string{utils.GenerateMetadataV2Key()},
-		NetworkID:        utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeV2StatusObj)
@@ -325,8 +322,8 @@ func Test_CheckUpgradeV2StatusHandler_Multiple_UpgradeV2s(t *testing.T) {
 	completedFileStart, err := models.GetCompletedFileByFileID(checkUpgradeV2StatusObj.FileHandles[0])
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountUpgradeV2Path, "v1", checkUpgradeV2StatusReq)

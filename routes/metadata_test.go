@@ -20,6 +20,10 @@ func Test_Init_Metadata(t *testing.T) {
 }
 
 func Test_GetMetadataHandler_Returns_Metadata(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	ttl := utils.TestValueTimeToLive
 
 	testMetadataKey := utils.GenerateFileHandle()
@@ -82,6 +86,10 @@ func Test_GetMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	testMetadataKey := utils.GenerateFileHandle()
 
 	getMetadata := metadataKeyObject{
@@ -105,6 +113,9 @@ func Test_GetMetadataHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 }
 
 func Test_GetMetadataHistoryHandler_Returns_Metadata_History(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	ttl := utils.TestValueTimeToLive
 
 	testMetadataKey := utils.GenerateFileHandle()
@@ -153,6 +164,10 @@ func Test_GetMetadataHistoryHandler_Returns_Metadata_History(t *testing.T) {
 }
 
 func Test_GetMetadataHistoryHandler_Returns_Metadata_History_If_Not_Maxed_Out(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	ttl := utils.TestValueTimeToLive
 
 	testMetadataKey := utils.GenerateFileHandle()
@@ -221,6 +236,10 @@ func Test_GetMetadataHistoryHandler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_GetMetadataHistoryHandler_Error_If_Not_In_KV_Store(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	testMetadataKey := utils.GenerateFileHandle()
 
 	getMetadata := metadataKeyObject{
@@ -244,6 +263,10 @@ func Test_GetMetadataHistoryHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 }
 
 func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	ttl := utils.TestValueTimeToLive
 
 	testMetadataKey := utils.GenerateFileHandle()
@@ -297,6 +320,10 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata(t *testing.T) {
 }
 
 func Test_UpdateMetadataHandler_Can_Update_Metadata_History(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	ttl := utils.TestValueTimeToLive
 
 	testMetadataKey := utils.GenerateFileHandle()
@@ -367,10 +394,14 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata_History(t *testing.T) {
 
 	metadataHistory, err = getMetadataHistoryWithoutContext(testMetadataKey)
 	assert.Equal(t, expectedEndingMetadataHistory, metadataHistory)
+	assert.Nil(t, err)
 }
 
 func Test_UpdateMetadataHandler_Can_Update_Metadata_History_If_Not_Maxed_Out(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 
 	testMetadataKey := utils.GenerateFileHandle()
 	startingCurrentMetadataValue := "quick"
@@ -436,10 +467,14 @@ func Test_UpdateMetadataHandler_Can_Update_Metadata_History_If_Not_Maxed_Out(t *
 
 	metadataHistory, err = getMetadataHistoryWithoutContext(testMetadataKey)
 	assert.Equal(t, expectedEndingMetadataHistory, metadataHistory)
+	assert.Nil(t, err)
 }
 
 func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 	ttl := utils.TestValueTimeToLive
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 
 	testMetadataKey := utils.GenerateFileHandle()
 	testMetadataValue := utils.GenerateFileHandle()
@@ -472,6 +507,10 @@ func Test_UpdateMetadataHandler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	testMetadataKey := utils.GenerateFileHandle()
 	newValue := utils.GenerateFileHandle()
 
@@ -497,6 +536,10 @@ func Test_UpdateMetadataHandler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 }
 
 func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	testMetadataKey := utils.GenerateFileHandle()
 	newValue := utils.GenerateFileHandle()
 
@@ -522,6 +565,10 @@ func Test_UpdateMetadataHandler_Error_If_Verification_Fails(t *testing.T) {
 }
 
 func Test_Create_Metadata_Creates_Metadata(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
+
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 
 	createMetadataObj := metadataKeyObject{
@@ -581,8 +628,8 @@ func Test_Create_Metadata_Error_If_Unpaid_Account(t *testing.T) {
 		},
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -632,6 +679,9 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 func Test_Create_Metadata_Error_If_Duplicate_Metadata(t *testing.T) {
 	// First create a new metadata and confirm success
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 
 	createMetadataObj := metadataKeyObject{
 		MetadataKey: testMetadataKey,
@@ -696,8 +746,8 @@ func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
 		Timestamp:   time.Now().Unix(),
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, deleteMetadataObj)
@@ -723,6 +773,9 @@ func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
 }
 
 func Test_Delete_Metadata_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 	testMetadataValue := "someValue"
 
@@ -766,6 +819,9 @@ func Test_Delete_Metadata_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T) 
 }
 
 func Test_Delete_Metadata_Success(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	testMetadataKey := utils.RandSeqFromRunes(64, []rune("abcdef01234567890"))
 	testMetadataValue := "someValue"
 
@@ -797,6 +853,7 @@ func Test_Delete_Metadata_Success(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataKey, c)
+	assert.Nil(t, err)
 	permissionHashKey := getPermissionHashKeyForBadger(testMetadataKey)
 
 	ttl := time.Until(account.ExpirationDate())

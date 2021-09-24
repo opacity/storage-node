@@ -84,6 +84,7 @@ func SetWallets() {
 		CheckForPendingTokenTxs: services.CheckForPendingTokenTxsWrapper,
 	}
 
+	services.EthWrappers = make(map[uint]*services.Eth)
 	for _, smartContract := range smartContracts {
 		// singletons
 		services.EthWrappers[smartContract.ID] = &services.Eth{

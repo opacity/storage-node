@@ -82,7 +82,6 @@ func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Success(t *testi
 	checkRenewalV2StatusObj := checkRenewalV2StatusObject{
 		MetadataKeys: []string{utils.GenerateMetadataV2Key()},
 		FileHandles:  []string{utils.GenerateMetadataV2Key()},
-		NetworkID:    utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkRenewalV2StatusObj)
@@ -113,8 +112,8 @@ func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Success(t *testi
 	completedFileStart, err := models.GetCompletedFileByFileID(checkRenewalV2StatusObj.FileHandles[0])
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountRenewPath, "v1", checkRenewalV2StatusReq)
@@ -147,7 +146,6 @@ func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Still_Pending(t 
 	checkRenewalV2StatusObj := checkRenewalV2StatusObject{
 		MetadataKeys: []string{utils.GenerateMetadataV2Key()},
 		FileHandles:  []string{utils.GenerateMetadataV2Key()},
-		NetworkID:    utils.TestNetworkID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkRenewalV2StatusObj)
@@ -172,8 +170,8 @@ func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Still_Pending(t 
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, renewals[0].PaymentStatus)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountRenewPath, "v1", checkRenewalV2StatusReq)

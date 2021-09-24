@@ -91,6 +91,9 @@ func Test_GetMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_GetMetadataV2Handler_Error_If_Not_In_KV_Store(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
 
 	getMetadataV2 := metadataV2KeyObject{
@@ -362,8 +365,8 @@ func Test_Delete_MetadataV2_Fails_If_Unpaid(t *testing.T) {
 		Timestamp:     time.Now().Unix(),
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, deleteMetadataV2Obj)
@@ -434,6 +437,9 @@ func Test_Delete_MetadataV2_Fails_If_Permission_Hash_Does_Not_Match(t *testing.T
 }
 
 func Test_Delete_MetadataV2_Success(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	accountID, privateKey := generateValidateAccountId(t)
 	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
 	publicKeyBin, _ := hex.DecodeString(publicKey)
@@ -475,6 +481,9 @@ func Test_Delete_MetadataV2_Success(t *testing.T) {
 
 func Test_Delete_MetadataMultipleV2_Success(t *testing.T) {
 	setupTests(t)
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	numberOfMetadatas := 10
 	accountID, privateKey := generateValidateAccountId(t)
 	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)

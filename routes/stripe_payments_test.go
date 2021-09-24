@@ -19,6 +19,8 @@ func Test_Init_Stripe_Payments(t *testing.T) {
 }
 
 func Test_Successful_Stripe_Payment(t *testing.T) {
+	setupTests(t)
+
 	models.DeleteStripePaymentsForTest(t)
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
@@ -28,7 +30,6 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
-		NetworkID:   utils.TestNetworkID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -37,8 +38,8 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 		requestBody:  b,
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
@@ -61,7 +62,6 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
-		NetworkID:   utils.TestNetworkID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -70,8 +70,8 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 		requestBody:  b,
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
@@ -90,7 +90,6 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
-		NetworkID:   utils.TestNetworkID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -99,8 +98,8 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 		requestBody:  b,
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
@@ -122,7 +121,6 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
-		NetworkID:   utils.TestNetworkID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -131,8 +129,8 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 		requestBody:  b,
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
@@ -151,7 +149,6 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
-		NetworkID:   utils.TestNetworkID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -160,8 +157,8 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 		requestBody:  b,
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
@@ -206,7 +203,7 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 //		requestBody:  b,
 //	}
 //
-//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
+//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
 //		return false, nil
 //	}
 //	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,

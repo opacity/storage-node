@@ -2,9 +2,11 @@ package routes
 
 import (
 	"crypto/ecdsa"
+	"math/big"
 	"net/http"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -35,6 +37,9 @@ func Test_initFileUploadWithUnpaidAccount(t *testing.T) {
 }
 
 func Test_initFileUploadWithPaidAccount(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	accountID, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountID)
 
@@ -61,6 +66,9 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 }
 
 func Test_initFileUploadWithPaidAccount_MissingFormAndFormFile(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	accountID, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountID)
 
@@ -72,6 +80,9 @@ func Test_initFileUploadWithPaidAccount_MissingFormAndFormFile(t *testing.T) {
 }
 
 func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
+	}
 	accountID, privateKey := generateValidateAccountId(t)
 	account := CreatePaidAccountForTest(t, accountID)
 

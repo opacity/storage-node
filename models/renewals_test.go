@@ -213,15 +213,15 @@ func Test_Renewal_SetRenewalsToNextPaymentStatus(t *testing.T) {
 func Test_Renewal_CheckIfPaid_Has_Paid(t *testing.T) {
 	renewal, _ := returnValidRenewal()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	if err := DB.Create(&renewal).Error; err != nil {
 		t.Fatalf("should have renewal account but didn't: " + err.Error())
 	}
 
-	paid, err := renewal.CheckIfPaid(utils.TestNetworkID)
+	paid, _, err := renewal.CheckIfPaid()
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -233,15 +233,15 @@ func Test_Renewal_CheckIfPaid_Has_Paid(t *testing.T) {
 func Test_Renewal_CheckIfPaid_Not_Paid(t *testing.T) {
 	renewal, _ := returnValidRenewal()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	if err := DB.Create(&renewal).Error; err != nil {
 		t.Fatalf("should have renewal account but didn't: " + err.Error())
 	}
 
-	paid, err := renewal.CheckIfPaid(utils.TestNetworkID)
+	paid, _, err := renewal.CheckIfPaid()
 	assert.False(t, paid)
 	assert.Nil(t, err)
 
@@ -253,15 +253,15 @@ func Test_Renewal_CheckIfPaid_Not_Paid(t *testing.T) {
 func Test_Renewal_CheckIfPaid_Error_While_Checking(t *testing.T) {
 	renewal, _ := returnValidRenewal()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, errors.New("some error")
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, errors.New("some error")
 	}
 
 	if err := DB.Create(&renewal).Error; err != nil {
 		t.Fatalf("should have renewal account but didn't: " + err.Error())
 	}
 
-	paid, err := renewal.CheckIfPaid(utils.TestNetworkID)
+	paid, _, err := renewal.CheckIfPaid()
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 

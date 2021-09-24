@@ -117,7 +117,6 @@ func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) 
 	_, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -130,15 +129,14 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 	//	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -152,15 +150,14 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -175,7 +172,6 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsExpi
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 	//	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -186,8 +182,8 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsExpi
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -203,15 +199,14 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 	//	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int, networkID uint) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, nil
 	}
 
 	stripeToken := models.RandTestStripeToken()
@@ -241,7 +236,6 @@ func Test_UpdateApiVersion(t *testing.T) {
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
-		NetworkID: utils.TestNetworkID,
 	}, privateKey)
 	account.ApiVersion = 1
 	account.StorageLocation = "1"
