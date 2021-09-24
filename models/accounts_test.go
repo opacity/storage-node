@@ -36,6 +36,7 @@ func returnValidAccount() Account {
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
 		ExpiredAt:            time.Now().AddDate(0, DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}
 }
 
