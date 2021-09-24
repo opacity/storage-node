@@ -16,7 +16,7 @@
     "paths": {
         "/api/v1/account-data": {
             "post": {
-                "description": "check the payment status of an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"timestamp\": 1557346389\n\"networkId\": 1\n}",
+                "description": "check the payment status of an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"timestamp\": 1557346389\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -494,7 +494,7 @@
         },
         "/api/v1/renew": {
             "post": {
-                "description": "check the renewal status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n\"networkId\": 1,\n}",
+                "description": "check the renewal status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -592,7 +592,7 @@
         },
         "/api/v1/stripe/create": {
             "post": {
-                "description": "create a stripe payment\nrequestBody should be a stringified version of (values are just examples):\n{\n\"stripeToken\": \"tok_KPte7942xySKBKyrBu11yEpf\",\n\"networkId\": 1,\n\"timestamp\": 1659325302,\n}",
+                "description": "create a stripe payment\nrequestBody should be a stringified version of (values are just examples):\n{\n\"stripeToken\": \"tok_KPte7942xySKBKyrBu11yEpf\",\n\"timestamp\": 1659325302,\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -647,7 +647,7 @@
         },
         "/api/v1/upgrade": {
             "post": {
-                "description": "check the upgrade status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n\"networkId\": 1,\n}",
+                "description": "check the upgrade status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -745,7 +745,7 @@
         },
         "/api/v1/upgradeV2": {
             "post": {
-                "description": "check the upgradeV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n\"networkId\": 1,\n}",
+                "description": "check the upgradeV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -1637,7 +1637,7 @@
         },
         "/api/v2/renew": {
             "post": {
-                "description": "check the renewalV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n\"networkId\": 1,\n}",
+                "description": "check the renewalV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -1938,10 +1938,6 @@
                     "maxLength": 42,
                     "minLength": 42,
                     "example": "a 42-char eth address with 0x prefix"
-                },
-                "networkId": {
-                    "type": "integer",
-                    "example": 1
                 }
             }
         },
@@ -2457,14 +2453,9 @@
         "routes.accountGetReqObj": {
             "type": "object",
             "required": [
-                "networkId",
                 "timestamp"
             ],
             "properties": {
-                "networkId": {
-                    "type": "integer",
-                    "example": 1
-                },
                 "timestamp": {
                     "type": "integer"
                 }
@@ -2502,8 +2493,7 @@
             "type": "object",
             "required": [
                 "fileHandles",
-                "metadataKeys",
-                "networkId"
+                "metadataKeys"
             ],
             "properties": {
                 "fileHandles": {
@@ -2523,10 +2513,6 @@
                     "example": [
                         "an array containing all your metadata keys"
                     ]
-                },
-                "networkId": {
-                    "type": "integer",
-                    "example": 1
                 }
             }
         },
@@ -2565,8 +2551,7 @@
             "type": "object",
             "required": [
                 "fileHandles",
-                "metadataKeys",
-                "networkId"
+                "metadataKeys"
             ],
             "properties": {
                 "fileHandles": {
@@ -2586,10 +2571,6 @@
                     "example": [
                         "an array containing all your metadata keys"
                     ]
-                },
-                "networkId": {
-                    "type": "integer",
-                    "example": 1
                 }
             }
         },
@@ -2630,7 +2611,6 @@
                 "durationInMonths",
                 "fileHandles",
                 "metadataKeys",
-                "networkId",
                 "storageLimit"
             ],
             "properties": {
@@ -2656,10 +2636,6 @@
                     "example": [
                         "an array containing all your metadata keys"
                     ]
-                },
-                "networkId": {
-                    "type": "integer",
-                    "example": 1
                 },
                 "storageLimit": {
                     "type": "integer",
@@ -2705,7 +2681,6 @@
                 "durationInMonths",
                 "fileHandles",
                 "metadataKeys",
-                "networkId",
                 "storageLimit"
             ],
             "properties": {
@@ -2731,10 +2706,6 @@
                     "example": [
                         "an array containing all your metadata keys"
                     ]
-                },
-                "networkId": {
-                    "type": "integer",
-                    "example": 1
                 },
                 "storageLimit": {
                     "type": "integer",
@@ -2788,7 +2759,6 @@
         "routes.createStripePaymentObject": {
             "type": "object",
             "required": [
-                "networkId",
                 "stripeToken",
                 "timestamp"
             ],
@@ -2797,10 +2767,6 @@
                     "type": "integer",
                     "minimum": 1,
                     "example": 12
-                },
-                "networkId": {
-                    "type": "integer",
-                    "example": 1
                 },
                 "storageLimit": {
                     "type": "integer",
