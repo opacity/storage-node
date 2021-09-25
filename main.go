@@ -89,7 +89,7 @@ func SetWallets() {
 		// singletons
 		services.EthWrappers[smartContract.ID] = &services.Eth{
 			AddressNonceMap:                make(map[common.Address]uint64),
-			MainWalletAddress:              smartContract.ContractAddress,
+			MainWalletAddress:              smartContract.WalletAddress,
 			MainWalletPrivateKey:           smartContract.WalletPrivateKey,
 			DefaultGasPrice:                services.ConvertGweiToWei(big.NewInt(80)),
 			DefaultGasForPaymentCollection: new(big.Int).Mul(defaultGasPrice, big.NewInt(int64(services.GasLimitTokenSend))),
