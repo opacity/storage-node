@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "github.com/opacity/storage-node/docs"
+	"github.com/opacity/storage-node/models"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
@@ -317,6 +318,7 @@ func setupAdminPaths(router *gin.Engine) {
 	g.POST("/delete", AdminDeleteFileHandler())
 
 	setupAdminPlansPaths(g)
+	setupAdminSmartContractPaths(g)
 
 	// Load template file location relative to the current working directory
 	// Unable to find the file.
@@ -343,6 +345,30 @@ func setupAdminPlansPaths(adminGroup *gin.RouterGroup) {
 		})
 	})
 	plansGroup.POST("/add", AdminPlansAddHandler())
+}
+
+func setupAdminSmartContractPaths(adminGroup *gin.RouterGroup) {
+	smartContractGroup := adminGroup.Group("/smart-contracts")
+	smartContracts := []models.SmartContract{}
+	models.DB.Find(&smartContracts)
+
+	smartContractGroup.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "smart-contract-list.tmpl", gin.H{
+			"title":          "Smart contracts administration",
+			"smartContracts": smartContracts,
+		})
+	})
+	smartContractGroup.POST("/", AdminSmartContractUpdateHandler())
+
+	smartContractGroup.GET("/edit/:sc", AdminSmartContractGetHandler())
+	smartContractGroup.POST("/remove/:sc", AdminSmartContractRemoveHandler())
+	smartContractGroup.GET("/confirm-remove/:sc", AdminSmartContractRemoveConfirmHandler())
+	smartContractGroup.GET("/add", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "smart-contract-add.tmpl", gin.H{
+			"title": "Add smart contract",
+		})
+	})
+	smartContractGroup.POST("/add", AdminSmartContractGetHandler())
 }
 
 // GetPlansHandler godoc
