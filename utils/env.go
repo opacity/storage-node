@@ -144,8 +144,12 @@ func SetTesting(filenames ...string) {
 	services.EthWrappers = make(map[uint]*services.Eth)
 	defaultGasPrice := services.ConvertGweiToWei(big.NewInt(80))
 
+	privateKey, _ := services.StringToPrivateKey(Env.MainWalletPrivateKey)
+
 	services.EthWrappers[TestNetworkID] = &services.Eth{
 		AddressNonceMap:                make(map[common.Address]uint64),
+		MainWalletAddress:              services.StringToAddress(Env.MainWalletAddress),
+		MainWalletPrivateKey:           privateKey,
 		DefaultGasPrice:                services.ConvertGweiToWei(big.NewInt(80)),
 		DefaultGasForPaymentCollection: new(big.Int).Mul(defaultGasPrice, big.NewInt(int64(services.GasLimitTokenSend))),
 		SlowGasPrice:                   services.ConvertGweiToWei(big.NewInt(80)),

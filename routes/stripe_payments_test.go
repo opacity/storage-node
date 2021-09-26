@@ -19,8 +19,6 @@ func Test_Init_Stripe_Payments(t *testing.T) {
 }
 
 func Test_Successful_Stripe_Payment(t *testing.T) {
-	setupTests(t)
-
 	models.DeleteStripePaymentsForTest(t)
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
