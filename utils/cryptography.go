@@ -46,7 +46,7 @@ func EncryptWithErrorReturn(key string, secret string, nonce string) ([]byte, er
 }
 
 /*Encrypt encrypts a secret using a key */
-func EncryptWithoutNonce(keyString, stringToEncrypt string) string {
+func EncryptWithGeneratedNonce(keyString, stringToEncrypt string) string {
 	key, err := hex.DecodeString(keyString)
 	PanicOnError(err)
 	plaintext := []byte(stringToEncrypt)
@@ -101,7 +101,7 @@ func DecryptWithErrorReturn(key string, cipherText string, nonce string) ([]byte
 	})
 }
 
-func DecryptWithoutNonce(keyString, encryptedString string) (decryptedString string) {
+func DecryptWithGeneratedNonce(keyString, encryptedString string) (decryptedString string) {
 	key, _ := hex.DecodeString(keyString)
 	enc, _ := hex.DecodeString(encryptedString)
 

@@ -137,7 +137,7 @@ func migrateEnvWallets() {
 			ContractAddressString:     utils.Env.ContractAddress,
 			NodeURL:                   utils.Env.EthNodeURL,
 			WalletAddressString:       utils.Env.MainWalletAddress,
-			WalletPrivateKeyEncrypted: utils.EncryptWithoutNonce(utils.Env.EncryptionKey, utils.Env.MainWalletPrivateKey),
+			WalletPrivateKeyEncrypted: utils.EncryptWithGeneratedNonce(utils.Env.EncryptionKey, utils.Env.MainWalletPrivateKey),
 			DefaultGasPriceGwei:       80,
 			SlowGasPriceGwei:          80,
 			FastGasPriceGwei:          145,

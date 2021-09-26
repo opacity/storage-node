@@ -14,8 +14,9 @@
       </h1>
       <div id="smart-contract">
         <div class="box">
-          <form action="/admin/smart-contracts/add" method="POST">
-          
+          <form action="/admin/smart-contracts" method="POST">
+            <input class="input is-hidden" type="number" name="ID" value="{{ .sc.ID }}">
+
             <div class="field is-horizontal pb-1">
               <div class="field-label is-normal">
                 <label class="label">Network</label>
@@ -23,7 +24,7 @@
               <div class="field-body">
                 <div class="field">
                   <p class="control">
-                    <input class="input" type="text" name="network" required>
+                    <input class="input" type="text" value="{{ .sc.Network }}" name="network" required>
                   </p>
                 </div>
               </div>
@@ -36,7 +37,7 @@
               <div class="field-body">
                 <div class="field">
                   <p class="control">
-                    <input class="input" type="number" name="networkID" required>
+                    <input class="input" type="number" value="{{ .sc.NetworkIDuint }}" name="networkID" required>
                   </p>
                 </div>
               </div>
@@ -49,7 +50,7 @@
               <div class="field-body">
                 <div class="field">
                   <p class="control">
-                    <input class="input" type="url" name="nodeUrl" required>
+                    <input class="input" type="url" value="{{ .sc.NodeURL }}" name="nodeUrl" required>
                   </p>
                 </div>
               </div>
@@ -62,7 +63,7 @@
               <div class="field-body">
                 <div class="field">
                   <p class="control">
-                    <input class="input" type="text" name="contractAddress" required>
+                    <input class="input" type="text" value="{{ .sc.ContractAddressString }}" name="contractAddress" required>
                   </p>
                 </div>
               </div>
@@ -70,12 +71,12 @@
 
             <div class="field is-horizontal pb-1">
               <div class="field-label is-normal">
-                <label class="label">Wallet Address</label>
+                <label class="label">Wallet address</label>
               </div>
               <div class="field-body">
                 <div class="field">
                   <p class="control">
-                    <input class="input" type="text" name="walletAddress" required>
+                    <input class="input" type="text" value="{{ .sc.WalletAddressString }}" name="walletAddress" required>
                   </p>
                 </div>
               </div>
@@ -88,7 +89,7 @@
               <div class="field-body">
                 <div class="field">
                   <p class="control">
-                    <input class="input" type="text" name="walletPrivateKey" required>
+                    <input class="input" type="text" placeholder="will be changed on save if not empty" name="walletPrivateKey" required>
                   </p>
                 </div>
               </div>
@@ -101,7 +102,7 @@
               <div class="field-body">
                 <div class="field">
                   <p class="control">
-                    <input class="input" type="number" name="defaultGasPrice" required>
+                    <input class="input" type="number" value="{{ .sc.DefaultGasPriceGwei }}" name="defaultGasPrice" required>
                   </p>
                 </div>
               </div>
@@ -114,7 +115,7 @@
               <div class="field-body">
                 <div class="field">
                   <p class="control">
-                    <input class="input" type="number" name="slowGasPrice" required>
+                    <input class="input" type="number" value="{{ .sc.SlowGasPriceGwei }}" name="slowGasPrice" required>
                   </p>
                 </div>
               </div>
@@ -127,7 +128,7 @@
               <div class="field-body">
                 <div class="field">
                   <p class="control">
-                    <input class="input" type="number" name="fastGasPrice" required>
+                    <input class="input" type="number" value="{{ .sc.FastGasPriceGwei }}" name="fastGasPrice" required>
                   </p>
                 </div>
               </div>

@@ -36,7 +36,7 @@ type SmartContract struct {
 func (sc *SmartContract) AfterFind(tx *gorm.DB) (err error) {
 	sc.NetworkID = big.NewInt(int64(sc.NetworkIDuint))
 	sc.WalletAddress = services.StringToAddress(sc.WalletAddressString)
-	sc.WalletPrivateKey, err = services.StringToPrivateKey(utils.DecryptWithoutNonce(utils.Env.EncryptionKey, sc.WalletPrivateKeyEncrypted))
+	sc.WalletPrivateKey, err = services.StringToPrivateKey(utils.DecryptWithGeneratedNonce(utils.Env.EncryptionKey, sc.WalletPrivateKeyEncrypted))
 	sc.ContractAddress = services.StringToAddress(sc.ContractAddressString)
 	utils.LogIfError(err, nil)
 	return

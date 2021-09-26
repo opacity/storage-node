@@ -194,7 +194,7 @@ func adminPlanAdd(c *gin.Context) error {
 		if _, ok := utils.Env.Plans[storageInGB]; !ok {
 			utils.Env.Plans[storageInGB] = planInfo
 
-			return OkResponse(c, StatusRes{Status: "plan " + planInfo.Name + " was add"})
+			return OkResponse(c, StatusRes{Status: "plan " + planInfo.Name + " was added"})
 		}
 	}
 

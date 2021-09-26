@@ -8,7 +8,6 @@ import (
 	"time"
 
 	_ "github.com/opacity/storage-node/docs"
-	"github.com/opacity/storage-node/models"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
@@ -349,18 +348,11 @@ func setupAdminPlansPaths(adminGroup *gin.RouterGroup) {
 
 func setupAdminSmartContractPaths(adminGroup *gin.RouterGroup) {
 	smartContractGroup := adminGroup.Group("/smart-contracts")
-	smartContracts := []models.SmartContract{}
-	models.DB.Find(&smartContracts)
 
-	smartContractGroup.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "smart-contract-list.tmpl", gin.H{
-			"title":          "Smart contracts administration",
-			"smartContracts": smartContracts,
-		})
-	})
+	smartContractGroup.GET("/", AdminSmartContractListHandler())
 	smartContractGroup.POST("/", AdminSmartContractUpdateHandler())
 
-	smartContractGroup.GET("/edit/:sc", AdminSmartContractGetHandler())
+	smartContractGroup.GET("/edit/:sc", AdminSmartContractEditHandler())
 	smartContractGroup.POST("/remove/:sc", AdminSmartContractRemoveHandler())
 	smartContractGroup.GET("/confirm-remove/:sc", AdminSmartContractRemoveConfirmHandler())
 	smartContractGroup.GET("/add", func(c *gin.Context) {
@@ -368,7 +360,7 @@ func setupAdminSmartContractPaths(adminGroup *gin.RouterGroup) {
 			"title": "Add smart contract",
 		})
 	})
-	smartContractGroup.POST("/add", AdminSmartContractGetHandler())
+	smartContractGroup.POST("/add", AdminSmartContractAddHandler())
 }
 
 // GetPlansHandler godoc
