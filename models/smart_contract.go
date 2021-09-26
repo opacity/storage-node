@@ -52,3 +52,63 @@ func GetAllSmartContracts() ([]SmartContract, error) {
 
 	return sc, nil
 }
+
+func SetWallets() {
+	smartContracts := []SmartContract{}
+	DB.Find(&smartContracts)
+
+	defaultGasPrice := services.ConvertGweiToWei(big.NewInt(80))
+
+	services.EthOpsWrapper = services.EthOps{
+		TransferToken:           services.TransferTokenWrapper,
+		TransferETH:             services.TransferETHWrapper,
+		GetTokenBalance:         services.GetTokenBalanceWrapper,
+		GetETHBalance:           services.GetETHBalanceWrapper,
+		CheckForPendingTokenTxs: services.CheckForPendingTokenTxsWrapper,
+	}
+
+	services.EthWrappers = make(map[uint]*services.Eth)
+	for _, smartContract := range smartContracts {
+		// singletons
+		services.EthWrappers[smartContract.ID] = &services.Eth{
+			AddressNonceMap:                make(map[common.Address]uint64),
+			MainWalletAddress:              smartContract.WalletAddress,
+			MainWalletPrivateKey:           smartContract.WalletPrivateKey,
+			DefaultGasPrice:                services.ConvertGweiToWei(big.NewInt(80)),
+			DefaultGasForPaymentCollection: new(big.Int).Mul(defaultGasPrice, big.NewInt(int64(services.GasLimitTokenSend))),
+			SlowGasPrice:                   services.ConvertGweiToWei(big.NewInt(80)),
+			FastGasPrice:                   services.ConvertGweiToWei(big.NewInt(145)),
+
+			ChainId:         smartContract.NetworkID,
+			ContractAddress: smartContract.ContractAddress,
+			NodeUrl:         smartContract.NodeURL,
+		}
+	}
+}
+
+// @TODO: remove this after first run with wallets in DB
+func MigrateEnvWallets() {
+	wallets := []SmartContract{}
+	walletsResults := DB.Find(&wallets)
+
+	if walletsResults.RowsAffected == 0 {
+		ethMainWallet := SmartContract{
+			Network:                   "ethereum",
+			NetworkIDuint:             1,
+			ContractAddressString:     utils.Env.ContractAddress,
+			NodeURL:                   utils.Env.EthNodeURL,
+			WalletAddressString:       utils.Env.MainWalletAddress,
+			WalletPrivateKeyEncrypted: utils.EncryptWithGeneratedNonce(utils.Env.EncryptionKey, utils.Env.MainWalletPrivateKey),
+			DefaultGasPriceGwei:       80,
+			SlowGasPriceGwei:          80,
+			FastGasPriceGwei:          145,
+		}
+
+		if utils.Env.GoEnv != "production" {
+			ethMainWallet.Network = "goerli"
+			ethMainWallet.NetworkIDuint = 5
+		}
+		DB.Model(&SmartContract{}).Create(&ethMainWallet)
+	}
+	SetWallets()
+}

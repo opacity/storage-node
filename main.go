@@ -6,13 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math/big"
 	"os"
 	"runtime/debug"
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/getsentry/sentry-go"
 	"github.com/opacity/storage-node/jobs"
 	"github.com/opacity/storage-node/models"
@@ -60,7 +58,7 @@ func main() {
 	}
 
 	setEnvPlans()
-	migrateEnvWallets()
+	models.MigrateEnvWallets()
 
 	jobs.StartupJobs()
 	if utils.Env.EnableJobs {
@@ -68,39 +66,6 @@ func main() {
 	}
 
 	routes.CreateRoutes()
-}
-
-func SetWallets() {
-	smartContracts := []models.SmartContract{}
-	models.DB.Find(&smartContracts)
-
-	defaultGasPrice := services.ConvertGweiToWei(big.NewInt(80))
-
-	services.EthOpsWrapper = services.EthOps{
-		TransferToken:           services.TransferTokenWrapper,
-		TransferETH:             services.TransferETHWrapper,
-		GetTokenBalance:         services.GetTokenBalanceWrapper,
-		GetETHBalance:           services.GetETHBalanceWrapper,
-		CheckForPendingTokenTxs: services.CheckForPendingTokenTxsWrapper,
-	}
-
-	services.EthWrappers = make(map[uint]*services.Eth)
-	for _, smartContract := range smartContracts {
-		// singletons
-		services.EthWrappers[smartContract.ID] = &services.Eth{
-			AddressNonceMap:                make(map[common.Address]uint64),
-			MainWalletAddress:              smartContract.WalletAddress,
-			MainWalletPrivateKey:           smartContract.WalletPrivateKey,
-			DefaultGasPrice:                services.ConvertGweiToWei(big.NewInt(80)),
-			DefaultGasForPaymentCollection: new(big.Int).Mul(defaultGasPrice, big.NewInt(int64(services.GasLimitTokenSend))),
-			SlowGasPrice:                   services.ConvertGweiToWei(big.NewInt(80)),
-			FastGasPrice:                   services.ConvertGweiToWei(big.NewInt(145)),
-
-			ChainId:         smartContract.NetworkID,
-			ContractAddress: smartContract.ContractAddress,
-			NodeUrl:         smartContract.NodeURL,
-		}
-	}
 }
 
 func setEnvPlans() {
@@ -123,33 +88,6 @@ func setEnvPlans() {
 	}
 
 	utils.CreatePlanMetrics()
-}
-
-// @TODO: remove this after first run with wallets in DB
-func migrateEnvWallets() {
-	wallets := []models.SmartContract{}
-	walletsResults := models.DB.Find(&wallets)
-
-	if walletsResults.RowsAffected == 0 {
-		ethMainWallet := models.SmartContract{
-			Network:                   "ethereum",
-			NetworkIDuint:             1,
-			ContractAddressString:     utils.Env.ContractAddress,
-			NodeURL:                   utils.Env.EthNodeURL,
-			WalletAddressString:       utils.Env.MainWalletAddress,
-			WalletPrivateKeyEncrypted: utils.EncryptWithGeneratedNonce(utils.Env.EncryptionKey, utils.Env.MainWalletPrivateKey),
-			DefaultGasPriceGwei:       80,
-			SlowGasPriceGwei:          80,
-			FastGasPriceGwei:          145,
-		}
-
-		if GO_ENV != "production" {
-			ethMainWallet.Network = "goerli"
-			ethMainWallet.NetworkIDuint = 5
-		}
-		models.DB.Model(&utils.PlanInfo{}).Create(&ethMainWallet)
-	}
-	SetWallets()
 }
 
 func sentryOpacityBeforeSend(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
