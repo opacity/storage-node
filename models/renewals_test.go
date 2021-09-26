@@ -32,6 +32,7 @@ func returnValidRenewal() (Renewal, Account) {
 		OpctCost:      renewalCostInOPCT,
 		//UsdCost:          utils.Env.Plans[int(account.StorageLimit)].CostInUSD,
 		DurationInMonths: 12,
+		NetworkIdPaid:    utils.TestNetworkID,
 	}, account
 }
 

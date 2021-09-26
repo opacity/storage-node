@@ -138,6 +138,7 @@ func getAccountUpgradeV2Invoice(c *gin.Context) error {
 		//UsdCost:          upgradeV2CostInUSD,
 		//DurationInMonths: request.getUpgradeV2AccountInvoiceObject.DurationInMonths,
 		DurationInMonths: account.MonthsInSubscription,
+		NetworkIdPaid:    utils.TestNetworkID,
 	}
 
 	upgradeV2InDB, err := models.GetOrCreateUpgrade(upgradeV2)

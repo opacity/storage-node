@@ -52,6 +52,7 @@ func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.Priva
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
 		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}, privateKeyToSignWith
 }
 
@@ -147,8 +148,6 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpaid(t *testing.T) {
-	setupTests(t)
-
 	account, privateKey := returnValidAccountAndPrivateKey(t)
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),

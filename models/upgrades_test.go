@@ -36,6 +36,7 @@ func returnValidUpgrade() (Upgrade, Account) {
 		OpctCost:        upgradeCostInOPCT,
 		//UsdCost:          upgradeCostInUSD,
 		DurationInMonths: 12,
+		NetworkIdPaid:    utils.TestNetworkID,
 	}, account
 }
 

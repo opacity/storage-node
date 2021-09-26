@@ -61,6 +61,7 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
 		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -89,6 +90,7 @@ func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
 		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {

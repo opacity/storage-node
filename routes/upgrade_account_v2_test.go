@@ -409,5 +409,6 @@ func returnUpgradeV2ForTest(t *testing.T, account models.Account, newStorageLimi
 		//UsdCost:          upgradeCostInUSD,
 		EthAddress:    ethAddress.String(),
 		EthPrivateKey: hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
+		NetworkIdPaid: utils.TestNetworkID,
 	}
 }
