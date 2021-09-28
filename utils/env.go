@@ -155,7 +155,7 @@ func SetTesting(filenames ...string) {
 		SlowGasPrice:                   services.ConvertGweiToWei(big.NewInt(80)),
 		FastGasPrice:                   services.ConvertGweiToWei(big.NewInt(145)),
 
-		ChainId:         big.NewInt(TestNetworkID),
+		ChainId:         big.NewInt(4), // Goerli
 		ContractAddress: services.StringToAddress(Env.ContractAddress),
 		NodeUrl:         Env.EthNodeURL,
 	}
