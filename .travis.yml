@@ -42,6 +42,7 @@ before_install:
   - sudo sed -i -e 's/STRIPE_KEY_TEST=TRAVIS/STRIPE_KEY_TEST='${STRIPE_KEY_TEST}'/' .env
   - sudo sed -i -e 's/MAIN_WALLET_ADDRESS=TRAVIS/MAIN_WALLET_ADDRESS='${MAIN_WALLET_ADDRESS}'/' .env
   - sudo sed -i -e 's/MAIN_WALLET_PRIVATE_KEY=TRAVIS/MAIN_WALLET_PRIVATE_KEY='${MAIN_WALLET_PRIVATE_KEY}'/' .env
+  - sudo sed -i -e 's/ENCRYPTION_KEY=TRAVIS/ENCRYPTION_KEY='${ENCRYPTION_KEY}'/' .env
   - docker-compose --version
   - rm -rf ./data
   - docker-compose up --build -d
