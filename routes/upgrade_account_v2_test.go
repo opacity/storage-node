@@ -157,7 +157,7 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Still_Pendin
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountUpgradeV2Path, "v1", checkUpgradeV2StatusReq)

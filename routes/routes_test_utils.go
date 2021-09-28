@@ -69,7 +69,7 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	return account

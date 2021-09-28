@@ -158,7 +158,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -184,7 +184,7 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsExpi
 	assert.Nil(t, err)
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -207,7 +207,7 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	stripeToken := models.RandTestStripeToken()

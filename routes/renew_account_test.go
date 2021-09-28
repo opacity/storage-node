@@ -169,7 +169,7 @@ func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Still_Pending(t *t
 	assert.Equal(t, models.InitialPaymentInProgress, renewals[0].PaymentStatus)
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountRenewPath, "v1", checkRenewalStatusReq)

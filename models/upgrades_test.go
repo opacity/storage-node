@@ -289,7 +289,7 @@ func Test_Upgrade_CheckIfPaid_Not_Paid(t *testing.T) {
 	upgrade, _ := returnValidUpgrade()
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	if err := DB.Create(&upgrade).Error; err != nil {

@@ -1149,7 +1149,7 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 	}
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	// grab the account from the DB

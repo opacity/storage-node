@@ -235,7 +235,7 @@ func Test_Renewal_CheckIfPaid_Not_Paid(t *testing.T) {
 	renewal, _ := returnValidRenewal()
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	if err := DB.Create(&renewal).Error; err != nil {

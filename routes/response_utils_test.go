@@ -58,7 +58,7 @@ func Test_verifyIfPaidWithContext_stripe_payment_has_been_paid(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	stripeToken := models.RandTestStripeToken()

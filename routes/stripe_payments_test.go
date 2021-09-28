@@ -69,7 +69,7 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
@@ -128,7 +128,7 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
@@ -156,7 +156,7 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {

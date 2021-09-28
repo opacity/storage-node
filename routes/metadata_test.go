@@ -582,7 +582,7 @@ func Test_Create_Metadata_Error_If_Unpaid_Account(t *testing.T) {
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	accountID, _ := utils.HashString(v.PublicKey)
@@ -696,7 +696,7 @@ func Test_Delete_Metadata_Fails_If_Unpaid(t *testing.T) {
 	}
 
 	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, deleteMetadataObj)

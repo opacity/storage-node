@@ -237,7 +237,7 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_incomplete(t *testing.
 	}
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
@@ -278,7 +278,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
 	}
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
-		return false, 0, nil
+		return false, utils.TestNetworkID, nil
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
