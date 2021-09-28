@@ -3,7 +3,7 @@ sudo: required
 language: go
 
 go:
- - "1.11.4"
+ - "1.17"
 
 branches:
   only:
@@ -15,10 +15,6 @@ env:
   - DOCKER_COMPOSE_VERSION=1.18.0
   - GO111MODULE=on
   - DISPLAY_NAME=travisBuild
-  - SLACK_DEBUG_URL=""
-  - DISABLE_DB_CONN=false
-  - PROD_DATABASE_URL="root:secret@tcp(db:3306)/test?parseTime=true&multiStatements=true&readTimeout=1s"
-  - TEST_DATABASE_URL="root:secret@tcp(db:3306)/test?parseTime=true&multiStatements=true&readTimeout=1s"
   # ETH_NODE_URL
   - secure: "M0bGhm0+J3rVo9KU26VAueVF8GCFV7JWyRiPDw+3Z6imCYlU2nqB08+ylD6+ObuyWPM4p5nXez2VqcdcSlLpye4t5O/l27mlA/AK09/L6PnIsTMHVD21gHYjlcktp9MDnZBFX+JH2xSryUyCCLzAzo8JYLZ6B1WNt1XsNboETog9d4ZLnSraYljCEUNGbTjSWzxbwp+xNvxlUYV9z/xHml6sKIkS7inh3RF0+jJTwGWMjCaCHv7aZaKimxJgr88fmLuZbTn4c/VW6QuWQa+fS2A3FLkMoKTNH+VBtXiHlNrZceliM+kEzZx00q31ycychTHj/VjxA5NeCNRvDds7PA3mmpZUhhoz7LzWmLTQxJQttH7GaIgd0EmhPw5svnYYGF6FrcG2o6hBYRB+kDh7YdaGIQtnX+Z384CwPX3094syGCN+wNAi1iqGZ1xwoymEUhX3gCBVpYW8nIU3Q4cES2XLWa6S+v+8O+5SzuCxobBIPFGWlLj1+VRDhmRnu2YBXp0EXWixwxhV5FyBUpIySSx8HhmeDDiksaEux4794smaWyKCWO7m5IH3i+qOQF0bKJH23tEw0FLzdJg3ojCeQ1FURTXtjc26i99owSqCika/Rn5vDEIEfN1aNNAuvnTAs3cidgp+oZN+K4tfbLuLwF7lOUAz/FW0E0RKke8ekmQ="
   # AWS_ACCESS_KEY_ID
@@ -60,10 +56,10 @@ before_install:
   - sudo sed -i -e 's/AWS_ACCESS_KEY_ID=TRAVIS/AWS_ACCESS_KEY_ID='${AWS_ACCESS_KEY_ID}'/' .env
   - sudo sed -i -e 's/AWS_SECRET_ACCESS_KEY=TRAVIS/AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}'/' .env
   - sudo sed -i -e 's/AWS_REGION=TRAVIS/AWS_REGION='${AWS_REGION}'/' .env
-  - sudo sed -i -e 's+ETH_NODE_URL=TRAVIS+ETH_NODE_URL='${ETH_NODE_URL}'+' .env
-  - sudo sed -i -e 's+STRIPE_KEY_TEST=TRAVIS+STRIPE_KEY_TEST='${STRIPE_KEY_TEST}'+' .env
-  - sudo sed -i -e 's+MAIN_WALLET_ADDRESS=TRAVIS+MAIN_WALLET_ADDRESS='${MAIN_WALLET_ADDRESS}'+' .env
-  - sudo sed -i -e 's+MAIN_WALLET_PRIVATE_KEY=TRAVIS+MAIN_WALLET_PRIVATE_KEY='${MAIN_WALLET_PRIVATE_KEY}'+' .env
+  - sudo sed -i -e 's/ETH_NODE_URL=TRAVIS/ETH_NODE_URL='${ETH_NODE_URL}'/' .env
+  - sudo sed -i -e 's/STRIPE_KEY_TEST=TRAVIS/STRIPE_KEY_TEST='${STRIPE_KEY_TEST}'/' .env
+  - sudo sed -i -e 's/MAIN_WALLET_ADDRESS=TRAVIS/MAIN_WALLET_ADDRESS='${MAIN_WALLET_ADDRESS}'/' .env
+  - sudo sed -i -e 's/MAIN_WALLET_PRIVATE_KEY=TRAVIS/MAIN_WALLET_PRIVATE_KEY='${MAIN_WALLET_PRIVATE_KEY}'/' .env
   - docker-compose --version
   - rm -rf ./data
   - docker-compose up --build -d
