@@ -150,7 +150,6 @@ func setupTests(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	err := services.InitStripe(utils.Env.StripeKeyTest)
 	assert.Nil(t, err)
-	models.MigrateEnvWallets()
 }
 
 func cleanUpBeforeTest(t *testing.T) {
