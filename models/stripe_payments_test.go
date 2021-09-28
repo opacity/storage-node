@@ -299,8 +299,7 @@ func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
 
 	retryOccurred := false
 
-	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+	services.EthOpsWrapper.TransferToken = func(*services.Eth, common.Address, *ecdsa.PrivateKey, common.Address, big.Int, *big.Int) (bool, string, int64) {
 		retryOccurred = true
 		return true, "", 1
 	}
@@ -323,8 +322,7 @@ func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
 
 	retryOccurred := false
 
-	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+	services.EthOpsWrapper.TransferToken = func(*services.Eth, common.Address, *ecdsa.PrivateKey, common.Address, big.Int, *big.Int) (bool, string, int64) {
 		retryOccurred = true
 		return true, "", 1
 	}

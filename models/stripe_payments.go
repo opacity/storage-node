@@ -94,7 +94,7 @@ func CheckForPaidStripePayment(accountID string) (bool, error) {
 
 /*CheckChargePaid checks if the charge has been paid. */
 func (stripePayment *StripePayment) CheckChargePaid() (bool, error) {
-	if stripePayment.ChargePaid == true {
+	if stripePayment.ChargePaid {
 		return true, nil
 	}
 	paid, errStripe := services.CheckChargePaid(stripePayment.ChargeID)
