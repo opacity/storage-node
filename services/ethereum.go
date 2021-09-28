@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/getsentry/sentry-go"
 )
 
 // needed as singleton in order to change it during tests
@@ -127,12 +128,14 @@ func GetTokenBalanceWrapper(ethWrapper *Eth, address common.Address) *big.Int {
 	// instance of the token contract
 	Opacity, err := NewOpacity(ethWrapper.ContractAddress, client)
 	if err != nil {
-		panic(err)
+		ethereumErrorLog(err, nil)
+		return big.NewInt(-1)
 	}
 	callOpts := bind.CallOpts{Pending: false, From: ethWrapper.ContractAddress}
 	balance, err := Opacity.BalanceOf(&callOpts, address)
 	if err != nil {
-		panic(err)
+		ethereumErrorLog(err, nil)
+		return big.NewInt(-1)
 	}
 	return balance
 }
@@ -161,13 +164,13 @@ func TransferTokenWrapper(ethWrapper *Eth, from common.Address, privateKey *ecds
 	client := ethWrapper.SharedClient()
 	Opacity, err := NewOpacity(ethWrapper.ContractAddress, client)
 	if err != nil {
-		panic(err)
+		ethereumErrorLog(err, nil)
 	}
 
 	// @TODO: initialize transactor // may need to move this to a session based transactor
 	auth, err := bind.NewKeyedTransactorWithChainID(&msg.PrivateKey, ethWrapper.ChainId)
 	if err != nil {
-		panic(err)
+		ethereumErrorLog(err, nil)
 	}
 
 	log.Printf("authorized transactor : %v\n", auth.From.Hex())
@@ -183,7 +186,8 @@ func TransferTokenWrapper(ethWrapper *Eth, from common.Address, privateKey *ecds
 
 	tx, err := Opacity.Transfer(&opts, msg.To, &msg.Amount)
 	if err != nil {
-		panic(err)
+		ethereumErrorLog(err, nil)
+		return false, "", int64(-1)
 	}
 
 	log.Printf("transfer pending: 0x%x\n", tx.Hash())
@@ -328,4 +332,13 @@ func StringToAddress(address string) common.Address {
 /* StringToPrivateKey Utility HexToECDSA parses a secp256k1 private key*/
 func StringToPrivateKey(hexPrivateKey string) (*ecdsa.PrivateKey, error) {
 	return crypto.HexToECDSA(hexPrivateKey)
+}
+
+func ethereumErrorLog(err error, extraInfo map[string]interface{}) {
+	if err == nil {
+		return
+	}
+	sentry.CaptureException(err)
+	fmt.Println(err)
+	fmt.Println(extraInfo)
 }
