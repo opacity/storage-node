@@ -110,7 +110,8 @@ func (eth *Eth) SharedClient() (c *ethclient.Client) {
 func GenerateWallet() (addr common.Address, privateKey string) {
 	ethAccount, err := crypto.GenerateKey()
 	if err != nil {
-		panic(err)
+		ethereumErrorLog(err, nil)
+		return
 	}
 	addr = crypto.PubkeyToAddress(ethAccount.PublicKey)
 	privateKey = hex.EncodeToString(ethAccount.D.Bytes())
@@ -233,7 +234,8 @@ func TransferETHWrapper(ethWrapper *Eth, fromAddress common.Address, fromPrivKey
 	// sign transaction
 	signedTx, err := types.SignTx(tx, signer, fromPrivKey)
 	if err != nil {
-		panic(err)
+		ethereumErrorLog(err, nil)
+		return types.Transactions{}, "", -1, err
 	}
 
 	// send transaction
@@ -260,12 +262,14 @@ func CheckForPendingTokenTxsWrapper(ethWrapper *Eth, address common.Address) boo
 	// instance of the token contract
 	Opacity, err := NewOpacity(ethWrapper.ContractAddress, client)
 	if err != nil {
-		panic(err)
+		ethereumErrorLog(err, nil)
+		return false
 	}
 	callOpts := bind.CallOpts{Pending: true, From: ethWrapper.ContractAddress}
 	balance, err := Opacity.BalanceOf(&callOpts, address)
 	if err != nil {
-		panic(err)
+		ethereumErrorLog(err, nil)
+		return false
 	}
 	return balance.Cmp(big.NewInt(0)) > 0
 }
