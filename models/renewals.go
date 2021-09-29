@@ -249,8 +249,9 @@ func handleRenewalAlreadyCollected(renewal Renewal) error {
 
 /*PurgeOldRenewals deletes renewals past a certain age*/
 func PurgeOldRenewals(hoursToRetain int) error {
-	err := DB.Where("updated_at < ?",
-		time.Now().Add(-1*time.Hour*time.Duration(hoursToRetain))).Delete(&Renewal{}).Error
+	err := DB.Where("updated_at < ? AND payment_status = ?",
+		time.Now().Add(-1*time.Hour*time.Duration(hoursToRetain)),
+		PaymentRetrievalComplete).Delete(&Renewal{}).Error
 
 	return err
 }

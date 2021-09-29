@@ -269,8 +269,9 @@ func handleUpgradeAlreadyCollected(upgrade Upgrade) error {
 
 /*PurgeOldUpgrades deletes upgrades past a certain age*/
 func PurgeOldUpgrades(hoursToRetain int) error {
-	err := DB.Where("updated_at < ?",
-		time.Now().Add(-1*time.Hour*time.Duration(hoursToRetain))).Delete(&Upgrade{}).Error
+	err := DB.Where("updated_at < ? AND payment_status = ?",
+		time.Now().Add(-1*time.Hour*time.Duration(hoursToRetain)),
+		PaymentRetrievalComplete).Delete(&Upgrade{}).Error
 
 	return err
 }
