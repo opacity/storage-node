@@ -19,7 +19,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/getsentry/sentry-go"
 )
 
 // needed as singleton in order to change it during tests
@@ -342,7 +341,6 @@ func ethereumErrorLog(err error, extraInfo map[string]interface{}) {
 	if err == nil {
 		return
 	}
-	sentry.CaptureException(err)
 	fmt.Println(err)
 	fmt.Println(extraInfo)
 }

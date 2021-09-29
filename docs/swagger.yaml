@@ -151,8 +151,12 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
+      fileSize:
+        example: 543534
+        type: integer
     required:
     - fileHandle
+    - fileSize
     type: object
   routes.PrivateToPublicReq:
     properties:
@@ -2493,6 +2497,7 @@ paths:
         requestBody should be a stringified version of:
         {
         "fileHandle": "a deterministically created file handle",
+        "fileSize": 543534,
         }
       parameters:
       - description: an object to do the conversion of a private file to a public
