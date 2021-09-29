@@ -34,9 +34,9 @@ func init() {
 }
 
 func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int) (bool, uint, error) {
-	var tokenBalance *big.Int
 	for networkID := range EthWrappers {
-		if tokenBalance = EthOpsWrapper.GetTokenBalance(EthWrappers[networkID], address); tokenBalance.Cmp(amount) >= 0 {
+		tokenBalance := EthOpsWrapper.GetTokenBalance(EthWrappers[networkID], address)
+		if tokenBalance.Cmp(amount) >= 0 {
 			return true, networkID, nil
 		}
 	}
