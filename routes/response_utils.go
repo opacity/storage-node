@@ -175,12 +175,12 @@ func setUpSession(c *gin.Context) {
 	c.Writer.Header().Set(REQUEST_UUID, v)
 }
 
-func verifyIfPaid(account models.Account) bool {
+func verifyIfPaid(account models.Account) (bool, uint) {
 	// Check if paid
-	paid, _ := account.CheckIfPaid()
+	paid, networkID, _ := account.CheckIfPaid()
 	paidWithCreditCard, _ := models.CheckForPaidStripePayment(account.AccountID)
 
-	return paid || paidWithCreditCard
+	return paid || paidWithCreditCard, networkID
 }
 
 func verifyAccountStillActive(account models.Account) bool {
@@ -188,7 +188,7 @@ func verifyAccountStillActive(account models.Account) bool {
 }
 
 func verifyIfPaidWithContext(account models.Account, c *gin.Context) error {
-	paid := verifyIfPaid(account)
+	paid, _ := verifyIfPaid(account)
 
 	cost, _ := account.Cost()
 	response := accountCreateRes{
@@ -213,7 +213,7 @@ func verifyIfPaidWithContext(account models.Account, c *gin.Context) error {
 func verifyValidStorageLimit(storageLimit int, c *gin.Context) error {
 	_, ok := utils.Env.Plans[storageLimit]
 	if !ok {
-		return BadRequestResponse(c, models.InvalidStorageLimitError)
+		return BadRequestResponse(c, models.ErrInvalidStorageLimit)
 	}
 	return nil
 }

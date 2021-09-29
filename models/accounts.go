@@ -39,6 +39,7 @@ type Account struct {
 	PaymentMethod            PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	Upgrades                 []Upgrade         `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
 	ExpiredAt                time.Time         `json:"expiredAt"`
+	NetworkIdPaid            uint              `json:"networkIdPaid"`
 }
 
 /*SpaceReport defines a model for capturing the space allotted compared to space used*/
@@ -111,7 +112,7 @@ on an account of that status*/
 var AccountCollectionFunctions = make(map[PaymentStatusType]func(
 	account Account) error)
 
-var InvalidStorageLimitError = errors.New("storage not offered in that increment in GB")
+var ErrInvalidStorageLimit = errors.New("storage not offered in that increment in GB")
 
 func init() {
 	PaymentStatusMap[InitialPaymentInProgress] = "InitialPaymentInProgress"
@@ -151,6 +152,14 @@ func (account *Account) BeforeUpdate(scope *gorm.Scope) error {
 func (account *Account) BeforeDelete(scope *gorm.Scope) error {
 	DeleteStripePaymentIfExists(account.AccountID)
 	return nil
+}
+
+func (account *Account) AfterFind(tx *gorm.DB) (err error) {
+	if account.NetworkIdPaid == 0 {
+		// Support legacy accounts
+		account.NetworkIdPaid = 1
+	}
+	return
 }
 
 /*ExpirationDate returns the date the account expires*/
@@ -208,31 +217,32 @@ func upgradeCost(costOfCurrentPlan, baseCostOfHigherPlan float64, account *Accou
 /*GetTotalCostInWei gets the total cost in wei for a subscription*/
 func (account *Account) GetTotalCostInWei() *big.Int {
 	float64Cost, _ := account.Cost()
-	return utils.ConvertToWeiUnit(big.NewFloat(float64Cost))
+	return services.ConvertToWeiUnit(big.NewFloat(float64Cost))
 }
 
 /*CheckIfPaid returns whether the account has been paid for*/
-func (account *Account) CheckIfPaid() (bool, error) {
+func (account *Account) CheckIfPaid() (bool, uint, error) {
 	if account.PaymentStatus >= InitialPaymentReceived {
-		return true, nil
+		return true, account.NetworkIdPaid, nil
 	}
+
 	costInWei := account.GetTotalCostInWei()
-	paid, err := BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress),
-		costInWei)
+	paid, networkID, err := BackendManager.CheckIfPaid(services.StringToAddress(account.EthAddress), costInWei)
+
 	if paid {
 		SetAccountsToNextPaymentStatus([]Account{*(account)})
 	}
-	return paid, err
+	return paid, networkID, err
 }
 
 /*CheckIfPending returns whether a transaction is pending to the address*/
-func (account *Account) CheckIfPending() (bool, error) {
+func (account *Account) CheckIfPending() bool {
 	return BackendManager.CheckIfPending(services.StringToAddress(account.EthAddress))
 }
 
 /*UseStorageSpaceInByte updates the account's StorageUsedInByte value*/
 func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
-	paid, err := account.CheckIfPaid()
+	paid, _, err := account.CheckIfPaid()
 	if err != nil {
 		return err
 	}
@@ -390,7 +400,7 @@ func (account *Account) RemoveMetadataMultiple(oldMetadataSizeInBytes int64, num
 func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan int) error {
 	_, ok := utils.Env.Plans[upgradeStorageLimit]
 	if !ok {
-		return InvalidStorageLimitError
+		return ErrInvalidStorageLimit
 	}
 	if upgradeStorageLimit == int(account.StorageLimit) {
 		// assume they have already upgraded and the method has simply been called twice
@@ -413,6 +423,10 @@ func (account *Account) RenewAccount() error {
 		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription+12, 0),
 		"updated_at":             time.Now(),
 	}).Error
+}
+
+func (account *Account) UpdateNetworkIdPaid(networkID uint) error {
+	return DB.Model(&account).Update("network_id_paid", networkID).Error
 }
 
 func differenceInMonths(a, b time.Time) int {
@@ -545,21 +559,21 @@ sets the account to the next payment status.
 Not calling SetAccountsToNextPaymentStatus here because CheckIfPaid calls it
 */
 func handleAccountWithPaymentInProgress(account Account) error {
-	_, err := account.CheckIfPaid()
+	_, _, err := account.CheckIfPaid()
 	return err
 }
 
 /*handleAccountThatNeedsGas sends some ETH to an account that we will later need to collect tokens from and sets the
 account's payment status to the next status.*/
 func handleAccountThatNeedsGas(account Account) error {
-	paid, _ := account.CheckIfPaid()
+	paid, networkID, _ := account.CheckIfPaid()
 	var transferErr error
 	if paid {
-		_, _, _, transferErr = EthWrapper.TransferETH(
-			services.MainWalletAddress,
-			services.MainWalletPrivateKey,
+		_, _, _, transferErr = services.EthOpsWrapper.TransferETH(services.EthWrappers[networkID],
+			services.EthWrappers[networkID].MainWalletAddress,
+			services.EthWrappers[networkID].MainWalletPrivateKey,
 			services.StringToAddress(account.EthAddress),
-			services.DefaultGasForPaymentCollection)
+			services.EthWrappers[networkID].DefaultGasForPaymentCollection)
 		if transferErr == nil {
 			SetAccountsToNextPaymentStatus([]Account{account})
 			return nil
@@ -571,57 +585,81 @@ func handleAccountThatNeedsGas(account Account) error {
 /*handleAccountReceivingGas checks whether the gas has arrived and transitions the account to the next payment
 status if so.*/
 func handleAccountReceivingGas(account Account) error {
-	ethBalance := EthWrapper.GetETHBalance(services.StringToAddress(account.EthAddress))
-	if ethBalance.Cmp(big.NewInt(0)) > 0 {
-		SetAccountsToNextPaymentStatus([]Account{account})
+	for networkID := range services.EthWrappers {
+		ethBalance := services.EthOpsWrapper.GetETHBalance(services.EthWrappers[networkID],
+			services.StringToAddress(account.EthAddress))
+
+		if ethBalance.Cmp(big.NewInt(0)) > 0 {
+			SetAccountsToNextPaymentStatus([]Account{account})
+			return nil
+		}
 	}
+
 	return nil
 }
 
 /*handleAccountReadyForCollection will attempt to retrieve the tokens from the account's payment address and set the
 account's payment status to the next status if there are no errors.*/
 func handleAccountReadyForCollection(account Account) error {
-	tokenBalance := EthWrapper.GetTokenBalance(services.StringToAddress(account.EthAddress))
-	ethBalance := EthWrapper.GetETHBalance(services.StringToAddress(account.EthAddress))
-	keyInBytes, decryptErr := utils.DecryptWithErrorReturn(
-		utils.Env.EncryptionKey,
-		account.EthPrivateKey,
-		account.AccountID,
-	)
-	privateKey, keyErr := services.StringToPrivateKey(hex.EncodeToString(keyInBytes))
+	for networkID := range services.EthWrappers {
+		tokenBalance := services.EthOpsWrapper.GetTokenBalance(services.EthWrappers[networkID],
+			services.StringToAddress(account.EthAddress))
+		ethBalance := services.EthOpsWrapper.GetETHBalance(services.EthWrappers[networkID],
+			services.StringToAddress(account.EthAddress))
 
-	if err := utils.ReturnFirstError([]error{decryptErr, keyErr}); err != nil {
-		return err
-	} else if tokenBalance.Cmp(big.NewInt(0)) == 0 {
-		return errors.New("expected a token balance but found 0")
-	} else if ethBalance.Cmp(big.NewInt(0)) == 0 {
-		return errors.New("expected an eth balance but found 0")
-	} else if tokenBalance.Cmp(big.NewInt(0)) < 0 {
-		return errors.New("got negative balance for tokenBalance")
-	} else if ethBalance.Cmp(big.NewInt(0)) < 0 {
-		return errors.New("got negative balance for ethBalance")
+		keyInBytes, decryptErr := utils.DecryptWithErrorReturn(
+			utils.Env.EncryptionKey,
+			account.EthPrivateKey,
+			account.AccountID,
+		)
+		privateKey, keyErr := services.StringToPrivateKey(hex.EncodeToString(keyInBytes))
+
+		if err := utils.ReturnFirstError([]error{decryptErr, keyErr}); err != nil {
+			return err
+		} else if tokenBalance.Cmp(big.NewInt(0)) == 0 {
+			fmt.Printf("expected a token balance but found 0 for networkID %d", networkID)
+		} else if ethBalance.Cmp(big.NewInt(0)) == 0 {
+			fmt.Printf("expected an eth balance but found 0 for networkID %d", networkID)
+		} else if tokenBalance.Cmp(big.NewInt(0)) < 0 {
+			fmt.Printf("got negative balance for tokenBalance for networkID %d", networkID)
+		} else if ethBalance.Cmp(big.NewInt(0)) < 0 {
+			fmt.Printf("got negative balance for ethBalance for networkID %d", networkID)
+		}
+
+		if ethBalance.Cmp(big.NewInt(0)) > 0 {
+			success, _, _ := services.EthOpsWrapper.TransferToken(services.EthWrappers[networkID],
+				services.StringToAddress(account.EthAddress),
+				privateKey,
+				services.EthWrappers[networkID].MainWalletAddress,
+				*tokenBalance,
+				services.EthWrappers[networkID].SlowGasPrice)
+			if success {
+				SetAccountsToNextPaymentStatus([]Account{account})
+				return nil
+			}
+		}
 	}
 
-	success, _, _ := EthWrapper.TransferToken(
-		services.StringToAddress(account.EthAddress),
-		privateKey,
-		services.MainWalletAddress,
-		*tokenBalance,
-		services.SlowGasPrice)
-	if success {
-		SetAccountsToNextPaymentStatus([]Account{account})
-		return nil
-	}
 	return errors.New("payment collection failed")
 }
 
-/*handleAccountWithCollectionInProgress will check the token balance of an account's payment address.  If the balance
+/*handleAccountWithCollectionInProgress will check the token balance of an account's payment address. If the balance
 is zero, it means the collection has succeeded and the payment status is set to the next status*/
 func handleAccountWithCollectionInProgress(account Account) error {
-	balance := EthWrapper.GetTokenBalance(services.StringToAddress(account.EthAddress))
-	if balance.Cmp(big.NewInt(0)) == 0 {
+	balanceChecks := []bool{}
+	for networkID := range services.EthWrappers {
+		balance := services.EthOpsWrapper.GetTokenBalance(services.EthWrappers[networkID],
+			services.StringToAddress(account.EthAddress))
+
+		if balance.Cmp(big.NewInt(0)) > 0 {
+			balanceChecks = append(balanceChecks, true)
+		}
+	}
+
+	if len(balanceChecks) == 0 {
 		SetAccountsToNextPaymentStatus([]Account{account})
 	}
+
 	return nil
 }
 

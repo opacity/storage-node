@@ -33,14 +33,14 @@ func returnValidUpgradeStripePaymentForTest() (StripePayment, Upgrade, Account) 
 
 func returnStripePaymentForTestForAccount(account Account) StripePayment {
 	return StripePayment{
-		StripeToken: services.RandTestStripeToken(),
+		StripeToken: RandTestStripeToken(),
 		AccountID:   account.AccountID,
 	}
 }
 
 func returnStripePaymentForTestForUpgrade(upgrade Upgrade) StripePayment {
 	return StripePayment{
-		StripeToken:    services.RandTestStripeToken(),
+		StripeToken:    RandTestStripeToken(),
 		AccountID:      upgrade.AccountID,
 		UpgradePayment: true,
 	}
@@ -49,7 +49,7 @@ func returnStripePaymentForTestForUpgrade(upgrade Upgrade) StripePayment {
 func Test_Init_Stripe_Payments(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
-	err := services.InitStripe()
+	err := services.InitStripe(utils.Env.StripeKeyTest)
 	assert.Nil(t, err)
 }
 
@@ -145,7 +145,7 @@ func Test_CheckForPaidStripePayment(t *testing.T) {
 	assert.Nil(t, err)
 }
 
-func Test_CheckChargePaid(t *testing.T) {
+func Test_CheckChargePaymentPaid(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
 	stripePayment, _ := returnValidStripePaymentForTest()
 
@@ -176,13 +176,13 @@ func Test_SendAccountOPCT(t *testing.T) {
 		t.Fatalf("should have created row but didn't: " + err.Error())
 	}
 
-	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return true, "", 1
 	}
 
 	assert.Equal(t, OpctTxNotStarted, stripePayment.OpctTxStatus)
-	err := stripePayment.SendAccountOPCT()
+	err := stripePayment.SendAccountOPCT(utils.TestNetworkID)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
 }
@@ -195,13 +195,13 @@ func Test_SendUpgradeOPCT(t *testing.T) {
 		t.Fatalf("should have created row but didn't: " + err.Error())
 	}
 
-	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		return true, "", 1
 	}
 
 	assert.Equal(t, OpctTxNotStarted, stripePayment.OpctTxStatus)
-	err := stripePayment.SendUpgradeOPCT(account, int(ProfessionalStorageLimit))
+	err := stripePayment.SendUpgradeOPCT(account, int(ProfessionalStorageLimit), utils.TestNetworkID)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
 }
@@ -215,8 +215,8 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_complete(t *testing.T)
 		t.Fatalf("should have created row but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
@@ -236,8 +236,8 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_incomplete(t *testing.
 		t.Fatalf("should have created row but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
@@ -256,8 +256,8 @@ func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 		t.Fatalf("should have created row but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
@@ -277,8 +277,8 @@ func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
 		t.Fatalf("should have created row but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
@@ -299,13 +299,12 @@ func Test_RetryIfTimedOut_Not_Timed_Out(t *testing.T) {
 
 	retryOccurred := false
 
-	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+	services.EthOpsWrapper.TransferToken = func(*services.Eth, common.Address, *ecdsa.PrivateKey, common.Address, big.Int, *big.Int) (bool, string, int64) {
 		retryOccurred = true
 		return true, "", 1
 	}
 
-	stripePayment.RetryIfTimedOut()
+	stripePayment.RetryIfTimedOut(utils.TestNetworkID)
 
 	assert.False(t, retryOccurred)
 }
@@ -323,13 +322,12 @@ func Test_RetryIfTimedOut_Timed_Out(t *testing.T) {
 
 	retryOccurred := false
 
-	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
-		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+	services.EthOpsWrapper.TransferToken = func(*services.Eth, common.Address, *ecdsa.PrivateKey, common.Address, big.Int, *big.Int) (bool, string, int64) {
 		retryOccurred = true
 		return true, "", 1
 	}
 
-	stripePayment.RetryIfTimedOut()
+	stripePayment.RetryIfTimedOut(utils.TestNetworkID)
 
 	assert.True(t, retryOccurred)
 }

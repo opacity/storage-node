@@ -1,10 +1,10 @@
 package jobs
 
 import (
-	"github.com/opacity/storage-node/models"
-	"github.com/opacity/storage-node/services"
-	"github.com/opacity/storage-node/utils"
 	"time"
+
+	"github.com/opacity/storage-node/models"
+	"github.com/opacity/storage-node/utils"
 )
 
 type tokenCollector struct{}
@@ -45,15 +45,17 @@ func (t tokenCollector) Run() {
 }
 
 func (t tokenCollector) Runnable() bool {
-	err := services.SetWallet()
-	utils.LogIfError(err, nil)
-	return models.DB != nil && err == nil
+	// @TODO: investigate this
+	// err := services.SetWallets()
+	// utils.LogIfError(err, nil)
+	// return models.DB != nil && err == nil
+	return models.DB != nil
 }
 
 func runAccountsCollectionSequence(accounts []models.Account) {
 	for _, account := range accounts {
-		err := models.AccountCollectionFunctions[account.PaymentStatus](account)
 		cost, _ := account.Cost()
+		err := models.AccountCollectionFunctions[account.PaymentStatus](account)
 		utils.LogIfError(err, map[string]interface{}{
 			"message":        "error running token collection functions on account",
 			"eth_address":    account.EthAddress,
@@ -61,6 +63,7 @@ func runAccountsCollectionSequence(accounts []models.Account) {
 			"payment_status": models.PaymentStatusMap[account.PaymentStatus],
 			"cost":           cost,
 		})
+
 	}
 }
 

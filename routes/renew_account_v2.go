@@ -109,11 +109,7 @@ func getAccountRenewalV2Invoice(c *gin.Context) error {
 
 	//renewalV2CostInUSD := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 
-	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
-	if err != nil {
-		err = fmt.Errorf("error generating renewalV2 wallet:  %v", err)
-		return BadRequestResponse(c, err)
-	}
+	ethAddr, privKey := services.GenerateWallet()
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
@@ -174,8 +170,8 @@ func checkRenewalV2Status(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("no renewalV2s found"))
 	}
 
-	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewalV2s[0].EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(renewalV2s[0].OpctCost)))
+	paid, networkID, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewalV2s[0].EthAddress),
+		services.ConvertToWeiUnit(big.NewFloat(renewalV2s[0].OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -192,6 +188,9 @@ func checkRenewalV2Status(c *gin.Context) error {
 	}
 
 	if err := models.DB.Model(&renewalV2s[0]).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	if err := renewalV2s[0].UpdateNetworkIdPaid(networkID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	if err := renewalV2AccountAndUpdateExpireDates(account, request, c); err != nil {

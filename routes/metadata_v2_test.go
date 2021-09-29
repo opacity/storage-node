@@ -362,8 +362,8 @@ func Test_Delete_MetadataV2_Fails_If_Unpaid(t *testing.T) {
 		Timestamp:     time.Now().Unix(),
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, deleteMetadataV2Obj)

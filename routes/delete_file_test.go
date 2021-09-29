@@ -20,7 +20,6 @@ func Test_Init_Delete_Files(t *testing.T) {
 
 func Test_Successful_File_Deletion_Request(t *testing.T) {
 	cleanUpBeforeTest(t)
-
 	account, fileIDs, privateKey := createAccountAndUploadFile(t, 1)
 	fileID := fileIDs[0]
 	checkPrerequisites(t, account, fileID)
@@ -53,7 +52,6 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 
 func Test_Successful_Multiple_File_Deletion_Request(t *testing.T) {
 	cleanUpBeforeTest(t)
-
 	account, fileIDs, privateKey := createAccountAndUploadFile(t, 3)
 
 	for _, fileID := range fileIDs {

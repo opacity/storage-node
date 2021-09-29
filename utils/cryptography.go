@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -44,6 +45,25 @@ func EncryptWithErrorReturn(key string, secret string, nonce string) ([]byte, er
 	return data, nil
 }
 
+/*Encrypt encrypts a secret using a key */
+func EncryptWithGeneratedNonce(keyString, stringToEncrypt string) string {
+	key, err := hex.DecodeString(keyString)
+	PanicOnError(err)
+	plaintext := []byte(stringToEncrypt)
+
+	block, err := aes.NewCipher(key)
+	PanicOnError(err)
+
+	aesGCM, err := cipher.NewGCM(block)
+	PanicOnError(err)
+
+	nonce := make([]byte, aesGCM.NonceSize())
+	PanicOnError(err)
+
+	ciphertext := aesGCM.Seal(nonce, nonce, plaintext, nil)
+	return fmt.Sprintf("%x", ciphertext)
+}
+
 /*Decrypt decrypts a secret using a key and a nonce*/
 func Decrypt(key string, cipherText string, nonce string) []byte {
 	keyInBytes, err := hex.DecodeString(key)
@@ -79,6 +99,25 @@ func DecryptWithErrorReturn(key string, cipherText string, nonce string) ([]byte
 		errDecodeNonce,
 		decryptErr,
 	})
+}
+
+func DecryptWithGeneratedNonce(keyString, encryptedString string) (decryptedString string) {
+	key, _ := hex.DecodeString(keyString)
+	enc, _ := hex.DecodeString(encryptedString)
+
+	block, err := aes.NewCipher(key)
+	PanicOnError(err)
+
+	aesGCM, err := cipher.NewGCM(block)
+	PanicOnError(err)
+
+	nonceSize := aesGCM.NonceSize()
+	nonce, ciphertext := enc[:nonceSize], enc[nonceSize:]
+
+	plaintext, err := aesGCM.Open(nil, nonce, ciphertext, nil)
+	PanicOnError(err)
+
+	return fmt.Sprintf("%s", plaintext)
 }
 
 /*HashString hashes input string arguments and outputs a hash encoded as a hex string*/

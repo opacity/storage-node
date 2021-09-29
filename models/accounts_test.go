@@ -23,7 +23,7 @@ import (
 )
 
 func returnValidAccount() Account {
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 	accountID := utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890"))
 
 	return Account{
@@ -36,6 +36,7 @@ func returnValidAccount() Account {
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
 		ExpiredAt:            time.Now().AddDate(0, DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}
 }
 
@@ -361,15 +362,15 @@ func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid()
+	paid, _, err := account.CheckIfPaid()
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -382,15 +383,15 @@ func Test_CheckIfPaid_Not_Paid(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid()
+	paid, _, err := account.CheckIfPaid()
 	assert.False(t, paid)
 	assert.Nil(t, err)
 
@@ -403,15 +404,15 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 	account := returnValidAccount()
 	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, errors.New("some error")
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, errors.New("some error")
 	}
 
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	paid, err := account.CheckIfPaid()
+	paid, _, err := account.CheckIfPaid()
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 
@@ -423,37 +424,34 @@ func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 func Test_CheckIfPending_Is_Pending(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPending = func(address common.Address) bool {
+		return true
 	}
 
-	pending, err := account.CheckIfPending()
+	pending := account.CheckIfPending()
 	assert.True(t, pending)
-	assert.Nil(t, err)
 }
 
 func Test_CheckIfPending_Is_Not_Pending(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPending = func(address common.Address) bool {
+		return false
 	}
 
-	pending, err := account.CheckIfPending()
+	pending := account.CheckIfPending()
 	assert.False(t, pending)
-	assert.Nil(t, err)
 }
 
 func Test_CheckIfPending_Error_While_Checking(t *testing.T) {
 	account := returnValidAccount()
 
-	BackendManager.CheckIfPending = func(address common.Address) (bool, error) {
-		return false, errors.New("some error")
+	BackendManager.CheckIfPending = func(address common.Address) bool {
+		return false
 	}
 
-	pending, err := account.CheckIfPending()
+	pending := account.CheckIfPending()
 	assert.False(t, pending)
-	assert.NotNil(t, err)
 	assert.Equal(t, InitialPaymentInProgress, account.PaymentStatus)
 }
 
@@ -1131,8 +1129,8 @@ func Test_handleAccountWithPaymentInProgress_has_paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	// grab the account from the DB
@@ -1150,8 +1148,8 @@ func Test_handleAccountWithPaymentInProgress_has_not_paid(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	// grab the account from the DB
@@ -1168,7 +1166,7 @@ func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.TransferETH = func(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey,
+	services.EthOpsWrapper.TransferETH = func(ethWrapper *services.Eth, fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey,
 		toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
 		// not returning anything important for the first three return values because
 		// handleAccountThatNeedsGas only cares about the 4th return value which will
@@ -1177,7 +1175,6 @@ func Test_handleAccountThatNeedsGas_transfer_success(t *testing.T) {
 	}
 
 	verifyPaymentStatusExpectations(t, account, InitialPaymentReceived, GasTransferInProgress, handleAccountThatNeedsGas)
-
 }
 
 func Test_handleAccountThatNeedsGas_transfer_error(t *testing.T) {
@@ -1188,7 +1185,7 @@ func Test_handleAccountThatNeedsGas_transfer_error(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.TransferETH = func(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey,
+	services.EthOpsWrapper.TransferETH = func(ethWrapper *services.Eth, fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey,
 		toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
 		// not returning anything important for the first three return values because
 		// handleAccountThatNeedsGas only cares about the 4th return value which will
@@ -1208,7 +1205,7 @@ func Test_handleAccountReceivingGas_gas_received(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetETHBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
 
@@ -1224,7 +1221,7 @@ func Test_handleAccountReceivingGas_gas_not_received(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetETHBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(-1)
 	}
 
@@ -1240,13 +1237,13 @@ func Test_handleAccountReadyForCollection_transfer_success(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetETHBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
-	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetTokenBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
-	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		// all that handleAccountReadyForCollection cares about is the first return value
 		return true, "", 1
@@ -1263,13 +1260,13 @@ func Test_handleAccountReadyForCollection_transfer_failed(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetETHBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetETHBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
-	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetTokenBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
-	EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 		// all that handleAccountReadyForCollection cares about is the first return value
 		return false, "", 1
@@ -1287,7 +1284,7 @@ func Test_handleAccountWithCollectionInProgress_balance_not_found(t *testing.T) 
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetTokenBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(1)
 	}
 
@@ -1302,7 +1299,7 @@ func Test_handleAccountWithCollectionInProgress_balance_found(t *testing.T) {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	EthWrapper.GetTokenBalance = func(addr common.Address) *big.Int {
+	services.EthOpsWrapper.GetTokenBalance = func(ethWrapper *services.Eth, addr common.Address) *big.Int {
 		return big.NewInt(0)
 	}
 

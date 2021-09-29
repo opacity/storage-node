@@ -13,7 +13,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/jobs"
-	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -32,9 +31,6 @@ import (
 
 var (
 	uptime time.Time
-
-	/*EthWrapper is a copy of services.EthWrapper*/
-	EthWrapper = services.EthWrapper
 )
 
 const (
@@ -165,11 +161,14 @@ const (
 
 	/*DeletePath is the path for deleting files, allowing multiple deletions*/
 	DeleteV2Path = "/delete"
+
+	/*SmartContractsV2Path is the path for getting smart contracts addresses and related data*/
+	SmartContractsV2Path = "/smart-contracts"
 )
 
 const MaxRequestSize = utils.MaxMultiPartSize + 1000
 
-var maintenanceError = errors.New("maintenance in progress, currently rejecting writes")
+var errMaintenance = errors.New("maintenance in progress, currently rejecting writes")
 
 // StatusRes ...
 type StatusRes struct {
@@ -295,6 +294,8 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	publicShareRouterGroup.POST(PublicShareRevokePath, RevokePublicShareHandler())
 
 	v2Router.POST(DeleteV2Path, DeleteFilesHandler())
+
+	v2Router.GET(SmartContractsV2Path, SmartContractsHandler())
 }
 
 func setupAdminPaths(router *gin.Engine) {
@@ -316,6 +317,7 @@ func setupAdminPaths(router *gin.Engine) {
 	g.POST("/delete", AdminDeleteFileHandler())
 
 	setupAdminPlansPaths(g)
+	setupAdminSmartContractPaths(g)
 
 	// Load template file location relative to the current working directory
 	// Unable to find the file.
@@ -342,6 +344,23 @@ func setupAdminPlansPaths(adminGroup *gin.RouterGroup) {
 		})
 	})
 	plansGroup.POST("/add", AdminPlansAddHandler())
+}
+
+func setupAdminSmartContractPaths(adminGroup *gin.RouterGroup) {
+	smartContractGroup := adminGroup.Group("/smart-contracts")
+
+	smartContractGroup.GET("/", AdminSmartContractListHandler())
+	smartContractGroup.POST("/", AdminSmartContractUpdateHandler())
+
+	smartContractGroup.GET("/edit/:sc", AdminSmartContractEditHandler())
+	smartContractGroup.POST("/remove/:sc", AdminSmartContractRemoveHandler())
+	smartContractGroup.GET("/confirm-remove/:sc", AdminSmartContractRemoveConfirmHandler())
+	smartContractGroup.GET("/add", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "smart-contract-add.tmpl", gin.H{
+			"title": "Add smart contract",
+		})
+	})
+	smartContractGroup.POST("/add", AdminSmartContractAddHandler())
 }
 
 // GetPlansHandler godoc

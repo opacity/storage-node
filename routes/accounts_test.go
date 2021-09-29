@@ -40,7 +40,7 @@ func returnFailedVerificationCreateAccountReq(t *testing.T, body accountCreateOb
 
 func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.PrivateKey) {
 	accountId, privateKeyToSignWith := generateValidateAccountId(t)
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	return models.Account{
 		AccountID:            accountId,
@@ -52,6 +52,7 @@ func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.Priva
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
 		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}, privateKeyToSignWith
 }
 
@@ -135,8 +136,8 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -156,8 +157,8 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -182,8 +183,8 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsExpi
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -205,11 +206,11 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
-	stripeToken := services.RandTestStripeToken()
+	stripeToken := models.RandTestStripeToken()
 	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken, account.AccountID)
 
 	stripePayment := models.StripePayment{

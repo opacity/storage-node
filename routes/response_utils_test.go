@@ -38,8 +38,8 @@ func Test_verifyIfPaidWithContext_account_opct_balance_has_arrived(t *testing.T)
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	err = verifyIfPaidWithContext(account, c)
@@ -57,11 +57,11 @@ func Test_verifyIfPaidWithContext_stripe_payment_has_been_paid(t *testing.T) {
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
-	stripeToken := services.RandTestStripeToken()
+	stripeToken := models.RandTestStripeToken()
 	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken, account.AccountID)
 
 	stripePayment := models.StripePayment{

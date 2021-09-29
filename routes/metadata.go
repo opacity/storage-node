@@ -184,7 +184,7 @@ func getMetadata(c *gin.Context) error {
 		return err
 	}
 
-	if paid := verifyIfPaid(account); !paid {
+	if paid, _ := verifyIfPaid(account); !paid {
 		cost, _ := account.Cost()
 		return AccountNotPaidResponse(c, accountCreateRes{
 			Invoice: models.Invoice{
@@ -246,7 +246,7 @@ func getMetadataHistory(c *gin.Context) error {
 		return err
 	}
 
-	if paid := verifyIfPaid(account); !paid {
+	if paid, _ := verifyIfPaid(account); !paid {
 		cost, _ := account.Cost()
 		return AccountNotPaidResponse(c, accountCreateRes{
 			Invoice: models.Invoice{

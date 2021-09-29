@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"crypto/ecdsa"
-	"errors"
 	"math/big"
 
 	"fmt"
@@ -20,13 +19,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/opacity/storage-node/utils"
+	"github.com/getsentry/sentry-go"
 )
 
-/*Eth is a struct specifying methods for our ethereum wrapper*/
-type Eth struct {
-	GenerateWallet
+// needed as singleton in order to change it during tests
+type EthOps struct {
 	GetTokenBalance
 	GetETHBalance
 	TransferToken
@@ -34,26 +31,38 @@ type Eth struct {
 	CheckForPendingTokenTxs
 }
 
-/*GenerateWallet - generate valid Ethereum network address and private key*/
-type GenerateWallet func() (addr common.Address, privateKey string, err error)
+type Eth struct {
+	client                         *ethclient.Client
+	mtx                            sync.Mutex
+	AddressNonceMap                map[common.Address]uint64
+	MainWalletAddress              common.Address
+	MainWalletPrivateKey           *ecdsa.PrivateKey
+	DefaultGasPrice                *big.Int
+	DefaultGasForPaymentCollection *big.Int
+	SlowGasPrice                   *big.Int
+	FastGasPrice                   *big.Int
+	ChainId                        *big.Int
+	ContractAddress                common.Address
+	NodeUrl                        string
+}
 
 /*GetTokenBalance - check Token balance of an address*/
-type GetTokenBalance func(common.Address) /*In Wei Unit*/ *big.Int
+type GetTokenBalance func(ethWrapper *Eth, address common.Address) /*In Wei Unit*/ *big.Int
 
 /*GetETHBalance - check ETH balance of an address*/
-type GetETHBalance func(common.Address) /*In Wei Unit*/ *big.Int
+type GetETHBalance func(ethWrapper *Eth, address common.Address) /*In Wei Unit*/ *big.Int
 
 /*TransferToken - send Token from one account to another*/
-type TransferToken func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, opctAmount big.Int, gasPrice *big.Int) (bool, string, int64)
+type TransferToken func(ethWrapper *Eth, fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, opctAmount big.Int, gasPrice *big.Int) (bool, string, int64)
 
 /*TransferETH - send ETH to an ethereum address*/
-type TransferETH func(fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error)
+type TransferETH func(ethWrapper *Eth, fromAddress common.Address, fromPrivateKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error)
 
 /*CheckForPendingTokenTxs - checks whether a pending token transaction exists*/
-type CheckForPendingTokenTxs func(address common.Address) (bool, error)
+type CheckForPendingTokenTxs func(*Eth, common.Address) bool
 
-/*AddressToNonceMap is a type of mapping addresses to nonces*/
-type AddressToNonceMap map[common.Address]uint64
+var EthWrappers map[uint]*Eth
+var EthOpsWrapper EthOps
 
 /*TokenCallMsg is the message to send to the ETH blockchain to do token transactions*/
 type TokenCallMsg struct {
@@ -75,127 +84,76 @@ const (
 	GasLimitETHSend uint64 = 21000
 )
 
-var (
-	/*EthWrapper is an instance of our ethereum wrapper*/
-	EthWrapper                     Eth
-	client                         *ethclient.Client
-	mtx                            sync.Mutex
-	addressNonceMap                AddressToNonceMap
-	MainWalletAddress              common.Address
-	MainWalletPrivateKey           *ecdsa.PrivateKey
-	DefaultGasPrice                = utils.ConvertGweiToWei(big.NewInt(80))
-	DefaultGasForPaymentCollection = new(big.Int).Mul(DefaultGasPrice, big.NewInt(int64(GasLimitTokenSend)))
-	SlowGasPrice                   = utils.ConvertGweiToWei(big.NewInt(80))
-	FastGasPrice                   = utils.ConvertGweiToWei(big.NewInt(145))
-)
-
-func init() {
-	EthWrapper = Eth{
-		GenerateWallet:          generateWallet,
-		TransferToken:           transferToken,
-		TransferETH:             transferETH,
-		GetTokenBalance:         getTokenBalance,
-		GetETHBalance:           getETHBalance,
-		CheckForPendingTokenTxs: checkForPendingTokenTxs,
-	}
-
-	addressNonceMap = make(AddressToNonceMap)
-}
-
-/*SetWallet gets the address and private key for storage node's main wallet*/
-func SetWallet() error {
-	var err error
-	if utils.Env.MainWalletPrivateKey == "" || utils.Env.MainWalletAddress == "" {
-		err = errors.New("need MainWalletAddress and MainWalletPrivateKey for storage node's main wallet")
-		utils.LogIfError(err, nil)
-		utils.PanicOnError(err)
-	}
-	MainWalletAddress = common.HexToAddress(utils.Env.MainWalletAddress)
-	MainWalletPrivateKey, err = StringToPrivateKey(utils.Env.MainWalletPrivateKey)
-	utils.LogIfError(err, nil)
-	return err
-}
-
 // Shared client provides access to the underlying Ethereum client
-func sharedClient() (c *ethclient.Client, err error) {
-	if client != nil {
-		return client, nil
+func (eth *Eth) SharedClient() (c *ethclient.Client) {
+	if eth.client != nil {
+		return eth.client
 	}
 	// check-lock-check pattern to avoid excessive locking.
-	mtx.Lock()
-	defer mtx.Unlock()
+	eth.mtx.Lock()
+	defer eth.mtx.Unlock()
 
-	if client != nil {
-		return client, nil
+	if eth.client != nil {
+		return eth.client
 	}
 
-	c, err = ethclient.Dial(utils.Env.EthNodeURL)
+	c, err := ethclient.Dial(eth.NodeUrl)
 	if err != nil {
-		utils.LogIfError(err, nil)
-		return
+		panic(err)
 	}
 	// Sets Singleton
-	client = c
+	eth.client = c
 	return
 }
 
 // Generate an Ethereum address and private key
-func generateWallet() (addr common.Address, privateKey string, err error) {
+func GenerateWallet() (addr common.Address, privateKey string) {
 	ethAccount, err := crypto.GenerateKey()
 	if err != nil {
-		utils.LogIfError(err, nil)
-		return addr, "", err
+		ethereumErrorLog(err, nil)
+		return
 	}
 	addr = crypto.PubkeyToAddress(ethAccount.PublicKey)
 	privateKey = hex.EncodeToString(ethAccount.D.Bytes())
 	if privateKey[0] == '0' || len(privateKey) != 64 || len(addr) != 20 {
-		return generateWallet()
+		return GenerateWallet()
 	}
-	return addr, privateKey, err
+	return addr, privateKey
 }
 
 // Check balance from a valid address
-func getTokenBalance(address common.Address) *big.Int {
+func GetTokenBalanceWrapper(ethWrapper *Eth, address common.Address) *big.Int {
 	// connect ethereum client
-	client, err := sharedClient()
-	if err != nil {
-		utils.LogIfError(err, nil)
-		return big.NewInt(-1)
-	}
+	client := ethWrapper.SharedClient()
 
 	// instance of the token contract
-	OpacityAddress := common.HexToAddress(utils.Env.ContractAddress)
-	Opacity, err := NewOpacity(OpacityAddress, client)
+	Opacity, err := NewOpacity(ethWrapper.ContractAddress, client)
 	if err != nil {
-		utils.LogIfError(err, nil)
+		ethereumErrorLog(err, nil)
 		return big.NewInt(-1)
 	}
-	callOpts := bind.CallOpts{Pending: false, From: OpacityAddress}
+	callOpts := bind.CallOpts{Pending: false, From: ethWrapper.ContractAddress}
 	balance, err := Opacity.BalanceOf(&callOpts, address)
 	if err != nil {
-		utils.LogIfError(err, nil)
+		ethereumErrorLog(err, nil)
 		return big.NewInt(-1)
 	}
 	return balance
 }
 
 // Check balance from a valid ethereum network address
-func getETHBalance(addr common.Address) *big.Int {
+func GetETHBalanceWrapper(ethWrapper *Eth, addr common.Address) *big.Int {
 	// connect ethereum client
-	client, err := sharedClient()
-	if err != nil {
-		utils.LogIfError(err, nil)
-	}
+	client := ethWrapper.SharedClient()
 
 	balance, err := client.BalanceAt(context.Background(), addr, nil)
 	if err != nil {
-		utils.LogIfError(err, nil)
-		return big.NewInt(-1)
+		panic(err)
 	}
 	return balance
 }
 
-func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address, opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
+func TransferTokenWrapper(ethWrapper *Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address, opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 	msg := TokenCallMsg{
 		From:       from,
 		To:         to,
@@ -204,17 +162,16 @@ func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.
 		PrivateKey: *privateKey,
 	}
 
-	client, _ := sharedClient()
-	Opacity, err := NewOpacity(common.HexToAddress(utils.Env.ContractAddress), client)
-
+	client := ethWrapper.SharedClient()
+	Opacity, err := NewOpacity(ethWrapper.ContractAddress, client)
 	if err != nil {
-		utils.LogIfError(err, nil)
+		ethereumErrorLog(err, nil)
 	}
 
-	// initialize transactor // may need to move this to a session based transactor
-	auth := bind.NewKeyedTransactor(&msg.PrivateKey)
+	// @TODO: initialize transactor // may need to move this to a session based transactor
+	auth, err := bind.NewKeyedTransactorWithChainID(&msg.PrivateKey, ethWrapper.ChainId)
 	if err != nil {
-		utils.LogIfError(err, nil)
+		ethereumErrorLog(err, nil)
 	}
 
 	log.Printf("authorized transactor : %v\n", auth.From.Hex())
@@ -230,7 +187,7 @@ func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.
 
 	tx, err := Opacity.Transfer(&opts, msg.To, &msg.Amount)
 	if err != nil {
-		utils.LogIfError(errors.New(fmt.Sprintf("transfer failed: %v", err.Error())), nil)
+		ethereumErrorLog(err, nil)
 		return false, "", int64(-1)
 	}
 
@@ -242,12 +199,8 @@ func transferToken(from common.Address, privateKey *ecdsa.PrivateKey, to common.
 }
 
 // Transfer funds from main wallet
-func transferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
-
-	client, err := sharedClient()
-	if err != nil {
-		return types.Transactions{}, "", -1, err
-	}
+func TransferETHWrapper(ethWrapper *Eth, fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAddr common.Address, amount *big.Int) (types.Transactions, string, int64, error) {
+	client := ethWrapper.SharedClient()
 
 	// initialize the context
 	ctx, cancel := createContext()
@@ -255,16 +208,15 @@ func transferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAd
 
 	// generate nonce
 	nonce, _ := client.PendingNonceAt(ctx, fromAddress)
-
-	if lastNonce, inMap := ReturnLastNonceFromMap(fromAddress); inMap && nonce <= lastNonce {
+	if lastNonce, inMap := ethWrapper.ReturnLastNonceFromMap(fromAddress); inMap && nonce <= lastNonce {
 		nonce = lastNonce + 1
 	}
 
-	UpdateLastNonceInMap(fromAddress, nonce)
+	ethWrapper.UpdateLastNonceInMap(fromAddress, nonce)
 
-	gasPrice, _ := getGasPrice()
+	gasPrice, _ := ethWrapper.GetGasPrice()
 
-	balance := getETHBalance(fromAddress)
+	balance := GetETHBalanceWrapper(ethWrapper, fromAddress)
 	fmt.Printf("balance : %v\n", balance)
 
 	// amount is greater than balance, return error
@@ -277,25 +229,20 @@ func transferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAd
 	tx := types.NewTransaction(nonce, toAddr, amount, GasLimitETHSend, gasPrice, nil)
 
 	// signer
-	chainId := params.MainnetChainConfig.ChainID
-	if utils.Env.GoEnv != "production" {
-		chainId = params.GoerliChainConfig.ChainID
-	}
-	signer := types.NewEIP155Signer(chainId)
+	signer := types.NewEIP155Signer(ethWrapper.ChainId)
 
 	// sign transaction
 	signedTx, err := types.SignTx(tx, signer, fromPrivKey)
 	if err != nil {
-		utils.LogIfError(err, nil)
+		ethereumErrorLog(err, nil)
 		return types.Transactions{}, "", -1, err
 	}
 
 	// send transaction
 	err = client.SendTransaction(ctx, signedTx)
 	if err != nil {
-		utils.LogIfError(fmt.Errorf("error sending transaction from %s to %s.  Error:  %v",
-			fromAddress.String(), signedTx.To().String(), err), nil)
-		return types.Transactions{}, "", -1, err
+		return types.Transactions{}, "", -1, fmt.Errorf("error sending transaction from %s to %s.  Error:  %v",
+			fromAddress.String(), signedTx.To().String(), err)
 	}
 
 	// pull signed transaction(s)
@@ -309,69 +256,59 @@ func transferETH(fromAddress common.Address, fromPrivKey *ecdsa.PrivateKey, toAd
 	return signedTxs, signedTx.Hash().Hex(), int64(signedTx.Nonce()), nil
 }
 
-func checkForPendingTokenTxs(address common.Address) (bool, error) {
-	// connect ethereum client
-	client, err := sharedClient()
-	if err != nil {
-		utils.LogIfError(err, nil)
-		return false, err
-	}
+func CheckForPendingTokenTxsWrapper(ethWrapper *Eth, address common.Address) bool {
+	client := ethWrapper.SharedClient()
 
 	// instance of the token contract
-	OpacityAddress := common.HexToAddress(utils.Env.ContractAddress)
-	Opacity, err := NewOpacity(OpacityAddress, client)
+	Opacity, err := NewOpacity(ethWrapper.ContractAddress, client)
 	if err != nil {
-		utils.LogIfError(err, nil)
-		return false, err
+		ethereumErrorLog(err, nil)
+		return false
 	}
-	callOpts := bind.CallOpts{Pending: true, From: OpacityAddress}
+	callOpts := bind.CallOpts{Pending: true, From: ethWrapper.ContractAddress}
 	balance, err := Opacity.BalanceOf(&callOpts, address)
 	if err != nil {
-		utils.LogIfError(err, nil)
-		return false, err
+		ethereumErrorLog(err, nil)
+		return false
 	}
-	return balance.Cmp(big.NewInt(0)) > 0, nil
+	return balance.Cmp(big.NewInt(0)) > 0
 }
 
 /*RemoveFromAddressNonceMap removes a key with a certain address from the map of addresses to their
 most recent nonces.  This is to prevent us from accidentally using a nonce that is already in the process
 of being used, for a particular address.*/
-func RemoveFromAddressNonceMap(address common.Address) {
-	if _, ok := addressNonceMap[address]; ok && address != MainWalletAddress {
-		delete(addressNonceMap, address)
+func (eth *Eth) RemoveFromAddressNonceMap(address common.Address) {
+	if _, ok := eth.AddressNonceMap[address]; ok && address != eth.MainWalletAddress {
+		delete(eth.AddressNonceMap, address)
 	}
 }
 
 /*ReturnLastNonceFromMap returns the latest nonce from the addressNonceMap for a particular
 address.*/
-func ReturnLastNonceFromMap(address common.Address) (uint64, bool) {
-	if _, ok := addressNonceMap[address]; ok {
-		return addressNonceMap[address], true
+func (eth *Eth) ReturnLastNonceFromMap(address common.Address) (uint64, bool) {
+	if _, ok := eth.AddressNonceMap[address]; ok {
+		return eth.AddressNonceMap[address], true
 	}
 	return uint64(0), false
 }
 
 /*UpdateLastNonceInMap updates the last nonce in the addressNonceMap for an address*/
-func UpdateLastNonceInMap(address common.Address, lastNonce uint64) {
-	addressNonceMap[address] = lastNonce
+func (eth *Eth) UpdateLastNonceInMap(address common.Address, lastNonce uint64) {
+	(*eth).AddressNonceMap[address] = lastNonce
 }
 
 // SuggestGasPrice retrieves the currently suggested gas price to allow a timely
 // execution for new transaction
-func getGasPrice() (*big.Int, error) {
+func (eth *Eth) GetGasPrice() (*big.Int, error) {
 	// if QAing, un-comment out the line immediately below to hard-code a high gwei value for fast txs
-	return DefaultGasPrice, nil
+	return (*eth).DefaultGasPrice, nil
 
-	// connect ethereum client
-	client, err := sharedClient()
-	if err != nil {
-		utils.LogIfError(err, nil)
-	}
+	client := eth.SharedClient()
 
 	// there is no guarantee with estimate gas price
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
-		utils.LogIfError(err, nil)
+		panic(err)
 	}
 	return gasPrice, nil
 }
@@ -384,10 +321,11 @@ func createContext() (ctx context.Context, cancel context.CancelFunc) {
 
 // utility to print
 func printTx(tx *types.Transaction) {
-	fmt.Printf("tx to     : %v\n", tx.To().Hash().String())
-	fmt.Printf("tx hash   : %v\n", tx.Hash().String())
-	fmt.Printf("tx amount : %v\n", tx.Value())
-	fmt.Printf("tx cost   : %v\n", tx.Cost())
+	fmt.Printf("tx to        : %v\n", tx.To().Hash().String())
+	fmt.Printf("tx hash      : %v\n", tx.Hash().String())
+	fmt.Printf("tx amount    : %v\n", tx.Value())
+	fmt.Printf("tx cost      : %v\n", tx.Cost())
+	fmt.Printf("tx chainId   : %v\n", tx.ChainId().String())
 }
 
 /*StringToAddress converts a string to a common.Address*/
@@ -398,4 +336,13 @@ func StringToAddress(address string) common.Address {
 /* StringToPrivateKey Utility HexToECDSA parses a secp256k1 private key*/
 func StringToPrivateKey(hexPrivateKey string) (*ecdsa.PrivateKey, error) {
 	return crypto.HexToECDSA(hexPrivateKey)
+}
+
+func ethereumErrorLog(err error, extraInfo map[string]interface{}) {
+	if err == nil {
+		return
+	}
+	sentry.CaptureException(err)
+	fmt.Println(err)
+	fmt.Println(extraInfo)
 }

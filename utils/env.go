@@ -4,17 +4,21 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"math/big"
 
 	"os"
 
 	"strconv"
 
 	"github.com/caarlos0/env/v6"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/joho/godotenv"
+	"github.com/opacity/storage-node/services"
 )
 
 const defaultAccountRetentionDays = 7
 const defaultStripeRetentionDays = 30
+const TestNetworkID = 999
 
 const DefaultPlansJson = `{
 	"10":{"name":"Free","cost":0,"costInUSD":0.00,"storageInGB":10,"maxFolders":200,"maxMetadataSizeInMB":20},
@@ -81,7 +85,6 @@ type StorageNodeEnv struct {
 	// Stripe Keys
 	StripeKeyTest string `env:"STRIPE_KEY_TEST" envDefault:"Unknown"`
 	StripeKeyProd string `env:"STRIPE_KEY_PROD" envDefault:"Unknown"`
-	StripeKey     string `envDefault:"Unknown"`
 
 	// Whether accepting credit cards is enabled
 	EnableCreditCards bool `env:"ENABLE_CREDIT_CARDS" envDefault:"false"`
@@ -118,7 +121,6 @@ func initEnv(filenames ...string) {
 func SetLive() {
 	initEnv()
 	Env.DatabaseURL = Env.ProdDatabaseURL
-	Env.StripeKey = Env.StripeKeyProd
 	runInitializations()
 }
 
@@ -131,7 +133,34 @@ func SetTesting(filenames ...string) {
 	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
 	LogIfError(err, nil)
 	Env.DatabaseURL = Env.TestDatabaseURL
-	Env.StripeKey = Env.StripeKeyTest
+
+	services.EthOpsWrapper = services.EthOps{
+		TransferToken:           services.TransferTokenWrapper,
+		TransferETH:             services.TransferETHWrapper,
+		GetTokenBalance:         services.GetTokenBalanceWrapper,
+		GetETHBalance:           services.GetETHBalanceWrapper,
+		CheckForPendingTokenTxs: services.CheckForPendingTokenTxsWrapper,
+	}
+	services.EthWrappers = make(map[uint]*services.Eth)
+	defaultGasPrice := services.ConvertGweiToWei(big.NewInt(80))
+
+	privateKey, _ := services.StringToPrivateKey(Env.MainWalletPrivateKey)
+
+	services.EthWrappers[TestNetworkID] = &services.Eth{
+		AddressNonceMap:                make(map[common.Address]uint64),
+		MainWalletAddress:              services.StringToAddress(Env.MainWalletAddress),
+		MainWalletPrivateKey:           privateKey,
+		DefaultGasPrice:                services.ConvertGweiToWei(big.NewInt(80)),
+		DefaultGasForPaymentCollection: new(big.Int).Mul(defaultGasPrice, big.NewInt(int64(services.GasLimitTokenSend))),
+		SlowGasPrice:                   services.ConvertGweiToWei(big.NewInt(80)),
+		FastGasPrice:                   services.ConvertGweiToWei(big.NewInt(145)),
+
+		ChainId:         big.NewInt(5), // Goerli
+		ContractAddress: services.StringToAddress(Env.ContractAddress),
+		NodeUrl:         Env.EthNodeURL,
+	}
+
+	services.InitStripe(Env.StripeKeyTest)
 	runInitializations()
 }
 

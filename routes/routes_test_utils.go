@@ -49,7 +49,7 @@ func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKe
 func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 	abortIfNotTesting(t)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	account := models.Account{
 		AccountID:            accountID,
@@ -61,14 +61,15 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
 		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	return account
@@ -77,7 +78,7 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 	abortIfNotTesting(t)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	account := models.Account{
 		AccountID:            accountID,
@@ -89,6 +90,7 @@ func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
 		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -146,7 +148,7 @@ func setupTests(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
 	gin.SetMode(gin.TestMode)
-	err := services.InitStripe()
+	err := services.InitStripe(utils.Env.StripeKeyTest)
 	assert.Nil(t, err)
 }
 

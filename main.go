@@ -47,8 +47,8 @@ func main() {
 	defer models.Close()
 
 	utils.SetLive()
-	services.SetWallet()
-	err := services.InitStripe()
+
+	err := services.InitStripe(utils.Env.StripeKeyProd)
 	utils.PanicOnError(err)
 
 	utils.SlackLog("Begin to restart service!")
@@ -58,6 +58,7 @@ func main() {
 	}
 
 	setEnvPlans()
+	models.MigrateEnvWallets()
 
 	jobs.StartupJobs()
 	if utils.Env.EnableJobs {

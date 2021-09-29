@@ -1,38 +1,40 @@
-package utils
+package services
 
 import (
 	"math/big"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_ConvertToWeiUnit(t *testing.T) {
 	v := ConvertToWeiUnit(big.NewFloat(0.2))
 
-	AssertTrue(v.Cmp(big.NewInt(200000000000000000)) == 0, t, "")
+	assert.True(t, v.Cmp(big.NewInt(200000000000000000)) == 0)
 }
 
 func Test_ConvertToWeiUnit_SmallValue(t *testing.T) {
 	v := ConvertToWeiUnit(big.NewFloat(0.000000000000000002))
 
-	AssertTrue(v.Cmp(big.NewInt(2)) == 0, t, "")
+	assert.True(t, v.Cmp(big.NewInt(2)) == 0)
 }
 
 func Test_ConvertToWeiUnit_ConsiderAsZero(t *testing.T) {
 	v := ConvertToWeiUnit(big.NewFloat(0.0000000000000000002))
 
-	AssertTrue(v.Cmp(big.NewInt(0)) == 0, t, "")
+	assert.True(t, v.Cmp(big.NewInt(0)) == 0)
 }
 
 func Test_ConvertToOpctUnit(t *testing.T) {
 	v := ConvertFromWeiUnit(big.NewInt(200000000000000000))
 
-	AssertTrue(v.String() == big.NewFloat(.2).String(), t, "")
+	assert.True(t, v.String() == big.NewFloat(.2).String())
 }
 
 func Test_ConvertToOpctUnit_SmallValue(t *testing.T) {
 	v := ConvertFromWeiUnit(big.NewInt(2))
 
-	AssertTrue(v.String() == big.NewFloat(.000000000000000002).String(), t, "")
+	assert.True(t, v.String() == big.NewFloat(.000000000000000002).String())
 }
 
 func Test_ConvertGweiToWei(t *testing.T) {
@@ -40,7 +42,7 @@ func Test_ConvertGweiToWei(t *testing.T) {
 	expectedWei := big.NewInt(1000000000)
 
 	weiResult := ConvertGweiToWei(gwei)
-	AssertTrue(expectedWei.String() == weiResult.String(), t, "")
+	assert.True(t, expectedWei.String() == weiResult.String())
 }
 
 func Test_ConvertWeiToGwei(t *testing.T) {
@@ -48,5 +50,5 @@ func Test_ConvertWeiToGwei(t *testing.T) {
 	expectedGwei := big.NewInt(1)
 
 	gweiResult := ConvertWeiToGwei(wei)
-	AssertTrue(expectedGwei.String() == gweiResult.String(), t, "")
+	assert.True(t, expectedGwei.String() == gweiResult.String())
 }

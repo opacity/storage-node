@@ -110,8 +110,8 @@ func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Success(t *testing
 	completedFileStart, err := models.GetCompletedFileByFileID(checkRenewalStatusObj.FileHandles[0])
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountRenewPath, "v1", checkRenewalStatusReq)
@@ -168,8 +168,8 @@ func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Still_Pending(t *t
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, renewals[0].PaymentStatus)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountRenewPath, "v1", checkRenewalStatusReq)
@@ -201,7 +201,7 @@ func CreateRenewalForTest(t *testing.T, account models.Account) models.Renewal {
 func returnRenewalForTest(t *testing.T, account models.Account) models.Renewal {
 	abortIfNotTesting(t)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	renewalCostInOPCT, _ := account.Cost()
 
@@ -212,5 +212,6 @@ func returnRenewalForTest(t *testing.T, account models.Account) models.Renewal {
 		OpctCost:         renewalCostInOPCT,
 		EthAddress:       ethAddress.String(),
 		EthPrivateKey:    hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
+		NetworkIdPaid:    utils.TestNetworkID,
 	}
 }

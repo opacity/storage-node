@@ -1,6 +1,8 @@
-package services
+package models
 
-import "github.com/opacity/storage-node/utils"
+import (
+	"math/rand"
+)
 
 var testTokens = []string{
 	`tok_visa`,
@@ -16,5 +18,5 @@ var testTokens = []string{
 }
 
 func RandTestStripeToken() string {
-	return testTokens[utils.RandIndex(len(testTokens))]
+	return testTokens[rand.Intn(len(testTokens))]
 }

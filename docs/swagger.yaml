@@ -225,6 +225,20 @@ definitions:
     - requestBody
     - signature
     type: object
+  routes.SmartContractResp:
+    properties:
+      contracts:
+        items:
+          $ref: '#/definitions/routes.SmartContractRespEntity'
+        type: array
+    type: object
+  routes.SmartContractRespEntity:
+    properties:
+      address:
+        type: string
+      network:
+        type: string
+    type: object
   routes.StatusRes:
     properties:
       status:
@@ -1835,6 +1849,7 @@ paths:
         requestBody should be a stringified version of (values are just examples):
         {
         "stripeToken": "tok_KPte7942xySKBKyrBu11yEpf",
+        "timestamp": 1659325302,
         }
       parameters:
       - description: stripe payment creation object
@@ -2700,6 +2715,25 @@ paths:
           schema:
             type: string
       summary: get an invoice to renew an account
+  /api/v2/smart-contracts:
+    get:
+      consumes:
+      - application/json
+      description: gets the smart contracts address and related info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/routes.SmartContractResp'
+            type: array
+        "404":
+          description: 'no account with that id: (with your accountID)'
+          schema:
+            type: string
+      summary: gets the smart contracts address
   /api/v2/upload-public:
     post:
       consumes:
