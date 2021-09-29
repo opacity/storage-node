@@ -38,7 +38,7 @@ before_install:
   - sudo sed -i -e 's/AWS_ACCESS_KEY_ID=TRAVIS/AWS_ACCESS_KEY_ID='${AWS_ACCESS_KEY_ID}'/' .env
   - sudo sed -i -e 's/AWS_SECRET_ACCESS_KEY=TRAVIS/AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}'/' .env
   - sudo sed -i -e 's/AWS_REGION=TRAVIS/AWS_REGION='${AWS_REGION}'/' .env
-  - sudo sed -i -e 's+ETH_NODE_URL=TRAVIS+ETH_NODE_URL='${ETH_NODE_URL}'+' .env
+  - sudo sed -i -e 's+ETH_NODE_URL=TRAVIS+ETH_NODE_URL="'${ETH_NODE_URL}'"+' .env
   - sudo sed -i -e 's/STRIPE_KEY_TEST=TRAVIS/STRIPE_KEY_TEST='${STRIPE_KEY_TEST}'/' .env
   - sudo sed -i -e 's/MAIN_WALLET_ADDRESS=TRAVIS/MAIN_WALLET_ADDRESS='${MAIN_WALLET_ADDRESS}'/' .env
   - sudo sed -i -e 's/MAIN_WALLET_PRIVATE_KEY=TRAVIS/MAIN_WALLET_PRIVATE_KEY='${MAIN_WALLET_PRIVATE_KEY}'/' .env
