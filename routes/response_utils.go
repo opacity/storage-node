@@ -184,7 +184,7 @@ func verifyIfPaid(account models.Account) (bool, uint) {
 }
 
 func verifyAccountStillActive(account models.Account) bool {
-	return account.ExpirationDate().After(time.Now()) || utils.Env.Plans[int(account.StorageLimit)].Name == "Free"
+	return account.ExpirationDate().After(time.Now())
 }
 
 func verifyIfPaidWithContext(account models.Account, c *gin.Context) error {
