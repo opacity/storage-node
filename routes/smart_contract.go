@@ -12,6 +12,7 @@ type SmartContractResp struct {
 type SmartContractRespEntity struct {
 	Network string `json:"network"`
 	Address string `json:"address"`
+	ChainID uint   `json:"chainId"`
 }
 
 // SmartContractsHandler godoc
@@ -39,6 +40,7 @@ func getSmartContractsWithContext(c *gin.Context) error {
 		scResp = append(scResp, SmartContractRespEntity{
 			Network: sc.Network,
 			Address: sc.ContractAddressString,
+			ChainID: sc.NetworkIDuint,
 		})
 	}
 
