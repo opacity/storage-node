@@ -176,13 +176,9 @@ func (dc *DecryptProgress) Read(part []byte) (int, error) {
 	return lenToRead, nil
 }
 
-type FileMetadata struct {
-	Size     int    `json:"size"`
-	FileName string `json:"name"`
-}
-
 type PrivateToPublicObj struct {
 	FileHandle string `json:"fileHandle" binding:"required,len=128" minLength:"128" maxLength:"128" example:"a deterministically created file handle"`
+	FileSize   int    `json:"fileSize" binding:"required" example:"543534"`
 }
 
 func (v *PrivateToPublicReq) getObjectRef() interface{} {
@@ -198,6 +194,7 @@ func (v *PrivateToPublicReq) getObjectRef() interface{} {
 // @description requestBody should be a stringified version of:
 // @description {
 // @description 	"fileHandle": "a deterministically created file handle",
+// @description 	"fileSize": 543534,
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
@@ -220,25 +217,16 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	key := request.privateToPublicObj.FileHandle[64:]
 	encryptionKey, _ := hex.DecodeString(key)
 
-	fileMetadata, err := utils.GetDefaultBucketObject(models.GetFileMetadataKey(hash), false)
-	if err != nil {
-		return NotFoundResponse(c, errors.New("the data does not exist"))
-	}
-
 	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(hash)) {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 
-	decryptedMetadata, err := DecryptMetadata(encryptionKey, []byte(fileMetadata))
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
 	realSize, err := getFileContentLength(hash)
-	fileSize := decryptedMetadata.Size
-
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
+
+	fileSize := request.privateToPublicObj.FileSize
 	numberOfParts := ((fileSize-1)/DefaultPartSize + 1)
 
 	downloadProgress := &DownloadProgress{
@@ -264,7 +252,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	})
 
 	g.Go(func() error {
-		return DownloadPrivateFile(hash, encryptionKey, numberOfParts, realSize, downloadProgress, sentryMainSpan)
+		return DownloadPrivateFile(hash, numberOfParts, realSize, downloadProgress, sentryMainSpan)
 	})
 
 	if err := g.Wait(); err != nil {
@@ -301,21 +289,7 @@ func DecryptWithNonceSize(key []byte, encryptedData []byte) (decryptedData []byt
 	return
 }
 
-func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
-	decryptedByteData, err := DecryptWithNonceSize(key, data)
-	if err != nil {
-		return
-	}
-
-	err = json.Unmarshal(decryptedByteData, &fileMetadata)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-func DownloadPrivateFile(fileID string, key []byte, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress, sentryMainSpan *sentry.Span) error {
+func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, downloadProgress *DownloadProgress, sentryMainSpan *sentry.Span) error {
 	sentrySpanDownload := sentryMainSpan.StartChild("download")
 	defer sentrySpanDownload.Finish()
 	for i := 0; i < numberOfParts; i++ {
