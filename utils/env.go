@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"math/big"
+	"time"
 
 	"os"
 
@@ -254,4 +255,16 @@ func AppendLookupErrors(property string, collectedErrors *[]error) string {
 		AppendIfError(errors.New("in tryLookup, failed to load .env variable: "+property), collectedErrors)
 	}
 	return value
+}
+
+// Temporary func @TODO: remove after migration
+func SetPlansMigration(done bool) error {
+	return BatchSet(&KVPairs{"planMigrationDone": strconv.FormatBool(done)}, time.Hour*24*90)
+}
+
+// Temporary func @TODO: remove after migration
+func GetPlansMigrationDone() (done bool) {
+	planMigrationDoneValue, _, _ := GetValueFromKV("planMigrationDone")
+	done, _ = strconv.ParseBool(planMigrationDoneValue)
+	return
 }
