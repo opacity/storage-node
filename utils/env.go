@@ -38,14 +38,15 @@ const (
 )
 
 type PlanInfo struct {
-	ID                   uint            `gorm:"primary_key" json:"id"`
-	Name                 string          `json:"name"`
-	Cost                 float64         `json:"cost"`
-	CostInUSD            float64         `json:"costInUSD"`
-	StorageInGB          int             `json:"storageInGB"`
-	MaxFolders           int             `json:"maxFolders"`
-	MaxMetadataSizeInMB  int64           `json:"maxMetadataSizeInMB"`
-	MonthsInSubscription uint            `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`
+	ID                  uint    `gorm:"primary_key" json:"id"`
+	Name                string  `json:"name"`
+	Cost                float64 `json:"cost"`
+	CostInUSD           float64 `json:"costInUSD"`
+	StorageInGB         int     `json:"storageInGB"`
+	MaxFolders          int     `json:"maxFolders"`
+	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB"`
+	// @TODO: Remove default value on monthly subscriptions feature
+	MonthsInSubscription uint            `json:"monthsInSubscription" gorm:"default:12" validate:"required,gte=1" example:"12"`
 	FileStorageType      FileStorageType `json:"storageType" gorm:"default:1"`
 }
 
