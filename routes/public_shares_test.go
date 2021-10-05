@@ -14,6 +14,7 @@ import (
 func Test_Init_PublicShares(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
+	models.SetTestPlans()
 	gin.SetMode(gin.TestMode)
 }
 

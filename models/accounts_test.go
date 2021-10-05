@@ -22,27 +22,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+/*BasicSubscriptionDefaultCostForTest is the cost for a default-length term of the basic plan*/
+const BasicSubscriptionDefaultCostForTest = 2.0
+
 func returnValidAccount() Account {
 	ethAddress, privateKey := services.GenerateWallet()
 	accountID := utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890"))
 
+	basicPlan, _ := GetPlanInfoByID(2)
+
 	return Account{
 		AccountID:            accountID,
-		MonthsInSubscription: DefaultMonthsPerSubscription,
-		StorageLocation:      "https://createdInModelsAccountsTest.com/12345",
-		StorageLimit:         BasicStorageLimit,
+		MonthsInSubscription: int(basicPlan.MonthsInSubscription),
 		StorageUsedInByte:    10 * 1e9,
 		PaymentStatus:        InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		ExpiredAt:            time.Now().AddDate(0, DefaultMonthsPerSubscription, 0),
+		ExpiredAt:            time.Now().AddDate(0, int(basicPlan.MonthsInSubscription), 0),
 		NetworkIdPaid:        utils.TestNetworkID,
+		PlanInfoID:           basicPlan.ID,
+		PlanInfo:             basicPlan,
 	}
 }
 
 func Test_Init_Accounts(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
+	SetTestPlans()
 }
 
 func Test_Valid_Account_Passes(t *testing.T) {
@@ -86,14 +92,14 @@ func Test_Not_Enough_Months_Fails(t *testing.T) {
 	}
 }
 
-func Test_StorageLimit_Less_Than_10_Fails(t *testing.T) {
-	account := returnValidAccount()
-	account.StorageLimit = 9
+// func Test_StorageLimit_Less_Than_10_Fails(t *testing.T) {
+// 	account := returnValidAccount()
+// 	account.StorageLimit = 9
 
-	if err := utils.Validator.Struct(account); err == nil {
-		t.Fatalf("account should have failed validation")
-	}
-}
+// 	if err := utils.Validator.Struct(account); err == nil {
+// 		t.Fatalf("account should have failed validation")
+// 	}
+// }
 
 func Test_StorageUsedInByte_Less_Than_0_Fails(t *testing.T) {
 	account := returnValidAccount()
@@ -175,96 +181,131 @@ func Test_Cost_Returns_Cost(t *testing.T) {
 		t.Fatalf("should have been able to calculate cost")
 	}
 
-	assert.Equal(t, BasicSubscriptionDefaultCost, cost)
+	assert.Equal(t, BasicSubscriptionDefaultCostForTest, cost)
 }
 
 func Test_UpgradeCostInOPCT_Basic_To_Professional_None_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
-
 	DB.Create(&account)
 
-	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[1024].StorageInGB, 12)
+	professionalPlan, err := GetPlanInfoByID(2)
+	assert.Nil(t, err)
+
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(professionalPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 15.00, math.Ceil(upgradeCostInOPCT))
 }
 
 func Test_UpgradeCostInOPCT_None_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(1024)
+	professionalPlan, err := GetPlanInfoByID(2)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
 
 	DB.Create(&account)
 
-	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(professionalPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 17.00, math.Ceil(upgradeCostInOPCT))
 }
 
 func Test_UpgradeCostInOPCT_Fourth_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(1024)
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
 
 	DB.Create(&account)
 	timeToSubtract := time.Hour * 24 * (365 / 4)
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 20.00, math.Ceil(upgradeCostInOPCT))
 }
 
 func Test_UpgradeCostInOPCT_Half_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(1024)
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
 
 	DB.Create(&account)
 	timeToSubtract := time.Hour * 24 * (365 / 2)
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 24.00, math.Ceil(upgradeCostInOPCT))
 }
 
 func Test_UpgradeCostInOPCT_Three_Fourths_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(1024)
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
 
 	DB.Create(&account)
 	timeToSubtract := time.Hour * 24 * ((365 / 4) * 3)
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 28.00, math.Ceil(upgradeCostInOPCT))
 }
 
 func Test_UpgradeCostInOPCT_Subscription_Expired(t *testing.T) {
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(1024)
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
 
 	DB.Create(&account)
 	timeToSubtract := time.Hour * 24 * 366
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 32.00, math.Ceil(upgradeCostInOPCT))
 }
 
 func Test_UpgradeCostInOPCT_Upgrade_From_Free_Plan_Half_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(10)
+	freePlan, err := GetPlanInfoByID(1)
+	assert.Nil(t, err)
+	account.PlanInfo = freePlan
+	account.PlanInfoID = freePlan.ID
 
 	DB.Create(&account)
 	timeToSubtract := time.Hour * 24 * (365 / 2)
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(utils.Env.Plans[2048].StorageInGB, 12)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 32.00, math.Ceil(upgradeCostInOPCT))
 }
@@ -273,14 +314,20 @@ func Test_UpgradeCostInUSD_Half_Of_Subscription_Has_Passed(t *testing.T) {
 	t.Skip("will be added back once prices are set")
 
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(1024)
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
 
 	DB.Create(&account)
 	timeToSubtract := time.Hour * 24 * (365 / 2)
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInUSD, err := account.UpgradeCostInUSD(utils.Env.Plans[2048].StorageInGB, 12)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 100.00, math.Ceil(upgradeCostInUSD))
 }
@@ -289,14 +336,20 @@ func Test_UpgradeCostInUSD_Fourth_Of_Subscription_Has_Passed(t *testing.T) {
 	t.Skip("will be added back once prices are set")
 
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(1024)
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
 
 	DB.Create(&account)
 	timeToSubtract := time.Hour * 24 * (365 / 4)
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInUSD, err := account.UpgradeCostInUSD(utils.Env.Plans[2048].StorageInGB, 12)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 75.00, math.Ceil(upgradeCostInUSD))
 }
@@ -305,14 +358,20 @@ func Test_UpgradeCostInUSD_Three_Fourths_Of_Subscription_Has_Passed(t *testing.T
 	t.Skip("will be added back once prices are set")
 
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(1024)
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
 
 	DB.Create(&account)
 	timeToSubtract := time.Hour * 24 * ((365 / 4) * 3)
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInUSD, err := account.UpgradeCostInUSD(utils.Env.Plans[2048].StorageInGB, 12)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 125.00, math.Ceil(upgradeCostInUSD))
 }
@@ -321,14 +380,20 @@ func Test_UpgradeCostInUSD_Subscription_Expired(t *testing.T) {
 	t.Skip("will be added back once prices are set")
 
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(1024)
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
 
 	DB.Create(&account)
 	timeToSubtract := time.Hour * 24 * 366
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInUSD, err := account.UpgradeCostInUSD(utils.Env.Plans[2048].StorageInGB, 12)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 150.00, math.Ceil(upgradeCostInUSD))
 }
@@ -337,14 +402,20 @@ func Test_UpgradeCostInUSD_Upgrade_From_Free_Plan_Half_Of_Subscription_Has_Passe
 	t.Skip("will be added back once prices are set")
 
 	account := returnValidAccount()
-	account.StorageLimit = StorageLimitType(10)
+	freePlan, err := GetPlanInfoByID(1)
+	assert.Nil(t, err)
+	account.PlanInfo = freePlan
+	account.PlanInfoID = freePlan.ID
 
 	DB.Create(&account)
 	timeToSubtract := time.Hour * 24 * (365 / 2)
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
 	DB.Save(&account)
 
-	upgradeCostInUSD, err := account.UpgradeCostInUSD(utils.Env.Plans[2048].StorageInGB, 12)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInUSD, err := account.UpgradeCostInUSD(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 150.00, math.Ceil(upgradeCostInUSD))
 }
@@ -360,7 +431,6 @@ func Test_GetTotalCostInWei(t *testing.T) {
 
 func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 	account := returnValidAccount()
-	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
 		return true, utils.TestNetworkID, nil
@@ -381,7 +451,6 @@ func Test_CheckIfPaid_Has_Paid(t *testing.T) {
 
 func Test_CheckIfPaid_Not_Paid(t *testing.T) {
 	account := returnValidAccount()
-	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
 		return false, utils.TestNetworkID, nil
@@ -571,13 +640,10 @@ func Test_Space_Updates_at_Scale(t *testing.T) {
 }
 
 func Test_MaxAllowedMetadataSizeInBytes(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
+	// @TODO: refactor this test, it's not really testing anything - upload file and
 	expectedMaxAllowedMetadataSizeInBytes := int64(200 * 1e6)
 
 	account := returnValidAccount()
-	account.StorageLimit = BasicStorageLimit
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -588,28 +654,23 @@ func Test_MaxAllowedMetadataSizeInBytes(t *testing.T) {
 }
 
 func Test_MaxAllowedMetadatas(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
-	expectedMaxAllowedMetadatas := utils.Env.Plans[int(BasicStorageLimit)].MaxFolders
+	// @TODO: refactor this test, it's not really testing anything - upload file and test
+	basicPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
 
 	account := returnValidAccount()
-	account.StorageLimit = BasicStorageLimit
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
 	actualMaxAllowedMetadatas := account.MaxAllowedMetadatas()
 
-	assert.Equal(t, expectedMaxAllowedMetadatas, actualMaxAllowedMetadatas)
+	assert.Equal(t, basicPlan.MaxFolders, actualMaxAllowedMetadatas)
 }
 
 func Test_CanAddNewMetadata(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
 	account := returnValidAccount()
-	account.TotalFolders = 1998
+	account.TotalFolders = account.PlanInfo.MaxFolders - 2
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
@@ -622,10 +683,6 @@ func Test_CanAddNewMetadata(t *testing.T) {
 }
 
 func Test_CanRemoveMetadata(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
-
 	account := returnValidAccount()
 	account.TotalFolders = 1
 	if err := DB.Create(&account).Error; err != nil {
@@ -638,10 +695,6 @@ func Test_CanRemoveMetadata(t *testing.T) {
 }
 
 func Test_CanUpdateMetadata(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
-
 	account := returnValidAccount()
 	account.TotalMetadataSizeInBytes = int64(100 * 1e6)
 	if err := DB.Create(&account).Error; err != nil {
@@ -654,40 +707,35 @@ func Test_CanUpdateMetadata(t *testing.T) {
 }
 
 func Test_IncrementMetadataCount(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
+	basicPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
 
 	account := returnValidAccount()
-	account.TotalFolders = utils.Env.Plans[int(BasicStorageLimit)].MaxFolders - 2
+	account.TotalFolders = basicPlan.MaxFolders - 2
 	if err := DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	err := account.IncrementMetadataCount()
+	err = account.IncrementMetadataCount()
 	assert.Nil(t, err)
 
 	accountFromDB, _ := GetAccountById(account.AccountID)
-	assert.True(t, accountFromDB.TotalFolders == utils.Env.Plans[int(BasicStorageLimit)].MaxFolders-1)
+	assert.True(t, accountFromDB.TotalFolders == basicPlan.MaxFolders-1)
 
 	err = account.IncrementMetadataCount()
 	assert.Nil(t, err)
 
 	accountFromDB, _ = GetAccountById(account.AccountID)
-	assert.True(t, accountFromDB.TotalFolders == utils.Env.Plans[int(BasicStorageLimit)].MaxFolders)
+	assert.True(t, accountFromDB.TotalFolders == basicPlan.MaxFolders)
 
 	err = account.IncrementMetadataCount()
 	assert.NotNil(t, err)
 
 	accountFromDB, _ = GetAccountById(account.AccountID)
-	assert.True(t, accountFromDB.TotalFolders == utils.Env.Plans[int(BasicStorageLimit)].MaxFolders)
+	assert.True(t, accountFromDB.TotalFolders == basicPlan.MaxFolders)
 }
 
 func Test_DecrementMetadataCount(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
-
 	account := returnValidAccount()
 	account.TotalFolders = 1
 	if err := DB.Create(&account).Error; err != nil {
@@ -705,10 +753,6 @@ func Test_DecrementMetadataCount(t *testing.T) {
 }
 
 func Test_UpdateMetadataSizeInBytes(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
-
 	account := returnValidAccount()
 	account.TotalMetadataSizeInBytes = 100
 	if err := DB.Create(&account).Error; err != nil {
@@ -721,10 +765,6 @@ func Test_UpdateMetadataSizeInBytes(t *testing.T) {
 }
 
 func Test_RemoveMetadata(t *testing.T) {
-	// This test relies upon TestFileStoragePerMetadataInMB
-	// and TestMaxPerMetadataSizeInMB defined in utils/env.go.
-	// If those values are changed this test will fail.
-
 	account := returnValidAccount()
 	account.TotalMetadataSizeInBytes = 100
 	account.TotalFolders = 1
@@ -760,41 +800,23 @@ func Test_UpgradeAccount(t *testing.T) {
 	DB.Save(&account)
 
 	startingExpirationDate := account.ExpirationDate()
-	startingStorageLimit := account.StorageLimit
+	startingStorageLimit := account.PlanInfo.StorageInGB
 	startingMonthsInSubscription := account.MonthsInSubscription
 
-	err := account.UpgradeAccount(1024, 12)
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
+
+	err = account.UpgradeAccount(professionalPlan)
 
 	assert.Nil(t, err)
-	assert.Equal(t, 1024, int(account.StorageLimit))
+	assert.Equal(t, professionalPlan.StorageInGB, int(account.PlanInfo.StorageInGB))
 
 	newExpirationDate := account.ExpirationDate()
 	assert.NotEqual(t, startingExpirationDate, newExpirationDate)
 	assert.NotEqual(t, startingMonthsInSubscription, account.MonthsInSubscription)
 	assert.NotEqual(t, startingStorageLimit, int(account.MonthsInSubscription))
-}
-
-func Test_UpgradeAccount_Invalid_Storage_Value(t *testing.T) {
-	account := returnValidAccount()
-
-	if err := DB.Create(&account).Error; err != nil {
-		t.Fatalf("should have created account but didn't: " + err.Error())
-	}
-	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
-	DB.Save(&account)
-
-	startingExpirationDate := account.ExpirationDate()
-	startingStorageLimit := account.StorageLimit
-	startingMonthsInSubscription := account.MonthsInSubscription
-
-	err := account.UpgradeAccount(1023, 12)
-
-	assert.NotNil(t, err)
-	assert.Equal(t, startingStorageLimit, account.StorageLimit)
-
-	newExpirationDate := account.ExpirationDate()
-	assert.Equal(t, startingExpirationDate, newExpirationDate)
-	assert.Equal(t, startingMonthsInSubscription, account.MonthsInSubscription)
 }
 
 func Test_RenewAccount(t *testing.T) {
@@ -810,7 +832,7 @@ func Test_RenewAccount(t *testing.T) {
 
 	accountFromDB, _ := GetAccountById(account.AccountID)
 
-	assert.Equal(t, originalMonthsInSubscription+12, accountFromDB.MonthsInSubscription)
+	assert.Equal(t, originalMonthsInSubscription+int(account.PlanInfo.MonthsInSubscription), accountFromDB.MonthsInSubscription)
 }
 
 func Test_GetAccountById(t *testing.T) {
@@ -831,7 +853,9 @@ func Test_GetAccountById(t *testing.T) {
 }
 
 func Test_CreateSpaceUsedReport(t *testing.T) {
-	expectedSpaceAllotted := int(4 * BasicStorageLimit)
+	basicPlan, err := GetPlanInfoByID(2)
+	assert.Nil(t, err)
+	expectedSpaceAllotted := int(4 * basicPlan.StorageInGB)
 	expectedSpaceUsed := 234.56 * 1e9
 
 	DeleteAccountsForTest(t)
@@ -860,8 +884,12 @@ func Test_CreateSpaceUsedReport(t *testing.T) {
 }
 
 func Test_CreateSpaceUsedReportForPlanType(t *testing.T) {
-	expectedSpaceAllottedBasic := int(4 * BasicStorageLimit)
-	expectedSpaceAllottedProfessional := int(4 * ProfessionalStorageLimit)
+	basicPlan, err := GetPlanInfoByID(2)
+	assert.Nil(t, err)
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	expectedSpaceAllottedBasic := int(4 * basicPlan.StorageInGB)
+	expectedSpaceAllottedProfessional := int(4 * professionalPlan.StorageInGB)
 	expectedSpaceUsed := 234.56 * 1e9
 
 	DeleteAccountsForTest(t)
@@ -877,7 +905,6 @@ func Test_CreateSpaceUsedReportForPlanType(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		accountPaid := returnValidAccount()
 		accountPaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
-		accountPaid.StorageLimit = ProfessionalStorageLimit
 		accountPaid.PaymentStatus = PaymentStatusType(utils.RandIndex(5) + 2)
 		if err := DB.Create(&accountPaid).Error; err != nil {
 			t.Fatalf("should have created account but didn't: " + err.Error())
@@ -894,18 +921,17 @@ func Test_CreateSpaceUsedReportForPlanType(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		accountUnpaid := returnValidAccount()
 		accountUnpaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
-		accountUnpaid.StorageLimit = ProfessionalStorageLimit
 		if err := DB.Create(&accountUnpaid).Error; err != nil {
 			t.Fatalf("should have created account but didn't: " + err.Error())
 		}
 	}
 
-	spaceReport := CreateSpaceUsedReportForPlanType(BasicStorageLimit)
+	spaceReport := CreateSpaceUsedReportForPlanType(basicPlan)
 
 	assert.Equal(t, expectedSpaceAllottedBasic, spaceReport.SpaceAllottedSum)
 	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
 
-	spaceReport = CreateSpaceUsedReportForPlanType(ProfessionalStorageLimit)
+	spaceReport = CreateSpaceUsedReportForPlanType(professionalPlan)
 
 	assert.Equal(t, expectedSpaceAllottedProfessional, spaceReport.SpaceAllottedSum)
 	assert.Equal(t, expectedSpaceUsed, spaceReport.SpaceUsedSum)
@@ -1059,19 +1085,28 @@ func Test_CountPaidAccountsByPlanType(t *testing.T) {
 		}
 	}
 
+	professionalPlan, err := GetPlanInfoByID(3)
+	assert.Nil(t, err)
+
 	for i := 0; i < 4; i++ {
 		account := returnValidAccount()
-		account.StorageLimit = ProfessionalStorageLimit
+
+		account.PlanInfo = professionalPlan
+		account.PlanInfoID = professionalPlan.ID
+
 		account.PaymentStatus = PaymentStatusType(utils.RandIndex(5) + 2)
 		if err := DB.Create(&account).Error; err != nil {
 			t.Fatalf("should have created account but didn't: " + err.Error())
 		}
 	}
 
-	count, _ := CountPaidAccountsByPlanType(BasicStorageLimit)
+	basicPlan, err := GetPlanInfoByID(2)
+	assert.Nil(t, err)
+
+	count, _ := CountPaidAccountsByPlanType(basicPlan)
 	assert.Equal(t, 4, count)
 
-	count, _ = CountPaidAccountsByPlanType(ProfessionalStorageLimit)
+	count, _ = CountPaidAccountsByPlanType(professionalPlan)
 	assert.Equal(t, 4, count)
 }
 

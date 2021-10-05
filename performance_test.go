@@ -29,6 +29,7 @@ func deleteEverything(t *testing.T) {
 func Test_Init_Performance_Test(t *testing.T) {
 	utils.SetTesting(".env")
 	models.Connect(utils.Env.DatabaseURL)
+	models.SetTestPlans()
 	gin.SetMode(gin.TestMode)
 }
 

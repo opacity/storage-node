@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"math/big"
@@ -143,8 +142,6 @@ func SetTesting(filenames ...string) {
 	Env.GoEnv = "test"
 	os.Setenv("GO_ENV", Env.GoEnv)
 	initEnv(filenames...)
-	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
-	LogIfError(err, nil)
 	Env.DatabaseURL = Env.TestDatabaseURL
 
 	services.EthOpsWrapper = services.EthOps{

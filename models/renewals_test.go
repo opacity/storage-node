@@ -39,6 +39,7 @@ func returnValidRenewal() (Renewal, Account) {
 func Test_Init_Renewals(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
+	SetTestPlans()
 }
 
 func Test_Valid_Renewal_Passes(t *testing.T) {

@@ -11,6 +11,7 @@ import (
 
 func Test_Stripe_Init(t *testing.T) {
 	utils.SetTesting("../.env")
+	SetTestPlans()
 }
 
 func Test_CreateCharge(t *testing.T) {
