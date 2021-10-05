@@ -737,3 +737,13 @@ func (account *Account) PrettyString() {
 	fmt.Print("TotalMetadataSizeInBytes:       ")
 	fmt.Println(account.TotalMetadataSizeInBytes)
 }
+
+// Temporary func @TODO: remove after migration
+func MigrateAccountsToPlanId(planId uint, storageLimit int) {
+	query := DB.Exec("UPDATE accounts SET plan_info_id = ? WHERE storage_limit = ?", planId, storageLimit)
+	err := query.Error
+	utils.LogIfError(err, map[string]interface{}{
+		"plan_id":      planId,
+		"storageLimit": storageLimit,
+	})
+}

@@ -47,6 +47,31 @@ func Connect(dbURL string) {
 	DB.AutoMigrate(&utils.PlanInfo{})
 }
 
+// Temporary func @TODO: remove after migration
+func MigratePlanIds() error {
+	initPlans := []utils.PlanInfo{}
+	DB.Model(&utils.PlanInfo{}).Find(&initPlans)
+
+	DB.DropTable(utils.PlanInfo{})
+	DB.AutoMigrate(&utils.PlanInfo{})
+	DB.AutoMigrate(&Account{}).AddForeignKey("plan_info_id", "plan_infos(id)", "RESTRICT", "RESTRICT")
+
+	for planId, plan := range initPlans {
+		plan.ID = uint(planId) + 1
+		plan.MonthsInSubscription = 12
+		DB.Model(&utils.PlanInfo{}).Create(&plan)
+
+		// migrate accounts to PlanInfo
+		MigrateAccountsToPlanId(plan.ID, plan.StorageInGB)
+	}
+
+	// drop 'storage_location' and 'storage_limit'
+	DB.Model(&Account{}).DropColumn("storage_location")
+	DB.Model(&Account{}).DropColumn("storage_limit")
+
+	return utils.SetPlansMigration(true)
+}
+
 /*Close a database connection*/
 func Close() {
 	DB.Close()

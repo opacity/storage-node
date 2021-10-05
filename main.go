@@ -57,6 +57,12 @@ func main() {
 		models.Connect(utils.Env.DatabaseURL)
 	}
 
+	migratePlanIds := utils.GetPlansMigrationDone()
+	if !migratePlanIds {
+		err := models.MigratePlanIds()
+		utils.PanicOnError(err)
+	}
+
 	setEnvPlans()
 	models.MigrateEnvWallets()
 
