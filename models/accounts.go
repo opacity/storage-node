@@ -26,9 +26,7 @@ type Account struct {
 	AccountID                string            `gorm:"primary_key" json:"accountID" validate:"required,len=64"` // some hash of the user's master handle
 	CreatedAt                time.Time         `json:"createdAt"`
 	UpdatedAt                time.Time         `json:"updatedAt"`
-	MonthsInSubscription     int               `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription
-	StorageLocation          string            `json:"storageLocation" validate:"omitempty"`                                                                               // where their files live, on S3 or elsewhere
-	StorageLimit             StorageLimitType  `json:"storageLimit" validate:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
+	MonthsInSubscription     int               `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription                                                           // how much storage they are allowed, in GB
 	StorageUsedInByte        int64             `json:"storageUsedInByte" validate:"gte=0" example:"30"`                                                                    // how much storage they have used, in B
 	EthAddress               string            `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	EthPrivateKey            string            `json:"ethPrivateKey" validate:"required,len=96"`                                                                           // the private key of the eth address
@@ -56,21 +54,10 @@ type Invoice struct {
 	EthAddress string  `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"`
 }
 
-/*StorageLimitType defines a type for the storage limits*/
-type StorageLimitType int
-
 /*PaymentStatusType defines a type for the payment statuses*/
 type PaymentStatusType int
 
 type PaymentMethodType int
-
-const (
-	/*BasicStorageLimit allows 128 GB on the basic plan*/
-	BasicStorageLimit StorageLimitType = iota + 128
-
-	/*ProfessionalStorageLimit allows 1024 GB on the professional plan*/
-	ProfessionalStorageLimit StorageLimitType = 1024
-)
 
 const (
 	/*InitialPaymentInProgress - we have created the subscription and are awaiting their initial payment*/
@@ -98,10 +85,8 @@ const StorageUsedTooLow = "storage_used_in_byte cannot go below 0"
 
 /*DefaultMonthsPerSubscription is the number of months per year since our
 default subscription is a year*/
+// @TODO: Remove this on monthly payments
 const DefaultMonthsPerSubscription = 12
-
-/*BasicSubscriptionDefaultCost is the cost for a default-length term of the basic plan*/
-const BasicSubscriptionDefaultCost = 2.0
 
 /*AccountIDLength is the expected length of an accountID for an account*/
 const AccountIDLength = 64
@@ -113,8 +98,6 @@ var PaymentStatusMap = make(map[PaymentStatusType]string)
 on an account of that status*/
 var AccountCollectionFunctions = make(map[PaymentStatusType]func(
 	account Account) error)
-
-var ErrInvalidStorageLimit = errors.New("storage not offered in that increment in GB")
 
 func init() {
 	PaymentStatusMap[InitialPaymentInProgress] = "InitialPaymentInProgress"
@@ -137,15 +120,16 @@ func (account *Account) BeforeCreate(scope *gorm.Scope) error {
 	if account.PaymentStatus < InitialPaymentInProgress {
 		account.PaymentStatus = InitialPaymentInProgress
 	}
-	if utils.FreeModeEnabled() || utils.Env.Plans[int(account.StorageLimit)].Name == "Free" {
+	if utils.FreeModeEnabled() || CheckPlanInfoIsFree(account.PlanInfo) {
 		account.PaymentStatus = PaymentRetrievalComplete
 	}
-	account.ExpiredAt = time.Now().AddDate(0, account.MonthsInSubscription, 0)
+	account.ExpiredAt = time.Now().AddDate(0, int(account.PlanInfo.MonthsInSubscription), 0)
 	return utils.Validator.Struct(account)
 }
 
 /*BeforeUpdate - callback called before the row is updated*/
 func (account *Account) BeforeUpdate(scope *gorm.Scope) error {
+	// @TODO: investigate why ExpiredAt is updated on each update
 	account.ExpiredAt = time.Now().AddDate(0, account.MonthsInSubscription, 0)
 	return utils.Validator.Struct(account)
 }
@@ -166,22 +150,23 @@ func (account *Account) AfterFind(tx *gorm.DB) (err error) {
 
 /*ExpirationDate returns the date the account expires*/
 func (account *Account) ExpirationDate() time.Time {
+	// @TODO: Investigate why is the expiration date updated on each call :| possible bug
 	account.ExpiredAt = account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
 	err := DB.Model(&account).Update("expired_at", account.ExpiredAt).Error
 	utils.LogIfError(err, nil)
-	return account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
+	return account.ExpiredAt
 }
 
 /*Cost returns the expected price of the subscription*/
 func (account *Account) Cost() (float64, error) {
-	return utils.Env.Plans[int(account.StorageLimit)].Cost *
-		float64(account.MonthsInSubscription/DefaultMonthsPerSubscription), nil
+	return account.PlanInfo.Cost *
+		float64(account.MonthsInSubscription/int(account.PlanInfo.MonthsInSubscription)), nil
 }
 
 /*UpgradeCostInOPCT returns the cost to upgrade in OPCT*/
-func (account *Account) UpgradeCostInOPCT(upgradeStorageLimit int, monthsForNewPlan int) (float64, error) {
-	baseCostOfHigherPlan := utils.Env.Plans[int(upgradeStorageLimit)].Cost *
-		float64(monthsForNewPlan/DefaultMonthsPerSubscription)
+func (account *Account) UpgradeCostInOPCT(newPlanInfo utils.PlanInfo) (float64, error) {
+	baseCostOfHigherPlan := newPlanInfo.Cost *
+		float64(newPlanInfo.MonthsInSubscription/DefaultMonthsPerSubscription)
 	costOfCurrentPlan, _ := account.Cost()
 
 	if account.ExpirationDate().Before(time.Now()) {
@@ -192,10 +177,10 @@ func (account *Account) UpgradeCostInOPCT(upgradeStorageLimit int, monthsForNewP
 }
 
 /*UpgradeCostInUSD returns the cost to upgrade in USD*/
-func (account *Account) UpgradeCostInUSD(upgradeStorageLimit int, monthsForNewPlan int) (float64, error) {
-	baseCostOfHigherPlan := utils.Env.Plans[int(upgradeStorageLimit)].CostInUSD *
-		float64(monthsForNewPlan/DefaultMonthsPerSubscription)
-	costOfCurrentPlan := utils.Env.Plans[int(account.StorageLimit)].CostInUSD *
+func (account *Account) UpgradeCostInUSD(newPlanInfo utils.PlanInfo) (float64, error) {
+	baseCostOfHigherPlan := newPlanInfo.CostInUSD *
+		float64(newPlanInfo.MonthsInSubscription/DefaultMonthsPerSubscription)
+	costOfCurrentPlan := account.PlanInfo.CostInUSD *
 		float64(account.MonthsInSubscription/DefaultMonthsPerSubscription)
 
 	if account.ExpirationDate().Before(time.Now()) {
@@ -264,14 +249,14 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 	}
 
 	var accountFromDB Account
-	if err := tx.Where("account_id = ?", account.AccountID).First(&accountFromDB).Error; err != nil {
+	if err := tx.Preload("PlanInfo").Where("account_id = ?", account.AccountID).First(&accountFromDB).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 
 	plannedInGB := (float64(planToUsedInByte) + float64(accountFromDB.StorageUsedInByte)) / 1e9
 
-	if plannedInGB > float64(accountFromDB.StorageLimit) {
+	if plannedInGB > float64(accountFromDB.PlanInfo.StorageInGB) {
 		return errors.New("unable to store more data")
 	}
 
@@ -281,7 +266,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 		return err
 	}
 
-	if err := tx.Where("account_id = ?", account.AccountID).First(&accountFromDB).Error; err != nil {
+	if err := tx.Preload("PlanInfo").Where("account_id = ?", account.AccountID).First(&accountFromDB).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
@@ -289,7 +274,7 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 		tx.Rollback()
 		return errors.New(StorageUsedTooLow)
 	}
-	if (accountFromDB.StorageUsedInByte / 1e9) > int64(accountFromDB.StorageLimit) {
+	if (accountFromDB.StorageUsedInByte / 1e9) > int64(accountFromDB.PlanInfo.StorageInGB) {
 		tx.Rollback()
 		return errors.New("unable to store more data")
 	}
@@ -299,13 +284,12 @@ func (account *Account) UseStorageSpaceInByte(planToUsedInByte int64) error {
 
 /*MaxAllowedMetadataSizeInBytes returns the maximum possible metadata size for an account based on its plan*/
 func (account *Account) MaxAllowedMetadataSizeInBytes() int64 {
-	maxAllowedMetadataSizeInMB := utils.Env.Plans[int(account.StorageLimit)].MaxMetadataSizeInMB
-	return maxAllowedMetadataSizeInMB * 1e6
+	return account.PlanInfo.MaxMetadataSizeInMB * 1e6
 }
 
 /*MaxAllowedMetadatas returns the maximum possible number of metadatas for an account based on its plan*/
 func (account *Account) MaxAllowedMetadatas() int {
-	return utils.Env.Plans[int(account.StorageLimit)].MaxFolders
+	return account.PlanInfo.MaxFolders
 }
 
 /*CanAddNewMetadata checks if an account can have another metadata*/
@@ -399,21 +383,19 @@ func (account *Account) RemoveMetadataMultiple(oldMetadataSizeInBytes int64, num
 	return err
 }
 
-func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan int) error {
-	_, ok := utils.Env.Plans[upgradeStorageLimit]
-	if !ok {
-		return ErrInvalidStorageLimit
-	}
-	if upgradeStorageLimit == int(account.StorageLimit) {
+// func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan int) error {
+func (account *Account) UpgradeAccount(newPlanInfo utils.PlanInfo) error {
+	if newPlanInfo.ID == account.PlanInfo.ID {
 		// assume they have already upgraded and the method has simply been called twice
 		return nil
 	}
+
 	monthsSinceCreation := differenceInMonths(account.CreatedAt, time.Now())
-	account.StorageLimit = StorageLimitType(upgradeStorageLimit)
-	account.MonthsInSubscription = monthsSinceCreation + monthsForNewPlan
+
+	account.MonthsInSubscription = monthsSinceCreation + int(newPlanInfo.MonthsInSubscription)
 	return DB.Model(account).Updates(map[string]interface{}{
 		"months_in_subscription": account.MonthsInSubscription,
-		"storage_limit":          account.StorageLimit,
+		"plan_info_id":           newPlanInfo.ID,
 		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0),
 		"updated_at":             time.Now(),
 	}).Error
@@ -421,8 +403,8 @@ func (account *Account) UpgradeAccount(upgradeStorageLimit int, monthsForNewPlan
 
 func (account *Account) RenewAccount() error {
 	return DB.Model(account).Updates(map[string]interface{}{
-		"months_in_subscription": account.MonthsInSubscription + 12,
-		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription+12, 0),
+		"months_in_subscription": account.MonthsInSubscription + int(account.PlanInfo.MonthsInSubscription),
+		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription+int(account.PlanInfo.MonthsInSubscription), 0),
 		"updated_at":             time.Now(),
 	}).Error
 }
@@ -457,7 +439,7 @@ func differenceInMonths(a, b time.Time) int {
 /*Return Account object(first one) if there is not any error. */
 func GetAccountById(accountID string) (Account, error) {
 	account := Account{}
-	err := DB.Where("account_id = ?", accountID).First(&account).Error
+	err := DB.Preload("PlanInfo").Where("account_id = ?", accountID).First(&account).Error
 	return account, err
 }
 
@@ -471,11 +453,12 @@ func CreateSpaceUsedReport() SpaceReport {
 
 /*CreateSpaceUsedReportForPlanType populates a model of the space allotted versus space used for a
 particular type of plan*/
-func CreateSpaceUsedReportForPlanType(storageLimit StorageLimitType) SpaceReport {
+func CreateSpaceUsedReportForPlanType(planInfo utils.PlanInfo) SpaceReport {
+	// @TODO: fix this for metrics
 	var result SpaceReport
 	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM "+
 		"accounts WHERE payment_status >= ? AND storage_limit = ?",
-		InitialPaymentReceived, storageLimit).Scan(&result)
+		InitialPaymentReceived, planInfo.StorageInGB).Scan(&result)
 	return result
 }
 
@@ -504,7 +487,7 @@ func PurgeOldUnpaidAccounts(daysToRetainUnpaidAccounts int) error {
 /*GetAccountsByPaymentStatus gets accounts based on the payment status passed in*/
 func GetAccountsByPaymentStatus(paymentStatus PaymentStatusType) []Account {
 	accounts := []Account{}
-	err := DB.Where("payment_status = ?",
+	err := DB.Preload("PlanInfo").Where("payment_status = ?",
 		paymentStatus).Find(&accounts).Error
 	utils.LogIfError(err, nil)
 	return accounts
@@ -513,25 +496,27 @@ func GetAccountsByPaymentStatus(paymentStatus PaymentStatusType) []Account {
 /*CountAccountsByPaymentStatus counts accounts based on the payment status passed in*/
 func CountAccountsByPaymentStatus(paymentStatus PaymentStatusType) (int, error) {
 	count := 0
-	err := DB.Model(&Account{}).Where("payment_status = ?",
+	err := DB.Preload("PlanInfo").Model(&Account{}).Where("payment_status = ?",
 		paymentStatus).Count(&count).Error
 	utils.LogIfError(err, nil)
 	return count, err
 }
 
 /*CountPaidAccountsByPlanType counts all paid accounts based on the plan type*/
-func CountPaidAccountsByPlanType(storageLimit StorageLimitType) (int, error) {
+func CountPaidAccountsByPlanType(planInfo utils.PlanInfo) (int, error) {
+	// @TODO: fix this for metrics
 	count := 0
-	err := DB.Model(&Account{}).Where("storage_limit = ? AND payment_status >= ?",
-		storageLimit, InitialPaymentReceived).Count(&count).Error
+	err := DB.Preload("PlanInfo").Model(&Account{}).Where("storage_limit = ? AND payment_status >= ?",
+		planInfo.StorageInGB, InitialPaymentReceived).Count(&count).Error
 	utils.LogIfError(err, nil)
 	return count, err
 }
 
-func CountPaidAccountsByPaymentMethodAndPlanType(storageLimit StorageLimitType, paymentMethod PaymentMethodType) (int, error) {
+func CountPaidAccountsByPaymentMethodAndPlanType(planInfo utils.PlanInfo, paymentMethod PaymentMethodType) (int, error) {
+	// @TODO: fix this for metrics
 	count := 0
-	err := DB.Model(&Account{}).Where("storage_limit = ? AND payment_status >= ? AND payment_method = ?",
-		storageLimit, InitialPaymentReceived, paymentMethod).Count(&count).Error
+	err := DB.Preload("PlanInfo").Model(&Account{}).Where("storage_limit = ? AND payment_status >= ? AND payment_method = ?",
+		planInfo.StorageInGB, InitialPaymentReceived, paymentMethod).Count(&count).Error
 	utils.LogIfError(err, nil)
 	return count, err
 }
@@ -542,7 +527,7 @@ func SetAccountsToNextPaymentStatus(accounts []Account) {
 		if account.PaymentStatus == PaymentRetrievalComplete {
 			continue
 		}
-		err := DB.Model(&account).Update("payment_status", getNextPaymentStatus(account.PaymentStatus)).Error
+		err := DB.Preload("PlanInfo").Model(&account).Update("payment_status", getNextPaymentStatus(account.PaymentStatus)).Error
 		utils.LogIfError(err, nil)
 	}
 }
@@ -731,14 +716,8 @@ func (account *Account) PrettyString() {
 	fmt.Print("Cost:                           ")
 	fmt.Println(account.Cost())
 
-	fmt.Print("StorageLimit:                   ")
-	fmt.Println(account.StorageLimit)
-
 	fmt.Print("StorageUsedInByte:                    ")
 	fmt.Println(account.StorageUsedInByte)
-
-	fmt.Print("StorageLocation:                ")
-	fmt.Println(account.StorageLocation)
 
 	fmt.Print("PaymentStatus:                  ")
 	fmt.Println(PaymentStatusMap[account.PaymentStatus])

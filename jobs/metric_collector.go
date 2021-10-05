@@ -33,7 +33,7 @@ func (m metricCollector) spaceUsageMetrics() {
 	utils.Metrics_Percent_Of_Space_Used_Map[utils.TotalLbl].Set(models.CalculatePercentSpaceUsed(spaceReport))
 
 	for _, plan := range utils.Env.Plans {
-		spaceReport := models.CreateSpaceUsedReportForPlanType(models.StorageLimitType(plan.StorageInGB))
+		spaceReport := models.CreateSpaceUsedReportForPlanType(plan)
 
 		utils.Metrics_Percent_Of_Space_Used_Map[plan.Name].Set(models.CalculatePercentSpaceUsed(spaceReport))
 	}
@@ -81,13 +81,13 @@ func (m metricCollector) accountsMetrics() {
 
 	for _, plan := range utils.Env.Plans {
 		name := plan.Name
-		accountCount, err := models.CountPaidAccountsByPlanType(models.StorageLimitType(plan.StorageInGB))
+		accountCount, err := models.CountPaidAccountsByPlanType(plan)
 		if err == nil {
 			utils.Metrics_Total_Paid_Accounts_Map[name].Set(float64(accountCount))
 		}
 		utils.LogIfError(err, nil)
 
-		stripeCount, err := models.CountPaidAccountsByPaymentMethodAndPlanType(models.StorageLimitType(plan.StorageInGB), models.PaymentMethodWithCreditCard)
+		stripeCount, err := models.CountPaidAccountsByPaymentMethodAndPlanType(plan, models.PaymentMethodWithCreditCard)
 		if err == nil {
 			utils.Metrics_Total_Stripe_Paid_Accounts_Map[name].Set(float64(stripeCount))
 		}
