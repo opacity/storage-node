@@ -29,14 +29,24 @@ const DefaultPlansJson = `{
 	"10000":{"name":"Custom10TB","cost":150000,"costInUSD":550.00,"storageInGB":10000,"maxFolders":156000,"maxMetadataSizeInMB":15600}
 }`
 
+type FileStorageType int
+
+const (
+	S3 FileStorageType = iota + 1
+	Sia
+	Skynet
+)
+
 type PlanInfo struct {
-	PlanID              int     `gorm:"primary_key" json:"id"`
-	Name                string  `json:"name"`
-	Cost                float64 `json:"cost"`
-	CostInUSD           float64 `json:"costInUSD"`
-	StorageInGB         int     `json:"storageInGB"`
-	MaxFolders          int     `json:"maxFolders"`
-	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB"`
+	ID                   uint            `gorm:"primary_key" json:"id"`
+	Name                 string          `json:"name"`
+	Cost                 float64         `json:"cost"`
+	CostInUSD            float64         `json:"costInUSD"`
+	StorageInGB          int             `json:"storageInGB"`
+	MaxFolders           int             `json:"maxFolders"`
+	MaxMetadataSizeInMB  int64           `json:"maxMetadataSizeInMB"`
+	MonthsInSubscription uint            `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`
+	FileStorageType      FileStorageType `json:"storageType" gorm:"default:1"`
 }
 
 type PlanResponseType map[int]PlanInfo
