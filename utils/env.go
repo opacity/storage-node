@@ -30,7 +30,8 @@ const DefaultPlansJson = `{
 }`
 
 type PlanInfo struct {
-	Name                string  `gorm:"primary_key" json:"name"`
+	PlanID              int     `gorm:"primary_key" json:"id"`
+	Name                string  `json:"name"`
 	Cost                float64 `json:"cost"`
 	CostInUSD           float64 `json:"costInUSD"`
 	StorageInGB         int     `json:"storageInGB"`
