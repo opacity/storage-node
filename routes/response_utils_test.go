@@ -62,7 +62,7 @@ func Test_verifyIfPaidWithContext_stripe_payment_has_been_paid(t *testing.T) {
 	}
 
 	stripeToken := models.RandTestStripeToken()
-	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken, account.AccountID)
+	charge, _ := services.CreateCharge(account.PlanInfo.CostInUSD, stripeToken, account.AccountID)
 
 	stripePayment := models.StripePayment{
 		StripeToken: stripeToken,
@@ -91,16 +91,6 @@ func Test_verifyIfPaidWithContext_account_not_paid_and_no_stripe_payment(t *test
 	assert.NotNil(t, err)
 }
 
-func Test_verifyValidStorageLimit(t *testing.T) {
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	err := verifyValidStorageLimit(128, c)
-	assert.Nil(t, err)
-
-	c, _ = gin.CreateTestContext(httptest.NewRecorder())
-	err = verifyValidStorageLimit(129, c)
-	assert.NotNil(t, err)
-}
-
 func Test_verifyAccountStillActive(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	privateKey, err := utils.GenerateKey()
@@ -117,13 +107,6 @@ func Test_verifyAccountStillActive(t *testing.T) {
 
 	stillActive = verifyAccountStillActive(account)
 	assert.False(t, stillActive)
-
-	account.StorageLimit = 10
-	err = models.DB.Save(&account).Error
-	assert.Nil(t, err)
-
-	stillActive = verifyAccountStillActive(account)
-	assert.True(t, stillActive)
 }
 
 func Test_verifyRenewEligible(t *testing.T) {
