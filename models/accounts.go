@@ -39,6 +39,8 @@ type Account struct {
 	PaymentMethod            PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	Upgrades                 []Upgrade         `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
 	ExpiredAt                time.Time         `json:"expiredAt"`
+	PlanInfoID               uint              `json:"-"`
+	PlanInfo                 utils.PlanInfo    `gorm:"foreignKey:plan_info_id;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT;" json:"plan"`
 	NetworkIdPaid            uint              `json:"networkIdPaid"`
 }
 
@@ -205,7 +207,7 @@ func (account *Account) UpgradeCostInUSD(upgradeStorageLimit int, monthsForNewPl
 
 func upgradeCost(costOfCurrentPlan, baseCostOfHigherPlan float64, account *Account) (float64, error) {
 	accountTimeTotal := account.ExpirationDate().Sub(account.CreatedAt)
-	accountTimeRemaining := accountTimeTotal - time.Now().Sub(account.CreatedAt)
+	accountTimeRemaining := accountTimeTotal - time.Since(account.CreatedAt)
 
 	accountBalance := costOfCurrentPlan * float64(accountTimeRemaining.Hours()/accountTimeTotal.Hours())
 
