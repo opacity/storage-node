@@ -95,14 +95,12 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	afterRenewMonthsInSubscription := account.MonthsInSubscription
 	afterRenewExpirationDate := account.ExpirationDate()
 
-	newStorageLimit := 1024
+	newPlanID := uint(3)
 
 	checkUpgradeStatusObj := checkUpgradeStatusObject{
-		StorageLimit: newStorageLimit,
-		//DurationInMonths: models.DefaultMonthsPerSubscription,
-		DurationInMonths: account.MonthsInSubscription,
-		MetadataKeys:     checkRenewalStatusObj.MetadataKeys,
-		FileHandles:      checkRenewalStatusObj.FileHandles,
+		PlanID:       newPlanID,
+		MetadataKeys: checkRenewalStatusObj.MetadataKeys,
+		FileHandles:  checkRenewalStatusObj.FileHandles,
 	}
 
 	v, b = returnValidVerificationAndRequestBody(t, checkUpgradeStatusObj, privateKey)
@@ -112,11 +110,11 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 		requestBody:  b,
 	}
 
-	CreateUpgradeForTest(t, account, newStorageLimit)
+	CreateUpgradeForTest(t, account, newPlanID)
 
-	originalStorageLimit := int(account.StorageLimit)
+	originalPlanID := account.PlanInfo.ID
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
+	upgrade, err := models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
@@ -136,12 +134,12 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	assert.True(t, completedFileEnd.ExpiredAt.Unix() >= completedFileStart.ExpiredAt.Unix())
 	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
 
-	assert.Equal(t, newStorageLimit, int(account.StorageLimit))
+	assert.Equal(t, newPlanID, account.PlanInfo.ID)
 	assert.True(t, account.MonthsInSubscription >= afterRenewMonthsInSubscription)
 	assert.True(t, account.ExpirationDate().Unix() >= afterRenewExpirationDate.Unix())
 	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
+	upgrade, err = models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentReceived, upgrade.PaymentStatus)
 }

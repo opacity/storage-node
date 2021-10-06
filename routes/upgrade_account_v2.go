@@ -14,15 +14,13 @@ import (
 )
 
 type getUpgradeV2AccountInvoiceObject struct {
-	StorageLimit     int `json:"storageLimit" validate:"required,gte=128" minimum:"128" example:"128"`
-	DurationInMonths int `json:"durationInMonths" validate:"required,gte=1" minimum:"1" example:"12"`
+	PlanId uint `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
 }
 
 type checkUpgradeV2StatusObject struct {
-	MetadataKeys     []string `json:"metadataKeys" validate:"required" example:"an array containing all your metadata keys"`
-	FileHandles      []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
-	StorageLimit     int      `json:"storageLimit" validate:"required,gte=128" minimum:"128" example:"128"`
-	DurationInMonths int      `json:"durationInMonths" validate:"required,gte=1" minimum:"1" example:"12"`
+	MetadataKeys []string `json:"metadataKeys" validate:"required" example:"an array containing all your metadata keys"`
+	FileHandles  []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
+	PlanId       uint     `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
 }
 
 type getUpgradeV2AccountInvoiceReq struct {
@@ -54,17 +52,16 @@ func (v *checkUpgradeV2StatusReq) getObjectRef() interface{} {
 // GetAccountUpgradeV2InvoiceHandler godoc
 // @Summary get an invoice to upgradeV2 an account
 // @Description get an invoice to upgradeV2 an account
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param getUpgradeV2AccountInvoiceReq body routes.getUpgradeV2AccountInvoiceReq true "get upgradeV2 invoice object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"storageLimit": 100,
-// @description 	"durationInMonths": 12,
+// @description 	"planId": 1,
 // @description }
 // @Success 200 {object} routes.getUpgradeV2AccountInvoiceRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
-// @Failure 404 {string} string "no account with that id: (with your accountID)"
+// @Failure 404 {string} string "no account with that id: (with your accountID) or plan not found"
 // @Failure 500 {string} string "some information about the internal error"
 // @Router /api/v1/upgradeV2/invoice [post]
 /*GetAccountUpgradeV2InvoiceHandler is a handler for getting an invoice to upgradeV2 an account*/
@@ -75,21 +72,20 @@ func GetAccountUpgradeV2InvoiceHandler() gin.HandlerFunc {
 // CheckUpgradeV2StatusHandler godoc
 // @Summary check the upgradeV2 status
 // @Description check the upgradeV2 status
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param checkUpgradeV2StatusReq body routes.checkUpgradeV2StatusReq true "check upgradeV2 status object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
-// @description 	"storageLimit": 100,
-// @description 	"durationInMonths": 12,
+// @description 	"planId": 1,
 // @description 	"metadataKeys": "["someKey", "someOtherKey]",
 // @description 	"fileHandles": "["someHandle", "someOtherHandle]",
 // @description }
 // @Success 200 {object} routes.StatusRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
-// @Failure 404 {string} string "no account with that id: (with your accountID)"
+// @Failure 404 {string} string "no account with that id: (with your accountID) or plan not found"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/upgradeV2 [post]
+// @Router /api/v2/upgradeV2 [post]
 /*CheckUpgradeV2StatusHandler is a handler for checking the upgradeV2 status*/
 func CheckUpgradeV2StatusHandler() gin.HandlerFunc {
 	return ginHandlerFunc(checkUpgradeV2Status)
@@ -107,13 +103,16 @@ func getAccountUpgradeV2Invoice(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyUpgradeEligible(account, request.getUpgradeV2AccountInvoiceObject.StorageLimit, c); err != nil {
+	newPlanInfo, err := models.GetPlanInfoByID(request.getUpgradeV2AccountInvoiceObject.PlanId)
+	if err != nil {
+		return NotFoundResponse(c, PlanDoesNotExitErr)
+	}
+
+	if err := verifyUpgradeEligible(account, newPlanInfo, c); err != nil {
 		return err
 	}
 
-	upgradeV2CostInOPCT, _ := account.UpgradeCostInOPCT(request.getUpgradeV2AccountInvoiceObject.StorageLimit,
-		//request.getUpgradeV2AccountInvoiceObject.DurationInMonths)
-		account.MonthsInSubscription)
+	upgradeV2CostInOPCT, _ := account.UpgradeCostInOPCT(newPlanInfo)
 
 	ethAddr, privKey := services.GenerateWallet()
 
@@ -128,17 +127,15 @@ func getAccountUpgradeV2Invoice(c *gin.Context) error {
 	}
 
 	upgradeV2 := models.Upgrade{
-		AccountID:       account.AccountID,
-		NewStorageLimit: models.StorageLimitType(request.getUpgradeV2AccountInvoiceObject.StorageLimit),
-		OldStorageLimit: account.StorageLimit,
-		EthAddress:      ethAddr.String(),
-		EthPrivateKey:   hex.EncodeToString(encryptedKeyInBytes),
-		PaymentStatus:   models.InitialPaymentInProgress,
-		OpctCost:        upgradeV2CostInOPCT,
-		//UsdCost:          upgradeV2CostInUSD,
-		//DurationInMonths: request.getUpgradeV2AccountInvoiceObject.DurationInMonths,
-		DurationInMonths: account.MonthsInSubscription,
-		NetworkIdPaid:    utils.TestNetworkID,
+		AccountID:     account.AccountID,
+		NewPlanInfoID: newPlanInfo.ID,
+		OldPlanInfoID: account.PlanInfoID,
+		EthAddress:    ethAddr.String(),
+		EthPrivateKey: hex.EncodeToString(encryptedKeyInBytes),
+		PaymentStatus: models.InitialPaymentInProgress,
+		OpctCost:      upgradeV2CostInOPCT,
+		//UsdCost:          upgradeCostInUSD,
+		NetworkIdPaid: utils.TestNetworkID,
 	}
 
 	upgradeV2InDB, err := models.GetOrCreateUpgrade(upgradeV2)
@@ -168,11 +165,16 @@ func checkUpgradeV2Status(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyUpgradeEligible(account, request.checkUpgradeV2StatusObject.StorageLimit, c); err != nil {
+	newPlanInfo, err := models.GetPlanInfoByID(request.checkUpgradeV2StatusObject.PlanId)
+	if err != nil {
+		return NotFoundResponse(c, PlanDoesNotExitErr)
+	}
+
+	if err := verifyUpgradeEligible(account, newPlanInfo, c); err != nil {
 		return err
 	}
 
-	upgradeV2, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, request.checkUpgradeV2StatusObject.StorageLimit, int(account.StorageLimit))
+	upgradeV2, err := models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanInfo.ID, account.PlanInfo.ID)
 	//if upgradeV2.DurationInMonths != request.checkUpgradeV2StatusObject.DurationInMonths {
 	//	return ForbiddenResponse(c, errors.New("durationInMonths does not match durationInMonths "+
 	//		"when upgradeV2 was initiated"))
@@ -220,7 +222,7 @@ func checkUpgradeV2Status(c *gin.Context) error {
 	if err := upgradeV2.UpdateNetworkIdPaid(networkID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
-	if err := upgradeV2AccountAndUpdateExpireDates(account, request, c); err != nil {
+	if err := upgradeV2AccountAndUpdateExpireDates(account, newPlanInfo, request.checkUpgradeV2StatusObject.FileHandles, request.checkUpgradeV2StatusObject.MetadataKeys, request.verification.PublicKey, c); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	return OkResponse(c, StatusRes{
@@ -228,19 +230,15 @@ func checkUpgradeV2Status(c *gin.Context) error {
 	})
 }
 
-func upgradeV2AccountAndUpdateExpireDates(account models.Account, request checkUpgradeV2StatusReq, c *gin.Context) error {
-	if err := account.UpgradeAccount(request.checkUpgradeV2StatusObject.StorageLimit,
-		//request.checkUpgradeV2StatusObject.DurationInMonths); err != nil {
-		account.MonthsInSubscription); err != nil {
+func upgradeV2AccountAndUpdateExpireDates(account models.Account, newPlanInfo utils.PlanInfo, fileHandles []string, metadataKeys []string, publicKey string, c *gin.Context) error {
+	if err := account.UpgradeAccount(newPlanInfo); err != nil {
 		return err
 	}
-	filesErr := models.UpdateExpiredAt(request.checkUpgradeV2StatusObject.FileHandles,
-		request.verification.PublicKey, account.ExpirationDate())
+	filesErr := models.UpdateExpiredAt(fileHandles, publicKey, account.ExpirationDate())
 
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
-	metadatasErr := updateMetadataExpiration(request.checkUpgradeV2StatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate().Add(MetadataExpirationOffset), c)
+	metadatasErr := updateMetadataExpiration(metadataKeys, publicKey, account.ExpirationDate().Add(MetadataExpirationOffset), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }

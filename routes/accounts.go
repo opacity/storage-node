@@ -17,7 +17,7 @@ const Paid = "paid"
 const Expired = "expired"
 
 type accountCreateObj struct {
-	PlanId int `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
+	PlanId uint `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
 }
 
 type accountCreateReq struct {
@@ -182,7 +182,7 @@ func createAccount(c *gin.Context) error {
 
 	ethAddr, privKey := services.GenerateWallet()
 
-	planInfo, err := models.GetPlanInfoByID(uint(request.accountCreateObj.PlanId))
+	planInfo, err := models.GetPlanInfoByID(request.accountCreateObj.PlanId)
 	if err != nil {
 		return NotFoundResponse(c, PlanDoesNotExitErr)
 	}
