@@ -14,13 +14,13 @@ import (
 )
 
 type getUpgradeV2AccountInvoiceObject struct {
-	PlanId uint `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
+	PlanID uint `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
 }
 
 type checkUpgradeV2StatusObject struct {
 	MetadataKeys []string `json:"metadataKeys" validate:"required" example:"an array containing all your metadata keys"`
 	FileHandles  []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
-	PlanId       uint     `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
+	PlanID       uint     `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
 }
 
 type getUpgradeV2AccountInvoiceReq struct {
@@ -103,7 +103,7 @@ func getAccountUpgradeV2Invoice(c *gin.Context) error {
 		return err
 	}
 
-	newPlanInfo, err := models.GetPlanInfoByID(request.getUpgradeV2AccountInvoiceObject.PlanId)
+	newPlanInfo, err := models.GetPlanInfoByID(request.getUpgradeV2AccountInvoiceObject.PlanID)
 	if err != nil {
 		return NotFoundResponse(c, PlanDoesNotExitErr)
 	}
@@ -165,7 +165,7 @@ func checkUpgradeV2Status(c *gin.Context) error {
 		return err
 	}
 
-	newPlanInfo, err := models.GetPlanInfoByID(request.checkUpgradeV2StatusObject.PlanId)
+	newPlanInfo, err := models.GetPlanInfoByID(request.checkUpgradeV2StatusObject.PlanID)
 	if err != nil {
 		return NotFoundResponse(c, PlanDoesNotExitErr)
 	}

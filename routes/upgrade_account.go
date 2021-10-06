@@ -13,7 +13,7 @@ import (
 )
 
 type getUpgradeAccountInvoiceObject struct {
-	PlanId uint `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
+	PlanID uint `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
 }
 
 type checkUpgradeStatusObject struct {
@@ -102,7 +102,7 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 		return err
 	}
 
-	newPlanInfo, err := models.GetPlanInfoByID(request.getUpgradeAccountInvoiceObject.PlanId)
+	newPlanInfo, err := models.GetPlanInfoByID(request.getUpgradeAccountInvoiceObject.PlanID)
 	if err != nil {
 		return NotFoundResponse(c, PlanDoesNotExitErr)
 	}
