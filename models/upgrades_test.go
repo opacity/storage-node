@@ -21,28 +21,30 @@ func returnValidUpgrade() (Upgrade, Account) {
 
 	ethAddress, privateKey := services.GenerateWallet()
 
-	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(utils.Env.Plans[1024].StorageInGB,
-		12)
+	professionalPlan, _ := GetPlanInfoByID(3)
+
+	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(professionalPlan)
 	//upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[1024].StorageInGB,
 	//	12)
 
 	return Upgrade{
-		AccountID:       account.AccountID,
-		NewStorageLimit: ProfessionalStorageLimit,
-		OldStorageLimit: account.StorageLimit,
-		EthAddress:      ethAddress.String(),
-		EthPrivateKey:   hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
-		PaymentStatus:   InitialPaymentInProgress,
-		OpctCost:        upgradeCostInOPCT,
+		AccountID:     account.AccountID,
+		NewPlanInfoID: professionalPlan.ID,
+		NewPlanInfo:   professionalPlan,
+		OldPlanInfoID: account.PlanInfo.ID,
+		EthAddress:    ethAddress.String(),
+		EthPrivateKey: hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
+		PaymentStatus: InitialPaymentInProgress,
+		OpctCost:      upgradeCostInOPCT,
 		//UsdCost:          upgradeCostInUSD,
-		DurationInMonths: 12,
-		NetworkIdPaid:    utils.TestNetworkID,
+		NetworkIdPaid: utils.TestNetworkID,
 	}, account
 }
 
 func Test_Init_Upgrades(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
+	SetTestPlans()
 }
 
 func Test_Valid_Upgrade_Passes(t *testing.T) {
@@ -71,24 +73,6 @@ func Test_Upgrade_Invalid_AccountID_Length_Fails(t *testing.T) {
 	}
 
 	upgrade.AccountID = utils.RandSeqFromRunes(65, []rune("abcdef01234567890"))
-
-	if err := utils.Validator.Struct(upgrade); err == nil {
-		t.Fatalf("upgrade should have failed validation")
-	}
-}
-
-func Test_Upgrade_Not_Enough_Months_Fails(t *testing.T) {
-	upgrade, _ := returnValidUpgrade()
-	upgrade.DurationInMonths = 0
-
-	if err := utils.Validator.Struct(upgrade); err == nil {
-		t.Fatalf("upgrade should have failed validation")
-	}
-}
-
-func Test_Upgrade_StorageLimit_Less_Than_128_Fails(t *testing.T) {
-	upgrade, _ := returnValidUpgrade()
-	upgrade.NewStorageLimit = 127
 
 	if err := utils.Validator.Struct(upgrade); err == nil {
 		t.Fatalf("upgrade should have failed validation")
@@ -148,16 +132,16 @@ func Test_Upgrade_GetOrCreateUpgrade(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, uPtr.AccountID, upgrade.AccountID)
 	assert.Equal(t, uPtr.EthAddress, upgrade.EthAddress)
-	assert.Equal(t, uPtr.NewStorageLimit, upgrade.NewStorageLimit)
+	assert.Equal(t, uPtr.NewPlanInfoID, upgrade.NewPlanInfoID)
 	assert.Equal(t, uPtr.OpctCost, upgrade.OpctCost)
 	//assert.Equal(t, uPtr.UsdCost, upgrade.UsdCost)
 
-	// simulate generating a new update with the same AccountID and NewStorageLimit
+	// simulate generating a new update with the same AccountID and NewPlanInfoID
 	// although another upgrade already exists--price should not change due to 1 hour price
 	// locking
 	upgrade2, _ := returnValidUpgrade()
 	upgrade2.AccountID = upgrade.AccountID
-	upgrade2.NewStorageLimit = upgrade.NewStorageLimit
+	upgrade2.NewPlanInfoID = upgrade.NewPlanInfoID
 	upgrade2.OpctCost = 1337.00
 	uPtr, err = GetOrCreateUpgrade(upgrade2)
 	assert.Nil(t, err)
@@ -186,16 +170,16 @@ func Test_Upgrade_GetOrCreateUpgrade(t *testing.T) {
 	assert.NotEqual(t, upgrade.OpctCost, uPtr.OpctCost)
 }
 
-func Test_Upgrade_GetUpgradeFromAccountIDAndStorageLimits(t *testing.T) {
+func Test_Upgrade_GetUpgradeFromAccountIDAndPlans(t *testing.T) {
 	upgrade, account := returnValidUpgrade()
 
 	DB.Create(&upgrade)
 
-	upgradeFromDB, err := GetUpgradeFromAccountIDAndStorageLimits(upgrade.AccountID, int(upgrade.NewStorageLimit), int(account.StorageLimit))
+	upgradeFromDB, err := GetUpgradeFromAccountIDAndPlans(upgrade.AccountID, upgrade.NewPlanInfoID, account.PlanInfoID)
 	assert.Nil(t, err)
 	assert.Equal(t, upgrade.AccountID, upgradeFromDB.AccountID)
 
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndPlans(
 		utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890")), 128, 10)
 	assert.NotNil(t, err)
 	assert.Equal(t, "", upgradeFromDB.AccountID)
@@ -207,10 +191,15 @@ func Test_Upgrade_GetUpgradesFromAccountID(t *testing.T) {
 	DB.Create(&upgrade)
 
 	upgrade2, _ := returnValidUpgrade()
-	upgrade2.NewStorageLimit = BasicStorageLimit
+
+	basicPlan, err := GetPlanInfoByID(2)
+	assert.Nil(t, err)
+	upgrade2.NewPlanInfo = basicPlan
+	upgrade2.NewPlanInfoID = basicPlan.ID
+
 	upgrade2.AccountID = upgrade.AccountID
 
-	err := DB.Create(&upgrade2).Error
+	err = DB.Create(&upgrade2).Error
 	assert.Nil(t, err)
 
 	upgrades, err := GetUpgradesFromAccountID(upgrade.AccountID)
@@ -226,41 +215,41 @@ func Test_Upgrade_SetUpgradesToNextPaymentStatus(t *testing.T) {
 
 	assert.Equal(t, InitialPaymentInProgress, upgrade.PaymentStatus)
 
-	originalStorageLimit := int(account.StorageLimit)
+	originalPlanId := account.PlanInfoID
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgrade})
-	upgradeFromDB, err := GetUpgradeFromAccountIDAndStorageLimits(
-		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
+	upgradeFromDB, err := GetUpgradeFromAccountIDAndPlans(
+		upgrade.AccountID, upgrade.NewPlanInfoID, originalPlanId)
 	assert.Nil(t, err)
 	assert.Equal(t, InitialPaymentReceived, upgradeFromDB.PaymentStatus)
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgradeFromDB})
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
-		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndPlans(
+		upgrade.AccountID, upgrade.NewPlanInfoID, originalPlanId)
 	assert.Nil(t, err)
 	assert.Equal(t, GasTransferInProgress, upgradeFromDB.PaymentStatus)
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgradeFromDB})
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
-		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndPlans(
+		upgrade.AccountID, upgrade.NewPlanInfoID, originalPlanId)
 	assert.Nil(t, err)
 	assert.Equal(t, GasTransferComplete, upgradeFromDB.PaymentStatus)
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgradeFromDB})
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
-		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndPlans(
+		upgrade.AccountID, upgrade.NewPlanInfoID, originalPlanId)
 	assert.Nil(t, err)
 	assert.Equal(t, PaymentRetrievalInProgress, upgradeFromDB.PaymentStatus)
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgradeFromDB})
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
-		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndPlans(
+		upgrade.AccountID, upgrade.NewPlanInfoID, originalPlanId)
 	assert.Nil(t, err)
 	assert.Equal(t, PaymentRetrievalComplete, upgradeFromDB.PaymentStatus)
 
 	SetUpgradesToNextPaymentStatus([]Upgrade{upgradeFromDB})
-	upgradeFromDB, err = GetUpgradeFromAccountIDAndStorageLimits(
-		upgrade.AccountID, int(upgrade.NewStorageLimit), originalStorageLimit)
+	upgradeFromDB, err = GetUpgradeFromAccountIDAndPlans(
+		upgrade.AccountID, upgrade.NewPlanInfoID, originalPlanId)
 	assert.Nil(t, err)
 	assert.Equal(t, PaymentRetrievalComplete, upgradeFromDB.PaymentStatus)
 }
