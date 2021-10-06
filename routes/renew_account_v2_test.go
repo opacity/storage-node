@@ -34,7 +34,11 @@ func Test_GetAccountRenewV2InvoiceHandler_Returns_Invoice(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
 
-	account.StorageLimit = models.StorageLimitType(1024)
+	professionalPlan, err := models.GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
+
 	account.CreatedAt = time.Now().Add(time.Hour * 24 * 360 * -1)
 	models.DB.Save(&account)
 
@@ -63,7 +67,11 @@ func Test_GetAccountRenewV2InvoiceHandler_ReturnsErrorIfExpirationDateTooFarInFu
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
 
-	account.StorageLimit = models.StorageLimitType(1024)
+	professionalPlan, err := models.GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
+
 	account.MonthsInSubscription = 13
 	models.DB.Save(&account)
 
