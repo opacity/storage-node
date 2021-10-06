@@ -51,10 +51,14 @@ func Connect(dbURL string) {
 func MigratePlanIds() error {
 	initPlans := []utils.PlanInfo{}
 	DB.Model(&utils.PlanInfo{}).Find(&initPlans)
-
 	DB.DropTable(utils.PlanInfo{})
+
+	// Accounts
 	DB.AutoMigrate(&utils.PlanInfo{})
 	DB.AutoMigrate(&Account{}).AddForeignKey("plan_info_id", "plan_infos(id)", "RESTRICT", "RESTRICT")
+
+	// Upgrades
+	// DB.AutoMigrate(&Upgrade{}).RemoveIndex()
 
 	for planId, plan := range initPlans {
 		plan.ID = uint(planId) + 1

@@ -38,7 +38,7 @@ type Account struct {
 	Upgrades                 []Upgrade         `gorm:"foreignkey:AccountID;association_foreignkey:AccountID"`
 	ExpiredAt                time.Time         `json:"expiredAt"`
 	PlanInfoID               uint              `json:"-"`
-	PlanInfo                 utils.PlanInfo    `gorm:"foreignKey:plan_info_id;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT;" json:"plan"`
+	PlanInfo                 utils.PlanInfo    `gorm:"foreignKey:plan_info_id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;" json:"plan"`
 	NetworkIdPaid            uint              `json:"networkIdPaid"`
 }
 
