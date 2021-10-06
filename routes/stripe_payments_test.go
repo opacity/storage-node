@@ -112,7 +112,10 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
 	account := CreateUnpaidAccountForTest(t, accountID)
-	account.StorageLimit = models.StorageLimitType(utils.Env.Plans[10].StorageInGB)
+	freePlan, err := models.GetPlanInfoByID(1)
+	assert.Nil(t, err)
+	account.PlanInfo = freePlan
+	account.PlanInfoID = freePlan.ID
 	err = models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
