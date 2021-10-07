@@ -283,21 +283,21 @@ func SetUpgradesToLowerPaymentStatusByUpdateTime(paymentStatus PaymentStatusType
 }
 
 // Temporary func @TODO: remove after migration
-func MigrateUpgradesToPlanId(newPlanId uint, oldPlanId uint, newStorageLimit int, oldStorageLimit int) {
-	query := DB.Exec("UPDATE upgrades SET new_plan_info_id = ? AND old_plan_info_id = ? WHERE new_storage_limit = ? AND old_storage_limit", newPlanId, oldPlanId, newStorageLimit, oldStorageLimit)
+func MigrateUpgradeToPlanIdNew(newPlanId uint, newStorageLimit int) {
+	query := DB.Exec("UPDATE upgrades SET new_plan_info_id = ? WHERE new_storage_limit = ?", newPlanId, newStorageLimit)
 	err := query.Error
 	utils.LogIfError(err, map[string]interface{}{
 		"new_plan_id":      newPlanId,
-		"old_plan_id":      oldPlanId,
 		"new_storageLimit": newStorageLimit,
-		"old_storageLimit": oldStorageLimit,
 	})
 }
 
 // Temporary func @TODO: remove after migration
-func GetAllUpgrades() []Upgrade {
-	upgrades := []Upgrade{}
-	DB.Find(&upgrades)
-
-	return upgrades
+func MigrateUpgradeToPlanIdOld(oldPlanId uint, oldStorageLimit int) {
+	query := DB.Exec("UPDATE upgrades SET old_plan_info_id = ? WHERE old_storage_limit", oldPlanId, oldStorageLimit)
+	err := query.Error
+	utils.LogIfError(err, map[string]interface{}{
+		"old_plan_id":      oldPlanId,
+		"old_storageLimit": oldStorageLimit,
+	})
 }

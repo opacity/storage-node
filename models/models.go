@@ -66,8 +66,10 @@ func MigratePlanIds() error {
 		plan.MonthsInSubscription = 12
 		DB.Model(&utils.PlanInfo{}).Create(&plan)
 
-		// migrate accounts to PlanInfo
+		// migrate Accounts to PlanInfo
 		MigrateAccountsToPlanId(plan.ID, plan.StorageInGB)
+		MigrateUpgradeToPlanIdNew(plan.ID, plan.StorageInGB)
+		MigrateUpgradeToPlanIdOld(plan.ID, plan.StorageInGB)
 	}
 
 	// drop 'storage_location' and 'storage_limit'
