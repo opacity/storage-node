@@ -44,7 +44,8 @@ func Connect(dbURL string) {
 	DB.AutoMigrate(&ExpiredAccount{})
 	DB.AutoMigrate(&PublicShare{})
 	DB.AutoMigrate(&SmartContract{})
-	DB.AutoMigrate(&utils.PlanInfo{})
+	// @TODO: uncomment after planID migration
+	// DB.AutoMigrate(&utils.PlanInfo{})
 }
 
 // Temporary func @TODO: remove after migration

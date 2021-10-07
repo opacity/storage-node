@@ -118,7 +118,7 @@
                       <select required name="fileStorageType">
                         {{with .fileStorageTypes}}
                         {{range $fileStorageTypeName, $fileStorageTypeValue := .}}
-                        <option {{if $fileStorageTypeValue == .fileStorageType }} selected {{end}} value="{{ $fileStorageTypeValue }}">{{ $fileStorageTypeName }}</option>
+                        <option {{if eq $fileStorageTypeValue .fileStorageType }} selected {{end}} value="{{ $fileStorageTypeValue }}">{{ $fileStorageTypeName }}</option>
                         {{end}}
                         {{end}}
                       </select>

@@ -99,18 +99,6 @@ var (
 	//})
 )
 
-func CreatePlanMetrics() {
-	Metrics_Percent_Of_Space_Used_Map[TotalLbl] = Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": TotalLbl})
-	Metrics_Total_Paid_Accounts_Map[TotalLbl] = Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": TotalLbl})
-	Metrics_Total_Stripe_Paid_Accounts_Map[TotalLbl] = Metrics_Total_Stripe_Paid_Accounts.With(prometheus.Labels{"plan_type": TotalLbl})
-	for _, plan := range Env.Plans {
-		name := plan.Name
-		Metrics_Percent_Of_Space_Used_Map[name] = Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": name})
-		Metrics_Total_Paid_Accounts_Map[name] = Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": name})
-		Metrics_Total_Stripe_Paid_Accounts_Map[name] = Metrics_Total_Stripe_Paid_Accounts.With(prometheus.Labels{"plan_type": name})
-	}
-}
-
 func GetMetricCounter(m prometheus.Counter) float64 {
 	pb := &dto.Metric{}
 	m.Write(pb)
