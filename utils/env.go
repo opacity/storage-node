@@ -20,14 +20,6 @@ const defaultAccountRetentionDays = 7
 const defaultStripeRetentionDays = 30
 const TestNetworkID = 999
 
-const DefaultPlansJson = `{
-	"10":{"name":"Free","cost":0,"costInUSD":0.00,"storageInGB":10,"maxFolders":200,"maxMetadataSizeInMB":20},
-	"128":{"name":"Basic","cost":2,"costInUSD":39.99,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
-	"1024":{"name":"Professional","cost":16,"costInUSD":99.99,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600},
-	"2048":{"name":"Business","cost":32,"costInUSD":119.99,"storageInGB":2048,"maxFolders":32000,"maxMetadataSizeInMB":3200},
-	"10000":{"name":"Custom10TB","cost":150000,"costInUSD":550.00,"storageInGB":10000,"maxFolders":156000,"maxMetadataSizeInMB":15600}
-}`
-
 type FileStorageType int
 
 const (
@@ -48,8 +40,6 @@ type PlanInfo struct {
 	MonthsInSubscription uint            `json:"monthsInSubscription" gorm:"default:12" validate:"required,gte=1" example:"12"`
 	FileStorageType      FileStorageType `json:"storageType" gorm:"default:1"`
 }
-
-type PlanResponseType map[int]PlanInfo
 
 /*StorageNodeEnv represents what our storage node environment should look like*/
 type StorageNodeEnv struct {
@@ -91,8 +81,6 @@ type StorageNodeEnv struct {
 	// Debug purpose
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
 	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
-
-	Plans PlanResponseType
 
 	// Stripe Keys
 	StripeKeyTest string `env:"STRIPE_KEY_TEST" envDefault:"Unknown"`

@@ -63,7 +63,8 @@ func main() {
 		utils.PanicOnError(err)
 	}
 
-	setEnvPlans()
+	utils.CreatePlanMetrics()
+
 	models.MigrateEnvWallets()
 
 	jobs.StartupJobs()
@@ -72,28 +73,6 @@ func main() {
 	}
 
 	routes.CreateRoutes()
-}
-
-func setEnvPlans() {
-	plans := []utils.PlanInfo{}
-	results := models.DB.Find(&plans)
-
-	utils.Env.Plans = make(utils.PlanResponseType)
-
-	if results.RowsAffected == 0 {
-		err := json.Unmarshal([]byte(utils.DefaultPlansJson), &utils.Env.Plans)
-		utils.LogIfError(err, nil)
-
-		for _, plan := range utils.Env.Plans {
-			models.DB.Model(&utils.PlanInfo{}).Create(&plan)
-		}
-	} else {
-		for _, plan := range plans {
-			utils.Env.Plans[plan.StorageInGB] = plan
-		}
-	}
-
-	utils.CreatePlanMetrics()
 }
 
 func sentryOpacityBeforeSend(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
