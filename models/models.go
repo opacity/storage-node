@@ -53,12 +53,12 @@ func MigratePlanIds() error {
 	DB.Model(&utils.PlanInfo{}).Find(&initPlans)
 	DB.DropTable(utils.PlanInfo{})
 
-	// Accounts
 	DB.AutoMigrate(&utils.PlanInfo{})
-	DB.AutoMigrate(&Account{}).AddForeignKey("plan_info_id", "plan_infos(id)", "RESTRICT", "RESTRICT")
 
-	// Upgrades
-	// DB.AutoMigrate(&Upgrade{}).RemoveIndex()
+	DB.Model(&Account{}).AddForeignKey("plan_info_id", "plan_infos(id)", "RESTRICT", "CASCADE")
+
+	DB.Model(&Upgrade{}).AddForeignKey("new_plan_info_id", "plan_infos(id)", "RESTRICT", "CASCADE")
+	DB.Exec("ALTER TABLE upgrades DROP PRIMARY KEY, ADD PRIMARY KEY (`account_id`, `new_plan_info_id`)")
 
 	for planId, plan := range initPlans {
 		plan.ID = uint(planId) + 1
@@ -72,6 +72,13 @@ func MigratePlanIds() error {
 	// drop 'storage_location' and 'storage_limit'
 	DB.Model(&Account{}).DropColumn("storage_location")
 	DB.Model(&Account{}).DropColumn("storage_limit")
+
+	DB.Model(&Upgrade{}).DropColumn("new_storage_limit")
+	DB.Model(&Upgrade{}).DropColumn("old_storage_limit")
+	DB.Model(&Upgrade{}).DropColumn("duration_in_months")
+	DB.Model(&Upgrade{}).DropColumn("opq_cost")
+
+	DB.Model(&Renewal{}).DropColumn("opq_cost")
 
 	return utils.SetPlansMigration(true)
 }

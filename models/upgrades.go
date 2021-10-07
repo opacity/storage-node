@@ -16,7 +16,7 @@ type Upgrade struct {
 	/*AccountID associates an entry in the upgrades table with an entry in the accounts table*/
 	AccountID     string            `gorm:"primary_key" json:"accountID" validate:"required,len=64"`
 	NewPlanInfoID uint              `json:"newPlanId"`
-	NewPlanInfo   utils.PlanInfo    `gorm:"foreignKey:new_plan_info_id;constraint:OnUpdate:RESTRICT,OnDelete:RESTRICT;" json:"newPlan" validate:"required,gte=1"`
+	NewPlanInfo   utils.PlanInfo    `gorm:"foreignKey:new_plan_info_id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;" json:"newPlan" validate:"required,gte=1"`
 	OldPlanInfoID uint              `json:"oldPlanId" validate:"required,gte=1"`
 	CreatedAt     time.Time         `json:"createdAt"`
 	UpdatedAt     time.Time         `json:"updatedAt"`
