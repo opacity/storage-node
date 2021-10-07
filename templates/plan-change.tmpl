@@ -63,7 +63,6 @@
                 <div class="field">
                   <p class="control">
                     <input class="input" type="number" name="storageInGB" value="{{ .plan.StorageInGB }}" required>
-                    <input class="input is-hidden" type="number" name="storageInGBInit" value="{{ .plan.StorageInGB }}">
                   </p>
                 </div>
               </div>
@@ -84,12 +83,46 @@
 
             <div class="field is-horizontal pb-1">
               <div class="field-label is-normal">
-                <label class="label">Max Metadata size in MB</label>
+                <label class="label">Max metadata size in MB</label>
               </div>
               <div class="field-body">
                 <div class="field">
                   <p class="control">
                     <input class="input" type="number" name="maxMetadataSizeInMB" value="{{ .plan.MaxMetadataSizeInMB }}" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Months in subscription</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" disabled type="number" name="monthsInSubscription" value="12" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">File storage type</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <div class="select is-link">
+                      <select required name="fileStorageType">
+                        {{with .fileStorageTypes}}
+                        {{range $fileStorageTypeName, $fileStorageTypeValue := .}}
+                        <option {{if $fileStorageTypeValue == .fileStorageType }} selected {{end}} value="{{ $fileStorageTypeValue }}">{{ $fileStorageTypeName }}</option>
+                        {{end}}
+                        {{end}}
+                      </select>
+                    </div>
                   </p>
                 </div>
               </div>

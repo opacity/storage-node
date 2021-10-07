@@ -25,3 +25,7 @@ func GetAllPlans() ([]utils.PlanInfo, error) {
 
 	return pi, nil
 }
+
+func DeletePlanByID(planInfoId uint) error {
+	return DB.Where("id = ?", planInfoId).Delete(utils.PlanInfo{}).Error
+}

@@ -18,12 +18,15 @@
         <table class="table">
           <thead>
             <tr>
+              <th>ID</th>
               <th>Name</th>
               <th>Cost</th>
               <th>Cost in USD</th>
               <th>Storage in GB</th>
               <th>Max Folders</th>
               <th>Max Metadata size in MB</th>
+              <th>Months in subscription</th>
+              <th>Storage Type</th>
               <th></th>
             </tr>
           </thead>
@@ -31,16 +34,19 @@
             {{with .plans}}
             {{range .}}
             <tr>
+              <th>{{ .ID }}</th>
               <th>{{ .Name }}</th>
               <th>{{ .Cost }}</th>
               <th>{{ .CostInUSD }}</th>
               <th>{{ .StorageInGB }}</th>
               <th>{{ .MaxFolders }}</th>
               <th>{{ .MaxMetadataSizeInMB }}</th>
+              <th>{{ .MonthsInSubscription }}</th>
+              <th>{{ .MaxMetFileStorageTypeadataSizeInMB }}</th>
               <th>
                 <div class="buttons">
-                  <a href="edit/{{ .StorageInGB }}/" class="button is-link is-small is-primary is-outlined">Edit</a>
-                  <a href="confirm-remove/{{ .StorageInGB }}" class="button is-link is-small is-danger">Remove</a>
+                  <a href="edit/{{ .ID }}/" class="button is-link is-small is-primary is-outlined">Edit</a>
+                  <a href="confirm-remove/{{ .ID }}" class="button is-link is-small is-danger">Remove</a>
                 </div>
               </th>
             </tr>
