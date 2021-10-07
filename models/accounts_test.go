@@ -173,7 +173,6 @@ func Test_Returns_Expiration_Date(t *testing.T) {
 
 func Test_Cost_Returns_Cost(t *testing.T) {
 	account := returnValidAccount()
-	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
 	cost, err := account.Cost()
 
@@ -422,7 +421,6 @@ func Test_UpgradeCostInUSD_Upgrade_From_Free_Plan_Half_Of_Subscription_Has_Passe
 
 func Test_GetTotalCostInWei(t *testing.T) {
 	account := returnValidAccount()
-	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
 	costInWei := account.GetTotalCostInWei()
 
@@ -471,7 +469,6 @@ func Test_CheckIfPaid_Not_Paid(t *testing.T) {
 
 func Test_CheckIfPaid_Error_While_Checking(t *testing.T) {
 	account := returnValidAccount()
-	account.MonthsInSubscription = DefaultMonthsPerSubscription
 
 	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
 		return false, 0, errors.New("some error")

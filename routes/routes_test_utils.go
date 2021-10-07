@@ -55,12 +55,12 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 
 	account := models.Account{
 		AccountID:            accountID,
-		MonthsInSubscription: models.DefaultMonthsPerSubscription,
+		MonthsInSubscription: int(basicPlan.MonthsInSubscription),
 		StorageUsedInByte:    defaultStorageUsedInByteForTest,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		ExpiredAt:            time.Now().AddDate(0, int(basicPlan.MonthsInSubscription), 0),
 		NetworkIdPaid:        utils.TestNetworkID,
 		PlanInfoID:           basicPlan.ID,
 		PlanInfo:             basicPlan,
@@ -86,12 +86,12 @@ func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 
 	account := models.Account{
 		AccountID:            accountID,
-		MonthsInSubscription: models.DefaultMonthsPerSubscription,
+		MonthsInSubscription: int(basicPlan.MonthsInSubscription),
 		StorageUsedInByte:    defaultStorageUsedInByteForTest,
 		PaymentStatus:        models.InitialPaymentReceived,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		ExpiredAt:            time.Now().AddDate(0, int(basicPlan.MonthsInSubscription), 0),
 		NetworkIdPaid:        utils.TestNetworkID,
 		PlanInfoID:           basicPlan.ID,
 		PlanInfo:             basicPlan,

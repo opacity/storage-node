@@ -83,11 +83,6 @@ const (
 
 const StorageUsedTooLow = "storage_used_in_byte cannot go below 0"
 
-/*DefaultMonthsPerSubscription is the number of months per year since our
-default subscription is a year*/
-// @TODO: Remove this on monthly payments
-const DefaultMonthsPerSubscription = 12
-
 /*AccountIDLength is the expected length of an accountID for an account*/
 const AccountIDLength = 64
 
@@ -166,7 +161,7 @@ func (account *Account) Cost() (float64, error) {
 /*UpgradeCostInOPCT returns the cost to upgrade in OPCT*/
 func (account *Account) UpgradeCostInOPCT(newPlanInfo utils.PlanInfo) (float64, error) {
 	baseCostOfHigherPlan := newPlanInfo.Cost *
-		float64(newPlanInfo.MonthsInSubscription/DefaultMonthsPerSubscription)
+		float64(newPlanInfo.MonthsInSubscription/account.PlanInfo.MonthsInSubscription)
 	costOfCurrentPlan, _ := account.Cost()
 
 	if account.ExpirationDate().Before(time.Now()) {
@@ -179,9 +174,9 @@ func (account *Account) UpgradeCostInOPCT(newPlanInfo utils.PlanInfo) (float64, 
 /*UpgradeCostInUSD returns the cost to upgrade in USD*/
 func (account *Account) UpgradeCostInUSD(newPlanInfo utils.PlanInfo) (float64, error) {
 	baseCostOfHigherPlan := newPlanInfo.CostInUSD *
-		float64(newPlanInfo.MonthsInSubscription/DefaultMonthsPerSubscription)
+		float64(newPlanInfo.MonthsInSubscription/uint(account.MonthsInSubscription))
 	costOfCurrentPlan := account.PlanInfo.CostInUSD *
-		float64(account.MonthsInSubscription/DefaultMonthsPerSubscription)
+		float64(account.MonthsInSubscription/int(account.PlanInfo.MonthsInSubscription))
 
 	if account.ExpirationDate().Before(time.Now()) {
 		return baseCostOfHigherPlan, nil

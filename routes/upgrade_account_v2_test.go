@@ -114,7 +114,7 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Success(t *t
 	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
 
 	assert.Equal(t, newPlanID, account.PlanInfo.ID)
-	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
+	assert.True(t, account.MonthsInSubscription > int(account.PlanInfo.MonthsInSubscription))
 	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
 	upgrade, err = models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
@@ -169,7 +169,7 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Still_Pendin
 	assert.Nil(t, err)
 	assert.NotEqual(t, newPlanID, account.PlanInfo.ID)
 	assert.NotEqual(t, models.InitialPaymentReceived, account.PaymentStatus)
-	assert.False(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
+	assert.False(t, account.MonthsInSubscription > int(account.PlanInfo.MonthsInSubscription))
 	assert.Contains(t, w.Body.String(), `Incomplete`)
 
 	upgrade, err = models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
@@ -336,7 +336,7 @@ func Test_CheckUpgradeV2StatusHandler_Multiple_UpgradeV2s(t *testing.T) {
 	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
 
 	assert.Equal(t, newPlanID2, account.PlanInfo.ID)
-	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
+	assert.True(t, account.MonthsInSubscription > int(account.PlanInfo.MonthsInSubscription))
 	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
 	upgrade, err = models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)

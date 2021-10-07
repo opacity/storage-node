@@ -45,12 +45,12 @@ func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.Priva
 
 	return models.Account{
 		AccountID:            accountId,
-		MonthsInSubscription: models.DefaultMonthsPerSubscription,
+		MonthsInSubscription: int(basicPlan.MonthsInSubscription),
 		StorageUsedInByte:    10 * 1e9,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
-		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		ExpiredAt:            time.Now().AddDate(0, int(basicPlan.MonthsInSubscription), 0),
 		NetworkIdPaid:        utils.TestNetworkID,
 		PlanInfoID:           basicPlan.ID,
 		PlanInfo:             basicPlan,
