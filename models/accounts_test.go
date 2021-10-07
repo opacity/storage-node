@@ -22,9 +22,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-/*BasicSubscriptionDefaultCostForTest is the cost for a default-length term of the basic plan*/
-const BasicSubscriptionDefaultCostForTest = 2.0
-
 func returnValidAccount() Account {
 	ethAddress, privateKey := services.GenerateWallet()
 	accountID := utils.RandSeqFromRunes(AccountIDLength, []rune("abcdef01234567890"))
@@ -180,7 +177,10 @@ func Test_Cost_Returns_Cost(t *testing.T) {
 		t.Fatalf("should have been able to calculate cost")
 	}
 
-	assert.Equal(t, BasicSubscriptionDefaultCostForTest, cost)
+	basicPlan, err := GetPlanInfoByID(2)
+	assert.Nil(t, err)
+
+	assert.Equal(t, basicPlan.Cost, cost)
 }
 
 func Test_UpgradeCostInOPCT_Basic_To_Professional_None_Of_Subscription_Has_Passed(t *testing.T) {
