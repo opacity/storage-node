@@ -15,7 +15,7 @@ import (
 type Upgrade struct {
 	/*AccountID associates an entry in the upgrades table with an entry in the accounts table*/
 	AccountID     string            `gorm:"primary_key" json:"accountID" validate:"required,len=64"`
-	NewPlanInfoID uint              `json:"newPlanId"`
+	NewPlanInfoID uint              `gorm:"primary_key;auto_increment:false" json:"newPlanId"`
 	NewPlanInfo   utils.PlanInfo    `gorm:"foreignKey:new_plan_info_id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;" json:"newPlan" validate:"required,gte=1"`
 	OldPlanInfoID uint              `json:"oldPlanId" validate:"required,gte=1"`
 	CreatedAt     time.Time         `json:"createdAt"`
@@ -292,4 +292,12 @@ func MigrateUpgradesToPlanId(newPlanId uint, oldPlanId uint, newStorageLimit int
 		"new_storageLimit": newStorageLimit,
 		"old_storageLimit": oldStorageLimit,
 	})
+}
+
+// Temporary func @TODO: remove after migration
+func GetAllUpgrades() []Upgrade {
+	upgrades := []Upgrade{}
+	DB.Find(&upgrades)
+
+	return upgrades
 }
