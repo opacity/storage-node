@@ -446,8 +446,11 @@ func GetAccountById(accountID string) (Account, error) {
 /*CreateSpaceUsedReport populates a model of the space allotted versus space used*/
 func CreateSpaceUsedReport() SpaceReport {
 	var result SpaceReport
-	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM "+
-		"accounts WHERE payment_status >= ?", InitialPaymentReceived).Scan(&result)
+	DB.Raw("SELECT SUM(plan_infos.storage_in_gb) as space_allotted_sum, SUM(accounts.storage_used_in_byte) as space_used_sum "+
+		"FROM .accounts "+
+		"INNER JOIN plan_infos ON plan_infos.id = accounts.plan_info_id "+
+		"WHERE accounts.payment_status >= ?",
+		InitialPaymentReceived).Scan(&result)
 	return result
 }
 
@@ -456,9 +459,11 @@ particular type of plan*/
 func CreateSpaceUsedReportForPlanType(planInfo utils.PlanInfo) SpaceReport {
 	// @TODO: fix this for metrics
 	var result SpaceReport
-	DB.Raw("SELECT SUM(storage_limit) as space_allotted_sum, SUM(storage_used_in_byte) as space_used_sum FROM "+
-		"accounts WHERE payment_status >= ? AND storage_limit = ?",
-		InitialPaymentReceived, planInfo.StorageInGB).Scan(&result)
+	DB.Raw("SELECT SUM(plan_infos.storage_in_gb) as space_allotted_sum, SUM(accounts.storage_used_in_byte) as space_used_sum "+
+		"FROM .accounts "+
+		"INNER JOIN plan_infos ON plan_infos.id = accounts.plan_info_id "+
+		"WHERE accounts.payment_status >= ? AND plan_infos.id = ?",
+		InitialPaymentReceived, planInfo.ID).Scan(&result)
 	return result
 }
 
@@ -506,8 +511,8 @@ func CountAccountsByPaymentStatus(paymentStatus PaymentStatusType) (int, error) 
 func CountPaidAccountsByPlanType(planInfo utils.PlanInfo) (int, error) {
 	// @TODO: fix this for metrics
 	count := 0
-	err := DB.Preload("PlanInfo").Model(&Account{}).Where("storage_limit = ? AND payment_status >= ?",
-		planInfo.StorageInGB, InitialPaymentReceived).Count(&count).Error
+	err := DB.Preload("PlanInfo").Model(&Account{}).Where("plan_info_id = ? AND payment_status >= ?",
+		planInfo.ID, InitialPaymentReceived).Count(&count).Error
 	utils.LogIfError(err, nil)
 	return count, err
 }
@@ -515,8 +520,8 @@ func CountPaidAccountsByPlanType(planInfo utils.PlanInfo) (int, error) {
 func CountPaidAccountsByPaymentMethodAndPlanType(planInfo utils.PlanInfo, paymentMethod PaymentMethodType) (int, error) {
 	// @TODO: fix this for metrics
 	count := 0
-	err := DB.Preload("PlanInfo").Model(&Account{}).Where("storage_limit = ? AND payment_status >= ? AND payment_method = ?",
-		planInfo.StorageInGB, InitialPaymentReceived, paymentMethod).Count(&count).Error
+	err := DB.Preload("PlanInfo").Model(&Account{}).Where("plan_info_id = ? AND payment_status >= ? AND payment_method = ?",
+		planInfo.ID, InitialPaymentReceived, paymentMethod).Count(&count).Error
 	utils.LogIfError(err, nil)
 	return count, err
 }
