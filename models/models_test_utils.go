@@ -158,9 +158,7 @@ func SetTestPlans() {
 
 	if results.RowsAffected == 0 {
 		workingDir, _ := os.Getwd()
-		testDir := filepath.Dir(workingDir)
-		testDir = testDir + string(os.PathSeparator) + "test_files"
-		localFilePath := testDir + string(os.PathSeparator) + "plans.json"
+		localFilePath := workingDir + string(os.PathSeparator) + "test_files" + string(os.PathSeparator) + "plans.json"
 
 		plansFile, err := os.Open(localFilePath)
 		if err != nil {
