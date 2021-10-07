@@ -63,7 +63,7 @@ func (v *checkUpgradeV2StatusReq) getObjectRef() interface{} {
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID) or plan not found"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/upgradeV2/invoice [post]
+// @Router /api/v2/upgradeV2/invoice [post]
 /*GetAccountUpgradeV2InvoiceHandler is a handler for getting an invoice to upgradeV2 an account*/
 func GetAccountUpgradeV2InvoiceHandler() gin.HandlerFunc {
 	return ginHandlerFunc(getAccountUpgradeV2Invoice)
