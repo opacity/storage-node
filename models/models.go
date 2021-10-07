@@ -58,9 +58,6 @@ func MigratePlanIds() error {
 
 	DB.Model(&Account{}).AddForeignKey("plan_info_id", "plan_infos(id)", "RESTRICT", "CASCADE")
 
-	DB.Model(&Upgrade{}).AddForeignKey("new_plan_info_id", "plan_infos(id)", "RESTRICT", "CASCADE")
-	DB.Exec("ALTER TABLE upgrades DROP PRIMARY KEY, ADD PRIMARY KEY (`account_id`, `new_plan_info_id`)")
-
 	for planId, plan := range initPlans {
 		plan.ID = uint(planId) + 1
 		plan.MonthsInSubscription = 12
@@ -71,6 +68,9 @@ func MigratePlanIds() error {
 		MigrateUpgradeToPlanIdNew(plan.ID, plan.StorageInGB)
 		MigrateUpgradeToPlanIdOld(plan.ID, plan.StorageInGB)
 	}
+
+	DB.Model(&Upgrade{}).AddForeignKey("new_plan_info_id", "plan_infos(id)", "RESTRICT", "CASCADE")
+	DB.Exec("ALTER TABLE upgrades DROP PRIMARY KEY, ADD PRIMARY KEY (`account_id`, `new_plan_info_id`)")
 
 	// drop 'storage_location' and 'storage_limit'
 	DB.Model(&Account{}).DropColumn("storage_location")

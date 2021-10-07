@@ -294,7 +294,7 @@ func MigrateUpgradeToPlanIdNew(newPlanId uint, newStorageLimit int) {
 
 // Temporary func @TODO: remove after migration
 func MigrateUpgradeToPlanIdOld(oldPlanId uint, oldStorageLimit int) {
-	query := DB.Exec("UPDATE upgrades SET old_plan_info_id = ? WHERE old_storage_limit", oldPlanId, oldStorageLimit)
+	query := DB.Exec("UPDATE upgrades SET old_plan_info_id = ? WHERE old_storage_limit = ?", oldPlanId, oldStorageLimit)
 	err := query.Error
 	utils.LogIfError(err, map[string]interface{}{
 		"old_plan_id":      oldPlanId,
