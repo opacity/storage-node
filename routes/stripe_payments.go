@@ -21,7 +21,7 @@ type createStripePaymentObject struct {
 	StripeToken    string `json:"stripeToken" validate:"required" example:"tok_KPte7942xySKBKyrBu11yEpf"`
 	Timestamp      int64  `json:"timestamp" validate:"required"`
 	UpgradeAccount bool   `json:"upgradeAccount"`
-	PlanID         uint   `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
+	PlanID         uint   `json:"planId" validate:"required,gte=1" minimum:"1" example:"4"`
 }
 
 type createStripePaymentReq struct {

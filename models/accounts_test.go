@@ -299,10 +299,13 @@ func Test_UpgradeCostInOPCT_Upgrade_From_Free_Plan_Half_Of_Subscription_Has_Pass
 	account.PlanInfo = freePlan
 	account.PlanInfoID = freePlan.ID
 
-	DB.Create(&account)
+	err = DB.Create(&account).Error
+	assert.Nil(t, err)
+
 	timeToSubtract := time.Hour * 24 * (365 / 2)
 	account.CreatedAt = time.Now().Add(timeToSubtract * -1)
-	DB.Save(&account)
+	err = DB.Save(&account).Error
+	assert.Nil(t, err)
 
 	businessPlan, err := GetPlanInfoByID(4)
 	assert.Nil(t, err)

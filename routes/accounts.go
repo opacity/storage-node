@@ -210,6 +210,8 @@ func createAccount(c *gin.Context) error {
 		ApiVersion:           2,
 		MonthsInSubscription: int(planInfo.MonthsInSubscription),
 		ExpiredAt:            time.Now().AddDate(0, int(planInfo.MonthsInSubscription), 0),
+		PlanInfoID:           planInfo.ID,
+		PlanInfo:             planInfo,
 	}
 
 	// Add account to DB

@@ -31,8 +31,8 @@ const (
 type PlanInfo struct {
 	ID                  uint    `gorm:"primary_key" json:"id"`
 	Name                string  `json:"name" validate:"required"`
-	Cost                float64 `json:"cost" validate:"required,gte=0"`
-	CostInUSD           float64 `json:"costInUSD" validate:"required,gte=0"`
+	Cost                float64 `json:"cost"`
+	CostInUSD           float64 `json:"costInUSD"`
 	StorageInGB         int     `json:"storageInGB" validate:"required,gte=1"`
 	MaxFolders          int     `json:"maxFolders" validate:"required,gte=1"`
 	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB" validate:"required,gte=1"`

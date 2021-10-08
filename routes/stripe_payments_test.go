@@ -2,6 +2,7 @@ package routes
 
 import (
 	"crypto/ecdsa"
+	"fmt"
 	"math/big"
 	"net/http"
 	"testing"
@@ -23,11 +24,12 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
-	CreateUnpaidAccountForTest(t, accountID)
+	account := CreateUnpaidAccountForTest(t, accountID)
 
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		PlanID:      account.PlanInfoID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -46,9 +48,10 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
 
+	fmt.Println(w.Body.String())
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	account, _ := models.GetAccountById(accountID)
+	account, _ = models.GetAccountById(accountID)
 	assert.Equal(t, models.PaymentMethodWithCreditCard, account.PaymentMethod)
 }
 
@@ -60,6 +63,7 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		PlanID:      2, // random
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -83,11 +87,12 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
-	CreatePaidAccountForTest(t, accountID)
+	account := CreatePaidAccountForTest(t, accountID)
 
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		PlanID:      account.PlanInfoID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -122,6 +127,7 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		PlanID:      account.PlanInfoID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -145,11 +151,12 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
-	CreateUnpaidAccountForTest(t, accountID)
+	account := CreateUnpaidAccountForTest(t, accountID)
 
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		PlanID:      account.PlanInfoID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
