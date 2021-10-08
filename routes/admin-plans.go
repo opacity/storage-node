@@ -11,7 +11,7 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-var NoPlanFoundErr = errors.New("no plan found")
+var ErrNoPlanFound = errors.New("no plan found")
 
 func AdminPlansGetAllHandler() gin.HandlerFunc {
 	return ginHandlerFunc(adminPlanGetAll)
@@ -38,17 +38,7 @@ func AdminPlansAddHandler() gin.HandlerFunc {
 }
 
 func adminPlanGetAll(c *gin.Context) error {
-	plans, err := models.GetAllPlans()
-	if err != nil {
-		return NotFoundResponse(c, err)
-	}
-
-	c.HTML(http.StatusOK, "plans-list.tmpl", gin.H{
-		"title": "Change plans",
-		"plans": plans,
-	})
-
-	return nil
+	return adminPlanGetRenderAll(c, "")
 }
 
 func adminPlanGet(c *gin.Context) error {
@@ -59,7 +49,7 @@ func adminPlanGet(c *gin.Context) error {
 
 	plan, err := models.GetPlanInfoByID(uint(planParam))
 	if err != nil {
-		return NotFoundResponse(c, NoPlanFoundErr)
+		return NotFoundResponse(c, ErrNoPlanFound)
 	}
 
 	c.HTML(http.StatusOK, "plan-change.tmpl", gin.H{
@@ -80,7 +70,7 @@ func adminPlanRemoveConfirm(c *gin.Context) error {
 
 	plan, err := models.GetPlanInfoByID(uint(planParam))
 	if err != nil {
-		return NotFoundResponse(c, NoPlanFoundErr)
+		return NotFoundResponse(c, ErrNoPlanFound)
 	}
 	c.HTML(http.StatusOK, "plan-confirm-remove.tmpl", gin.H{
 		"title": plan.Name,
@@ -99,10 +89,10 @@ func adminPlanRemove(c *gin.Context) error {
 
 	err = models.DeletePlanByID(uint(planParam))
 	if err != nil {
-		return InternalErrorResponse(c, NoPlanFoundErr)
+		return InternalErrorResponse(c, ErrNoPlanFound)
 	}
 
-	return OkResponse(c, StatusRes{Status: fmt.Sprintf("plan %d was removed", planParam)})
+	return adminPlanGetRenderAll(c, fmt.Sprintf("Plan %d was removed", planParam))
 }
 
 func adminPlanChange(c *gin.Context) error {
@@ -143,6 +133,9 @@ func adminPlanChange(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 	fileStorageType, err := strconv.ParseInt(c.Request.PostForm["fileStorageType"][0], 10, 64)
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
 
 	planInfo.Name = c.Request.PostForm["name"][0]
 	planInfo.Cost = cost
@@ -155,10 +148,10 @@ func adminPlanChange(c *gin.Context) error {
 
 	err = models.DB.Save(&planInfo).Error
 	if err != nil {
-		return OkResponse(c, StatusRes{Status: fmt.Sprintf("plan %d was updated", planInfo.ID)})
+		return BadRequestResponse(c, err)
 	}
 
-	return BadRequestResponse(c, err)
+	return adminPlanGetRenderAll(c, fmt.Sprintf("Plan %d was updated", planInfo.ID))
 }
 
 func adminPlanAdd(c *gin.Context) error {
@@ -207,10 +200,26 @@ func adminPlanAdd(c *gin.Context) error {
 
 	err = models.DB.Save(&planInfo).Error
 	if err != nil {
-		return OkResponse(c, StatusRes{Status: fmt.Sprintf("plan %d was added", planInfo.ID)})
+		return InternalErrorResponse(c, err)
 	}
 
-	return InternalErrorResponse(c, err)
+	return adminPlanGetRenderAll(c, fmt.Sprintf("Plan %s (%d) was added", planInfo.Name, planInfo.ID))
+}
+
+func adminPlanGetRenderAll(c *gin.Context, notificationMessage string) error {
+	plans, err := models.GetAllPlans()
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	c.HTML(http.StatusOK, "plans-list.tmpl", gin.H{
+		"title":                   "Change plans",
+		"plans":                   plans,
+		"FileStorageTypeToString": FileStorageTypeToString,
+		"notificationMessage":     notificationMessage,
+	})
+
+	return nil
 }
 
 func GetFileStorageTypesMap() map[string]utils.FileStorageType {
@@ -221,4 +230,17 @@ func GetFileStorageTypesMap() map[string]utils.FileStorageType {
 	}
 
 	return fileTypes
+}
+
+func FileStorageTypeToString(fst utils.FileStorageType) string {
+	switch fst {
+	case utils.S3:
+		return "S3"
+	case utils.Sia:
+		return "Sia"
+	case utils.Skynet:
+		return "Skynet"
+	default:
+		return "unkown"
+	}
 }

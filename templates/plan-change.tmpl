@@ -15,7 +15,8 @@
       <div id="plan">
         <div class="box">
           <form action="/admin/plans" method="POST">
-          
+            <input class="input is-hidden" type="number" name="ID" value="{{ .plan.ID }}">
+
             <div class="field is-horizontal pb-1">
               <div class="field-label is-normal">
                 <label class="label">Name</label>
@@ -114,12 +115,10 @@
               <div class="field-body">
                 <div class="field">
                   <p class="control">
-                    <div class="select is-link">
+                    <div class="select">
                       <select required name="fileStorageType">
-                        {{with .fileStorageTypes}}
-                        {{range $fileStorageTypeName, $fileStorageTypeValue := .}}
-                        <option {{if eq $fileStorageTypeValue .fileStorageType }} selected {{end}} value="{{ $fileStorageTypeValue }}">{{ $fileStorageTypeName }}</option>
-                        {{end}}
+                        {{range $fileStorageTypeName, $fileStorageTypeValue := .fileStorageTypes}}
+                          <option {{if eq $fileStorageTypeValue $.plan.FileStorageType }} selected {{end}} value="{{ $fileStorageTypeValue }}">{{ $fileStorageTypeName }}</option>
                         {{end}}
                       </select>
                     </div>
