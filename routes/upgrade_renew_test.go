@@ -17,6 +17,8 @@ func Test_Init_Renew_And_Upgrade_Accounts(t *testing.T) {
 }
 
 func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
+	t.Skip()
+
 	models.DeleteAccountsForTest(t)
 	models.DeleteRenewalsForTest(t)
 	models.DeleteUpgradesForTest(t)

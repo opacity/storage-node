@@ -174,6 +174,9 @@ func checkUpgradeStatus(c *gin.Context) error {
 	}
 
 	upgrade, err := models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanInfo.ID, account.PlanInfo.ID)
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
 	//if upgrade.DurationInMonths != request.checkUpgradeStatusObject.DurationInMonths {
 	//	return ForbiddenResponse(c, errors.New("durationInMonths does not match durationInMonths "+
 	//		"when upgrade was initiated"))

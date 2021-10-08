@@ -34,6 +34,10 @@ var (
 	uptime time.Time
 )
 
+type PlanResponse struct {
+	Plans []utils.PlanInfo `json:"plans"`
+}
+
 const (
 	/*V1Path is a router group for the v1 version of storage node*/
 	V1Path = "/api/v1"
@@ -373,5 +377,5 @@ func getPlans(c *gin.Context) error {
 	if err != nil {
 		return NotFoundResponse(c, err)
 	}
-	return OkResponse(c, plans)
+	return OkResponse(c, PlanResponse{Plans: plans})
 }
