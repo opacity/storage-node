@@ -135,7 +135,7 @@ func Test_CheckRenewalStatusHandler_Returns_Status_OPCT_Renew_Success(t *testing
 	assert.NotEqual(t, completedFileStart.ExpiredAt, completedFileEnd.ExpiredAt)
 	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
 
-	assert.Equal(t, originalMonthsInSubscription+12, account.MonthsInSubscription)
+	assert.Equal(t, originalMonthsInSubscription+int(account.PlanInfo.MonthsInSubscription), account.MonthsInSubscription)
 	assert.True(t, account.MonthsInSubscription > int(account.PlanInfo.MonthsInSubscription))
 	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
