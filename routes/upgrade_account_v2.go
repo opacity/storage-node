@@ -14,13 +14,13 @@ import (
 )
 
 type getUpgradeV2AccountInvoiceObject struct {
-	PlanID uint `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
+	PlanID uint `json:"planId" validate:"required,gte=1" minimum:"1" example:"4"`
 }
 
 type checkUpgradeV2StatusObject struct {
 	MetadataKeys []string `json:"metadataKeys" validate:"required" example:"an array containing all your metadata keys"`
 	FileHandles  []string `json:"fileHandles" validate:"required" example:"an array containing all your file handles"`
-	PlanID       uint     `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
+	PlanID       uint     `json:"planId" validate:"required,gte=1" minimum:"1" example:"4"`
 }
 
 type getUpgradeV2AccountInvoiceReq struct {
@@ -129,6 +129,7 @@ func getAccountUpgradeV2Invoice(c *gin.Context) error {
 	upgradeV2 := models.Upgrade{
 		AccountID:     account.AccountID,
 		NewPlanInfoID: newPlanInfo.ID,
+		NewPlanInfo:   newPlanInfo,
 		OldPlanInfoID: account.PlanInfoID,
 		EthAddress:    ethAddr.String(),
 		EthPrivateKey: hex.EncodeToString(encryptedKeyInBytes),

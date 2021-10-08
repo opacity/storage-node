@@ -17,7 +17,7 @@ const Paid = "paid"
 const Expired = "expired"
 
 type accountCreateObj struct {
-	PlanId uint `json:"planId" validate:"required,gte=1" minimum:"1" example: "4"`
+	PlanId uint `json:"planId" validate:"required,gte=1" minimum:"1" example:"4"`
 }
 
 type accountCreateReq struct {

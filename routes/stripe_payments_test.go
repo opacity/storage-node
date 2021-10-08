@@ -2,7 +2,6 @@ package routes
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"math/big"
 	"net/http"
 	"testing"
@@ -48,7 +47,6 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 
 	w := httpPostRequestHelperForTest(t, StripeCreatePath, "v1", post)
 
-	fmt.Println(w.Body.String())
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	account, _ = models.GetAccountById(accountID)

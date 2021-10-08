@@ -21,12 +21,7 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	models.DeleteRenewalsForTest(t)
 	models.DeleteUpgradesForTest(t)
 
-	/*
-
-		First do a renewal and check that the expiration has moved forward 1 year
-
-	*/
-
+	/* First do a renewal and check that the expiration has moved forward 1 year */
 	checkRenewalStatusObj := checkRenewalStatusObject{
 		MetadataKeys: []string{utils.GenerateFileHandle()},
 		FileHandles:  []string{utils.GenerateFileHandle()},
@@ -85,20 +80,17 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentReceived, renewals[0].PaymentStatus)
 
-	/*
-
-		Now do an upgrade and check that the expiration date is at least as far in the future
-		as it was when the renewal was done.
-
-	*/
+	/* Now do an upgrade and check that the expiration date is at least as far in the future
+	as it was when the renewal was done. */
 
 	afterRenewMonthsInSubscription := account.MonthsInSubscription
 	afterRenewExpirationDate := account.ExpirationDate()
 
-	newPlanID := uint(3)
+	professionalPlan, err := models.GetPlanInfoByID(3)
+	assert.Nil(t, err)
 
 	checkUpgradeStatusObj := checkUpgradeStatusObject{
-		PlanID:       newPlanID,
+		PlanID:       professionalPlan.ID,
 		MetadataKeys: checkRenewalStatusObj.MetadataKeys,
 		FileHandles:  checkRenewalStatusObj.FileHandles,
 	}
@@ -110,11 +102,11 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 		requestBody:  b,
 	}
 
-	CreateUpgradeForTest(t, account, newPlanID)
+	CreateUpgradeForTest(t, account, professionalPlan.ID)
 
 	originalPlanID := account.PlanInfo.ID
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
+	upgrade, err := models.GetUpgradeFromAccountIDAndPlans(account.AccountID, professionalPlan.ID, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
@@ -134,12 +126,12 @@ func Test_Renew_And_Upgrade_Keeps_Expiration_Year(t *testing.T) {
 	assert.True(t, completedFileEnd.ExpiredAt.Unix() >= completedFileStart.ExpiredAt.Unix())
 	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
 
-	assert.Equal(t, newPlanID, account.PlanInfo.ID)
+	assert.Equal(t, professionalPlan.ID, account.PlanInfo.ID)
 	assert.True(t, account.MonthsInSubscription >= afterRenewMonthsInSubscription)
 	assert.True(t, account.ExpirationDate().Unix() >= afterRenewExpirationDate.Unix())
 	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
+	upgrade, err = models.GetUpgradeFromAccountIDAndPlans(account.AccountID, professionalPlan.ID, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentReceived, upgrade.PaymentStatus)
 }

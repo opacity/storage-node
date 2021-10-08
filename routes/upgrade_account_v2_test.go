@@ -25,8 +25,11 @@ func Test_GetAccountUpgradeV2InvoiceHandler_Returns_Invoice(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	models.DeleteUpgradesForTest(t)
 
+	businessPlan, err := models.GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
 	getInvoiceObj := getUpgradeV2AccountInvoiceObject{
-		PlanID: 4,
+		PlanID: businessPlan.ID,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getInvoiceObj)
