@@ -187,7 +187,7 @@ func Test_UpgradeCostInOPCT_Basic_To_Professional_None_Of_Subscription_Has_Passe
 	account := returnValidAccount()
 	DB.Create(&account)
 
-	professionalPlan, err := GetPlanInfoByID(2)
+	professionalPlan, err := GetPlanInfoByID(3)
 	assert.Nil(t, err)
 
 	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(professionalPlan)
@@ -197,14 +197,17 @@ func Test_UpgradeCostInOPCT_Basic_To_Professional_None_Of_Subscription_Has_Passe
 
 func Test_UpgradeCostInOPCT_None_Of_Subscription_Has_Passed(t *testing.T) {
 	account := returnValidAccount()
-	professionalPlan, err := GetPlanInfoByID(2)
+	professionalPlan, err := GetPlanInfoByID(3)
 	assert.Nil(t, err)
 	account.PlanInfo = professionalPlan
 	account.PlanInfoID = professionalPlan.ID
 
 	DB.Create(&account)
 
-	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(professionalPlan)
+	businessPlan, err := GetPlanInfoByID(4)
+	assert.Nil(t, err)
+
+	upgradeCostInOPCT, err := account.UpgradeCostInOPCT(businessPlan)
 	assert.Nil(t, err)
 	assert.Equal(t, 17.00, math.Ceil(upgradeCostInOPCT))
 }
@@ -652,7 +655,7 @@ func Test_MaxAllowedMetadataSizeInBytes(t *testing.T) {
 
 func Test_MaxAllowedMetadatas(t *testing.T) {
 	// @TODO: refactor this test, it's not really testing anything - upload file and test
-	basicPlan, err := GetPlanInfoByID(3)
+	basicPlan, err := GetPlanInfoByID(2)
 	assert.Nil(t, err)
 
 	account := returnValidAccount()
@@ -704,7 +707,7 @@ func Test_CanUpdateMetadata(t *testing.T) {
 }
 
 func Test_IncrementMetadataCount(t *testing.T) {
-	basicPlan, err := GetPlanInfoByID(3)
+	basicPlan, err := GetPlanInfoByID(2)
 	assert.Nil(t, err)
 
 	account := returnValidAccount()
@@ -802,18 +805,15 @@ func Test_UpgradeAccount(t *testing.T) {
 
 	professionalPlan, err := GetPlanInfoByID(3)
 	assert.Nil(t, err)
-	account.PlanInfo = professionalPlan
-	account.PlanInfoID = professionalPlan.ID
 
 	err = account.UpgradeAccount(professionalPlan)
 
 	assert.Nil(t, err)
 	assert.Equal(t, professionalPlan.StorageInGB, int(account.PlanInfo.StorageInGB))
 
-	newExpirationDate := account.ExpirationDate()
-	assert.NotEqual(t, startingExpirationDate, newExpirationDate)
+	assert.NotEqual(t, startingExpirationDate, account.ExpirationDate())
 	assert.NotEqual(t, startingMonthsInSubscription, account.MonthsInSubscription)
-	assert.NotEqual(t, startingStorageLimit, int(account.MonthsInSubscription))
+	assert.NotEqual(t, startingStorageLimit, int(account.PlanInfo.StorageInGB))
 }
 
 func Test_RenewAccount(t *testing.T) {
@@ -903,6 +903,8 @@ func Test_CreateSpaceUsedReportForPlanType(t *testing.T) {
 		accountPaid := returnValidAccount()
 		accountPaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
 		accountPaid.PaymentStatus = PaymentStatusType(utils.RandIndex(5) + 2)
+		accountPaid.PlanInfo = professionalPlan
+		accountPaid.PlanInfoID = professionalPlan.ID
 		if err := DB.Create(&accountPaid).Error; err != nil {
 			t.Fatalf("should have created account but didn't: " + err.Error())
 		}
@@ -918,6 +920,8 @@ func Test_CreateSpaceUsedReportForPlanType(t *testing.T) {
 	for i := 0; i < 4; i++ {
 		accountUnpaid := returnValidAccount()
 		accountUnpaid.StorageUsedInByte = int64(expectedSpaceUsed / 4)
+		accountUnpaid.PlanInfo = professionalPlan
+		accountUnpaid.PlanInfoID = professionalPlan.ID
 		if err := DB.Create(&accountUnpaid).Error; err != nil {
 			t.Fatalf("should have created account but didn't: " + err.Error())
 		}
@@ -958,7 +962,7 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 	}
 
 	accounts := []Account{}
-	DB.Find(&accounts)
+	DB.Preload("PlanInfo").Find(&accounts)
 	assert.Equal(t, 4, len(accounts))
 
 	// after cutoff time and payment has been received
@@ -984,19 +988,23 @@ func Test_PurgeOldUnpaidAccounts(t *testing.T) {
 
 	accountToBeDeletedID := accounts[3].AccountID
 
-	DB.Save(&accounts[0])
-	DB.Save(&accounts[1])
-	DB.Save(&accounts[2])
-	DB.Save(&accounts[3])
+	err := DB.Save(&accounts[0]).Error
+	assert.Nil(t, err)
+	err = DB.Save(&accounts[1]).Error
+	assert.Nil(t, err)
+	err = DB.Save(&accounts[2]).Error
+	assert.Nil(t, err)
+	err = DB.Save(&accounts[3]).Error
+	assert.Nil(t, err)
 
 	PurgeOldUnpaidAccounts(utils.Env.AccountRetentionDays)
 
 	accounts = []Account{}
-	DB.Find(&accounts)
+	DB.Preload("PlanInfo").Find(&accounts)
 	assert.Equal(t, 3, len(accounts))
 
 	accounts = []Account{}
-	DB.Where("account_id = ?", accountToBeDeletedID).Find(&accounts)
+	DB.Preload("PlanInfo").Where("account_id = ?", accountToBeDeletedID).Find(&accounts)
 	assert.Equal(t, 0, len(accounts))
 }
 
@@ -1013,7 +1021,7 @@ func Test_PurgeOldUnpaidAccounts_Stripe_Payment_Is_Deleted(t *testing.T) {
 	DB.Save(&account)
 
 	accounts := []Account{}
-	DB.Find(&accounts)
+	DB.Preload("PlanInfo").Find(&accounts)
 	assert.Equal(t, 1, len(accounts))
 
 	stripePayments := []StripePayment{}
@@ -1023,7 +1031,7 @@ func Test_PurgeOldUnpaidAccounts_Stripe_Payment_Is_Deleted(t *testing.T) {
 	PurgeOldUnpaidAccounts(utils.Env.AccountRetentionDays)
 
 	accounts = []Account{}
-	DB.Find(&accounts)
+	DB.Preload("PlanInfo").Find(&accounts)
 	assert.Equal(t, 0, len(accounts))
 
 	stripePayments = []StripePayment{}
@@ -1379,12 +1387,12 @@ func Test_DeleteExpiredAccounts(t *testing.T) {
 	assert.Nil(t, err)
 
 	accounts := []Account{}
-	DB.Find(&accounts)
+	DB.Preload("PlanInfo").Find(&accounts)
 	assert.Equal(t, 1, len(accounts))
 	assert.Equal(t, accountNotExpired.AccountID, accounts[0].AccountID)
 
 	expiredAccounts := []ExpiredAccount{}
-	DB.Find(&expiredAccounts)
+	DB.Preload("PlanInfo").Find(&expiredAccounts)
 	assert.Equal(t, 1, len(expiredAccounts))
 	assert.Equal(t, accountExpired.AccountID, expiredAccounts[0].AccountID)
 }
@@ -1400,7 +1408,7 @@ func Test_SetAccountsToLowerPaymentStatusByUpdateTime(t *testing.T) {
 	}
 
 	accounts := []Account{}
-	DB.Find(&accounts)
+	DB.Preload("PlanInfo").Find(&accounts)
 	assert.Equal(t, 2, len(accounts))
 
 	accounts[0].PaymentStatus = GasTransferInProgress

@@ -323,6 +323,8 @@ func Test_Upgrade_GetTotalCostInWei(t *testing.T) {
 }
 
 func Test_SetUpgradesToLowerPaymentStatusByUpdateTime(t *testing.T) {
+	Test_Init_Upgrades(t)
+
 	DeleteUpgradesForTest(t)
 
 	for i := 0; i < 2; i++ {
@@ -333,14 +335,16 @@ func Test_SetUpgradesToLowerPaymentStatusByUpdateTime(t *testing.T) {
 	}
 
 	upgrades := []Upgrade{}
-	DB.Find(&upgrades)
+	DB.Preload("NewPlanInfo").Find(&upgrades)
 	assert.Equal(t, 2, len(upgrades))
 
 	upgrades[0].PaymentStatus = GasTransferInProgress
 	upgrades[1].PaymentStatus = GasTransferInProgress
 
-	DB.Save(&upgrades[0])
-	DB.Save(&upgrades[1])
+	err := DB.Save(&upgrades[0]).Error
+	assert.Nil(t, err)
+	err = DB.Save(&upgrades[1]).Error
+	assert.Nil(t, err)
 
 	// after cutoff time
 	// should NOT get set to lower status
@@ -349,7 +353,7 @@ func Test_SetUpgradesToLowerPaymentStatusByUpdateTime(t *testing.T) {
 	// should get set to lower status
 	DB.Exec("UPDATE upgrades set updated_at = ? WHERE account_id = ?;", time.Now().Add(-1*3*24*time.Hour), upgrades[1].AccountID)
 
-	err := SetUpgradesToLowerPaymentStatusByUpdateTime(GasTransferInProgress, time.Now().Add(-1*2*24*time.Hour))
+	err = SetUpgradesToLowerPaymentStatusByUpdateTime(GasTransferInProgress, time.Now().Add(-1*2*24*time.Hour))
 	assert.Nil(t, err)
 
 	upgradesFromDB := []Upgrade{}

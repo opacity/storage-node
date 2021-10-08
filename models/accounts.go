@@ -149,7 +149,7 @@ func (account *Account) ExpirationDate() time.Time {
 	account.ExpiredAt = account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
 	err := DB.Model(&account).Update("expired_at", account.ExpiredAt).Error
 	utils.LogIfError(err, nil)
-	return account.ExpiredAt
+	return account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0)
 }
 
 /*Cost returns the expected price of the subscription*/
@@ -385,15 +385,21 @@ func (account *Account) UpgradeAccount(newPlanInfo utils.PlanInfo) error {
 		return nil
 	}
 
-	monthsSinceCreation := differenceInMonths(account.CreatedAt, time.Now())
-
-	account.MonthsInSubscription = monthsSinceCreation + int(newPlanInfo.MonthsInSubscription)
-	return DB.Model(account).Updates(map[string]interface{}{
-		"months_in_subscription": account.MonthsInSubscription,
+	newMonthsInSubscription := differenceInMonths(account.CreatedAt, time.Now()) + int(newPlanInfo.MonthsInSubscription)
+	err := DB.Model(account).Updates(map[string]interface{}{
+		"months_in_subscription": newMonthsInSubscription,
 		"plan_info_id":           newPlanInfo.ID,
 		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription, 0),
 		"updated_at":             time.Now(),
 	}).Error
+
+	if err == nil {
+		account.MonthsInSubscription = newMonthsInSubscription
+		account.PlanInfo = newPlanInfo
+		account.PlanInfoID = newPlanInfo.ID
+	}
+
+	return err
 }
 
 func (account *Account) RenewAccount() error {

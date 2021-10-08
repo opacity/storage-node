@@ -153,12 +153,14 @@ func MultipartUploadOfSingleChunk(t *testing.T, f *File) (*s3.CompletedPart, err
 }
 
 func SetTestPlans() {
+	DB.AutoMigrate(&utils.PlanInfo{})
 	plans := []utils.PlanInfo{}
 	results := DB.Find(&plans)
 
 	if results.RowsAffected == 0 {
 		workingDir, _ := os.Getwd()
-		localFilePath := workingDir + string(os.PathSeparator) + "test_files" + string(os.PathSeparator) + "plans.json"
+		testDir := filepath.Dir(workingDir)
+		localFilePath := testDir + string(os.PathSeparator) + "test_files" + string(os.PathSeparator) + "plans.json"
 
 		plansFile, err := os.Open(localFilePath)
 		if err != nil {

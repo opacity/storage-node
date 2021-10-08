@@ -182,8 +182,8 @@ func (stripePayment *StripePayment) CheckAccountCreationOPCTTransaction() (bool,
 }
 
 /*CheckUpgradeOPCTTransaction checks the status of an OPCT payment to an upgrade. */
-func (stripePayment *StripePayment) CheckUpgradeOPCTTransaction(account Account, planID uint) (bool, error) {
-	upgrade, err := GetUpgradeFromAccountIDAndPlans(account.AccountID, planID, account.PlanInfo.ID)
+func (stripePayment *StripePayment) CheckUpgradeOPCTTransaction(account Account, newPlanID uint) (bool, error) {
+	upgrade, err := GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, account.PlanInfo.ID)
 	if err != nil {
 		return false, err
 	}

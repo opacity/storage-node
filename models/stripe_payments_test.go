@@ -250,7 +250,7 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_incomplete(t *testing.
 
 func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
+	stripePayment, upgrade, account := returnValidUpgradeStripePaymentForTest()
 	stripePayment.OpctTxStatus = OpctTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -262,7 +262,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, account.PlanInfo.ID)
+	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, upgrade.NewPlanInfoID)
 	assert.True(t, success)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxSuccess, stripePayment.OpctTxStatus)
@@ -271,7 +271,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 
 func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
+	stripePayment, upgrade, account := returnValidUpgradeStripePaymentForTest()
 	stripePayment.OpctTxStatus = OpctTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -283,7 +283,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, account.PlanInfo.ID)
+	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, upgrade.NewPlanInfoID)
 	assert.Nil(t, err)
 	assert.False(t, success)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
