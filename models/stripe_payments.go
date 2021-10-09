@@ -134,8 +134,8 @@ func (stripePayment *StripePayment) SendAccountOPCT(networkID uint) error {
 }
 
 /*SendUpgradeOPCT sends OPCT to the account being upgraded, associated with a stripe payment. */
-func (stripePayment *StripePayment) SendUpgradeOPCT(account Account, newStorageLimit int, networkID uint) error {
-	upgrade, _ := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
+func (stripePayment *StripePayment) SendUpgradeOPCT(account Account, planID uint, networkID uint) error {
+	upgrade, _ := GetUpgradeFromAccountIDAndPlans(account.AccountID, planID, account.PlanInfo.ID)
 
 	costInWei := services.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost))
 
@@ -182,8 +182,8 @@ func (stripePayment *StripePayment) CheckAccountCreationOPCTTransaction() (bool,
 }
 
 /*CheckUpgradeOPCTTransaction checks the status of an OPCT payment to an upgrade. */
-func (stripePayment *StripePayment) CheckUpgradeOPCTTransaction(account Account, newStorageLimit int) (bool, error) {
-	upgrade, err := GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, int(account.StorageLimit))
+func (stripePayment *StripePayment) CheckUpgradeOPCTTransaction(account Account, newPlanID uint) (bool, error) {
+	upgrade, err := GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, account.PlanInfo.ID)
 	if err != nil {
 		return false, err
 	}

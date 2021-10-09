@@ -34,7 +34,11 @@ func Test_GetAccountRenewV2InvoiceHandler_Returns_Invoice(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
 
-	account.StorageLimit = models.StorageLimitType(1024)
+	professionalPlan, err := models.GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
+
 	account.CreatedAt = time.Now().Add(time.Hour * 24 * 360 * -1)
 	models.DB.Save(&account)
 
@@ -63,7 +67,11 @@ func Test_GetAccountRenewV2InvoiceHandler_ReturnsErrorIfExpirationDateTooFarInFu
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
 
-	account.StorageLimit = models.StorageLimitType(1024)
+	professionalPlan, err := models.GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
+
 	account.MonthsInSubscription = 13
 	models.DB.Save(&account)
 
@@ -129,8 +137,8 @@ func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Success(t *testi
 	assert.NotEqual(t, completedFileStart.ExpiredAt, completedFileEnd.ExpiredAt)
 	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
 
-	assert.Equal(t, originalMonthsInSubscription+12, account.MonthsInSubscription)
-	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
+	assert.Equal(t, originalMonthsInSubscription+int(account.PlanInfo.MonthsInSubscription), account.MonthsInSubscription)
+	assert.True(t, account.MonthsInSubscription > int(account.PlanInfo.MonthsInSubscription))
 	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
 	renewals, err = models.GetRenewalsFromAccountID(account.AccountID)
@@ -182,7 +190,7 @@ func Test_CheckRenewalV2StatusHandler_Returns_Status_OPCT_Renew_Still_Pending(t 
 	assert.Nil(t, err)
 	assert.Equal(t, originalMonthsInSubscription, account.MonthsInSubscription)
 	assert.NotEqual(t, models.InitialPaymentReceived, account.PaymentStatus)
-	assert.False(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
+	assert.False(t, account.MonthsInSubscription > int(account.PlanInfo.MonthsInSubscription))
 	assert.Contains(t, w.Body.String(), `Incomplete`)
 
 	renewals, err = models.GetRenewalsFromAccountID(account.AccountID)
@@ -209,7 +217,7 @@ func returnRenewalV2ForTest(t *testing.T, account models.Account) models.Renewal
 
 	return models.Renewal{
 		AccountID:        account.AccountID,
-		DurationInMonths: models.DefaultMonthsPerSubscription,
+		DurationInMonths: int(account.PlanInfo.MonthsInSubscription),
 		PaymentStatus:    models.InitialPaymentInProgress,
 		OpctCost:         renewalCostInOPCT,
 		EthAddress:       ethAddress.String(),

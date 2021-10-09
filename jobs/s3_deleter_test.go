@@ -12,6 +12,7 @@ import (
 func Test_Init_S3_Deleter(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
+	models.SetTestPlans()
 }
 
 func Test_DeleteAllExpiredCompletedFiles(t *testing.T) {

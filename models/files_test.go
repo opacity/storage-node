@@ -14,6 +14,7 @@ import (
 func Test_Init_Files(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
+	SetTestPlans()
 }
 
 func Test_Valid_File_Passes(t *testing.T) {

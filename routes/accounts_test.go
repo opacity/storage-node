@@ -17,8 +17,7 @@ import (
 
 func returnValidCreateAccountBody() accountCreateObj {
 	return accountCreateObj{
-		StorageLimit:     int(models.BasicStorageLimit),
-		DurationInMonths: 12,
+		PlanId: 2,
 	}
 }
 
@@ -42,17 +41,19 @@ func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.Priva
 	accountId, privateKeyToSignWith := generateValidateAccountId(t)
 	ethAddress, privateKey := services.GenerateWallet()
 
+	basicPlan, _ := models.GetPlanInfoByID(2)
+
 	return models.Account{
 		AccountID:            accountId,
-		MonthsInSubscription: models.DefaultMonthsPerSubscription,
-		StorageLocation:      "https://createdInRoutesAccountsTest.com/12345",
-		StorageLimit:         models.BasicStorageLimit,
+		MonthsInSubscription: int(basicPlan.MonthsInSubscription),
 		StorageUsedInByte:    10 * 1e9,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
-		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		ExpiredAt:            time.Now().AddDate(0, int(basicPlan.MonthsInSubscription), 0),
 		NetworkIdPaid:        utils.TestNetworkID,
+		PlanInfoID:           basicPlan.ID,
+		PlanInfo:             basicPlan,
 	}, privateKeyToSignWith
 }
 
@@ -92,26 +93,6 @@ func Test_ExpectErrorIfVerificationFails(t *testing.T) {
 	w := httpPostRequestHelperForTest(t, AccountsPath, "v1", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
-}
-
-func Test_ExpectErrorWithInvalidStorageLimit(t *testing.T) {
-	body := returnValidCreateAccountBody()
-	body.StorageLimit = 9
-	post := returnValidCreateAccountReq(t, body)
-
-	w := httpPostRequestHelperForTest(t, AccountsPath, "v1", post)
-	// Check to see if the response was what you expected
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-}
-
-func Test_ExpectErrorWithInvalidDurationInMonths(t *testing.T) {
-	body := returnValidCreateAccountBody()
-	body.DurationInMonths = 0
-	post := returnValidCreateAccountReq(t, body)
-
-	w := httpPostRequestHelperForTest(t, AccountsPath, "v1", post)
-	// Check to see if the response was what you expected
-	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
 func Test_CheckAccountPaymentStatusHandler_ExpectErrorIfNoAccount(t *testing.T) {
@@ -211,7 +192,7 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 	}
 
 	stripeToken := models.RandTestStripeToken()
-	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken, account.AccountID)
+	charge, _ := services.CreateCharge(float64(account.PlanInfo.CostInUSD), stripeToken, account.AccountID)
 
 	stripePayment := models.StripePayment{
 		StripeToken: stripeToken,
@@ -239,7 +220,6 @@ func Test_UpdateApiVersion(t *testing.T) {
 		Timestamp: time.Now().Unix(),
 	}, privateKey)
 	account.ApiVersion = 1
-	account.StorageLocation = "1"
 
 	if err := models.DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())

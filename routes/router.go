@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "github.com/opacity/storage-node/docs"
+	"github.com/opacity/storage-node/models"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
@@ -32,6 +33,10 @@ import (
 var (
 	uptime time.Time
 )
+
+type PlanResponse struct {
+	Plans []utils.PlanInfo `json:"plans"`
+}
 
 const (
 	/*V1Path is a router group for the v1 version of storage node*/
@@ -173,11 +178,6 @@ var errMaintenance = errors.New("maintenance in progress, currently rejecting wr
 // StatusRes ...
 type StatusRes struct {
 	Status string `json:"status" example:"status of the request"`
-}
-
-// PlanResponse ...
-type PlanResponse struct {
-	Plans utils.PlanResponseType `json:"plans"`
 }
 
 func init() {
@@ -328,19 +328,15 @@ func setupAdminPaths(router *gin.Engine) {
 func setupAdminPlansPaths(adminGroup *gin.RouterGroup) {
 	plansGroup := adminGroup.Group("/plans")
 
-	plansGroup.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "plans-list.tmpl", gin.H{
-			"title": "Change plans",
-			"plans": utils.Env.Plans,
-		})
-	})
+	plansGroup.GET("/", AdminPlansGetAllHandler())
 	plansGroup.GET("/edit/:plan", AdminPlansGetHandler())
 	plansGroup.GET("/confirm-remove/:plan", AdminPlansRemoveConfirmHandler())
 	plansGroup.POST("/remove/:plan", AdminPlansRemoveHandler())
 	plansGroup.POST("/", AdminPlansChangeHandler())
 	plansGroup.GET("/add", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "plan-add.tmpl", gin.H{
-			"title": "Add plan",
+			"title":            "Add plan",
+			"fileStorageTypes": GetFileStorageTypesMap(),
 		})
 	})
 	plansGroup.POST("/add", AdminPlansAddHandler())
@@ -368,7 +364,8 @@ func setupAdminSmartContractPaths(adminGroup *gin.RouterGroup) {
 // @Description get the plans we sell
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} routes.PlanResponse
+// @Success 200 {array} utils.PlanInfo
+// @Failure 404 {string} string "no plans added"
 // @Router /plans [get]
 /*GetPlansHandler is a handler for getting the plans*/
 func GetPlansHandler() gin.HandlerFunc {
@@ -376,7 +373,9 @@ func GetPlansHandler() gin.HandlerFunc {
 }
 
 func getPlans(c *gin.Context) error {
-	return OkResponse(c, PlanResponse{
-		Plans: utils.Env.Plans,
-	})
+	plans, err := models.GetAllPlans()
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+	return OkResponse(c, PlanResponse{Plans: plans})
 }

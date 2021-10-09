@@ -25,8 +25,7 @@ func Test_GetAccountUpgradeInvoiceHandler_Returns_Invoice(t *testing.T) {
 	models.DeleteUpgradesForTest(t)
 
 	getInvoiceObj := getUpgradeAccountInvoiceObject{
-		StorageLimit:     2048,
-		DurationInMonths: 12,
+		PlanID: 4,
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getInvoiceObj)
@@ -39,7 +38,11 @@ func Test_GetAccountUpgradeInvoiceHandler_Returns_Invoice(t *testing.T) {
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
 
-	account.StorageLimit = models.StorageLimitType(1024)
+	professionalPlan, err := models.GetPlanInfoByID(3)
+	assert.Nil(t, err)
+	account.PlanInfo = professionalPlan
+	account.PlanInfoID = professionalPlan.ID
+
 	account.CreatedAt = time.Now().Add(time.Hour * 24 * (365 / 2) * -1)
 	models.DB.Save(&account)
 
@@ -54,13 +57,12 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Success(t *testi
 	models.DeleteAccountsForTest(t)
 	models.DeleteUpgradesForTest(t)
 
-	newStorageLimit := 1024
+	newPlanID := uint(3)
 
 	checkUpgradeStatusObj := checkUpgradeStatusObject{
-		StorageLimit:     newStorageLimit,
-		DurationInMonths: models.DefaultMonthsPerSubscription,
-		MetadataKeys:     []string{utils.GenerateFileHandle()},
-		FileHandles:      []string{utils.GenerateFileHandle()},
+		PlanID:       newPlanID,
+		MetadataKeys: []string{utils.GenerateFileHandle()},
+		FileHandles:  []string{utils.GenerateFileHandle()},
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeStatusObj)
@@ -77,11 +79,11 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Success(t *testi
 	account.PaymentStatus = models.PaymentRetrievalComplete
 	models.DB.Save(&account)
 
-	CreateUpgradeForTest(t, account, newStorageLimit)
+	CreateUpgradeForTest(t, account, newPlanID)
 
-	originalStorageLimit := int(account.StorageLimit)
+	originalPlanID := account.PlanInfo.ID
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
+	upgrade, err := models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
@@ -108,11 +110,11 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Success(t *testi
 	assert.NotEqual(t, completedFileStart.ExpiredAt, completedFileEnd.ExpiredAt)
 	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
 
-	assert.Equal(t, newStorageLimit, int(account.StorageLimit))
-	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
+	assert.Equal(t, newPlanID, account.PlanInfo.ID)
+	assert.True(t, account.MonthsInSubscription > int(account.PlanInfo.MonthsInSubscription))
 	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
+	upgrade, err = models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentReceived, upgrade.PaymentStatus)
 }
@@ -124,13 +126,12 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Still_Pending(t 
 	models.DeleteUpgradesForTest(t)
 	models.DeleteStripePaymentsForTest(t)
 
-	newStorageLimit := 1024
+	newPlanID := uint(3)
 
 	checkUpgradeStatusObj := checkUpgradeStatusObject{
-		StorageLimit:     newStorageLimit,
-		DurationInMonths: models.DefaultMonthsPerSubscription,
-		MetadataKeys:     []string{utils.GenerateFileHandle()},
-		FileHandles:      []string{utils.GenerateFileHandle()},
+		PlanID:       newPlanID,
+		MetadataKeys: []string{utils.GenerateFileHandle()},
+		FileHandles:  []string{utils.GenerateFileHandle()},
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeStatusObj)
@@ -147,11 +148,11 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Still_Pending(t 
 	account.PaymentStatus = models.PaymentRetrievalComplete
 	models.DB.Save(&account)
 
-	CreateUpgradeForTest(t, account, newStorageLimit)
+	CreateUpgradeForTest(t, account, newPlanID)
 
-	originalStorageLimit := int(account.StorageLimit)
+	originalPlanID := account.PlanInfo.ID
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
+	upgrade, err := models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
@@ -165,12 +166,12 @@ func Test_CheckUpgradeStatusHandler_Returns_Status_OPCT_Upgrade_Still_Pending(t 
 
 	account, err = models.GetAccountById(account.AccountID)
 	assert.Nil(t, err)
-	assert.NotEqual(t, newStorageLimit, int(account.StorageLimit))
+	assert.NotEqual(t, newPlanID, account.PlanInfo.ID)
 	assert.NotEqual(t, models.InitialPaymentReceived, account.PaymentStatus)
-	assert.False(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
+	assert.False(t, account.MonthsInSubscription > int(account.PlanInfo.MonthsInSubscription))
 	assert.Contains(t, w.Body.String(), `Incomplete`)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
+	upgrade, err = models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 }
@@ -267,14 +268,13 @@ func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 	models.DeleteAccountsForTest(t)
 	models.DeleteUpgradesForTest(t)
 
-	newStorageLimit := 1024
-	newStorageLimit2 := 2048
+	newPlanID := uint(3)
+	newPlanID2 := uint(4)
 
 	checkUpgradeStatusObj := checkUpgradeStatusObject{
-		StorageLimit:     newStorageLimit2,
-		DurationInMonths: models.DefaultMonthsPerSubscription,
-		MetadataKeys:     []string{utils.GenerateFileHandle()},
-		FileHandles:      []string{utils.GenerateFileHandle()},
+		PlanID:       newPlanID2,
+		MetadataKeys: []string{utils.GenerateFileHandle()},
+		FileHandles:  []string{utils.GenerateFileHandle()},
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, checkUpgradeStatusObj)
@@ -291,24 +291,20 @@ func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 	account.PaymentStatus = models.PaymentRetrievalComplete
 	models.DB.Save(&account)
 
-	CreateUpgradeForTest(t, account, newStorageLimit)
+	CreateUpgradeForTest(t, account, newPlanID)
 
-	originalStorageLimit := int(account.StorageLimit)
+	originalPlanID := account.PlanInfo.ID
 
-	upgrade, err := models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
+	upgrade, err := models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
-	upgrade2 := returnUpgradeForTest(t, account, newStorageLimit2)
-	upgrade2.NewStorageLimit = models.StorageLimitType(newStorageLimit2)
+	upgrade2 := returnUpgradeForTest(t, account, newPlanID2)
 
-	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(utils.Env.Plans[newStorageLimit2].StorageInGB,
-		models.DefaultMonthsPerSubscription)
-	//upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[newStorageLimit2].StorageInGB,
-	//	models.DefaultMonthsPerSubscription)
+	newPlanInfo2, _ := models.GetPlanInfoByID(newPlanID2)
+	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(newPlanInfo2)
 
 	upgrade2.OpctCost = upgradeCostInOPCT
-	//upgrade2.UsdCost = upgradeCostInUSD
 
 	err = models.DB.Create(&upgrade2).Error
 	assert.Nil(t, err)
@@ -336,15 +332,15 @@ func Test_CheckUpgradeStatusHandler_Multiple_Upgrades(t *testing.T) {
 	assert.NotEqual(t, completedFileStart.ExpiredAt, completedFileEnd.ExpiredAt)
 	assert.Equal(t, completedFileEnd.ExpiredAt, account.ExpirationDate())
 
-	assert.Equal(t, newStorageLimit2, int(account.StorageLimit))
-	assert.True(t, account.MonthsInSubscription > models.DefaultMonthsPerSubscription)
+	assert.Equal(t, newPlanID2, account.PlanInfo.ID)
+	assert.True(t, account.MonthsInSubscription > int(account.PlanInfo.MonthsInSubscription))
 	assert.Contains(t, w.Body.String(), `Success with OPCT`)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit, originalStorageLimit)
+	upgrade, err = models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
-	upgrade, err = models.GetUpgradeFromAccountIDAndStorageLimits(account.AccountID, newStorageLimit2, originalStorageLimit)
+	upgrade, err = models.GetUpgradeFromAccountIDAndPlans(account.AccountID, newPlanID2, originalPlanID)
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentReceived, upgrade.PaymentStatus)
 }
@@ -373,8 +369,8 @@ func makeMetadataForTest(metadataKey string, key string) {
 	}, ttl)
 }
 
-func CreateUpgradeForTest(t *testing.T, account models.Account, newStorageLimit int) models.Upgrade {
-	upgrade := returnUpgradeForTest(t, account, newStorageLimit)
+func CreateUpgradeForTest(t *testing.T, account models.Account, newPlanId uint) models.Upgrade {
+	upgrade := returnUpgradeForTest(t, account, newPlanId)
 
 	if err := models.DB.Create(&upgrade).Error; err != nil {
 		t.Fatalf("should have created upgrade but didn't: " + err.Error())
@@ -383,23 +379,21 @@ func CreateUpgradeForTest(t *testing.T, account models.Account, newStorageLimit 
 	return upgrade
 }
 
-func returnUpgradeForTest(t *testing.T, account models.Account, newStorageLimit int) models.Upgrade {
+func returnUpgradeForTest(t *testing.T, account models.Account, newPlanId uint) models.Upgrade {
 	abortIfNotTesting(t)
 
 	ethAddress, privateKey := services.GenerateWallet()
 
-	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(utils.Env.Plans[newStorageLimit].StorageInGB,
-		models.DefaultMonthsPerSubscription)
-	//upgradeCostInUSD, _ := account.UpgradeCostInUSD(utils.Env.Plans[newStorageLimit].StorageInGB,
-	//	models.DefaultMonthsPerSubscription)
+	plan, _ := models.GetPlanInfoByID(newPlanId)
+	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(plan)
 
 	return models.Upgrade{
-		AccountID:        account.AccountID,
-		NewStorageLimit:  models.StorageLimitType(newStorageLimit),
-		OldStorageLimit:  account.StorageLimit,
-		DurationInMonths: models.DefaultMonthsPerSubscription,
-		PaymentStatus:    models.InitialPaymentInProgress,
-		OpctCost:         upgradeCostInOPCT,
+		AccountID:     account.AccountID,
+		NewPlanInfoID: plan.ID,
+		NewPlanInfo:   plan,
+		OldPlanInfoID: account.PlanInfo.ID,
+		PaymentStatus: models.InitialPaymentInProgress,
+		OpctCost:      upgradeCostInOPCT,
 		//UsdCost:          upgradeCostInUSD,
 		EthAddress:    ethAddress.String(),
 		EthPrivateKey: hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),

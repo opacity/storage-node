@@ -10,6 +10,7 @@ import (
 func Test_Init_PublicShare(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
+	SetTestPlans()
 }
 
 func Test_Get_PublicShare_By_ID(t *testing.T) {

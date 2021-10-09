@@ -51,17 +51,19 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 
 	ethAddress, privateKey := services.GenerateWallet()
 
+	basicPlan, _ := models.GetPlanInfoByID(2)
+
 	account := models.Account{
 		AccountID:            accountID,
-		MonthsInSubscription: models.DefaultMonthsPerSubscription,
-		StorageLocation:      "https://createdInRoutesTestUtils.com/12345",
-		StorageLimit:         models.BasicStorageLimit,
+		MonthsInSubscription: int(basicPlan.MonthsInSubscription),
 		StorageUsedInByte:    defaultStorageUsedInByteForTest,
 		PaymentStatus:        models.InitialPaymentInProgress,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		ExpiredAt:            time.Now().AddDate(0, int(basicPlan.MonthsInSubscription), 0),
 		NetworkIdPaid:        utils.TestNetworkID,
+		PlanInfoID:           basicPlan.ID,
+		PlanInfo:             basicPlan,
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -80,17 +82,19 @@ func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 
 	ethAddress, privateKey := services.GenerateWallet()
 
+	basicPlan, _ := models.GetPlanInfoByID(2)
+
 	account := models.Account{
 		AccountID:            accountID,
-		MonthsInSubscription: models.DefaultMonthsPerSubscription,
-		StorageLocation:      "https://createdInRoutesTestUtils.com/12345",
-		StorageLimit:         models.BasicStorageLimit,
+		MonthsInSubscription: int(basicPlan.MonthsInSubscription),
 		StorageUsedInByte:    defaultStorageUsedInByteForTest,
 		PaymentStatus:        models.InitialPaymentReceived,
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
-		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		ExpiredAt:            time.Now().AddDate(0, int(basicPlan.MonthsInSubscription), 0),
 		NetworkIdPaid:        utils.TestNetworkID,
+		PlanInfoID:           basicPlan.ID,
+		PlanInfo:             basicPlan,
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -148,6 +152,7 @@ func setupTests(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
 	gin.SetMode(gin.TestMode)
+	models.SetTestPlans()
 	err := services.InitStripe(utils.Env.StripeKeyTest)
 	assert.Nil(t, err)
 }

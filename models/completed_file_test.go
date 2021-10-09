@@ -11,6 +11,7 @@ import (
 func Test_Init_Completed_File(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
+	SetTestPlans()
 }
 
 func Test_GetAllExpiredCompletedFiles(t *testing.T) {

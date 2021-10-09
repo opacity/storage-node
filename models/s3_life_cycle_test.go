@@ -11,6 +11,7 @@ import (
 func Test_Init_S3_Life_Cycle(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.DatabaseURL)
+	SetTestPlans()
 }
 func Test_Update(t *testing.T) {
 	objectName := "abc"
