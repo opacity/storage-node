@@ -45,6 +45,15 @@ func uploadFileSia(c *gin.Context) error {
 		return err
 	}
 
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyAccountPlan(account, models.Sia, c); err != nil {
+		return err
+	}
+
 	fileID := request.uploadFileSiaObj.FileHandle
 
 	siaProgressFile, err := models.GetSiaProgressFileById(fileID)

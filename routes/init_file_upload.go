@@ -70,6 +70,10 @@ func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error 
 		return err
 	}
 
+	if err := verifyAccountPlan(account, models.S3, c); err != nil {
+		return err
+	}
+
 	if err := CheckHaveEnoughStorageSpace(account, request.initFileUploadObj.FileSizeInByte, c); err != nil {
 		return err
 	}

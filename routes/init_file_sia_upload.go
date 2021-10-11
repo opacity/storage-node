@@ -74,6 +74,10 @@ func initFileSiaUploadWithRequest(request InitFileSiaUploadReq, c *gin.Context) 
 		return err
 	}
 
+	if err := verifyAccountPlan(account, models.Sia, c); err != nil {
+		return err
+	}
+
 	if err := CheckHaveEnoughStorageSpace(account, request.initFileSiaUploadObj.FileSizeInByte, c); err != nil {
 		return err
 	}

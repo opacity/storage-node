@@ -64,6 +64,15 @@ func uploadFile(c *gin.Context) error {
 		return err
 	}
 
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyAccountPlan(account, models.S3, c); err != nil {
+		return err
+	}
+
 	return uploadChunk(request, c)
 }
 

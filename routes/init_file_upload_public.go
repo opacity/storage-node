@@ -52,6 +52,10 @@ func initFileUploadPublicWithRequest(request InitFileUploadReq, c *gin.Context) 
 		return err
 	}
 
+	if err := verifyAccountPlan(account, models.S3, c); err != nil {
+		return err
+	}
+
 	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataPublicKey(request.initFileUploadObj.FileHandle), "")
 	if err != nil {
 		return InternalErrorResponse(c, err)

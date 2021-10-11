@@ -58,6 +58,10 @@ func DeleteFileSiaByID(fileID, publicKey string, account models.Account, c *gin.
 		return err
 	}
 
+	if err := verifyAccountPlan(account, models.Sia, c); err != nil {
+		return err
+	}
+
 	if err := verifyPermissions(publicKey, fileID, completedFile.ModifierHash, c); err != nil {
 		return err
 	}

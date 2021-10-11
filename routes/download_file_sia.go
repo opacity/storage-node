@@ -37,6 +37,16 @@ func downloadFileSia(c *gin.Context) error {
 	if err := verifyAndParseBodyRequest(&request, c); err != nil {
 		return err
 	}
+
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyAccountPlan(account, models.Sia, c); err != nil {
+		return err
+	}
+
 	c.Request.Body = ioutil.NopCloser(bytes.NewBuffer(nil)) // don't care about the body for the rest of the req
 	c.Request.ContentLength = 0
 
