@@ -30,7 +30,9 @@ func Test_Upload_File_Bad_Request(t *testing.T) {
 }
 
 func Test_Upload_File_Without_Init(t *testing.T) {
-	_, privateKey := generateValidateAccountId(t)
+	accountId, privateKey := generateValidateAccountId(t)
+	CreatePaidAccountForTest(t, accountId)
+
 	uploadObj := ReturnValidUploadFileBodyForTest(t)
 	request := ReturnValidUploadFileReqForTest(t, uploadObj, privateKey)
 
