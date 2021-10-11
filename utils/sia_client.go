@@ -23,9 +23,8 @@ func InitSiaClient() {
 	}
 
 	opts.Password = Env.SiaApiPassword
-	if Env.GoEnv != "localhost" {
-		opts.Address = "sia:9980"
-	}
+	opts.Address = Env.SiaNodeAddress
+
 	siaClient = sia_client.New(opts)
 }
 

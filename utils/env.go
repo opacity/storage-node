@@ -50,6 +50,7 @@ type StorageNodeEnv struct {
 
 	// Sia
 	SiaApiPassword string `env:"SIA_API_PASSWORD,notEmpty"`
+	SiaNodeAddress string `env:"SIA_NODE_ADDRESS" envDefault:"sia:9980"`
 
 	// Key to encrypt the eth private keys that we store in the accounts table
 	EncryptionKey string `env:"ENCRYPTION_KEY,notEmpty"`
@@ -226,10 +227,13 @@ func tryLookUp() error {
 	enableCreditCardsStr, _ := os.LookupEnv("ENABLE_CREDIT_CARDS")
 	enableCreditCards := enableCreditCardsStr == "true"
 
+	siaNodeAddress, _ := os.LookupEnv("SIA_NODE_ADDRESS")
+
 	serverEnv := StorageNodeEnv{
 		ProdDatabaseURL:      prodDBUrl,
 		TestDatabaseURL:      testDBUrl,
 		SiaApiPassword:       siaApiPassword,
+		SiaNodeAddress:       siaNodeAddress,
 		EncryptionKey:        encryptionKey,
 		ContractAddress:      contractAddress,
 		EthNodeURL:           ethNodeURL,
