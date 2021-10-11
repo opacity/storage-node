@@ -3,6 +3,7 @@ package jobs
 import (
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 type metricCollector struct{}
@@ -32,8 +33,10 @@ func (m metricCollector) spaceUsageMetrics() {
 
 	utils.Metrics_Percent_Of_Space_Used_Map[utils.TotalLbl].Set(models.CalculatePercentSpaceUsed(spaceReport))
 
-	for _, plan := range utils.Env.Plans {
-		spaceReport := models.CreateSpaceUsedReportForPlanType(models.StorageLimitType(plan.StorageInGB))
+	plans, _ := models.GetAllPlans()
+
+	for _, plan := range plans {
+		spaceReport := models.CreateSpaceUsedReportForPlanType(plan)
 
 		utils.Metrics_Percent_Of_Space_Used_Map[plan.Name].Set(models.CalculatePercentSpaceUsed(spaceReport))
 	}
@@ -79,19 +82,37 @@ func (m metricCollector) accountsMetrics() {
 		utils.Metrics_Percent_Of_Paid_Accounts_Collected.Set(float64(percentOfPaidAccountsCollected))
 	}
 
-	for _, plan := range utils.Env.Plans {
+	plans, _ := models.GetAllPlans()
+
+	for _, plan := range plans {
 		name := plan.Name
-		accountCount, err := models.CountPaidAccountsByPlanType(models.StorageLimitType(plan.StorageInGB))
+		accountCount, err := models.CountPaidAccountsByPlanType(plan)
 		if err == nil {
 			utils.Metrics_Total_Paid_Accounts_Map[name].Set(float64(accountCount))
 		}
 		utils.LogIfError(err, nil)
 
-		stripeCount, err := models.CountPaidAccountsByPaymentMethodAndPlanType(models.StorageLimitType(plan.StorageInGB), models.PaymentMethodWithCreditCard)
+		stripeCount, err := models.CountPaidAccountsByPaymentMethodAndPlanType(plan, models.PaymentMethodWithCreditCard)
 		if err == nil {
 			utils.Metrics_Total_Stripe_Paid_Accounts_Map[name].Set(float64(stripeCount))
 		}
 		utils.LogIfError(err, nil)
+	}
+}
+
+func CreatePlanMetrics() {
+	utils.Metrics_Percent_Of_Space_Used_Map[utils.TotalLbl] = utils.Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": utils.TotalLbl})
+	utils.Metrics_Total_Paid_Accounts_Map[utils.TotalLbl] = utils.Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": utils.TotalLbl})
+
+	utils.Metrics_Total_Stripe_Paid_Accounts_Map[utils.TotalLbl] = utils.Metrics_Total_Stripe_Paid_Accounts.With(prometheus.Labels{"plan_type": utils.TotalLbl})
+
+	plans, _ := models.GetAllPlans()
+
+	for _, plan := range plans {
+		name := plan.Name
+		utils.Metrics_Percent_Of_Space_Used_Map[name] = utils.Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": name})
+		utils.Metrics_Total_Paid_Accounts_Map[name] = utils.Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": name})
+		utils.Metrics_Total_Stripe_Paid_Accounts_Map[name] = utils.Metrics_Total_Stripe_Paid_Accounts.With(prometheus.Labels{"plan_type": name})
 	}
 }
 

@@ -617,7 +617,7 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 
 	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
-	account.TotalFolders = utils.Env.Plans[int(account.StorageLimit)].MaxFolders
+	account.TotalFolders = account.PlanInfo.MaxFolders
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
@@ -626,7 +626,7 @@ func Test_Create_Metadata_Error_If_Too_Many_Metadatas(t *testing.T) {
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusForbidden, w.Code)
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
-	assert.Equal(t, utils.Env.Plans[int(account.StorageLimit)].MaxFolders, accountFromDB.TotalFolders)
+	assert.Equal(t, account.PlanInfo.MaxFolders, accountFromDB.TotalFolders)
 }
 
 func Test_Create_Metadata_Error_If_Duplicate_Metadata(t *testing.T) {

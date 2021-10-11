@@ -14,20 +14,20 @@ import (
 
 type Upgrade struct {
 	/*AccountID associates an entry in the upgrades table with an entry in the accounts table*/
-	AccountID       string            `gorm:"primary_key" json:"accountID" validate:"required,len=64"`
-	NewStorageLimit StorageLimitType  `gorm:"primary_key;auto_increment:false" json:"newStorageLimit" validate:"required,gte=128" example:"100"` // how much storage they are allowed, in GB.  This will be the new StorageLimit of the account
-	OldStorageLimit StorageLimitType  `json:"oldStorageLimit" validate:"required,gte=10" example:"10"`                                           // how much storage they are allowed, in GB.  This will be the new StorageLimit of the account
-	CreatedAt       time.Time         `json:"createdAt"`
-	UpdatedAt       time.Time         `json:"updatedAt"`
-	EthAddress      string            `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
-	EthPrivateKey   string            `json:"ethPrivateKey" validate:"required,len=96"`                                                                           // the private key of the eth address
-	PaymentStatus   PaymentStatusType `json:"paymentStatus" validate:"required"`                                                                                  // the status of their payment
-	ApiVersion      int               `json:"apiVersion" validate:"omitempty,gte=1" gorm:"default:1"`
-	PaymentMethod   PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
-	OpctCost        float64           `json:"opctCost" validate:"omitempty,gte=0" example:"1.56"`
+	AccountID     string            `gorm:"primary_key" json:"accountID" validate:"required,len=64"`
+	NewPlanInfoID uint              `gorm:"primary_key;auto_increment:false" json:"newPlanId"`
+	NewPlanInfo   utils.PlanInfo    `gorm:"foreignKey:new_plan_info_id;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;" json:"newPlan" validate:"required,gte=1"`
+	OldPlanInfoID uint              `json:"oldPlanId" validate:"required,gte=1"`
+	CreatedAt     time.Time         `json:"createdAt"`
+	UpdatedAt     time.Time         `json:"updatedAt"`
+	EthAddress    string            `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
+	EthPrivateKey string            `json:"ethPrivateKey" validate:"required,len=96"`                                                                           // the private key of the eth address
+	PaymentStatus PaymentStatusType `json:"paymentStatus" validate:"required"`                                                                                  // the status of their payment
+	ApiVersion    int               `json:"apiVersion" validate:"omitempty,gte=1" gorm:"default:1"`
+	PaymentMethod PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
+	OpctCost      float64           `json:"opctCost" validate:"omitempty,gte=0" example:"1.56"`
 	//UsdCost          float64           `json:"usdcost" validate:"omitempty,gte=0" example:"39.99"`
-	DurationInMonths int  `json:"durationInMonths" gorm:"default:12" validate:"required,gte=1" minimum:"1" example:"12"`
-	NetworkIdPaid    uint `json:"networkIdPaid"`
+	NetworkIdPaid uint `json:"networkIdPaid"`
 }
 
 /*UpgradeCollectionFunctions maps a PaymentStatus to the method that should be run
@@ -80,7 +80,7 @@ but will not update the EthAddress and EthPrivateKey*/
 func GetOrCreateUpgrade(upgrade Upgrade) (*Upgrade, error) {
 	var upgradeFromDB Upgrade
 
-	upgradeFromDB, err := GetUpgradeFromAccountIDAndStorageLimits(upgrade.AccountID, int(upgrade.NewStorageLimit), int(upgrade.OldStorageLimit))
+	upgradeFromDB, err := GetUpgradeFromAccountIDAndPlans(upgrade.AccountID, upgrade.NewPlanInfoID, upgrade.OldPlanInfoID)
 	if len(upgradeFromDB.AccountID) == 0 {
 		err = DB.Create(&upgrade).Error
 		upgradeFromDB = upgrade
@@ -96,20 +96,20 @@ func GetOrCreateUpgrade(upgrade Upgrade) (*Upgrade, error) {
 	return &upgradeFromDB, err
 }
 
-/*GetUpgradeFromAccountIDAndStorageLimits will get an upgrade based on AccountID and storage limits*/
-func GetUpgradeFromAccountIDAndStorageLimits(accountID string, newStorageLimit, oldStorageLimit int) (Upgrade, error) {
+/*GetUpgradeFromAccountIDAndPlans will get an upgrade based on AccountID and storage limits*/
+func GetUpgradeFromAccountIDAndPlans(accountID string, newPlanID, oldPlanID uint) (Upgrade, error) {
 	upgrade := Upgrade{}
-	err := DB.Where("account_id = ? AND new_storage_limit = ? AND old_storage_limit = ?",
+	err := DB.Preload("NewPlanInfo").Where("account_id = ? AND new_plan_info_id = ? AND old_plan_info_id = ?",
 		accountID,
-		newStorageLimit,
-		oldStorageLimit).First(&upgrade).Error
+		newPlanID,
+		oldPlanID).First(&upgrade).Error
 	return upgrade, err
 }
 
 /*GetUpgradesFromAccountID gets all upgrades that have a particular AccountID*/
 func GetUpgradesFromAccountID(accountID string) ([]Upgrade, error) {
 	var upgrades []Upgrade
-	err := DB.Where("account_id = ?",
+	err := DB.Preload("NewPlanInfo").Where("account_id = ?",
 		accountID).Find(&upgrades).Error
 	return upgrades, err
 }
@@ -149,7 +149,7 @@ func (upgrade *Upgrade) GetTotalCostInWei() *big.Int {
 /*GetUpgradesByPaymentStatus gets upgrades based on the payment status passed in*/
 func GetUpgradesByPaymentStatus(paymentStatus PaymentStatusType) []Upgrade {
 	var upgrades []Upgrade
-	err := DB.Where("payment_status = ?",
+	err := DB.Preload("NewPlanInfo").Where("payment_status = ?",
 		paymentStatus).Find(&upgrades).Error
 	utils.LogIfError(err, nil)
 	return upgrades
@@ -280,4 +280,24 @@ func PurgeOldUpgrades(hoursToRetain int) error {
 status and the updated_at time is older than the cutoff argument*/
 func SetUpgradesToLowerPaymentStatusByUpdateTime(paymentStatus PaymentStatusType, updatedAtCutoffTime time.Time) error {
 	return DB.Exec("UPDATE upgrades set payment_status = ? WHERE payment_status = ? AND updated_at < ?", paymentStatus-1, paymentStatus, updatedAtCutoffTime).Error
+}
+
+// Temporary func @TODO: remove after migration
+func MigrateUpgradeToPlanIdNew(newPlanId uint, newStorageLimit int) {
+	query := DB.Exec("UPDATE upgrades SET new_plan_info_id = ? WHERE new_storage_limit = ?", newPlanId, newStorageLimit)
+	err := query.Error
+	utils.LogIfError(err, map[string]interface{}{
+		"new_plan_id":      newPlanId,
+		"new_storageLimit": newStorageLimit,
+	})
+}
+
+// Temporary func @TODO: remove after migration
+func MigrateUpgradeToPlanIdOld(oldPlanId uint, oldStorageLimit int) {
+	query := DB.Exec("UPDATE upgrades SET old_plan_info_id = ? WHERE old_storage_limit = ?", oldPlanId, oldStorageLimit)
+	err := query.Error
+	utils.LogIfError(err, map[string]interface{}{
+		"old_plan_id":      oldPlanId,
+		"old_storageLimit": oldStorageLimit,
+	})
 }

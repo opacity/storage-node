@@ -13,6 +13,7 @@ import (
 func Test_Init_File_Upload_Public(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
+	models.SetTestPlans()
 	gin.SetMode(gin.TestMode)
 }
 

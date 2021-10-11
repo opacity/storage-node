@@ -39,6 +39,8 @@ func (v *GenericSiaFileReq) getObjectRef() interface{} {
 
 const noAccountWithThatID = "no account with that id"
 
+var PlanDoesNotExitErr = errors.New("the choosen plan does not exist")
+
 const REQUEST_UUID = "request_uuid"
 
 type handlerFunc func(*gin.Context) error
@@ -228,20 +230,8 @@ func verifyIfPaidWithContext(account models.Account, c *gin.Context) error {
 	return nil
 }
 
-func verifyValidStorageLimit(storageLimit int, c *gin.Context) error {
-	_, ok := utils.Env.Plans[storageLimit]
-	if !ok {
-		return BadRequestResponse(c, models.ErrInvalidStorageLimit)
-	}
-	return nil
-}
-
-func verifyUpgradeEligible(account models.Account, newStorageLimit int, c *gin.Context) error {
-	err := verifyValidStorageLimit(newStorageLimit, c)
-	if err != nil {
-		return err
-	}
-	if newStorageLimit <= int(account.StorageLimit) {
+func verifyUpgradeEligible(account models.Account, newPlanInfo utils.PlanInfo, c *gin.Context) error {
+	if newPlanInfo.StorageInGB <= int(account.PlanInfo.StorageInGB) {
 		return BadRequestResponse(c, errors.New("cannot upgrade to storage limit lower than current limit"))
 	}
 	return nil

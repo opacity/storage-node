@@ -1,6 +1,8 @@
 package models
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -148,4 +150,32 @@ func MultipartUploadOfSingleChunk(t *testing.T, f *File) (*s3.CompletedPart, err
 	completedPart, err := utils.UploadMultiPartPart(awsObjKey, aws.StringValue(f.AwsUploadID),
 		buffer, FirstChunkIndex)
 	return completedPart, err
+}
+
+func SetTestPlans() {
+	DB.AutoMigrate(&utils.PlanInfo{})
+	plans := []utils.PlanInfo{}
+	results := DB.Find(&plans)
+
+	if results.RowsAffected == 0 {
+		workingDir, _ := os.Getwd()
+		testDir := filepath.Dir(workingDir)
+		localFilePath := testDir + string(os.PathSeparator) + "test_files" + string(os.PathSeparator) + "plans.json"
+
+		plansFile, err := os.Open(localFilePath)
+		if err != nil {
+			panic("no plans.json file")
+		}
+		defer plansFile.Close()
+		plansFileBytes, err := ioutil.ReadAll(plansFile)
+		utils.LogIfError(err, nil)
+
+		err = json.Unmarshal([]byte(plansFileBytes), &plans)
+		utils.LogIfError(err, nil)
+
+		for _, plan := range plans {
+			DB.Model(&utils.PlanInfo{}).Create(&plan)
+		}
+	}
+
 }

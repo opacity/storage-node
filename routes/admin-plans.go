@@ -2,6 +2,7 @@ package routes
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -9,6 +10,12 @@ import (
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 )
+
+var ErrNoPlanFound = errors.New("no plan found")
+
+func AdminPlansGetAllHandler() gin.HandlerFunc {
+	return ginHandlerFunc(adminPlanGetAll)
+}
 
 func AdminPlansGetHandler() gin.HandlerFunc {
 	return ginHandlerFunc(adminPlanGet)
@@ -30,59 +37,62 @@ func AdminPlansAddHandler() gin.HandlerFunc {
 	return ginHandlerFunc(adminPlanAdd)
 }
 
+func adminPlanGetAll(c *gin.Context) error {
+	return adminPlanGetRenderAll(c, "")
+}
+
 func adminPlanGet(c *gin.Context) error {
-	planParam, err := strconv.Atoi(c.Param("plan"))
+	planParam, err := strconv.ParseUint(c.Param("plan"), 10, 0)
 	if err != nil {
 		return InternalErrorResponse(c, errors.New("something went wrong"))
 	}
-	if plan, ok := utils.Env.Plans[planParam]; ok {
-		c.HTML(http.StatusOK, "plan-change.tmpl", gin.H{
-			"title": plan.Name + " " + strconv.Itoa(plan.StorageInGB),
-			"plan":  plan,
-		})
-		return nil
+
+	plan, err := models.GetPlanInfoByID(uint(planParam))
+	if err != nil {
+		return NotFoundResponse(c, ErrNoPlanFound)
 	}
 
-	return NotFoundResponse(c, errors.New("no plan found"))
+	c.HTML(http.StatusOK, "plan-change.tmpl", gin.H{
+		"title":            plan.Name,
+		"plan":             plan,
+		"fileStorageTypes": GetFileStorageTypesMap(),
+	})
+	return nil
 }
 
 func adminPlanRemoveConfirm(c *gin.Context) error {
 	defer c.Request.Body.Close()
 
-	planParam, err := strconv.Atoi(c.Param("plan"))
+	planParam, err := strconv.ParseUint(c.Param("plan"), 10, 0)
 	if err != nil {
 		return InternalErrorResponse(c, errors.New("something went wrong"))
 	}
-	if plan, ok := utils.Env.Plans[planParam]; ok {
-		c.HTML(http.StatusOK, "plan-confirm-remove.tmpl", gin.H{
-			"title": plan.Name + " " + strconv.Itoa(plan.StorageInGB),
-			"plan":  plan,
-		})
-		return nil
-	}
 
-	return NotFoundResponse(c, errors.New("no plan found"))
+	plan, err := models.GetPlanInfoByID(uint(planParam))
+	if err != nil {
+		return NotFoundResponse(c, ErrNoPlanFound)
+	}
+	c.HTML(http.StatusOK, "plan-confirm-remove.tmpl", gin.H{
+		"title": plan.Name,
+		"plan":  plan,
+	})
+	return nil
 }
 
 func adminPlanRemove(c *gin.Context) error {
 	defer c.Request.Body.Close()
 
-	planParam, err := strconv.Atoi(c.Param("plan"))
+	planParam, err := strconv.ParseUint(c.Param("plan"), 10, 0)
 	if err != nil {
 		return InternalErrorResponse(c, errors.New("something went wrong"))
 	}
-	if plan, ok := utils.Env.Plans[planParam]; ok {
-		err := models.DB.Where("storage_in_gb = ?", plan.StorageInGB).Delete(utils.PlanInfo{}).Error
-		if err != nil {
-			return InternalErrorResponse(c, err)
-		}
 
-		delete(utils.Env.Plans, planParam)
-
-		return OkResponse(c, StatusRes{Status: "plan " + plan.Name + " was removed"})
+	err = models.DeletePlanByID(uint(planParam))
+	if err != nil {
+		return InternalErrorResponse(c, ErrNoPlanFound)
 	}
 
-	return NotFoundResponse(c, errors.New("no plan found"))
+	return adminPlanGetRenderAll(c, fmt.Sprintf("Plan %d was removed", planParam))
 }
 
 func adminPlanChange(c *gin.Context) error {
@@ -93,12 +103,11 @@ func adminPlanChange(c *gin.Context) error {
 		return BadRequestResponse(c, errors.New("something went wrong"))
 	}
 
-	planInfo := utils.PlanInfo{}
-	storageInGBInit, err := strconv.Atoi(c.Request.PostForm["storageInGBInit"][0])
+	planID, err := strconv.Atoi(c.Request.PostForm["ID"][0])
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
-	err = models.DB.Where("storage_in_gb = ?", storageInGBInit).First(&planInfo).Error
+	planInfo, err := models.GetPlanInfoByID(uint(planID))
 	if err != nil {
 		return NotFoundResponse(c, errors.New("no plan found"))
 	}
@@ -123,6 +132,10 @@ func adminPlanChange(c *gin.Context) error {
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
+	fileStorageType, err := strconv.ParseInt(c.Request.PostForm["fileStorageType"][0], 10, 64)
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
 
 	planInfo.Name = c.Request.PostForm["name"][0]
 	planInfo.Cost = cost
@@ -130,19 +143,15 @@ func adminPlanChange(c *gin.Context) error {
 	planInfo.StorageInGB = storageInGB
 	planInfo.MaxFolders = maxFolders
 	planInfo.MaxMetadataSizeInMB = maxMetadataSizeInMB
+	planInfo.MonthsInSubscription = 12
+	planInfo.FileStorageType = utils.FileStorageType(fileStorageType)
 
-	if err := models.DB.Save(&planInfo).Error; err == nil {
-		if err != nil {
-			return BadRequestResponse(c, err)
-		}
-		if plan, ok := utils.Env.Plans[storageInGBInit]; ok {
-			utils.Env.Plans[storageInGBInit] = planInfo
-
-			return OkResponse(c, StatusRes{Status: "plan " + plan.Name + " was changed"})
-		}
+	err = models.DB.Save(&planInfo).Error
+	if err != nil {
+		return BadRequestResponse(c, err)
 	}
 
-	return BadRequestResponse(c, err)
+	return adminPlanGetRenderAll(c, fmt.Sprintf("Plan %d was updated", planInfo.ID))
 }
 
 func adminPlanAdd(c *gin.Context) error {
@@ -154,20 +163,16 @@ func adminPlanAdd(c *gin.Context) error {
 	}
 
 	planInfo := utils.PlanInfo{}
-	storageInGB, err := strconv.Atoi(c.Request.PostForm["storageInGB"][0])
-	if err != nil {
-		return InternalErrorResponse(c, err)
-	}
-	err = models.DB.Where("storage_in_gb = ?", storageInGB).First(&planInfo).Error
-	if err == nil {
-		return BadRequestResponse(c, errors.New("plan with the set "+c.Request.PostForm["storageInGB"][0]+" storage is already present"))
-	}
 
 	cost, err := strconv.ParseFloat(c.Request.PostForm["cost"][0], 64)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	costInUSD, err := strconv.ParseFloat(c.Request.PostForm["costInUSD"][0], 64)
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	storageInGB, err := strconv.Atoi(c.Request.PostForm["storageInGB"][0])
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -179,6 +184,10 @@ func adminPlanAdd(c *gin.Context) error {
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
+	fileStorageType, err := strconv.ParseInt(c.Request.PostForm["fileStorageType"][0], 10, 64)
+	if err != nil {
+		return InternalErrorResponse(c, err)
+	}
 
 	planInfo.Name = c.Request.PostForm["name"][0]
 	planInfo.Cost = cost
@@ -186,17 +195,52 @@ func adminPlanAdd(c *gin.Context) error {
 	planInfo.StorageInGB = storageInGB
 	planInfo.MaxFolders = maxFolders
 	planInfo.MaxMetadataSizeInMB = maxMetadataSizeInMB
+	planInfo.MonthsInSubscription = 12
+	planInfo.FileStorageType = utils.FileStorageType(fileStorageType)
 
-	if err := models.DB.Save(&planInfo).Error; err == nil {
-		if err != nil {
-			return BadRequestResponse(c, err)
-		}
-		if _, ok := utils.Env.Plans[storageInGB]; !ok {
-			utils.Env.Plans[storageInGB] = planInfo
-
-			return OkResponse(c, StatusRes{Status: "plan " + planInfo.Name + " was added"})
-		}
+	err = models.DB.Save(&planInfo).Error
+	if err != nil {
+		return InternalErrorResponse(c, err)
 	}
 
-	return InternalErrorResponse(c, err)
+	return adminPlanGetRenderAll(c, fmt.Sprintf("Plan %s (%d) was added", planInfo.Name, planInfo.ID))
+}
+
+func adminPlanGetRenderAll(c *gin.Context, notificationMessage string) error {
+	plans, err := models.GetAllPlans()
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	c.HTML(http.StatusOK, "plans-list.tmpl", gin.H{
+		"title":                   "Change plans",
+		"plans":                   plans,
+		"FileStorageTypeToString": FileStorageTypeToString,
+		"notificationMessage":     notificationMessage,
+	})
+
+	return nil
+}
+
+func GetFileStorageTypesMap() map[string]utils.FileStorageType {
+	fileTypes := map[string]utils.FileStorageType{
+		"S3":     utils.S3,
+		"Sia":    utils.Sia,
+		"Skynet": utils.Skynet,
+	}
+
+	return fileTypes
+}
+
+func FileStorageTypeToString(fst utils.FileStorageType) string {
+	switch fst {
+	case utils.S3:
+		return "S3"
+	case utils.Sia:
+		return "Sia"
+	case utils.Skynet:
+		return "Skynet"
+	default:
+		return "unkown"
+	}
 }

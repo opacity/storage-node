@@ -135,11 +135,6 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.PlanResponse:
-    properties:
-      plans:
-        $ref: '#/definitions/utils.PlanResponseType'
-    type: object
   routes.PrivateToPublicReq:
     properties:
       publicKey:
@@ -368,22 +363,12 @@ definitions:
         type: string
       expirationDate:
         type: string
-      maxFolders:
-        example: 2000
-        type: integer
-      maxMetadataSizeInMB:
-        example: 200
-        type: integer
       monthsInSubscription:
+        description: number of months in their subscription
         example: 12
         type: integer
-      storageLimit:
-        description: how much storage they are allowed, in GB
-        example: 100
-        type: integer
-      storageLocation:
-        description: where their files live, on S3 or elsewhere
-        type: integer
+      plan:
+        $ref: '#/definitions/utils.PlanInfo'
       storageUsed:
         description: how much storage they have used, in GB
         example: 30
@@ -401,7 +386,7 @@ definitions:
     - ethAddress
     - expirationDate
     - monthsInSubscription
-    - storageLimit
+    - plan
     type: object
   routes.accountUnpaidRes:
     properties:
@@ -1021,18 +1006,29 @@ definitions:
         type: number
       costInUSD:
         type: number
+      id:
+        type: integer
       maxFolders:
         type: integer
       maxMetadataSizeInMB:
+        type: integer
+      monthsInSubscription:
+        description: '@TODO: Remove default value on monthly subscriptions feature'
+        example: 12
         type: integer
       name:
         type: string
       storageInGB:
         type: integer
-    type: object
-  utils.PlanResponseType:
-    additionalProperties:
-      $ref: '#/definitions/utils.PlanInfo'
+      storageType:
+        type: integer
+    required:
+    - maxFolders
+    - maxMetadataSizeInMB
+    - monthsInSubscription
+    - name
+    - storageInGB
+    - storageType
     type: object
 info:
   contact:
@@ -1086,8 +1082,7 @@ paths:
         create an account
         requestBody should be a stringified version of (values are just examples):
         {
-        "storageLimit": 100,
-        "durationInMonths": 12,
+        "planId": 1,
         }
       parameters:
       - description: account creation object
@@ -1105,6 +1100,10 @@ paths:
             $ref: '#/definitions/routes.accountCreateRes'
         "400":
           description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: plan not found
           schema:
             type: string
         "503":
@@ -1490,6 +1489,7 @@ paths:
         {
         "stripeToken": "tok_KPte7942xySKBKyrBu11yEpf",
         "timestamp": 1659325302,
+        "planId": 1,
         }
       parameters:
       - description: stripe payment creation object
@@ -1514,7 +1514,8 @@ paths:
           schema:
             type: string
         "404":
-          description: 'no account with that id: (with your accountID)'
+          description: 'no account with that id: (with your accountID) or plan not
+            found'
           schema:
             type: string
         "500":
@@ -1530,8 +1531,7 @@ paths:
         check the upgrade status
         requestBody should be a stringified version of (values are just examples):
         {
-        "storageLimit": 100,
-        "durationInMonths": 12,
+        "planId": 1,
         "metadataKeys": "["someKey", "someOtherKey]",
         "fileHandles": "["someHandle", "someOtherHandle]",
         }
@@ -1554,7 +1554,8 @@ paths:
           schema:
             type: string
         "404":
-          description: 'no account with that id: (with your accountID)'
+          description: 'no account with that id: (with your accountID) or plan not
+            found'
           schema:
             type: string
         "500":
@@ -1570,8 +1571,7 @@ paths:
         get an invoice to upgrade an account
         requestBody should be a stringified version of (values are just examples):
         {
-        "storageLimit": 100,
-        "durationInMonths": 12,
+        "planId": 1,
         }
       parameters:
       - description: get upgrade invoice object
@@ -1592,7 +1592,8 @@ paths:
           schema:
             type: string
         "404":
-          description: 'no account with that id: (with your accountID)'
+          description: 'no account with that id: (with your accountID) or plan not
+            found'
           schema:
             type: string
         "500":
@@ -1600,84 +1601,6 @@ paths:
           schema:
             type: string
       summary: get an invoice to upgrade an account
-  /api/v1/upgradeV2:
-    post:
-      consumes:
-      - application/json
-      description: |-
-        check the upgradeV2 status
-        requestBody should be a stringified version of (values are just examples):
-        {
-        "storageLimit": 100,
-        "durationInMonths": 12,
-        "metadataKeys": "["someKey", "someOtherKey]",
-        "fileHandles": "["someHandle", "someOtherHandle]",
-        }
-      parameters:
-      - description: check upgradeV2 status object
-        in: body
-        name: checkUpgradeV2StatusReq
-        required: true
-        schema:
-          $ref: '#/definitions/routes.checkUpgradeV2StatusReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.StatusRes'
-        "400":
-          description: 'bad request, unable to parse request body: (with the error)'
-          schema:
-            type: string
-        "404":
-          description: 'no account with that id: (with your accountID)'
-          schema:
-            type: string
-        "500":
-          description: some information about the internal error
-          schema:
-            type: string
-      summary: check the upgradeV2 status
-  /api/v1/upgradeV2/invoice:
-    post:
-      consumes:
-      - application/json
-      description: |-
-        get an invoice to upgradeV2 an account
-        requestBody should be a stringified version of (values are just examples):
-        {
-        "storageLimit": 100,
-        "durationInMonths": 12,
-        }
-      parameters:
-      - description: get upgradeV2 invoice object
-        in: body
-        name: getUpgradeV2AccountInvoiceReq
-        required: true
-        schema:
-          $ref: '#/definitions/routes.getUpgradeV2AccountInvoiceReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/routes.getUpgradeV2AccountInvoiceRes'
-        "400":
-          description: 'bad request, unable to parse request body: (with the error)'
-          schema:
-            type: string
-        "404":
-          description: 'no account with that id: (with your accountID)'
-          schema:
-            type: string
-        "500":
-          description: some information about the internal error
-          schema:
-            type: string
-      summary: get an invoice to upgradeV2 an account
   /api/v1/upload:
     post:
       consumes:
@@ -2593,6 +2516,84 @@ paths:
           schema:
             type: string
       summary: gets the smart contracts address
+  /api/v2/upgradeV2:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        check the upgradeV2 status
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "planId": 1,
+        "metadataKeys": "["someKey", "someOtherKey]",
+        "fileHandles": "["someHandle", "someOtherHandle]",
+        }
+      parameters:
+      - description: check upgradeV2 status object
+        in: body
+        name: checkUpgradeV2StatusReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.checkUpgradeV2StatusReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.StatusRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID) or plan not
+            found'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: check the upgradeV2 status
+  /api/v2/upgradeV2/invoice:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        get an invoice to upgradeV2 an account
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "planId": 1,
+        }
+      parameters:
+      - description: get upgradeV2 invoice object
+        in: body
+        name: getUpgradeV2AccountInvoiceReq
+        required: true
+        schema:
+          $ref: '#/definitions/routes.getUpgradeV2AccountInvoiceReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.getUpgradeV2AccountInvoiceRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: 'no account with that id: (with your accountID) or plan not
+            found'
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: get an invoice to upgradeV2 an account
   /api/v2/upload-public:
     post:
       consumes:
@@ -2685,6 +2686,12 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/routes.PlanResponse'
+            items:
+              $ref: '#/definitions/utils.PlanInfo'
+            type: array
+        "404":
+          description: no plans added
+          schema:
+            type: string
       summary: get the plans we sell
 swagger: "2.0"

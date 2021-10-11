@@ -75,7 +75,7 @@ var doc = `{
         },
         "/api/v1/accounts": {
             "post": {
-                "description": "create an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n}",
+                "description": "create an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"planId\": 1,\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -103,6 +103,12 @@ var doc = `{
                     },
                     "400": {
                         "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "plan not found",
                         "schema": {
                             "type": "string"
                         }
@@ -608,7 +614,7 @@ var doc = `{
         },
         "/api/v1/stripe/create": {
             "post": {
-                "description": "create a stripe payment\nrequestBody should be a stringified version of (values are just examples):\n{\n\"stripeToken\": \"tok_KPte7942xySKBKyrBu11yEpf\",\n\"timestamp\": 1659325302,\n}",
+                "description": "create a stripe payment\nrequestBody should be a stringified version of (values are just examples):\n{\n\"stripeToken\": \"tok_KPte7942xySKBKyrBu11yEpf\",\n\"timestamp\": 1659325302,\n\"planId\": 1,\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -647,7 +653,7 @@ var doc = `{
                         }
                     },
                     "404": {
-                        "description": "no account with that id: (with your accountID)",
+                        "description": "no account with that id: (with your accountID) or plan not found",
                         "schema": {
                             "type": "string"
                         }
@@ -663,7 +669,7 @@ var doc = `{
         },
         "/api/v1/upgrade": {
             "post": {
-                "description": "check the upgrade status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
+                "description": "check the upgrade status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"planId\": 1,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -696,7 +702,7 @@ var doc = `{
                         }
                     },
                     "404": {
-                        "description": "no account with that id: (with your accountID)",
+                        "description": "no account with that id: (with your accountID) or plan not found",
                         "schema": {
                             "type": "string"
                         }
@@ -712,7 +718,7 @@ var doc = `{
         },
         "/api/v1/upgrade/invoice": {
             "post": {
-                "description": "get an invoice to upgrade an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n}",
+                "description": "get an invoice to upgrade an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"planId\": 1,\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -745,105 +751,7 @@ var doc = `{
                         }
                     },
                     "404": {
-                        "description": "no account with that id: (with your accountID)",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "some information about the internal error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/upgradeV2": {
-            "post": {
-                "description": "check the upgradeV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "check the upgradeV2 status",
-                "parameters": [
-                    {
-                        "description": "check upgradeV2 status object",
-                        "name": "checkUpgradeV2StatusReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/routes.checkUpgradeV2StatusReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routes.StatusRes"
-                        }
-                    },
-                    "400": {
-                        "description": "bad request, unable to parse request body: (with the error)",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "no account with that id: (with your accountID)",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "some information about the internal error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/upgradeV2/invoice": {
-            "post": {
-                "description": "get an invoice to upgradeV2 an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n}",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "get an invoice to upgradeV2 an account",
-                "parameters": [
-                    {
-                        "description": "get upgradeV2 invoice object",
-                        "name": "getUpgradeV2AccountInvoiceReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceRes"
-                        }
-                    },
-                    "400": {
-                        "description": "bad request, unable to parse request body: (with the error)",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "no account with that id: (with your accountID)",
+                        "description": "no account with that id: (with your accountID) or plan not found",
                         "schema": {
                             "type": "string"
                         }
@@ -2072,6 +1980,104 @@ var doc = `{
                 }
             }
         },
+        "/api/v2/upgradeV2": {
+            "post": {
+                "description": "check the upgradeV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"planId\": 1,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "check the upgradeV2 status",
+                "parameters": [
+                    {
+                        "description": "check upgradeV2 status object",
+                        "name": "checkUpgradeV2StatusReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.checkUpgradeV2StatusReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID) or plan not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/upgradeV2/invoice": {
+            "post": {
+                "description": "get an invoice to upgradeV2 an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"planId\": 1,\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get an invoice to upgradeV2 an account",
+                "parameters": [
+                    {
+                        "description": "get upgradeV2 invoice object",
+                        "name": "getUpgradeV2AccountInvoiceReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID) or plan not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/upload-public": {
             "post": {
                 "description": "upload a chunk of a file. The first partIndex must be 1. The storage for this file does not count\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"partIndex\": 1,\n}",
@@ -2185,7 +2191,16 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.PlanResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/utils.PlanInfo"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "no plans added",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -2348,14 +2363,6 @@ var doc = `{
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                }
-            }
-        },
-        "routes.PlanResponse": {
-            "type": "object",
-            "properties": {
-                "plans": {
-                    "$ref": "#/definitions/utils.PlanResponseType"
                 }
             }
         },
@@ -2619,7 +2626,7 @@ var doc = `{
                 "ethAddress",
                 "expirationDate",
                 "monthsInSubscription",
-                "storageLimit"
+                "plan"
             ],
             "properties": {
                 "apiVersion": {
@@ -2642,26 +2649,13 @@ var doc = `{
                 "expirationDate": {
                     "type": "string"
                 },
-                "maxFolders": {
-                    "type": "integer",
-                    "example": 2000
-                },
-                "maxMetadataSizeInMB": {
-                    "type": "integer",
-                    "example": 200
-                },
                 "monthsInSubscription": {
+                    "description": "number of months in their subscription",
                     "type": "integer",
                     "example": 12
                 },
-                "storageLimit": {
-                    "description": "how much storage they are allowed, in GB",
-                    "type": "integer",
-                    "example": 100
-                },
-                "storageLocation": {
-                    "description": "where their files live, on S3 or elsewhere",
-                    "type": "integer"
+                "plan": {
+                    "$ref": "#/definitions/utils.PlanInfo"
                 },
                 "storageUsed": {
                     "description": "how much storage they have used, in GB",
@@ -3417,6 +3411,14 @@ var doc = `{
         },
         "utils.PlanInfo": {
             "type": "object",
+            "required": [
+                "maxFolders",
+                "maxMetadataSizeInMB",
+                "monthsInSubscription",
+                "name",
+                "storageInGB",
+                "storageType"
+            ],
             "properties": {
                 "cost": {
                     "type": "number"
@@ -3424,24 +3426,29 @@ var doc = `{
                 "costInUSD": {
                     "type": "number"
                 },
+                "id": {
+                    "type": "integer"
+                },
                 "maxFolders": {
                     "type": "integer"
                 },
                 "maxMetadataSizeInMB": {
                     "type": "integer"
                 },
+                "monthsInSubscription": {
+                    "description": "@TODO: Remove default value on monthly subscriptions feature",
+                    "type": "integer",
+                    "example": 12
+                },
                 "name": {
                     "type": "string"
                 },
                 "storageInGB": {
                     "type": "integer"
+                },
+                "storageType": {
+                    "type": "integer"
                 }
-            }
-        },
-        "utils.PlanResponseType": {
-            "type": "object",
-            "additionalProperties": {
-                "$ref": "#/definitions/utils.PlanInfo"
             }
         }
     }

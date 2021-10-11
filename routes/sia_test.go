@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,8 +21,7 @@ func Test_SiaUpload(t *testing.T) {
 	log.Printf("fileHandle: %s", fileHandle)
 	accountID, privateKey := generateValidateAccountId(t)
 	log.Printf("accountID: %s", accountID)
-	account := CreatePaidAccountForTest(t, accountID)
-	account.StorageLocation = models.Sia
+	CreatePaidAccountForTest(t, accountID) // returns account @TODO: set account on Sia plan
 
 	// init-upload
 	siaInitUploadObj := InitFileSiaUploadObj{

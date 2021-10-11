@@ -23,11 +23,12 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
-	CreateUnpaidAccountForTest(t, accountID)
+	account := CreateUnpaidAccountForTest(t, accountID)
 
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		PlanID:      account.PlanInfoID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -48,7 +49,7 @@ func Test_Successful_Stripe_Payment(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	account, _ := models.GetAccountById(accountID)
+	account, _ = models.GetAccountById(accountID)
 	assert.Equal(t, models.PaymentMethodWithCreditCard, account.PaymentMethod)
 }
 
@@ -60,6 +61,7 @@ func Test_Fails_If_Account_Does_Not_Exist(t *testing.T) {
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		PlanID:      2, // random
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -83,11 +85,12 @@ func Test_Fails_If_Account_Is_Paid(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
-	CreatePaidAccountForTest(t, accountID)
+	account := CreatePaidAccountForTest(t, accountID)
 
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		PlanID:      account.PlanInfoID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -112,13 +115,17 @@ func Test_Fails_If_Account_Is_Free(t *testing.T) {
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
 	account := CreateUnpaidAccountForTest(t, accountID)
-	account.StorageLimit = models.StorageLimitType(utils.Env.Plans[10].StorageInGB)
+	freePlan, err := models.GetPlanInfoByID(1)
+	assert.Nil(t, err)
+	account.PlanInfo = freePlan
+	account.PlanInfoID = freePlan.ID
 	err = models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		PlanID:      account.PlanInfoID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 
@@ -142,11 +149,12 @@ func Test_Unsuccessful_Token_Transfer_Returns_Error(t *testing.T) {
 	privateKey, err := utils.GenerateKey()
 	assert.Nil(t, err)
 	accountID, _ := utils.HashString(utils.PubkeyCompressedToHex(privateKey.PublicKey))
-	CreateUnpaidAccountForTest(t, accountID)
+	account := CreateUnpaidAccountForTest(t, accountID)
 
 	stripeTokenBody := createStripePaymentObject{
 		StripeToken: models.RandTestStripeToken(),
 		Timestamp:   time.Now().Unix(),
+		PlanID:      account.PlanInfoID,
 	}
 	v, b := returnValidVerificationAndRequestBody(t, stripeTokenBody, privateKey)
 

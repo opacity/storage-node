@@ -75,7 +75,7 @@ func Test_initFileUploadWithoutEnoughSpace(t *testing.T) {
 	accountID, privateKey := generateValidateAccountId(t)
 	account := CreatePaidAccountForTest(t, accountID)
 
-	fileSizeInByte := (int64(account.StorageLimit)-(int64(account.StorageUsedInByte)/1e9))*1e9 + 1
+	fileSizeInByte := (int64(account.PlanInfo.StorageInGB)-(int64(account.StorageUsedInByte)/1e9))*1e9 + 1
 	req, uploadObj := createValidInitFileUploadRequest(t, fileSizeInByte, 1, privateKey)
 
 	form := map[string]string{

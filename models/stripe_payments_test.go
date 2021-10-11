@@ -49,6 +49,7 @@ func returnStripePaymentForTestForUpgrade(upgrade Upgrade) StripePayment {
 func Test_Init_Stripe_Payments(t *testing.T) {
 	utils.SetTesting("../.env")
 	Connect(utils.Env.TestDatabaseURL)
+	SetTestPlans()
 	err := services.InitStripe(utils.Env.StripeKeyTest)
 	assert.Nil(t, err)
 }
@@ -201,7 +202,7 @@ func Test_SendUpgradeOPCT(t *testing.T) {
 	}
 
 	assert.Equal(t, OpctTxNotStarted, stripePayment.OpctTxStatus)
-	err := stripePayment.SendUpgradeOPCT(account, int(ProfessionalStorageLimit), utils.TestNetworkID)
+	err := stripePayment.SendUpgradeOPCT(account, account.PlanInfo.ID, utils.TestNetworkID)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
 }
@@ -249,7 +250,7 @@ func Test_CheckAccountCreationOPCTTransaction_transaction_incomplete(t *testing.
 
 func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
+	stripePayment, upgrade, account := returnValidUpgradeStripePaymentForTest()
 	stripePayment.OpctTxStatus = OpctTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -261,7 +262,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit))
+	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, upgrade.NewPlanInfoID)
 	assert.True(t, success)
 	assert.Nil(t, err)
 	assert.Equal(t, OpctTxSuccess, stripePayment.OpctTxStatus)
@@ -270,7 +271,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_complete(t *testing.T) {
 
 func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
 	DeleteStripePaymentsForTest(t)
-	stripePayment, _, account := returnValidUpgradeStripePaymentForTest()
+	stripePayment, upgrade, account := returnValidUpgradeStripePaymentForTest()
 	stripePayment.OpctTxStatus = OpctTxInProgress
 
 	if err := DB.Create(&stripePayment).Error; err != nil {
@@ -282,7 +283,7 @@ func Test_CheckUpgradeOPCTTransaction_transaction_incomplete(t *testing.T) {
 	}
 
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
-	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, int(ProfessionalStorageLimit))
+	success, err := stripePayment.CheckUpgradeOPCTTransaction(account, upgrade.NewPlanInfoID)
 	assert.Nil(t, err)
 	assert.False(t, success)
 	assert.Equal(t, OpctTxInProgress, stripePayment.OpctTxStatus)
