@@ -69,7 +69,7 @@ func checkUploadStatusSia(c *gin.Context) error {
 		return InternalErrorResponse(c, siaFileMetadataErr)
 	}
 
-	if siaFileMetadata.File.Available {
+	if siaFileMetadata.File.Available && siaFileMetadata.File.Filesize != 0 {
 		completedFile := models.CompletedFile{
 			FileID:         siaProgressFile.FileID,
 			ExpiredAt:      siaProgressFile.ExpiredAt,
