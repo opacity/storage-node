@@ -340,3 +340,11 @@ func verifyPermissionsV2(publicKey []byte, key []byte, expectedPermissionHash st
 	}
 	return nil
 }
+
+func verifyAccountPlan(account models.Account, storageType models.FileStorageType, c *gin.Context) error {
+	if account.PlanInfo.FileStorageType != utils.FileStorageType(storageType) {
+		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))
+	}
+
+	return nil
+}
