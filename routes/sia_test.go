@@ -20,6 +20,7 @@ func Test_SiaUpload(t *testing.T) {
 
 	fileHandle := utils.GenerateFileHandle()
 	log.Printf("fileHandle: %s", fileHandle)
+	log.Printf("fileHandle size: %d", len(uploadFileContent))
 	accountID, privateKey := generateValidateAccountId(t)
 	log.Printf("accountID: %s", accountID)
 	account := CreatePaidAccountForTest(t, accountID)
@@ -28,13 +29,14 @@ func Test_SiaUpload(t *testing.T) {
 	assert.Nil(t, err)
 	account.PlanInfo = siaBasicPlan
 	account.PlanInfoID = siaBasicPlan.ID
+	models.DB.Save(&account)
 
 	// init-upload
 	siaInitUploadObj := InitFileSiaUploadObj{
 		GenericFileActionObj: GenericFileActionObj{
 			FileHandle: fileHandle,
 		},
-		FileSizeInByte: 1024,
+		FileSizeInByte: int64(len(uploadFileContent)),
 	}
 
 	v, b := returnValidVerificationAndRequestBody(t, siaInitUploadObj, privateKey)
