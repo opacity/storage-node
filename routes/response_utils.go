@@ -148,6 +148,8 @@ func ginHandlerFunc(f handlerFunc) gin.HandlerFunc {
 		span.Status = sentry.SpanStatusOK
 
 		setUpSession(c)
+		c.Request = c.Request.Clone(span.Context())
+		sentry.ContinueFromRequest(c.Request)
 
 		defer func() {
 			// Capture the error
@@ -191,20 +193,20 @@ func setUpSession(c *gin.Context) {
 	c.Writer.Header().Set(REQUEST_UUID, v)
 }
 
-func verifyIfPaid(account models.Account) bool {
+func verifyIfPaid(account models.Account) (bool, uint) {
 	// Check if paid
-	paid, _ := account.CheckIfPaid()
+	paid, networkID, _ := account.CheckIfPaid()
 	paidWithCreditCard, _ := models.CheckForPaidStripePayment(account.AccountID)
 
-	return paid || paidWithCreditCard
+	return paid || paidWithCreditCard, networkID
 }
 
 func verifyAccountStillActive(account models.Account) bool {
-	return account.ExpirationDate().After(time.Now()) || utils.Env.Plans[int(account.StorageLimit)].Name == "Free"
+	return account.ExpirationDate().After(time.Now())
 }
 
 func verifyIfPaidWithContext(account models.Account, c *gin.Context) error {
-	paid := verifyIfPaid(account)
+	paid, _ := verifyIfPaid(account)
 
 	cost, _ := account.Cost()
 	response := accountCreateRes{
@@ -229,7 +231,7 @@ func verifyIfPaidWithContext(account models.Account, c *gin.Context) error {
 func verifyValidStorageLimit(storageLimit int, c *gin.Context) error {
 	_, ok := utils.Env.Plans[storageLimit]
 	if !ok {
-		return BadRequestResponse(c, models.InvalidStorageLimitError)
+		return BadRequestResponse(c, models.ErrInvalidStorageLimit)
 	}
 	return nil
 }

@@ -115,11 +115,7 @@ func getAccountUpgradeV2Invoice(c *gin.Context) error {
 		//request.getUpgradeV2AccountInvoiceObject.DurationInMonths)
 		account.MonthsInSubscription)
 
-	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
-	if err != nil {
-		err = fmt.Errorf("error generating upgradeV2 wallet:  %v", err)
-		return BadRequestResponse(c, err)
-	}
+	ethAddr, privKey := services.GenerateWallet()
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
@@ -142,6 +138,7 @@ func getAccountUpgradeV2Invoice(c *gin.Context) error {
 		//UsdCost:          upgradeV2CostInUSD,
 		//DurationInMonths: request.getUpgradeV2AccountInvoiceObject.DurationInMonths,
 		DurationInMonths: account.MonthsInSubscription,
+		NetworkIdPaid:    utils.TestNetworkID,
 	}
 
 	upgradeV2InDB, err := models.GetOrCreateUpgrade(upgradeV2)
@@ -207,8 +204,8 @@ func checkUpgradeV2Status(c *gin.Context) error {
 	//	}
 	//}
 
-	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgradeV2.EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(upgradeV2.OpctCost)))
+	paid, networkID, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgradeV2.EthAddress),
+		services.ConvertToWeiUnit(big.NewFloat(upgradeV2.OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -218,6 +215,9 @@ func checkUpgradeV2Status(c *gin.Context) error {
 		})
 	}
 	if err := models.DB.Model(&upgradeV2).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	if err := upgradeV2.UpdateNetworkIdPaid(networkID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	if err := upgradeV2AccountAndUpdateExpireDates(account, request, c); err != nil {
@@ -240,7 +240,7 @@ func upgradeV2AccountAndUpdateExpireDates(account models.Account, request checkU
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
 	metadatasErr := updateMetadataExpiration(request.checkUpgradeV2StatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate().Add(24*time.Hour*60), c)
+		request.verification.PublicKey, account.ExpirationDate().Add(MetadataExpirationOffset), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }

@@ -3,12 +3,13 @@ package routes
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"math/big"
-	"time"
 )
 
 type getUpgradeAccountInvoiceObject struct {
@@ -113,12 +114,7 @@ func getAccountUpgradeInvoice(c *gin.Context) error {
 		//request.getUpgradeAccountInvoiceObject.DurationInMonths)
 		account.MonthsInSubscription)
 
-	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
-	if err != nil {
-		err = fmt.Errorf("error generating upgrade wallet:  %v", err)
-		return BadRequestResponse(c, err)
-	}
-
+	ethAddr, privKey := services.GenerateWallet()
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
 		privKey,
@@ -205,8 +201,8 @@ func checkUpgradeStatus(c *gin.Context) error {
 	//	}
 	//}
 
-	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgrade.EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost)))
+	paid, networkID, err := models.BackendManager.CheckIfPaid(services.StringToAddress(upgrade.EthAddress),
+		services.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -216,6 +212,9 @@ func checkUpgradeStatus(c *gin.Context) error {
 		})
 	}
 	if err := models.DB.Model(&upgrade).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	if err := upgrade.UpdateNetworkIdPaid(networkID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	if err := upgradeAccountAndUpdateExpireDates(account, request, c); err != nil {
@@ -238,7 +237,7 @@ func upgradeAccountAndUpdateExpireDates(account models.Account, request checkUpg
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
 	metadatasErr := updateMetadataExpiration(request.checkUpgradeStatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate().Add(24*time.Hour*60), c)
+		request.verification.PublicKey, account.ExpirationDate().Add(MetadataExpirationOffset), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }

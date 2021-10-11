@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"time"
-
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
@@ -61,7 +59,7 @@ func (v *checkRenewalV2StatusReq) getObjectRef() interface{} {
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/renew/invoice [post]
+// @Router /api/v2/renew/invoice [post]
 /*GetAccountRenewalV2InvoiceHandler is a handler for getting an invoice to renew an account*/
 func GetAccountRenewalV2InvoiceHandler() gin.HandlerFunc {
 	return ginHandlerFunc(getAccountRenewalV2Invoice)
@@ -82,7 +80,7 @@ func GetAccountRenewalV2InvoiceHandler() gin.HandlerFunc {
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
 // @Failure 404 {string} string "no account with that id: (with your accountID)"
 // @Failure 500 {string} string "some information about the internal error"
-// @Router /api/v1/renew [post]
+// @Router /api/v2/renew [post]
 /*CheckRenewalV2StatusHandler is a handler for checking the renewalV2 status*/
 func CheckRenewalV2StatusHandler() gin.HandlerFunc {
 	return ginHandlerFunc(checkRenewalV2Status)
@@ -111,11 +109,7 @@ func getAccountRenewalV2Invoice(c *gin.Context) error {
 
 	//renewalV2CostInUSD := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 
-	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
-	if err != nil {
-		err = fmt.Errorf("error generating renewalV2 wallet:  %v", err)
-		return BadRequestResponse(c, err)
-	}
+	ethAddr, privKey := services.GenerateWallet()
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
@@ -176,8 +170,8 @@ func checkRenewalV2Status(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("no renewalV2s found"))
 	}
 
-	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewalV2s[0].EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(renewalV2s[0].OpctCost)))
+	paid, networkID, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewalV2s[0].EthAddress),
+		services.ConvertToWeiUnit(big.NewFloat(renewalV2s[0].OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -194,6 +188,9 @@ func checkRenewalV2Status(c *gin.Context) error {
 	}
 
 	if err := models.DB.Model(&renewalV2s[0]).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
+		return InternalErrorResponse(c, err)
+	}
+	if err := renewalV2s[0].UpdateNetworkIdPaid(networkID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	if err := renewalV2AccountAndUpdateExpireDates(account, request, c); err != nil {
@@ -214,7 +211,7 @@ func renewalV2AccountAndUpdateExpireDates(account models.Account, request checkR
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
 	metadatasErr := updateMetadataExpirationV2(request.checkRenewalV2StatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate().Add(24*time.Hour*60), c)
+		request.verification.PublicKey, account.ExpirationDate().Add(MetadataExpirationOffset), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }

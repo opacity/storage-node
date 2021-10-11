@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .title }} | Opacity</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+  </head>
+  <body>
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h1 class="title">
+        Remove {{ .title }}?
+      </h1>
+      <div id="smart-contract">
+        <div class="box">
+          <form action="/admin/smart-contracts/remove/{{ .sc.ID }}" method="POST">
+          
+            <p class="mb-4">Confirm the removal of smart contract <b>"{{ .sc.Network }}" ({{ .sc.ContractAddressString }})</b>?</p>
+
+            <div class="field is-grouped is-grouped-centered">
+              <div class="control">
+                <button class="button is-link">Submit</button>
+              </div>
+              <div class="control">
+                <a class="button is-link is-light" href="/admin/smart-contracts">Cancel</a>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  </body>
+</html>

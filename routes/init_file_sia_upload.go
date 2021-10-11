@@ -48,7 +48,7 @@ func InitFileSiaUploadHandler() gin.HandlerFunc {
 
 func initFileSiaUploadWithContext(c *gin.Context) error {
 	if !utils.WritesEnabled() {
-		return ServiceUnavailableResponse(c, maintenanceError)
+		return ServiceUnavailableResponse(c, errMaintenance)
 	}
 
 	if !utils.IsSiaSynced() {

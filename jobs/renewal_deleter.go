@@ -14,7 +14,7 @@ func (u renewalDeleter) Name() string {
 }
 
 func (u renewalDeleter) ScheduleInterval() string {
-	return "@every 30m"
+	return "@every 6h"
 }
 
 func (u renewalDeleter) Run() {

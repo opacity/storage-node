@@ -14,7 +14,7 @@ func (u upgradeDeleter) Name() string {
 }
 
 func (u upgradeDeleter) ScheduleInterval() string {
-	return "@every 30m"
+	return "@every 6h"
 }
 
 func (u upgradeDeleter) Run() {

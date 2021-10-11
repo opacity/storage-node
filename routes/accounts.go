@@ -175,7 +175,7 @@ func accountUpdateApiVersionWithContext(c *gin.Context) error {
 
 func createAccount(c *gin.Context) error {
 	if !utils.WritesEnabled() {
-		return ServiceUnavailableResponse(c, maintenanceError)
+		return ServiceUnavailableResponse(c, errMaintenance)
 	}
 
 	request := accountCreateReq{}
@@ -184,11 +184,7 @@ func createAccount(c *gin.Context) error {
 		return err
 	}
 
-	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
-	if err != nil {
-		err = fmt.Errorf("error generating account wallet:  %v", err)
-		return BadRequestResponse(c, err)
-	}
+	ethAddr, privKey := services.GenerateWallet()
 
 	if err := verifyValidStorageLimit(request.accountCreateObj.StorageLimit, c); err != nil {
 		return err
@@ -253,10 +249,10 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	pending := false
-	paid, err := account.CheckIfPaid()
+	paid, networkID, err := account.CheckIfPaid()
 
 	if !paid && err == nil {
-		pending, err = account.CheckIfPending()
+		pending = account.CheckIfPending()
 	}
 
 	cost, _ := account.Cost()
@@ -310,6 +306,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	}
 
 	if res.PaymentStatus == Paid {
+		account.UpdateNetworkIdPaid(networkID)
 		return OkResponse(c, res)
 	}
 

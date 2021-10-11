@@ -94,8 +94,8 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Success(t *t
 	completedFileStart, err := models.GetCompletedFileByFileID(checkUpgradeV2StatusObj.FileHandles[0])
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountUpgradeV2Path, "v1", checkUpgradeV2StatusReq)
@@ -156,8 +156,8 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Still_Pendin
 	assert.Nil(t, err)
 	assert.Equal(t, models.InitialPaymentInProgress, upgrade.PaymentStatus)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountUpgradeV2Path, "v1", checkUpgradeV2StatusReq)
@@ -218,11 +218,11 @@ func Test_CheckUpgradeV2StatusHandler_Returns_Status_OPCT_UpgradeV2_Still_Pendin
 //	completedFileStart, err := models.GetCompletedFileByFileID(checkUpgradeV2StatusObj.FileHandles[0])
 //	assert.Nil(t, err)
 //
-//	models.EthWrapper.TransferToken = func(from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
+//	services.EthOpsWrapper.TransferToken = func(ethWrapper *services.Eth, from common.Address, privateKey *ecdsa.PrivateKey, to common.Address,
 //		opctAmount big.Int, gasPrice *big.Int) (bool, string, int64) {
 //		return true, "", 1
 //	}
-//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
+//	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
 //		return false, nil
 //	}
 //
@@ -322,8 +322,8 @@ func Test_CheckUpgradeV2StatusHandler_Multiple_UpgradeV2s(t *testing.T) {
 	completedFileStart, err := models.GetCompletedFileByFileID(checkUpgradeV2StatusObj.FileHandles[0])
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountUpgradeV2Path, "v1", checkUpgradeV2StatusReq)
@@ -393,7 +393,7 @@ func CreateUpgradeV2ForTest(t *testing.T, account models.Account, newStorageLimi
 func returnUpgradeV2ForTest(t *testing.T, account models.Account, newStorageLimit int) models.Upgrade {
 	abortIfNotTesting(t)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	upgradeCostInOPCT, _ := account.UpgradeCostInOPCT(utils.Env.Plans[newStorageLimit].StorageInGB,
 		models.DefaultMonthsPerSubscription)
@@ -410,5 +410,6 @@ func returnUpgradeV2ForTest(t *testing.T, account models.Account, newStorageLimi
 		//UsdCost:          upgradeCostInUSD,
 		EthAddress:    ethAddress.String(),
 		EthPrivateKey: hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, account.AccountID)),
+		NetworkIdPaid: utils.TestNetworkID,
 	}
 }

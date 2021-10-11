@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ .title }} | Opacity</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+</head>
+
+<body>
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h1 class="title">
+        {{ .title }} <span class="pl-2"><a class="button is-link" href="/admin/smart-contracts/add">Add new smart contract (network)</a></span>
+      </h1>
+      <div id="smart-contracts" class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Network</th>
+              <th>Network ID</th>
+              <th>Node URL</th>
+              <th>Contract address</th>
+              <th>Wallet address</th>
+              <th>Default gas price (gwei)</th>
+              <th>Slow gas price (gwei)</th>
+              <th>Fast gas price (gwei)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {{with .smartContracts}}
+            {{range .}}
+            <tr>
+              <th>{{ .ID }}</th>
+              <th>{{ .Network }}</th>
+              <th>{{ .NetworkIDuint }}</th>
+              <th>{{ .NodeURL }}</th>
+              <th>{{ .ContractAddressString }}</th>
+              <th>{{ .WalletAddressString }}</th>
+              <th>{{ .DefaultGasPriceGwei }}</th>
+              <th>{{ .SlowGasPriceGwei }}</th>
+              <th>{{ .FastGasPriceGwei }}</th>
+              <th>
+                <div class="buttons">
+                  <a href="edit/{{ .ID }}/" class="button is-link is-small is-primary is-outlined">Edit</a>
+                  <a href="confirm-remove/{{ .ID }}" class="button is-link is-small is-danger">Remove</a>
+                </div>
+              </th>
+            </tr>
+            {{end}}
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</body>
+
+</html>

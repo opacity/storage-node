@@ -1,19 +1,13 @@
 package services
 
 import (
-	"errors"
-
-	"github.com/opacity/storage-node/utils"
 	"github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/charge"
 )
 
 /*InitStripe initializes stripe service with our API keys*/
-func InitStripe() error {
-	if utils.Env.StripeKey == "" {
-		return errors.New("must specify stripe keys in .env file")
-	}
-	stripe.Key = utils.Env.StripeKey
+func InitStripe(stripeKey string) error {
+	stripe.Key = stripeKey
 	return nil
 }
 

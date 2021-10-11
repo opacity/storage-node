@@ -1,8 +1,9 @@
-package services
+package models
 
 import (
 	"testing"
 
+	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stripe/stripe-go"
@@ -10,51 +11,34 @@ import (
 
 func Test_Stripe_Init(t *testing.T) {
 	utils.SetTesting("../.env")
-	err := InitStripe()
-	assert.Nil(t, err)
 }
 
 func Test_CreateCharge(t *testing.T) {
-	if utils.Env.StripeKey != utils.Env.StripeKeyTest {
-		t.Fatalf("wrong stripe key")
-		return
-	}
-
 	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 
-	_, err := CreateCharge(costInDollars, stripeToken, utils.RandHexString(64))
+	_, err := services.CreateCharge(costInDollars, stripeToken, utils.RandHexString(64))
 	assert.Nil(t, err)
 }
 
 func Test_CheckChargeStatus(t *testing.T) {
-	if utils.Env.StripeKey != utils.Env.StripeKeyTest {
-		t.Fatalf("wrong stripe key")
-		return
-	}
-
 	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 
-	c, _ := CreateCharge(costInDollars, stripeToken, utils.RandHexString(64))
+	c, _ := services.CreateCharge(costInDollars, stripeToken, utils.RandHexString(64))
 
-	status, err := CheckChargeStatus(c.ID)
+	status, err := services.CheckChargeStatus(c.ID)
 	assert.Nil(t, err)
 	assert.Equal(t, string(stripe.PaymentIntentStatusSucceeded), status)
 }
 
 func Test_CheckChargePaid(t *testing.T) {
-	if utils.Env.StripeKey != utils.Env.StripeKeyTest {
-		t.Fatalf("wrong stripe key")
-		return
-	}
-
 	costInDollars := float64(15)
 	stripeToken := RandTestStripeToken()
 
-	c, _ := CreateCharge(costInDollars, stripeToken, utils.RandHexString(64))
+	c, _ := services.CreateCharge(costInDollars, stripeToken, utils.RandHexString(64))
 
-	paid, err := CheckChargePaid(c.ID)
+	paid, err := services.CheckChargePaid(c.ID)
 	assert.Nil(t, err)
 	assert.True(t, paid)
 }

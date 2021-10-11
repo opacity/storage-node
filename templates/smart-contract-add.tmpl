@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ .title }} | Opacity</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+  </head>
+  <body>
+  <section class="section">
+    <div class="container is-max-desktop">
+      <h1 class="title">
+        {{ .title }}
+      </h1>
+      <div id="smart-contract">
+        <div class="box">
+          <form action="/admin/smart-contracts/add" method="POST">
+          
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Network</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="text" name="network" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Network ID</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="number" name="networkID" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Node URL</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="url" name="nodeUrl" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Contract address</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="text" name="contractAddress" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Wallet Address</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="text" name="walletAddress" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Wallet private key</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="text" name="walletPrivateKey" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Default gas price (gwei)</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="number" name="defaultGasPrice" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Slow gas price (gwei)</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="number" name="slowGasPrice" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Fast gas price (gwei)</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" type="number" name="fastGasPrice" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-grouped is-grouped-centered">
+              <div class="control">
+                <button class="button is-link">Submit</button>
+              </div>
+              <div class="control">
+                <a class="button is-link is-light" href="/admin/smart-contracts">Cancel</a>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+  </body>
+</html>

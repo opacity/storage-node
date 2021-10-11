@@ -52,9 +52,9 @@ const FirstChunkIndex = 1
 /*UploadStatusMap is for pretty printing the UploadStatus*/
 var UploadStatusMap = make(map[UploadStatusType]string)
 
-/*IncompleteUploadErr is what we will get if we call FinishUpload on an upload that is not done.
+/*ErrIncompleteUpload is what we will get if we call FinishUpload on an upload that is not done.
 It's not really an error.*/
-var IncompleteUploadErr = errors.New("missing some chunks, cannot finish upload")
+var ErrIncompleteUpload = errors.New("missing some chunks, cannot finish upload")
 
 func init() {
 	UploadStatusMap[FileUploadNotStarted] = "FileUploadNotStarted"
@@ -233,7 +233,7 @@ func (file *File) UploadCompleted() bool {
 func (file *File) FinishUpload() (CompletedFile, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
-		return CompletedFile{}, IncompleteUploadErr
+		return CompletedFile{}, ErrIncompleteUpload
 	}
 
 	completedParts, err := GetCompletedPartsAsArray(file.FileID)
@@ -269,7 +269,7 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 func (file *File) FinishUploadPublic(title, description string) (PublicShare, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
-		return PublicShare{}, IncompleteUploadErr
+		return PublicShare{}, ErrIncompleteUpload
 	}
 
 	completedParts, err := GetCompletedPartsAsArray(file.FileID)

@@ -3,6 +3,7 @@ package routes
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"math/big"
@@ -50,7 +51,7 @@ func ReturnValidUploadFileReqForTest(t *testing.T, body UploadFileObj, privateKe
 func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 	abortIfNotTesting(t)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	account := models.Account{
 		AccountID:            accountID,
@@ -62,14 +63,15 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
 		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	return account
@@ -78,7 +80,7 @@ func CreateUnpaidAccountForTest(t *testing.T, accountID string) models.Account {
 func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 	abortIfNotTesting(t)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	account := models.Account{
 		AccountID:            accountID,
@@ -90,6 +92,7 @@ func CreatePaidAccountForTest(t *testing.T, accountID string) models.Account {
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountID)),
 		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}
 
 	if err := models.DB.Create(&account).Error; err != nil {
@@ -147,7 +150,7 @@ func setupTests(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
 	gin.SetMode(gin.TestMode)
-	err := services.InitStripe()
+	err := services.InitStripe(utils.Env.StripeKeyTest)
 	assert.Nil(t, err)
 }
 
@@ -398,4 +401,68 @@ func abortIfNotTesting(t *testing.T) {
 	if !utils.IsTestEnv() {
 		assert.Fail(t, "should only be calling this method while testing")
 	}
+}
+
+func GenerateMetadataV2(publicKeyBin []byte, t *testing.T) (testMetadataV2Key string, testMetadataV2Value string) {
+	abortIfNotTesting(t)
+
+	ttl := utils.TestValueTimeToLive
+
+	testMetadataV2Key = utils.GenerateMetadataV2Key()
+	testMetadataV2Value = utils.GenerateMetadataV2Key()
+	testMetadataV2KeyBin, err := base64.URLEncoding.DecodeString(testMetadataV2Key)
+	if err != nil {
+		t.Fatalf("error decoding metadata v2 key")
+	}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin, c)
+	permissionHashKey := getPermissionHashV2KeyForBadger(string(testMetadataV2KeyBin))
+
+	if err := utils.BatchSet(&utils.KVPairs{
+		string(testMetadataV2KeyBin): testMetadataV2Value,
+		permissionHashKey:            permissionHash,
+	}, ttl); err != nil {
+		t.Fatalf("there should not have been an error while saving the metadata v2 test values")
+	}
+
+	return
+}
+
+func GenerateMetadataMultipleV2(publicKeyBin []byte, numberOfMetadatas int, t *testing.T) (metadataV2Keys []string, generatedMetadatasSizeInt64 int64) {
+	abortIfNotTesting(t)
+
+	if numberOfMetadatas < 1 {
+		t.Fatalf("can't generate 0 metadatas")
+	}
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	metadataKvPairs := utils.KVPairs{}
+	generatedMetadatasSize := 0
+
+	for i := 0; i < numberOfMetadatas; i++ {
+		testMetadataV2Key := utils.GenerateMetadataV2Key()
+		testMetadataV2Value := utils.GenerateMetadataV2Key()
+		generatedMetadatasSize += len(testMetadataV2Value)
+
+		testMetadataV2KeyBin, err := base64.URLEncoding.DecodeString(testMetadataV2Key)
+		if err != nil {
+			t.Fatalf("error decoding metadata v2 key")
+		}
+		testMetadataV2KeyBinString := string(testMetadataV2KeyBin)
+		metadataKvPairs[testMetadataV2KeyBinString] = testMetadataV2Value
+		metadataV2Keys = append(metadataV2Keys, testMetadataV2Key)
+
+		permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin, c)
+		permissionHashKey := getPermissionHashV2KeyForBadger(testMetadataV2KeyBinString)
+		metadataKvPairs[permissionHashKey] = permissionHash
+	}
+
+	if err := utils.BatchSet(&metadataKvPairs, utils.TestValueTimeToLive*10); err != nil {
+		t.Fatalf("there should not have been an error while saving the metadata v2 test values")
+	}
+
+	generatedMetadatasSizeInt64 = int64(generatedMetadatasSize)
+
+	return
 }

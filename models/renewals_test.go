@@ -6,11 +6,12 @@ import (
 	"math/big"
 	"testing"
 
+	"time"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 func returnValidRenewal() (Renewal, Account) {
@@ -19,7 +20,7 @@ func returnValidRenewal() (Renewal, Account) {
 	// Add account to DB
 	DB.Create(&account)
 
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	renewalCostInOPCT, _ := account.Cost()
 
@@ -31,6 +32,7 @@ func returnValidRenewal() (Renewal, Account) {
 		OpctCost:      renewalCostInOPCT,
 		//UsdCost:          utils.Env.Plans[int(account.StorageLimit)].CostInUSD,
 		DurationInMonths: 12,
+		NetworkIdPaid:    utils.TestNetworkID,
 	}, account
 }
 
@@ -212,15 +214,15 @@ func Test_Renewal_SetRenewalsToNextPaymentStatus(t *testing.T) {
 func Test_Renewal_CheckIfPaid_Has_Paid(t *testing.T) {
 	renewal, _ := returnValidRenewal()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	if err := DB.Create(&renewal).Error; err != nil {
 		t.Fatalf("should have renewal account but didn't: " + err.Error())
 	}
 
-	paid, err := renewal.CheckIfPaid()
+	paid, _, err := renewal.CheckIfPaid()
 	assert.True(t, paid)
 	assert.Nil(t, err)
 
@@ -232,15 +234,15 @@ func Test_Renewal_CheckIfPaid_Has_Paid(t *testing.T) {
 func Test_Renewal_CheckIfPaid_Not_Paid(t *testing.T) {
 	renewal, _ := returnValidRenewal()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	if err := DB.Create(&renewal).Error; err != nil {
 		t.Fatalf("should have renewal account but didn't: " + err.Error())
 	}
 
-	paid, err := renewal.CheckIfPaid()
+	paid, _, err := renewal.CheckIfPaid()
 	assert.False(t, paid)
 	assert.Nil(t, err)
 
@@ -252,15 +254,15 @@ func Test_Renewal_CheckIfPaid_Not_Paid(t *testing.T) {
 func Test_Renewal_CheckIfPaid_Error_While_Checking(t *testing.T) {
 	renewal, _ := returnValidRenewal()
 
-	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, errors.New("some error")
+	BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, 0, errors.New("some error")
 	}
 
 	if err := DB.Create(&renewal).Error; err != nil {
 		t.Fatalf("should have renewal account but didn't: " + err.Error())
 	}
 
-	paid, err := renewal.CheckIfPaid()
+	paid, _, err := renewal.CheckIfPaid()
 	assert.False(t, paid)
 	assert.NotNil(t, err)
 

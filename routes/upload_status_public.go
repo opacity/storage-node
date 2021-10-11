@@ -83,7 +83,7 @@ func checkUploadStatusPublic(c *gin.Context) error {
 
 	publicShare, err := file.FinishUploadPublic(request.uploadStatusPublicObj.Title, request.uploadStatusPublicObj.Description)
 	if err != nil {
-		if err == models.IncompleteUploadErr {
+		if err == models.ErrIncompleteUpload {
 			incompleteIndexes, err := models.GetIncompleteIndexesAsArray(file.FileID, file.EndIndex)
 			if err != nil || len(incompleteIndexes) == 0 {
 				// fall back to the old way to get data

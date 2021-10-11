@@ -29,10 +29,6 @@ func main() {
 	os.Setenv("GO_ENV", GO_ENV)
 	if GO_ENV == "production" || GO_ENV == "dev2" {
 		tracesSampleRate := 0.3
-		// keep all traces on dev2
-		if GO_ENV == "dev2" {
-			tracesSampleRate = 1
-		}
 		err := sentry.Init(sentry.ClientOptions{
 			Dsn:              "https://03e807e8312d47938a94b73ebec3cc84@o126495.ingest.sentry.io/5855671",
 			Release:          VERSION,
@@ -51,8 +47,8 @@ func main() {
 	defer models.Close()
 
 	utils.SetLive()
-	services.SetWallet()
-	err := services.InitStripe()
+
+	err := services.InitStripe(utils.Env.StripeKeyProd)
 	utils.PanicOnError(err)
 
 	utils.SlackLog("Begin to restart service!")
@@ -62,6 +58,7 @@ func main() {
 	}
 
 	setEnvPlans()
+	models.MigrateEnvWallets()
 
 	jobs.StartupJobs()
 	if utils.Env.EnableJobs {

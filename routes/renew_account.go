@@ -10,7 +10,6 @@ import (
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"time"
 )
 
 type getRenewalAccountInvoiceObject struct {
@@ -69,8 +68,8 @@ func GetAccountRenewalInvoiceHandler() gin.HandlerFunc {
 // CheckRenewalStatusHandler godoc
 // @Summary check the renewal status
 // @Description check the renewal status
-// @Accept  json
-// @Produce  json
+// @Accept json
+// @Produce json
 // @Param checkRenewalStatusReq body routes.checkRenewalStatusReq true "check renewal status object"
 // @description requestBody should be a stringified version of (values are just examples):
 // @description {
@@ -110,11 +109,7 @@ func getAccountRenewalInvoice(c *gin.Context) error {
 
 	//renewalCostInUSD := utils.Env.Plans[int(account.StorageLimit)].CostInUSD
 
-	ethAddr, privKey, err := services.EthWrapper.GenerateWallet()
-	if err != nil {
-		err = fmt.Errorf("error generating renewal wallet:  %v", err)
-		return BadRequestResponse(c, err)
-	}
+	ethAddr, privKey := services.GenerateWallet()
 
 	encryptedKeyInBytes, encryptErr := utils.EncryptWithErrorReturn(
 		utils.Env.EncryptionKey,
@@ -175,8 +170,8 @@ func checkRenewalStatus(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("no renewals found"))
 	}
 
-	paid, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewals[0].EthAddress),
-		utils.ConvertToWeiUnit(big.NewFloat(renewals[0].OpctCost)))
+	paid, networkID, err := models.BackendManager.CheckIfPaid(services.StringToAddress(renewals[0].EthAddress),
+		services.ConvertToWeiUnit(big.NewFloat(renewals[0].OpctCost)))
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -195,6 +190,11 @@ func checkRenewalStatus(c *gin.Context) error {
 	if err := models.DB.Model(&renewals[0]).Update("payment_status", models.InitialPaymentReceived).Error; err != nil {
 		return InternalErrorResponse(c, err)
 	}
+
+	if err := renewals[0].UpdateNetworkIdPaid(networkID); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
 	if err := renewalAccountAndUpdateExpireDates(account, request, c); err != nil {
 		return InternalErrorResponse(c, err)
 	}
@@ -213,7 +213,7 @@ func renewalAccountAndUpdateExpireDates(account models.Account, request checkRen
 	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
 	// be deleted too soon
 	metadatasErr := updateMetadataExpiration(request.checkRenewalStatusObject.MetadataKeys,
-		request.verification.PublicKey, account.ExpirationDate().Add(24*time.Hour*60), c)
+		request.verification.PublicKey, account.ExpirationDate().Add(MetadataExpirationOffset), c)
 
 	return utils.CollectErrors([]error{filesErr, metadatasErr})
 }

@@ -3,11 +3,13 @@ package models
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"math/big"
+	"time"
+
 	"github.com/jinzhu/gorm"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
-	"math/big"
-	"time"
 )
 
 type Upgrade struct {
@@ -24,7 +26,8 @@ type Upgrade struct {
 	PaymentMethod   PaymentMethodType `json:"paymentMethod" gorm:"default:0"`
 	OpctCost        float64           `json:"opctCost" validate:"omitempty,gte=0" example:"1.56"`
 	//UsdCost          float64           `json:"usdcost" validate:"omitempty,gte=0" example:"39.99"`
-	DurationInMonths int `json:"durationInMonths" gorm:"default:12" validate:"required,gte=1" minimum:"1" example:"12"`
+	DurationInMonths int  `json:"durationInMonths" gorm:"default:12" validate:"required,gte=1" minimum:"1" example:"12"`
+	NetworkIdPaid    uint `json:"networkIdPaid"`
 }
 
 /*UpgradeCollectionFunctions maps a PaymentStatus to the method that should be run
@@ -58,6 +61,18 @@ func (upgrade *Upgrade) BeforeUpdate(scope *gorm.Scope) error {
 func (upgrade *Upgrade) BeforeDelete(scope *gorm.Scope) error {
 	DeleteStripePaymentIfExists(upgrade.AccountID)
 	return nil
+}
+
+func (upgrade *Upgrade) AfterFind(tx *gorm.DB) (err error) {
+	if upgrade.NetworkIdPaid == 0 {
+		// Support legacy upgrades
+		upgrade.NetworkIdPaid = 1
+	}
+	return
+}
+
+func (upgrade *Upgrade) UpdateNetworkIdPaid(networkID uint) error {
+	return DB.Model(&upgrade).Update("network_id_paid", networkID).Error
 }
 
 /*GetOrCreateUpgrade will either get or create an upgrade.  If the upgrade already existed it will update the OpctCost
@@ -111,22 +126,24 @@ func SetUpgradesToNextPaymentStatus(upgrades []Upgrade) {
 }
 
 /*CheckIfPaid returns whether the upgrade has been paid for*/
-func (upgrade *Upgrade) CheckIfPaid() (bool, error) {
+func (upgrade *Upgrade) CheckIfPaid() (bool, uint, error) {
 	if upgrade.PaymentStatus >= InitialPaymentReceived {
-		return true, nil
+		return true, upgrade.NetworkIdPaid, nil
 	}
+
 	costInWei := upgrade.GetTotalCostInWei()
-	paid, err := BackendManager.CheckIfPaid(services.StringToAddress(upgrade.EthAddress),
-		costInWei)
+	paid, networkID, err := BackendManager.CheckIfPaid(services.StringToAddress(upgrade.EthAddress), costInWei)
+
 	if paid {
 		SetUpgradesToNextPaymentStatus([]Upgrade{*(upgrade)})
 	}
-	return paid, err
+
+	return paid, networkID, err
 }
 
 /*GetTotalCostInWei gets the total cost in wei for an upgrade*/
 func (upgrade *Upgrade) GetTotalCostInWei() *big.Int {
-	return utils.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost))
+	return services.ConvertToWeiUnit(big.NewFloat(upgrade.OpctCost))
 }
 
 /*GetUpgradesByPaymentStatus gets upgrades based on the payment status passed in*/
@@ -144,21 +161,21 @@ sets the upgrade to the next payment status.
 Not calling SetUpgradesToNextPaymentStatus here because CheckIfPaid calls it
 */
 func handleUpgradeWithPaymentInProgress(upgrade Upgrade) error {
-	_, err := upgrade.CheckIfPaid()
+	_, _, err := upgrade.CheckIfPaid()
 	return err
 }
 
 /*handleUpgradeThatNeedsGas sends some ETH to an upgrade that we will later need to collect tokens from and sets the
 upgrade's payment status to the next status.*/
 func handleUpgradeThatNeedsGas(upgrade Upgrade) error {
-	paid, _ := upgrade.CheckIfPaid()
+	paid, networkID, _ := upgrade.CheckIfPaid()
 	var transferErr error
 	if paid {
-		_, _, _, transferErr = EthWrapper.TransferETH(
-			services.MainWalletAddress,
-			services.MainWalletPrivateKey,
+		_, _, _, transferErr = services.EthOpsWrapper.TransferETH(services.EthWrappers[networkID],
+			services.EthWrappers[networkID].MainWalletAddress,
+			services.EthWrappers[networkID].MainWalletPrivateKey,
 			services.StringToAddress(upgrade.EthAddress),
-			services.DefaultGasForPaymentCollection)
+			services.EthWrappers[networkID].DefaultGasForPaymentCollection)
 		if transferErr == nil {
 			SetUpgradesToNextPaymentStatus([]Upgrade{upgrade})
 			return nil
@@ -170,57 +187,79 @@ func handleUpgradeThatNeedsGas(upgrade Upgrade) error {
 /*handleUpgradeReceivingGas checks whether the gas has arrived and transitions the upgrade to the next payment
 status if so.*/
 func handleUpgradeReceivingGas(upgrade Upgrade) error {
-	ethBalance := EthWrapper.GetETHBalance(services.StringToAddress(upgrade.EthAddress))
-	if ethBalance.Cmp(big.NewInt(0)) > 0 {
-		SetUpgradesToNextPaymentStatus([]Upgrade{upgrade})
+	for networkID := range services.EthWrappers {
+		ethBalance := services.EthOpsWrapper.GetETHBalance(services.EthWrappers[networkID],
+			services.StringToAddress(upgrade.EthAddress))
+
+		if ethBalance.Cmp(big.NewInt(0)) > 0 {
+			SetUpgradesToNextPaymentStatus([]Upgrade{upgrade})
+		}
+		return nil
 	}
+
 	return nil
 }
 
 /*handleUpgradeReadyForCollection will attempt to retrieve the tokens from the upgrade's payment address and set the
 upgrade's payment status to the next status if there are no errors.*/
 func handleUpgradeReadyForCollection(upgrade Upgrade) error {
-	tokenBalance := EthWrapper.GetTokenBalance(services.StringToAddress(upgrade.EthAddress))
-	ethBalance := EthWrapper.GetETHBalance(services.StringToAddress(upgrade.EthAddress))
-	keyInBytes, decryptErr := utils.DecryptWithErrorReturn(
-		utils.Env.EncryptionKey,
-		upgrade.EthPrivateKey,
-		upgrade.AccountID,
-	)
-	privateKey, keyErr := services.StringToPrivateKey(hex.EncodeToString(keyInBytes))
+	for networkID := range services.EthWrappers {
+		tokenBalance := services.EthOpsWrapper.GetTokenBalance(services.EthWrappers[networkID],
+			services.StringToAddress(upgrade.EthAddress))
+		ethBalance := services.EthOpsWrapper.GetETHBalance(services.EthWrappers[networkID],
+			services.StringToAddress(upgrade.EthAddress))
 
-	if err := utils.ReturnFirstError([]error{decryptErr, keyErr}); err != nil {
-		return err
-	} else if tokenBalance.Cmp(big.NewInt(0)) == 0 {
-		return errors.New("expected a token balance but found 0")
-	} else if ethBalance.Cmp(big.NewInt(0)) == 0 {
-		return errors.New("expected an eth balance but found 0")
-	} else if tokenBalance.Cmp(big.NewInt(0)) < 0 {
-		return errors.New("got negative balance for tokenBalance")
-	} else if ethBalance.Cmp(big.NewInt(0)) < 0 {
-		return errors.New("got negative balance for ethBalance")
+		keyInBytes, decryptErr := utils.DecryptWithErrorReturn(
+			utils.Env.EncryptionKey,
+			upgrade.EthPrivateKey,
+			upgrade.AccountID,
+		)
+		privateKey, keyErr := services.StringToPrivateKey(hex.EncodeToString(keyInBytes))
+
+		if err := utils.ReturnFirstError([]error{decryptErr, keyErr}); err != nil {
+			return err
+		} else if tokenBalance.Cmp(big.NewInt(0)) == 0 {
+			fmt.Printf("expected a token balance but found 0 for networkID %d", networkID)
+		} else if ethBalance.Cmp(big.NewInt(0)) == 0 {
+			fmt.Printf("expected an eth balance but found 0 for networkID %d", networkID)
+		} else if tokenBalance.Cmp(big.NewInt(0)) < 0 {
+			fmt.Printf("got negative balance for tokenBalance for networkID %d", networkID)
+		} else if ethBalance.Cmp(big.NewInt(0)) < 0 {
+			fmt.Printf("got negative balance for ethBalance for networkID %d", networkID)
+		}
+
+		success, _, _ := services.EthOpsWrapper.TransferToken(services.EthWrappers[networkID],
+			services.StringToAddress(upgrade.EthAddress),
+			privateKey,
+			services.EthWrappers[networkID].MainWalletAddress,
+			*tokenBalance,
+			services.EthWrappers[networkID].SlowGasPrice)
+		if success {
+			SetUpgradesToNextPaymentStatus([]Upgrade{upgrade})
+			return nil
+		}
 	}
 
-	success, _, _ := EthWrapper.TransferToken(
-		services.StringToAddress(upgrade.EthAddress),
-		privateKey,
-		services.MainWalletAddress,
-		*tokenBalance,
-		services.SlowGasPrice)
-	if success {
-		SetUpgradesToNextPaymentStatus([]Upgrade{upgrade})
-		return nil
-	}
 	return errors.New("payment collection failed")
 }
 
 /*handleUpgradeWithCollectionInProgress will check the token balance of an upgrade's payment address.  If the balance
 is zero, it means the collection has succeeded and the payment status is set to the next status*/
 func handleUpgradeWithCollectionInProgress(upgrade Upgrade) error {
-	balance := EthWrapper.GetTokenBalance(services.StringToAddress(upgrade.EthAddress))
-	if balance.Cmp(big.NewInt(0)) == 0 {
+	balanceChecks := []bool{}
+	for networkID := range services.EthWrappers {
+		balance := services.EthOpsWrapper.GetTokenBalance(services.EthWrappers[networkID],
+			services.StringToAddress(upgrade.EthAddress))
+
+		if balance.Cmp(big.NewInt(0)) > 0 {
+			balanceChecks = append(balanceChecks, true)
+		}
+	}
+
+	if len(balanceChecks) == 0 {
 		SetUpgradesToNextPaymentStatus([]Upgrade{upgrade})
 	}
+
 	return nil
 }
 
@@ -230,8 +269,9 @@ func handleUpgradeAlreadyCollected(upgrade Upgrade) error {
 
 /*PurgeOldUpgrades deletes upgrades past a certain age*/
 func PurgeOldUpgrades(hoursToRetain int) error {
-	err := DB.Where("updated_at < ?",
-		time.Now().Add(-1*time.Hour*time.Duration(hoursToRetain))).Delete(&Upgrade{}).Error
+	err := DB.Where("updated_at < ? AND payment_status = ?",
+		time.Now().Add(-1*time.Hour*time.Duration(hoursToRetain)),
+		PaymentRetrievalComplete).Delete(&Upgrade{}).Error
 
 	return err
 }

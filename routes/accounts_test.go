@@ -40,7 +40,7 @@ func returnFailedVerificationCreateAccountReq(t *testing.T, body accountCreateOb
 
 func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.PrivateKey) {
 	accountId, privateKeyToSignWith := generateValidateAccountId(t)
-	ethAddress, privateKey, _ := services.EthWrapper.GenerateWallet()
+	ethAddress, privateKey := services.GenerateWallet()
 
 	return models.Account{
 		AccountID:            accountId,
@@ -52,6 +52,7 @@ func returnValidAccountAndPrivateKey(t *testing.T) (models.Account, *ecdsa.Priva
 		EthAddress:           ethAddress.String(),
 		EthPrivateKey:        hex.EncodeToString(utils.Encrypt(utils.Env.EncryptionKey, privateKey, accountId)),
 		ExpiredAt:            time.Now().AddDate(0, models.DefaultMonthsPerSubscription, 0),
+		NetworkIdPaid:        utils.TestNetworkID,
 	}, privateKeyToSignWith
 }
 
@@ -135,8 +136,8 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsPaid
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return true, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return true, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -151,13 +152,13 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsUnpa
 	validReq := returnValidGetAccountReq(t, accountGetReqObj{
 		Timestamp: time.Now().Unix(),
 	}, privateKey)
-	//	// Add account to DB
+	// Add account to DB
 	if err := models.DB.Create(&account).Error; err != nil {
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -182,8 +183,8 @@ func Test_CheckAccountPaymentStatusHandler_ExpectNoErrorIfAccountExistsAndIsExpi
 	err := models.DB.Save(&account).Error
 	assert.Nil(t, err)
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
 	w := httpPostRequestHelperForTest(t, AccountDataPath, "v1", validReq)
@@ -205,11 +206,11 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 		t.Fatalf("should have created account but didn't: " + err.Error())
 	}
 
-	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, error) {
-		return false, nil
+	models.BackendManager.CheckIfPaid = func(address common.Address, amount *big.Int) (bool, uint, error) {
+		return false, utils.TestNetworkID, nil
 	}
 
-	stripeToken := services.RandTestStripeToken()
+	stripeToken := models.RandTestStripeToken()
 	charge, _ := services.CreateCharge(float64(utils.Env.Plans[int(account.StorageLimit)].CostInUSD), stripeToken, account.AccountID)
 
 	stripePayment := models.StripePayment{
@@ -230,4 +231,25 @@ func Test_CheckAccountPaymentStatusHandler_ReturnsStripeDataIfStripePaymentExist
 	account, _ = models.GetAccountById(account.AccountID)
 	// check that from the account's perspective, it is still unpaid
 	assert.Equal(t, models.InitialPaymentInProgress, account.PaymentStatus)
+}
+
+func Test_UpdateApiVersion(t *testing.T) {
+	account, privateKey := returnValidAccountAndPrivateKey(t)
+	validReq := returnValidGetAccountReq(t, accountGetReqObj{
+		Timestamp: time.Now().Unix(),
+	}, privateKey)
+	account.ApiVersion = 1
+
+	if err := models.DB.Create(&account).Error; err != nil {
+		t.Fatalf("should have created account but didn't: " + err.Error())
+	}
+
+	w := httpPostRequestHelperForTest(t, AccountUpdateApiVersion, "v2", validReq)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "account apiVersion updated to v2")
+
+	updatedAccount, err := models.GetAccountById(account.AccountID)
+	assert.Nil(t, err)
+	assert.Equal(t, updatedAccount.ApiVersion, 2)
 }

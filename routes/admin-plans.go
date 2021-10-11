@@ -10,37 +10,22 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-/*
-@TODO: add docs
-*/
 func AdminPlansGetHandler() gin.HandlerFunc {
 	return ginHandlerFunc(adminPlanGet)
 }
 
-/*
-@TODO: add docs
-*/
 func AdminPlansRemoveConfirmHandler() gin.HandlerFunc {
 	return ginHandlerFunc(adminPlanRemoveConfirm)
 }
 
-/*
-@TODO: add docs
-*/
 func AdminPlansRemoveHandler() gin.HandlerFunc {
 	return ginHandlerFunc(adminPlanRemove)
 }
 
-/*
-@TODO: add docs
-*/
 func AdminPlansChangeHandler() gin.HandlerFunc {
 	return ginHandlerFunc(adminPlanChange)
 }
 
-/*
-@TODO: add docs
-*/
 func AdminPlansAddHandler() gin.HandlerFunc {
 	return ginHandlerFunc(adminPlanAdd)
 }
@@ -209,7 +194,7 @@ func adminPlanAdd(c *gin.Context) error {
 		if _, ok := utils.Env.Plans[storageInGB]; !ok {
 			utils.Env.Plans[storageInGB] = planInfo
 
-			return OkResponse(c, StatusRes{Status: "plan " + planInfo.Name + " was add"})
+			return OkResponse(c, StatusRes{Status: "plan " + planInfo.Name + " was added"})
 		}
 	}
 

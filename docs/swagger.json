@@ -592,7 +592,7 @@
         },
         "/api/v1/stripe/create": {
             "post": {
-                "description": "create a stripe payment\nrequestBody should be a stringified version of (values are just examples):\n{\n\"stripeToken\": \"tok_KPte7942xySKBKyrBu11yEpf\",\n}",
+                "description": "create a stripe payment\nrequestBody should be a stringified version of (values are just examples):\n{\n\"stripeToken\": \"tok_KPte7942xySKBKyrBu11yEpf\",\n\"timestamp\": 1659325302,\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -1031,6 +1031,55 @@
                 }
             }
         },
+        "/api/v2/download/private": {
+            "post": {
+                "description": "download a file without cryptographic verification",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "download a file without cryptographic verification",
+                "parameters": [
+                    {
+                        "description": "download object for non-signed requests",
+                        "name": "routes.DownloadFileObj",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.DownloadFileObj"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.downloadFileRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "such data does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/download/public": {
             "post": {
                 "description": "returns the URLs for a public file and it's thumbnail, if no thumbnail is present, return a default one",
@@ -1239,6 +1288,61 @@
                 }
             }
         },
+        "/api/v2/metadata/delete-multiple": {
+            "post": {
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataV2Keys\": [\"public key for the metadataV2 encoded to base64\", \"another public key for the metadataV2 encoded to base64\", \"...\"],\n\"timestamp\": 1557346389\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "delete multiple metadataV2, if a key is not found, it won't be treated as an error",
+                "parameters": [
+                    {
+                        "description": "object for endpoint that only needs an array of metadataV2Keys and timestamp",
+                        "name": "metadataMultipleV2KeyReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.metadataMultipleV2KeyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, incorrect key length",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "subscription expired, or the invoice resonse",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/metadata/get": {
             "post": {
                 "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataV2Key\": \"public key for the metadataV2 encoded to base64\",\n\"timestamp\": 1557346389\n}",
@@ -1380,7 +1484,7 @@
         },
         "/api/v2/public-share/convert": {
             "post": {
-                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\n}",
+                "description": "convert private file to a public shared one\nrequestBody should be a stringified version of:\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"fileSize\": 543534,\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -1573,6 +1677,104 @@
                     },
                     "404": {
                         "description": "public share or file does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/renew": {
+            "post": {
+                "description": "check the renewalV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "check the renewalV2 status",
+                "parameters": [
+                    {
+                        "description": "check renewalV2 status object",
+                        "name": "checkRenewalV2StatusReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.checkRenewalV2StatusReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/renew/invoice": {
+            "post": {
+                "description": "get an invoice to renew an account\nrequestBody should be a stringified version of (values are just examples):\n{\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get an invoice to renew an account",
+                "parameters": [
+                    {
+                        "description": "get renewalV2 invoice object",
+                        "name": "getRenewalV2AccountInvoiceReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.getRenewalV2AccountInvoiceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.getRenewalV2AccountInvoiceRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
                         "schema": {
                             "type": "string"
                         }
@@ -1825,6 +2027,35 @@
                 }
             }
         },
+        "/api/v2/smart-contracts": {
+            "get": {
+                "description": "gets the smart contracts address and related info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "gets the smart contracts address",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/routes.SmartContractResp"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/upload-public": {
             "post": {
                 "description": "upload a chunk of a file. The first partIndex must be 1. The storage for this file does not count\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"partIndex\": 1,\n}",
@@ -1946,46 +2177,6 @@
         }
     },
     "definitions": {
-        "models.CreateShortlinkObj": {
-            "type": "object",
-            "required": [
-                "description",
-                "file_id",
-                "title"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "maxLength": 65535,
-                    "minLength": 1,
-                    "example": "lorem ipsum"
-                },
-                "fileExtension": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 1,
-                    "example": "png"
-                },
-                "file_id": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 64,
-                    "example": "the id of the file"
-                },
-                "mimeType": {
-                    "type": "string",
-                    "maxLength": 255,
-                    "minLength": 1,
-                    "example": "image/png"
-                },
-                "title": {
-                    "type": "string",
-                    "maxLength": 65535,
-                    "minLength": 1,
-                    "example": "LoremIpsum"
-                }
-            }
-        },
         "models.Invoice": {
             "type": "object",
             "required": [
@@ -2012,10 +2203,6 @@
                 "signature"
             ],
             "properties": {
-                "createShortlinkObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/models.CreateShortlinkObj"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -2055,20 +2242,6 @@
                 }
             }
         },
-        "routes.GenericFileActionObj": {
-            "type": "object",
-            "required": [
-                "fileHandle"
-            ],
-            "properties": {
-                "fileHandle": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 64,
-                    "example": "a deterministically created file handle"
-                }
-            }
-        },
         "routes.GenericSiaFileReq": {
             "type": "object",
             "required": [
@@ -2077,10 +2250,6 @@
                 "signature"
             ],
             "properties": {
-                "genericFileActionObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.GenericFileActionObj"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -2100,25 +2269,6 @@
                 }
             }
         },
-        "routes.InitFileSiaUploadObj": {
-            "type": "object",
-            "required": [
-                "fileHandle",
-                "fileSizeInByte"
-            ],
-            "properties": {
-                "fileHandle": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 64,
-                    "example": "a deterministically created file handle"
-                },
-                "fileSizeInByte": {
-                    "type": "integer",
-                    "example": 200000000000006
-                }
-            }
-        },
         "routes.InitFileSiaUploadReq": {
             "type": "object",
             "required": [
@@ -2128,10 +2278,6 @@
                 "signature"
             ],
             "properties": {
-                "initFileSiaUploadObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.InitFileSiaUploadObj"
-                },
                 "metadataAsFile": {
                     "type": "string"
                 },
@@ -2154,30 +2300,6 @@
                 }
             }
         },
-        "routes.InitFileUploadObj": {
-            "type": "object",
-            "required": [
-                "endIndex",
-                "fileHandle",
-                "fileSizeInByte"
-            ],
-            "properties": {
-                "endIndex": {
-                    "type": "integer",
-                    "example": 2
-                },
-                "fileHandle": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 64,
-                    "example": "a deterministically created file handle"
-                },
-                "fileSizeInByte": {
-                    "type": "integer",
-                    "example": 200000000000006
-                }
-            }
-        },
         "routes.InitFileUploadReq": {
             "type": "object",
             "required": [
@@ -2187,10 +2309,6 @@
                 "signature"
             ],
             "properties": {
-                "initFileUploadObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.InitFileUploadObj"
-                },
                 "metadata": {
                     "type": "string",
                     "example": "the metadata of the file you are about to upload, as an array of bytes"
@@ -2221,22 +2339,7 @@
             "type": "object",
             "properties": {
                 "plans": {
-                    "type": "object",
                     "$ref": "#/definitions/utils.PlanResponseType"
-                }
-            }
-        },
-        "routes.PrivateToPublicObj": {
-            "type": "object",
-            "required": [
-                "fileHandle"
-            ],
-            "properties": {
-                "fileHandle": {
-                    "type": "string",
-                    "maxLength": 128,
-                    "minLength": 128,
-                    "example": "a deterministically created file handle"
                 }
             }
         },
@@ -2248,10 +2351,6 @@
                 "signature"
             ],
             "properties": {
-                "privateToPublicObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.PrivateToPublicObj"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -2282,18 +2381,6 @@
                 }
             }
         },
-        "routes.PublicShareObj": {
-            "type": "object",
-            "required": [
-                "shortlink"
-            ],
-            "properties": {
-                "shortlink": {
-                    "type": "string",
-                    "example": "the short link of the completed file"
-                }
-            }
-        },
         "routes.PublicShareOpsReq": {
             "type": "object",
             "required": [
@@ -2308,10 +2395,6 @@
                     "minLength": 66,
                     "example": "a 66-character public key"
                 },
-                "publicShareObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.PublicShareObj"
-                },
                 "requestBody": {
                     "type": "string",
                     "example": "look at description for example"
@@ -2325,31 +2408,37 @@
                 }
             }
         },
+        "routes.SmartContractResp": {
+            "type": "object",
+            "properties": {
+                "contracts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/routes.SmartContractRespEntity"
+                    }
+                }
+            }
+        },
+        "routes.SmartContractRespEntity": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "chainId": {
+                    "type": "integer"
+                },
+                "network": {
+                    "type": "string"
+                }
+            }
+        },
         "routes.StatusRes": {
             "type": "object",
             "properties": {
                 "status": {
                     "type": "string",
                     "example": "status of the request"
-                }
-            }
-        },
-        "routes.UploadFileObj": {
-            "type": "object",
-            "required": [
-                "fileHandle",
-                "partIndex"
-            ],
-            "properties": {
-                "fileHandle": {
-                    "type": "string",
-                    "maxLength": 64,
-                    "minLength": 64,
-                    "example": "a deterministically created file handle"
-                },
-                "partIndex": {
-                    "type": "integer",
-                    "example": 1
                 }
             }
         },
@@ -2382,10 +2471,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                },
-                "uploadFileObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.UploadFileObj"
                 }
             }
         },
@@ -2418,10 +2503,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                },
-                "uploadFileSiaObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.GenericFileActionObj"
                 }
             }
         },
@@ -2449,30 +2530,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                },
-                "uploadStatusObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.GenericFileActionObj"
-                }
-            }
-        },
-        "routes.accountCreateObj": {
-            "type": "object",
-            "required": [
-                "durationInMonths",
-                "storageLimit"
-            ],
-            "properties": {
-                "durationInMonths": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 12
-                },
-                "storageLimit": {
-                    "type": "integer",
-                    "maximum": 2048,
-                    "minimum": 10,
-                    "example": 100
                 }
             }
         },
@@ -2484,10 +2541,6 @@
                 "signature"
             ],
             "properties": {
-                "accountCreateObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.accountCreateObj"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -2517,7 +2570,6 @@
                     "type": "string"
                 },
                 "invoice": {
-                    "type": "object",
                     "$ref": "#/definitions/models.Invoice"
                 }
             }
@@ -2529,7 +2581,6 @@
             ],
             "properties": {
                 "account": {
-                    "type": "object",
                     "$ref": "#/definitions/routes.accountGetObj"
                 },
                 "error": {
@@ -2541,7 +2592,6 @@
                     "example": "paid"
                 },
                 "stripeData": {
-                    "type": "object",
                     "$ref": "#/definitions/routes.stripeDataObj"
                 }
             }
@@ -2615,17 +2665,6 @@
                 }
             }
         },
-        "routes.accountGetReqObj": {
-            "type": "object",
-            "required": [
-                "timestamp"
-            ],
-            "properties": {
-                "timestamp": {
-                    "type": "integer"
-                }
-            }
-        },
         "routes.accountUnpaidRes": {
             "type": "object",
             "required": [
@@ -2633,7 +2672,6 @@
             ],
             "properties": {
                 "account": {
-                    "type": "object",
                     "$ref": "#/definitions/routes.accountGetObj"
                 },
                 "error": {
@@ -2641,7 +2679,6 @@
                     "example": "the error encountered while checking"
                 },
                 "invoice": {
-                    "type": "object",
                     "$ref": "#/definitions/models.Invoice"
                 },
                 "paymentStatus": {
@@ -2649,35 +2686,7 @@
                     "example": "paid"
                 },
                 "stripeData": {
-                    "type": "object",
                     "$ref": "#/definitions/routes.stripeDataObj"
-                }
-            }
-        },
-        "routes.checkRenewalStatusObject": {
-            "type": "object",
-            "required": [
-                "fileHandles",
-                "metadataKeys"
-            ],
-            "properties": {
-                "fileHandles": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "an array containing all your file handles"
-                    ]
-                },
-                "metadataKeys": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "an array containing all your metadata keys"
-                    ]
                 }
             }
         },
@@ -2689,10 +2698,6 @@
                 "signature"
             ],
             "properties": {
-                "checkRenewalStatusObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.checkRenewalStatusObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -2709,33 +2714,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                }
-            }
-        },
-        "routes.checkRenewalV2StatusObject": {
-            "type": "object",
-            "required": [
-                "fileHandles",
-                "metadataKeys"
-            ],
-            "properties": {
-                "fileHandles": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "an array containing all your file handles"
-                    ]
-                },
-                "metadataKeys": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "an array containing all your metadata keys"
-                    ]
                 }
             }
         },
@@ -2747,10 +2725,6 @@
                 "signature"
             ],
             "properties": {
-                "checkRenewalV2StatusObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.checkRenewalV2StatusObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -2767,45 +2741,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                }
-            }
-        },
-        "routes.checkUpgradeStatusObject": {
-            "type": "object",
-            "required": [
-                "durationInMonths",
-                "fileHandles",
-                "metadataKeys",
-                "storageLimit"
-            ],
-            "properties": {
-                "durationInMonths": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 12
-                },
-                "fileHandles": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "an array containing all your file handles"
-                    ]
-                },
-                "metadataKeys": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "an array containing all your metadata keys"
-                    ]
-                },
-                "storageLimit": {
-                    "type": "integer",
-                    "minimum": 128,
-                    "example": 128
                 }
             }
         },
@@ -2817,10 +2752,6 @@
                 "signature"
             ],
             "properties": {
-                "checkUpgradeStatusObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.checkUpgradeStatusObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -2840,45 +2771,6 @@
                 }
             }
         },
-        "routes.checkUpgradeV2StatusObject": {
-            "type": "object",
-            "required": [
-                "durationInMonths",
-                "fileHandles",
-                "metadataKeys",
-                "storageLimit"
-            ],
-            "properties": {
-                "durationInMonths": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 12
-                },
-                "fileHandles": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "an array containing all your file handles"
-                    ]
-                },
-                "metadataKeys": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "an array containing all your metadata keys"
-                    ]
-                },
-                "storageLimit": {
-                    "type": "integer",
-                    "minimum": 128,
-                    "example": 128
-                }
-            }
-        },
         "routes.checkUpgradeV2StatusReq": {
             "type": "object",
             "required": [
@@ -2887,10 +2779,6 @@
                 "signature"
             ],
             "properties": {
-                "checkUpgradeV2StatusObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.checkUpgradeV2StatusObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -2921,35 +2809,6 @@
                 }
             }
         },
-        "routes.createStripePaymentObject": {
-            "type": "object",
-            "required": [
-                "stripeToken",
-                "timestamp"
-            ],
-            "properties": {
-                "durationInMonths": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 12
-                },
-                "storageLimit": {
-                    "type": "integer",
-                    "minimum": 128,
-                    "example": 128
-                },
-                "stripeToken": {
-                    "type": "string",
-                    "example": "tok_KPte7942xySKBKyrBu11yEpf"
-                },
-                "timestamp": {
-                    "type": "integer"
-                },
-                "upgradeAccount": {
-                    "type": "boolean"
-                }
-            }
-        },
         "routes.createStripePaymentReq": {
             "type": "object",
             "required": [
@@ -2958,10 +2817,6 @@
                 "signature"
             ],
             "properties": {
-                "createStripePaymentObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.createStripePaymentObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -2981,18 +2836,6 @@
                 }
             }
         },
-        "routes.deleteFileObj": {
-            "type": "object",
-            "required": [
-                "fileID"
-            ],
-            "properties": {
-                "fileID": {
-                    "type": "string",
-                    "example": "the handle of the file"
-                }
-            }
-        },
         "routes.deleteFileReq": {
             "type": "object",
             "required": [
@@ -3001,10 +2844,6 @@
                 "signature"
             ],
             "properties": {
-                "deleteFileObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.deleteFileObj"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -3027,23 +2866,6 @@
         "routes.deleteFileRes": {
             "type": "object"
         },
-        "routes.deleteFilesObj": {
-            "type": "object",
-            "required": [
-                "fileIDs"
-            ],
-            "properties": {
-                "fileIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "the handle of the files"
-                    ]
-                }
-            }
-        },
         "routes.deleteFilesReq": {
             "type": "object",
             "required": [
@@ -3052,10 +2874,6 @@
                 "signature"
             ],
             "properties": {
-                "deleteFilesObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.deleteFilesObj"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -3117,10 +2935,6 @@
                 "signature"
             ],
             "properties": {
-                "accountGetReqObj": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.accountGetReqObj"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -3198,9 +3012,6 @@
                 }
             }
         },
-        "routes.getRenewalAccountInvoiceObject": {
-            "type": "object"
-        },
         "routes.getRenewalAccountInvoiceReq": {
             "type": "object",
             "required": [
@@ -3209,10 +3020,6 @@
                 "signature"
             ],
             "properties": {
-                "getRenewalAccountInvoiceObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.getRenewalAccountInvoiceObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -3236,13 +3043,9 @@
             "type": "object",
             "properties": {
                 "opctInvoice": {
-                    "type": "object",
                     "$ref": "#/definitions/models.Invoice"
                 }
             }
-        },
-        "routes.getRenewalV2AccountInvoiceObject": {
-            "type": "object"
         },
         "routes.getRenewalV2AccountInvoiceReq": {
             "type": "object",
@@ -3252,10 +3055,6 @@
                 "signature"
             ],
             "properties": {
-                "getRenewalV2AccountInvoiceObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.getRenewalV2AccountInvoiceObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -3279,27 +3078,7 @@
             "type": "object",
             "properties": {
                 "opctInvoice": {
-                    "type": "object",
                     "$ref": "#/definitions/models.Invoice"
-                }
-            }
-        },
-        "routes.getUpgradeAccountInvoiceObject": {
-            "type": "object",
-            "required": [
-                "durationInMonths",
-                "storageLimit"
-            ],
-            "properties": {
-                "durationInMonths": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 12
-                },
-                "storageLimit": {
-                    "type": "integer",
-                    "minimum": 128,
-                    "example": 128
                 }
             }
         },
@@ -3311,10 +3090,6 @@
                 "signature"
             ],
             "properties": {
-                "getUpgradeAccountInvoiceObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.getUpgradeAccountInvoiceObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -3338,27 +3113,7 @@
             "type": "object",
             "properties": {
                 "opctInvoice": {
-                    "type": "object",
                     "$ref": "#/definitions/models.Invoice"
-                }
-            }
-        },
-        "routes.getUpgradeV2AccountInvoiceObject": {
-            "type": "object",
-            "required": [
-                "durationInMonths",
-                "storageLimit"
-            ],
-            "properties": {
-                "durationInMonths": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "example": 12
-                },
-                "storageLimit": {
-                    "type": "integer",
-                    "minimum": 128,
-                    "example": 128
                 }
             }
         },
@@ -3370,10 +3125,6 @@
                 "signature"
             ],
             "properties": {
-                "getUpgradeV2AccountInvoiceObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -3397,24 +3148,7 @@
             "type": "object",
             "properties": {
                 "opctInvoice": {
-                    "type": "object",
                     "$ref": "#/definitions/models.Invoice"
-                }
-            }
-        },
-        "routes.metadataKeyObject": {
-            "type": "object",
-            "required": [
-                "metadataKey",
-                "timestamp"
-            ],
-            "properties": {
-                "metadataKey": {
-                    "type": "string",
-                    "example": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"
-                },
-                "timestamp": {
-                    "type": "integer"
                 }
             }
         },
@@ -3426,10 +3160,6 @@
                 "signature"
             ],
             "properties": {
-                "metadataKeyObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.metadataKeyObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -3449,19 +3179,30 @@
                 }
             }
         },
-        "routes.metadataV2KeyObject": {
+        "routes.metadataMultipleV2KeyReq": {
             "type": "object",
             "required": [
-                "metadataV2Key",
-                "timestamp"
+                "publicKey",
+                "requestBody",
+                "signature"
             ],
             "properties": {
-                "metadataV2Key": {
+                "publicKey": {
                     "type": "string",
-                    "example": "public key for the metadataV2 encoded to base64url"
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
                 },
-                "timestamp": {
-                    "type": "integer"
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
                 }
             }
         },
@@ -3473,10 +3214,6 @@
                 "signature"
             ],
             "properties": {
-                "metadataV2KeyObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.metadataV2KeyObject"
-                },
                 "publicKey": {
                     "type": "string",
                     "maxLength": 66,
@@ -3502,10 +3239,6 @@
                 "requestBody"
             ],
             "properties": {
-                "metadataV2KeyObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.metadataV2KeyObject"
-                },
                 "requestBody": {
                     "type": "string",
                     "example": "look at description for example"
@@ -3562,27 +3295,6 @@
                 }
             }
         },
-        "routes.updateMetadataObject": {
-            "type": "object",
-            "required": [
-                "metadata",
-                "metadataKey",
-                "timestamp"
-            ],
-            "properties": {
-                "metadata": {
-                    "type": "string",
-                    "example": "your (updated) account metadata"
-                },
-                "metadataKey": {
-                    "type": "string",
-                    "example": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"
-                },
-                "timestamp": {
-                    "type": "integer"
-                }
-            }
-        },
         "routes.updateMetadataReq": {
             "type": "object",
             "required": [
@@ -3607,10 +3319,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                },
-                "updateMetadataObject": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.updateMetadataObject"
                 }
             }
         },
@@ -3632,45 +3340,6 @@
                 "metadataKey": {
                     "type": "string",
                     "example": "a 64-char hex string created deterministically, will be a key for the metadata of one of your folders"
-                }
-            }
-        },
-        "routes.updateMetadataV2Object": {
-            "type": "object",
-            "required": [
-                "metadataV2Edges",
-                "metadataV2Key",
-                "metadataV2Sig",
-                "metadataV2Vertex",
-                "timestamp"
-            ],
-            "properties": {
-                "isPublic": {
-                    "type": "boolean"
-                },
-                "metadataV2Edges": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "the edges to add to your account metadataV2 encoded to base64url"
-                    ]
-                },
-                "metadataV2Key": {
-                    "type": "string",
-                    "example": "public key for the metadataV2 encoded to base64url"
-                },
-                "metadataV2Sig": {
-                    "type": "string",
-                    "example": "a signature encoded to base64url confirming the metadata change, the publickey will be a key for the metadataV2"
-                },
-                "metadataV2Vertex": {
-                    "type": "string",
-                    "example": "the vertex to add to your account metadataV2 encoded to base64url"
-                },
-                "timestamp": {
-                    "type": "integer"
                 }
             }
         },
@@ -3698,10 +3367,6 @@
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                },
-                "updateMetadataV2Object": {
-                    "type": "object",
-                    "$ref": "#/definitions/routes.updateMetadataV2Object"
                 }
             }
         },

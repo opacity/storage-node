@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -17,11 +16,11 @@ type AccountManagement struct {
 
 /*CheckIfPaid defines the required parameters and return values for
 an instance of AccountManagement's CheckIfPaid method*/
-type CheckIfPaid func(common.Address, *big.Int) (bool, error)
+type CheckIfPaid func(common.Address, *big.Int) (bool, uint, error)
 
 /*CheckIfPending defines the required parameters and return values for
 an instance of AccountManagement's CheckIfPending method*/
-type CheckIfPending func(common.Address) (bool, error)
+type CheckIfPending func(common.Address) bool
 
 /*BackendManagement is an instance of AccountManagement which we will use
 for backend-managed subscriptions*/
@@ -34,15 +33,23 @@ func init() {
 	}
 }
 
-func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int) (bool, error) {
-	var tokenBalance *big.Int
-	if tokenBalance = EthWrapper.GetTokenBalance(address); tokenBalance == big.NewInt(-1) {
-		return false, errors.New("could not get balance")
+func checkIfBackendSubscriptionPaid(address common.Address, amount *big.Int) (bool, uint, error) {
+	for networkID := range EthWrappers {
+		tokenBalance := EthOpsWrapper.GetTokenBalance(EthWrappers[networkID], address)
+		if tokenBalance.Cmp(amount) >= 0 {
+			return true, networkID, nil
+		}
 	}
 
-	return tokenBalance.Cmp(amount) >= 0, nil
+	return false, 0, nil
 }
 
-func checkIfBackendSubscriptionPaymentPending(address common.Address) (bool, error) {
-	return EthWrapper.CheckForPendingTokenTxs(address)
+func checkIfBackendSubscriptionPaymentPending(address common.Address) bool {
+	for networkID := range EthWrappers {
+		if EthOpsWrapper.CheckForPendingTokenTxs(EthWrappers[networkID], address) {
+			return true
+		}
+	}
+
+	return false
 }
