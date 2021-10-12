@@ -54,7 +54,17 @@
                 <td>Unspent Unallocated</td>
                 <td>{{ .unspentUnallocated }}</td>
               </tr>
+              <tr>
+                <td>Current Period <i>*</i></td>
+                <td>{{ .currentPeriod }}</td>
+              </tr>
+              <tr>
+                <td>Next Period</td>
+                <td>{{ .nextPeriod }}</td>
+              </tr>
             </table>
+
+            <p><i>* Current Period is the height at which the current allowance period began.</i></p>
           </div>
 
           <div class="column is-two-thirds">

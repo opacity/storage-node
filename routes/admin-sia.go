@@ -62,6 +62,8 @@ func siaAllowanceGet(c *gin.Context, notificationMessage string) error {
 		"storageSpending":     renter.FinancialMetrics.StorageSpending.HumanString(),
 		"unspentAllocated":    unspentAllocated.HumanString(),
 		"unspentUnallocated":  unspentUnallocated.HumanString(),
+		"currentPeriod":       renter.CurrentPeriod,
+		"nextPeriod":          renter.NextPeriod,
 		"notificationMessage": "",
 	})
 
