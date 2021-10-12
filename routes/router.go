@@ -330,6 +330,7 @@ func setupAdminPaths(router *gin.Engine) {
 
 	setupAdminPlansPaths(g)
 	setupAdminSmartContractPaths(g)
+	setupAdminSiaPaths(g)
 
 	// Load template file location relative to the current working directory
 	// Unable to find the file.
@@ -369,6 +370,13 @@ func setupAdminSmartContractPaths(adminGroup *gin.RouterGroup) {
 		})
 	})
 	smartContractGroup.POST("/add", AdminSmartContractAddHandler())
+}
+
+func setupAdminSiaPaths(adminGroup *gin.RouterGroup) {
+	siaAdminGroup := adminGroup.Group(SiaPathPrefix)
+
+	siaAdminGroup.GET("/", AdminSiaAllowanceGetHandler())
+	siaAdminGroup.POST("/", AdminSiaAllowanceChangeHandler())
 }
 
 // GetPlansHandler godoc
