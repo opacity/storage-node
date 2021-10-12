@@ -45,10 +45,10 @@ func adminSiaAllowanceChange(c *gin.Context) error {
 	period := c.Request.Form.Get("period")
 	hosts := c.Request.Form.Get("hosts")
 	renewWindowWeeks := c.Request.Form.Get("renew-window")
-	expectedDownload := c.Request.Form.Get("expected-download")
-	expectedUpload := c.Request.Form.Get("expected-upload")
+	expectedDownloadPerMonth := c.Request.Form.Get("expected-download")
+	expectedUploadPerMonth := c.Request.Form.Get("expected-upload")
 
-	if err := utils.SetSiaAllowance(allowanceFunds, period, hosts, renewWindowWeeks, expectedStorageTB, expectedDownload, expectedUpload); err != nil {
+	if err := utils.SetSiaAllowance(allowanceFunds, period, hosts, renewWindowWeeks, expectedStorageTB, expectedDownloadPerMonth, expectedUploadPerMonth); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
@@ -64,9 +64,9 @@ func siaAllowanceGet(c *gin.Context, notificationMessage string) error {
 	adminSiaAllowance := AdminSiaAllowance{
 		AllowanceFunds:   funds,
 		ExpectedStorage:  fmt.Sprintf("%.2f", float64(renter.Settings.Allowance.ExpectedStorage)/1e12),
-		Period:           fmt.Sprintf("%.1f", float64(renter.Settings.Allowance.Period)/float64(sia_types.BlocksPerWeek)),
+		Period:           fmt.Sprintf("%.0f", float64(renter.Settings.Allowance.Period)/float64(sia_types.BlocksPerWeek)),
 		Hosts:            renter.Settings.Allowance.Hosts,
-		RenewWindow:      fmt.Sprintf("%.1f", float64(renter.Settings.Allowance.RenewWindow)/float64(sia_types.BlocksPerWeek)),
+		RenewWindow:      fmt.Sprintf("%.0f", float64(renter.Settings.Allowance.RenewWindow)/float64(sia_types.BlocksPerWeek)),
 		ExpectedDownload: fmt.Sprintf("%.2f", float64(renter.Settings.Allowance.ExpectedDownload)*float64(sia_types.BlocksPerMonth)/1e12),
 		ExpectedUpload:   fmt.Sprintf("%.2f", float64(renter.Settings.Allowance.ExpectedUpload)*float64(sia_types.BlocksPerMonth)/1e12),
 	}
