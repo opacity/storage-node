@@ -23,6 +23,7 @@
 
       <article class="message is-info">
         <div class="message-body">
+          <button class="delete" style="float: right;"></button>
           <p class="pb-1">Set the amount of money that can be spent over a given period.</p>
           <p class="pb-1">Allowance can be automatically renewed periodically. If the current blockheight + the renew window >= the end height the contract, then the contract is renewed automatically.</p>
           <p class="pb-1">Note that setting the allowance will cause siad to immediately begin forming contracts! You should only set the allowance once you are fully synced and you have a reasonable number (>30) of hosts in your hostdb.</p>
@@ -121,7 +122,7 @@
                   <div class="field-body">
                     <div class="field has-addons">
                       <p class="control">
-                        <input class="input" type="number" step="any" name="period" value="{{ .allowance.Period }}" required>
+                        <input class="input" type="number" step="1" name="period" value="{{ .allowance.Period }}" required>
                       </p>
                       <p class="control">
                         <a class="button is-static">
@@ -152,7 +153,7 @@
                   <div class="field-body">
                     <div class="field has-addons">
                       <p class="control">
-                        <input class="input" type="number" step="any" name="renew-window" value="{{ .allowance.RenewWindow }}" required>
+                        <input class="input" type="number" step="1" name="renew-window" value="{{ .allowance.RenewWindow }}" required>
                       </p>
                       <p class="control">
                         <a class="button is-static">
@@ -174,7 +175,7 @@
                       </p>
                       <p class="control">
                         <a class="button is-static">
-                          TB
+                          TB per month
                         </a>
                       </p>
                     </div>
@@ -192,7 +193,7 @@
                       </p>
                       <p class="control">
                         <a class="button is-static">
-                          TB
+                          TB per month
                         </a>
                       </p>
                     </div>
@@ -229,7 +230,22 @@
           $notification.parentNode.removeChild($notification);
         });
       });
+
+      (document.querySelectorAll('.message .message-body .delete') || []).forEach(($delete) => {
+        const $message = $delete.parentNode.parentNode;
+
+        $delete.addEventListener('click', () => {
+          $message.parentNode.removeChild($message);
+        });
+      });
+
+      setTimeout(function() {
+      (document.querySelectorAll('.notification') || []).forEach(($notifcationBody) => {
+        $notifcationBody.parentNode.removeChild($notifcationBody)
+      });
+    }, 5000);
     });
+    
   </script>
 
 </body>
