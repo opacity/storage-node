@@ -86,7 +86,7 @@ func siaAllowanceGet(c *gin.Context, notificationMessage string) error {
 		"currentPeriod":                 renter.CurrentPeriod,
 		"nextPeriod":                    renter.NextPeriod,
 		"walletConfirmedSiacoinBalance": walletInfo.ConfirmedSiacoinBalance.HumanString(),
-		"notificationMessage":           "",
+		"notificationMessage":           notificationMessage,
 	})
 
 	return nil
