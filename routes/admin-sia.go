@@ -73,19 +73,20 @@ func siaAllowanceGet(c *gin.Context, notificationMessage string) error {
 
 	totalSpent, unspentAllocated, unspentUnallocated := renter.FinancialMetrics.SpendingBreakdown()
 
-	// @TODO add wallet info GetWalletInfo
+	walletInfo := utils.GetWalletInfo()
 
 	c.HTML(http.StatusOK, "sia-allowance.tmpl", gin.H{
-		"title":               "Sia allowance",
-		"allowance":           adminSiaAllowance,
-		"totalSpent":          totalSpent.HumanString(),
-		"contractFees":        renter.FinancialMetrics.ContractFees.HumanString(),
-		"storageSpending":     renter.FinancialMetrics.StorageSpending.HumanString(),
-		"unspentAllocated":    unspentAllocated.HumanString(),
-		"unspentUnallocated":  unspentUnallocated.HumanString(),
-		"currentPeriod":       renter.CurrentPeriod,
-		"nextPeriod":          renter.NextPeriod,
-		"notificationMessage": "",
+		"title":                         "Sia allowance",
+		"allowance":                     adminSiaAllowance,
+		"totalSpent":                    totalSpent.HumanString(),
+		"contractFees":                  renter.FinancialMetrics.ContractFees.HumanString(),
+		"storageSpending":               renter.FinancialMetrics.StorageSpending.HumanString(),
+		"unspentAllocated":              unspentAllocated.HumanString(),
+		"unspentUnallocated":            unspentUnallocated.HumanString(),
+		"currentPeriod":                 renter.CurrentPeriod,
+		"nextPeriod":                    renter.NextPeriod,
+		"walletConfirmedSiacoinBalance": walletInfo.ConfirmedSiacoinBalance.HumanString(),
+		"notificationMessage":           "",
 	})
 
 	return nil

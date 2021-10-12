@@ -33,6 +33,13 @@
 
         <div class="columns">
           <div class="column">
+
+            <article class="message is-info">
+              <div class="message-header" style="border-radius: 4px;">
+                <p>Wallet confirmed balance: {{ .walletConfirmedSiacoinBalance }}</p>
+              </div>
+             </article>
+            
             <table class="table">
               <tr class="is-selected">
                 <td>Total Spent</td>
@@ -145,7 +152,7 @@
                   <div class="field-body">
                     <div class="field has-addons">
                       <p class="control">
-                        <input class="input" type="number" step="any" name="allowance-funds" value="{{ .allowance.RenewWindow }}" required>
+                        <input class="input" type="number" step="any" name="renew-window" value="{{ .allowance.RenewWindow }}" required>
                       </p>
                       <p class="control">
                         <a class="button is-static">
