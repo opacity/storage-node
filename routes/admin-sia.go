@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -32,8 +33,26 @@ func adminSiaAllowanceGet(c *gin.Context) error {
 }
 
 func adminSiaAllowanceChange(c *gin.Context) error {
+	defer c.Request.Body.Close()
 
-	return nil
+	err := c.Request.ParseForm()
+	if err != nil {
+		return BadRequestResponse(c, errors.New("something went wrong"))
+	}
+
+	allowanceFunds := c.Request.Form.Get("allowance-funds")
+	expectedStorageTB := c.Request.Form.Get("expected-storage")
+	period := c.Request.Form.Get("period")
+	hosts := c.Request.Form.Get("hosts")
+	renewWindowWeeks := c.Request.Form.Get("renew-window")
+	expectedDownload := c.Request.Form.Get("expected-download")
+	expectedUpload := c.Request.Form.Get("expected-upload")
+
+	if err := utils.SetSiaAllowance(allowanceFunds, period, hosts, renewWindowWeeks, expectedStorageTB, expectedDownload, expectedUpload); err != nil {
+		return InternalErrorResponse(c, err)
+	}
+
+	return siaAllowanceGet(c, "Allowance set successfully")
 }
 
 func siaAllowanceGet(c *gin.Context, notificationMessage string) error {
@@ -53,6 +72,8 @@ func siaAllowanceGet(c *gin.Context, notificationMessage string) error {
 	}
 
 	totalSpent, unspentAllocated, unspentUnallocated := renter.FinancialMetrics.SpendingBreakdown()
+
+	// @TODO add wallet info GetWalletInfo
 
 	c.HTML(http.StatusOK, "sia-allowance.tmpl", gin.H{
 		"title":               "Sia allowance",
