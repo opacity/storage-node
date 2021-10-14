@@ -117,11 +117,18 @@ func CreatePlanMetrics() {
 }
 
 func (m metricCollector) fileMetrics() {
-	completedFileInSQLCount := 0
-	err := models.DB.Model(&models.CompletedFile{}).Count(&completedFileInSQLCount).Error
+	completedFileInSQLCountS3 := 0
+	err := models.DB.Where("storage_type = ?", models.S3).Model(&models.CompletedFile{}).Count(&completedFileInSQLCountS3).Error
 	utils.LogIfError(err, nil)
 	if err == nil {
-		utils.Metrics_Completed_Files_Count_SQL.Set(float64(completedFileInSQLCount))
+		utils.Metrics_Completed_Files_Count_SQL.Set(float64(completedFileInSQLCountS3))
+	}
+
+	completedFileInSQLCountSia := 0
+	err = models.DB.Where("storage_type = ?", models.Sia).Model(&models.CompletedFile{}).Count(&completedFileInSQLCountSia).Error
+	utils.LogIfError(err, nil)
+	if err == nil {
+		utils.Metrics_Completed_Files_Count_SQL_Sia.Set(float64(completedFileInSQLCountSia))
 	}
 
 	fileSizeInByteInSQLS3, err := models.GetTotalFileSizeInByteByStorageType(models.S3)
@@ -133,6 +140,6 @@ func (m metricCollector) fileMetrics() {
 	fileSizeInByteInSQLSia, err := models.GetTotalFileSizeInByteByStorageType(models.Sia)
 	utils.LogIfError(err, nil)
 	if err == nil {
-		utils.Metrics_Uploaded_File_Size_MB_SQL_SIA.Set(float64(fileSizeInByteInSQLSia) / 1000000.0)
+		utils.Metrics_Uploaded_File_Size_MB_SQL_Sia.Set(float64(fileSizeInByteInSQLSia) / 1000000.0)
 	}
 }

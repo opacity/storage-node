@@ -78,7 +78,12 @@ var (
 
 	Metrics_Completed_Files_Count_SQL = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "storagenode_completed_files_count_sql",
-		Help: "Total number of completed files in SQL database",
+		Help: "Total number of completed files in SQL database on S3",
+	})
+
+	Metrics_Completed_Files_Count_SQL_Sia = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "storagenode_completed_files_count_sql_sia",
+		Help: "Total number of completed files in SQL database on Sia",
 	})
 
 	Metrics_Uploaded_File_Size_MB_SQL = promauto.NewGauge(prometheus.GaugeOpts{
