@@ -31,3 +31,19 @@ func (expiredAccount *ExpiredAccount) BeforeUpdate(scope *gorm.Scope) error {
 func (expiredAccount *ExpiredAccount) BeforeDelete(scope *gorm.Scope) error {
 	return nil
 }
+
+func CountOfExpiredArchivedAccounts() (int64, error) {
+	rows, err := DB.Model(&ExpiredAccount{}).Select("count(account_id) AS total").Rows()
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	total := int64(0)
+	if rows.Next() {
+		if err := rows.Scan(&total); err != nil {
+			return 0, err
+		}
+	}
+	return total, nil
+}

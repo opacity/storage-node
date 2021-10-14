@@ -26,6 +26,7 @@ type Account struct {
 	AccountID                string            `gorm:"primary_key" json:"accountID" validate:"required,len=64"` // some hash of the user's master handle
 	CreatedAt                time.Time         `json:"createdAt"`
 	UpdatedAt                time.Time         `json:"updatedAt"`
+	RenewedAt                time.Time         `json:"renewedAt" gorm:"default:NULL"`
 	MonthsInSubscription     int               `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription
 	StorageLocation          string            `json:"storageLocation" validate:"omitempty"`                                                                               // where their files live, on S3 or elsewhere
 	StorageLimit             StorageLimitType  `json:"storageLimit" validate:"required,gte=10" example:"100"`                                                              // how much storage they are allowed, in GB
@@ -422,6 +423,7 @@ func (account *Account) RenewAccount() error {
 		"months_in_subscription": account.MonthsInSubscription + 12,
 		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription+12, 0),
 		"updated_at":             time.Now(),
+		"renewed_at":             time.Now(),
 	}).Error
 }
 
@@ -530,6 +532,13 @@ func CountPaidAccountsByPaymentMethodAndPlanType(storageLimit StorageLimitType, 
 	count := 0
 	err := DB.Model(&Account{}).Where("storage_limit = ? AND payment_status >= ? AND payment_method = ?",
 		storageLimit, InitialPaymentReceived, paymentMethod).Count(&count).Error
+	utils.LogIfError(err, nil)
+	return count, err
+}
+
+func CountOfRenewedAccounts() (int, error) {
+	count := 0
+	err := DB.Model(&Account{}).Where("renewed_at IS NOT NULL").Count(&count).Error
 	utils.LogIfError(err, nil)
 	return count, err
 }
@@ -675,6 +684,22 @@ func GetAllExpiredAccounts(expiredTime time.Time) ([]Account, error) {
 		return nil, err
 	}
 	return accounts, nil
+}
+
+func CountOfExpiredAccounts() (int64, error) {
+	rows, err := DB.Where("expired_at < ?", time.Now()).Model(&Account{}).Select("count(account_id) AS total").Rows()
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	total := int64(0)
+	if rows.Next() {
+		if err := rows.Scan(&total); err != nil {
+			return 0, err
+		}
+	}
+	return total, nil
 }
 
 func DeleteExpiredAccounts(expiredTime time.Time) error {
