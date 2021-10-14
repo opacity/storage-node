@@ -117,13 +117,6 @@ func Test_verifyAccountStillActive(t *testing.T) {
 
 	stillActive = verifyAccountStillActive(account)
 	assert.False(t, stillActive)
-
-	account.StorageLimit = 10
-	err = models.DB.Save(&account).Error
-	assert.Nil(t, err)
-
-	stillActive = verifyAccountStillActive(account)
-	assert.True(t, stillActive)
 }
 
 func Test_verifyRenewEligible(t *testing.T) {
