@@ -83,7 +83,12 @@ var (
 
 	Metrics_Uploaded_File_Size_MB_SQL = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "storagenode_uploaded_file_size_mb_sql",
-		Help: "Totals all the file sizes of rows in completed_files table in SQL, as MB",
+		Help: "Totals all the file sizes of rows in completed_files table in SQL, as MB on S3",
+	})
+
+	Metrics_Uploaded_File_Size_MB_SQL_Sia = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "storagenode_uploaded_file_size_mb_sql_sia",
+		Help: "Totals all the file sizes of rows in completed_files table in SQL, as MB on Sia",
 	})
 
 	// TODO:  use AWS cloudwatch to get these last two metrics

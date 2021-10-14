@@ -124,9 +124,15 @@ func (m metricCollector) fileMetrics() {
 		utils.Metrics_Completed_Files_Count_SQL.Set(float64(completedFileInSQLCount))
 	}
 
-	fileSizeInByteInSQL, err := models.GetTotalFileSizeInByteByStorageType(models.S3)
+	fileSizeInByteInSQLS3, err := models.GetTotalFileSizeInByteByStorageType(models.S3)
 	utils.LogIfError(err, nil)
 	if err == nil {
-		utils.Metrics_Uploaded_File_Size_MB_SQL.Set(float64(fileSizeInByteInSQL) / 1000000.0)
+		utils.Metrics_Uploaded_File_Size_MB_SQL.Set(float64(fileSizeInByteInSQLS3) / 1000000.0)
+	}
+
+	fileSizeInByteInSQLSia, err := models.GetTotalFileSizeInByteByStorageType(models.Sia)
+	utils.LogIfError(err, nil)
+	if err == nil {
+		utils.Metrics_Uploaded_File_Size_MB_SQL_SIA.Set(float64(fileSizeInByteInSQLSia) / 1000000.0)
 	}
 }
