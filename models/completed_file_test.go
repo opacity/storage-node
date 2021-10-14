@@ -79,7 +79,7 @@ func Test_DeleteAllCompletedFiles(t *testing.T) {
 	assert.True(t, len(f) == 0)
 }
 
-func Test_GetTotalFileSizeInByte(t *testing.T) {
+func Test_GetTotalFileSizeInByteS3(t *testing.T) {
 	DeleteCompletedFilesForTest(t)
 	s := CompletedFile{
 		FileID:         utils.GenerateFileHandle(),
@@ -96,7 +96,7 @@ func Test_GetTotalFileSizeInByte(t *testing.T) {
 	}
 	assert.Nil(t, DB.Create(&s).Error)
 
-	v, err := GetTotalFileSizeInByte()
+	v, err := GetTotalFileSizeInByteByStorageType(S3)
 
 	assert.Nil(t, err)
 	assert.Equal(t, int64(360), v)

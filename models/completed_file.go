@@ -70,8 +70,8 @@ func DeleteAllCompletedFiles(fileIDs []string) error {
 	return nil
 }
 
-func GetTotalFileSizeInByte() (int64, error) {
-	rows, err := DB.Model(&CompletedFile{}).Select("sum(file_size_in_byte) AS total").Rows()
+func GetTotalFileSizeInByteByStorageType(storageType FileStorageType) (int64, error) {
+	rows, err := DB.Model(&CompletedFile{}).Select("sum(file_size_in_byte) AS total WHERE storage_type = ?", storageType).Rows()
 	if err != nil {
 		return 0, err
 	}

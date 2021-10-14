@@ -124,7 +124,7 @@ func (m metricCollector) fileMetrics() {
 		utils.Metrics_Completed_Files_Count_SQL.Set(float64(completedFileInSQLCount))
 	}
 
-	fileSizeInByteInSQL, err := models.GetTotalFileSizeInByte()
+	fileSizeInByteInSQL, err := models.GetTotalFileSizeInByteByStorageType(models.S3)
 	utils.LogIfError(err, nil)
 	if err == nil {
 		utils.Metrics_Uploaded_File_Size_MB_SQL.Set(float64(fileSizeInByteInSQL) / 1000000.0)
