@@ -677,6 +677,22 @@ func GetAllExpiredAccounts(expiredTime time.Time) ([]Account, error) {
 	return accounts, nil
 }
 
+func CountOfExpiredAccounts() (int64, error) {
+	rows, err := DB.Where("expired_at < ?", time.Now()).Model(&Account{}).Select("count(account_id) AS total").Rows()
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	total := int64(0)
+	if rows.Next() {
+		if err := rows.Scan(&total); err != nil {
+			return 0, err
+		}
+	}
+	return total, nil
+}
+
 func DeleteExpiredAccounts(expiredTime time.Time) error {
 	accounts, err := GetAllExpiredAccounts(expiredTime)
 	if err != nil {
