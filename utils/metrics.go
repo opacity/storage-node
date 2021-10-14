@@ -71,6 +71,11 @@ var (
 		Help: "Total number of expired accounts which have time to renew",
 	})
 
+	Metrics_Total_Renewed_Accounts = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "storagenode_total_renewed_accounts",
+		Help: "Total number of renewed accounts",
+	})
+
 	Metrics_Percent_Of_Accounts_Paid = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "storagenode_percent_of_accounts_paid",
 		Help: "Accounts that are paid, as a percentage of all accounts",
