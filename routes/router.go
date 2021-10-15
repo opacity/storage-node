@@ -204,7 +204,7 @@ func returnEngine() *gin.Engine {
 	router := gin.Default()
 	if utils.Env.GoEnv == "production" || utils.Env.GoEnv == "dev2" {
 		router.Use(sentrygin.New(sentrygin.Options{
-			Repanic: true,
+			Repanic: false,
 		}))
 	}
 	config := cors.DefaultConfig()
