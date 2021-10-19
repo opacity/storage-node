@@ -13,7 +13,7 @@ phases:
     on-failure: ABORT
     commands:
       - curl -sL https://sentry.io/get-cli/ | bash
-  build:
+  pre_build:
     on-failure: ABORT
     commands:
       - VERSION=`sentry-cli releases propose-version`
@@ -25,8 +25,19 @@ phases:
       - echo "GO_ENV=$GO_ENV" >> .env
       - echo "AWS_REGION=$AWS_REGION" >> .env
       - echo "DEBUG=$DEBUG" >> .env
+      - echo "ADMIN_USER=$(aws ssm get-parameter --name /storage-node/$GO_ENV/ADMIN_USER --with-decryption --output text --query Parameter.Value)" >> .env
+      - echo "ADMIN_PASSWORD=$(aws ssm get-parameter --name /storage-node/$GO_ENV/ADMIN_PASSWORD --with-decryption --output text --query Parameter.Value)" >> .env
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin public.ecr.aws
+      - docker-compose pull
+  build:
+    on-failure: ABORT
+    commands:
+      - docker-compose build
+
+  post_build:
+    on-failure: ABORT
+    commands:
+      - docker-compose push
       - sentry-cli releases finalize "$VERSION"
       - sentry-cli releases deploys "$VERSION" new -e $GO_ENV
-artifacts:
-  files:
-    - '**/*'
+
