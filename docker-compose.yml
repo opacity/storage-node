@@ -5,6 +5,9 @@ services:
     build:
       context: ./prometheus
       dockerfile: Dockerfile
+      cache_from:
+        - public.ecr.aws/opacity/prometheus:${IMAGE_TAG}
+    image: public.ecr.aws/opacity/prometheus:${IMAGE_TAG}
     ports:
       - 9090:9090
     volumes:
@@ -20,6 +23,9 @@ services:
     build:
       context: ./influxdb
       dockerfile: Dockerfile
+      cache_from:
+        - public.ecr.aws/opacity/influxdb:${IMAGE_TAG}
+    image: public.ecr.aws/opacity/influxdb:${IMAGE_TAG}
     networks:
       - promnet
     ports:
@@ -64,7 +70,11 @@ services:
 #      - promnet
 
   app:
-    build: "."
+    build:
+      context: "."
+      cache_from:
+        - public.ecr.aws/opacity/app:${IMAGE_TAG}
+    image: public.ecr.aws/opacity/app:${IMAGE_TAG}
     restart: "always"
     ports:
     - ${APP_PORT:-3000}:3000
