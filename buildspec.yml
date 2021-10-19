@@ -23,6 +23,7 @@ phases:
       - sentry-cli releases set-commits "$VERSION" --auto --ignore-missing --ignore-empty
       - echo "VERSION=$VERSION" >> .env
       - echo "GO_ENV=$GO_ENV" >> .env
+      - echo "IMAGE_TAG=$GO_ENV" >> .env
       - echo "AWS_REGION=$AWS_REGION" >> .env
       - echo "DEBUG=$DEBUG" >> .env
       - echo "ADMIN_USER=$(aws ssm get-parameter --name /storage-node/$GO_ENV/ADMIN_USER --with-decryption --output text --query Parameter.Value)" >> .env
