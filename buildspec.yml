@@ -17,7 +17,7 @@ phases:
     on-failure: ABORT
     commands:
       - VERSION=`sentry-cli releases propose-version`
-
+      - sentry-cli releases new "$VERSION"
       - git remote remove origin
       - git remote add origin https://github.com/mihaiiorga/storage-node.git
       - sentry-cli releases set-commits "$VERSION" --auto --ignore-missing --ignore-empty
