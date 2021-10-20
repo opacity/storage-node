@@ -40,4 +40,7 @@ phases:
     commands:
       - docker-compose push
 
-
+artifacts:
+  files:
+    - '.env'
+    - 'docker-compose.yml'
