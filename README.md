@@ -27,7 +27,7 @@ docker-compose up --build -d
 docker-compose up -d
 
 # Run unit test
-docker-compose exec app go test ./...
+docker-compose exec storage-node go test ./...
 
 # Manage new dependencies
 # If you have installed the project outside of the $GOPATH and your go version is high enough, 
@@ -62,9 +62,9 @@ You can see the API documentation at `(host):3000/swagger/index.html`
 ```bash
 docker container ls # list all the running container
 docker ps # list all the running container too.
-docker kill storage-node_app_1 # to kill current running instance
-docker logs storage-node_app_1 # print out the app's log message
-docker inspect --format='{{.LogPath}}' storage-node_app_1 # print out the log's location from the docker.
+docker kill storage-node_storage-node_1 # to kill current running instance
+docker logs storage-node_storage-node_1 # print out the app's log message
+docker inspect --format='{{.LogPath}}' storage-node_storage-node_1 # print out the log's location from the docker.
 sudo systemctl restart docker # restart docker
 ```
 

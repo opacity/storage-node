@@ -6,8 +6,8 @@ services:
       context: ./prometheus
       dockerfile: Dockerfile
       cache_from:
-        - 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/opacity/prometheus:${IMAGE_TAG}
-    image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/opacity/prometheus:${IMAGE_TAG}
+        - 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/prometheus:${IMAGE_TAG}
+    image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/prometheus:${IMAGE_TAG}
     ports:
       - 9090:9090
     volumes:
@@ -24,8 +24,8 @@ services:
       context: ./influxdb
       dockerfile: Dockerfile
       cache_from:
-        - 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/opacity/influxdb:${IMAGE_TAG}
-    image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/opacity/influxdb:${IMAGE_TAG}
+        - 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/influxdb:${IMAGE_TAG}
+    image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/influxdb:${IMAGE_TAG}
     networks:
       - promnet
     ports:
@@ -69,12 +69,12 @@ services:
 #    networks:
 #      - promnet
 
-  app:
+  storage-node:
     build:
       context: "."
       cache_from:
-        - 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/opacity/app:${IMAGE_TAG}
-    image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/opacity/app:${IMAGE_TAG}
+        - 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/storage-node:${IMAGE_TAG}
+    image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/storage-node:${IMAGE_TAG}
     restart: "always"
     ports:
     - ${APP_PORT:-3000}:3000
@@ -128,7 +128,7 @@ services:
       - dbnet
 
 # In order for each service to connect to each other, They need to be on the same
-# network and use name like "app", "db", "prometheus" for reference. Ex: "db:3306", "app:3000".
+# network and use name like "storage-node", "db", "prometheus" for reference. Ex: "db:3306", "storage-node:3000".
 networks:
   promnet:
     driver: bridge
