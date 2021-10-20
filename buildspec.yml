@@ -19,7 +19,7 @@ phases:
       - VERSION=`sentry-cli releases propose-version`
       - sentry-cli releases new "$VERSION"
       - git remote remove origin
-      - git remote add origin https://github.com/opacity/storage-node.git
+      - git remote add origin https://github.com/mihaiiorga/storage-node.git
       - sentry-cli releases set-commits "$VERSION" --auto --ignore-missing --ignore-empty
       - echo "VERSION=$VERSION" >> .env
       - echo "GO_ENV=$GO_ENV" >> .env
