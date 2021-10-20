@@ -26,10 +26,7 @@ phases:
       - echo "IMAGE_TAG=$GO_ENV" >> .env
       - echo "AWS_REGION=$AWS_REGION" >> .env
       - echo "DEBUG=$DEBUG" >> .env
-      - echo "ADMIN_USER=$(aws ssm get-parameter --name /storage-node/$GO_ENV/ADMIN_USER --with-decryption --output text --query Parameter.Value)" >> .env
-      - echo "ADMIN_PASSWORD=$(aws ssm get-parameter --name /storage-node/$GO_ENV/ADMIN_PASSWORD --with-decryption --output text --query Parameter.Value)" >> .env
-      - ECR_PASS=$(aws ecr get-login-password --region $AWS_REGION)
-      - docker login --username AWS --password $ECR_PASS 174232317769.dkr.ecr.$AWS_REGION.amazonaws.com
+      - docker login --username AWS --password $(aws ecr get-login-password --region $AWS_REGION) 174232317769.dkr.ecr.$AWS_REGION.amazonaws.com
       - docker-compose pull
   build:
     on-failure: ABORT
