@@ -1,4 +1,4 @@
-version: "3"
+version: "3.3"
 
 services:
   prometheus:
@@ -81,7 +81,6 @@ services:
     depends_on:
     - "db"
     volumes:
-    - ".:/go/src/github.com/opacity/storage-node"
     - "../storage-node-data/badger/prod:/var/lib/badger/prod"
     - "../storage-node-data/badger/test:/var/lib/badger/test"
     working_dir: "/go/src/github.com/opacity/storage-node"

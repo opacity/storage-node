@@ -4,6 +4,9 @@ start=$(date +%s)
 
 cd /home/ubuntu/storage-node/
 
+mkdir prometheus
+mkdir influxdb
+
 AWS_REGION=$(grep AWS_REGION .env | cut -d '=' -f2)
 GO_ENV=$(grep GO_ENV .env | cut -d '=' -f2)
 VERSION=$(grep VERSION .env | cut -d '=' -f2)
