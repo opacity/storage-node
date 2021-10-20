@@ -28,7 +28,7 @@ phases:
       - echo "DEBUG=$DEBUG" >> .env
       - echo "ADMIN_USER=$(aws ssm get-parameter --name /storage-node/$GO_ENV/ADMIN_USER --with-decryption --output text --query Parameter.Value)" >> .env
       - echo "ADMIN_PASSWORD=$(aws ssm get-parameter --name /storage-node/$GO_ENV/ADMIN_PASSWORD --with-decryption --output text --query Parameter.Value)" >> .env
-      - $(aws ecr get-login --region region --no-include-email)
+      - $(aws ecr get-login --region $AWS_REGION --no-include-email)
       - docker-compose pull
   build:
     on-failure: ABORT
