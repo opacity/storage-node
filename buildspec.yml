@@ -13,20 +13,33 @@ phases:
     on-failure: ABORT
     commands:
       - curl -sL https://sentry.io/get-cli/ | bash
-  build:
+  pre_build:
     on-failure: ABORT
     commands:
       - VERSION=`sentry-cli releases propose-version`
       - sentry-cli releases new "$VERSION"
       - git remote remove origin
-      - git remote add origin https://github.com/opacity/storage-node.git
+      - git remote add origin https://github.com/mihaiiorga/storage-node.git
       - sentry-cli releases set-commits "$VERSION" --auto --ignore-missing --ignore-empty
       - echo "VERSION=$VERSION" >> .env
       - echo "GO_ENV=$GO_ENV" >> .env
+      - echo "IMAGE_TAG=$GO_ENV" >> .env
       - echo "AWS_REGION=$AWS_REGION" >> .env
       - echo "DEBUG=$DEBUG" >> .env
-      - sentry-cli releases finalize "$VERSION"
-      - sentry-cli releases deploys "$VERSION" new -e $GO_ENV
+      - docker login --username AWS --password $(aws ecr get-login-password --region $AWS_REGION) 174232317769.dkr.ecr.$AWS_REGION.amazonaws.com
+      - docker-compose pull
+  build:
+    on-failure: ABORT
+    commands:
+      - docker-compose build
+  post_build:
+    on-failure: ABORT
+    commands:
+      - docker-compose push
+
 artifacts:
   files:
-    - '**/*'
+    - "appspec.yml"
+    - "deploy_scripts/**/*"
+    - '.env'
+    - 'docker-compose.yml'

@@ -26,7 +26,7 @@ scrape_configs:
       password: @@ADMIN_PASSWORD@@
     # scheme defaults to 'http'.
     static_configs:
-    - targets: ['app:3000']
+    - targets: ['storage-node:3000']
 
   - job_name: 'node-exporter'
     static_configs:

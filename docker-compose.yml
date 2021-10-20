@@ -1,10 +1,13 @@
-version: "3"
+version: "3.3"
 
 services:
   prometheus:
     build:
       context: ./prometheus
       dockerfile: Dockerfile
+      cache_from:
+        - 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/prometheus:${IMAGE_TAG}
+    image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/prometheus:${IMAGE_TAG}
     ports:
       - 9090:9090
     volumes:
@@ -20,6 +23,9 @@ services:
     build:
       context: ./influxdb
       dockerfile: Dockerfile
+      cache_from:
+        - 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/influxdb:${IMAGE_TAG}
+    image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/influxdb:${IMAGE_TAG}
     networks:
       - promnet
     ports:
@@ -29,8 +35,6 @@ services:
     restart: "always"
     volumes:
       - ../storage-node-data/influxdb_data:/var/lib/influxdb
-      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
-      - ./influxdb/prometheus.iql:/docker-entrypoint-initdb.d/prometheus.iql:ro
     environment:
       - INFLUXDB_DB=prometheus
       - INFLUXDB_ADMIN_USER=${ADMIN_USER}
@@ -63,8 +67,12 @@ services:
 #    networks:
 #      - promnet
 
-  app:
-    build: "."
+  storage-node:
+    build:
+      context: "."
+      cache_from:
+        - 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/storage-node:${IMAGE_TAG}
+    image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/storage-node:${IMAGE_TAG}
     restart: "always"
     ports:
     - ${APP_PORT:-3000}:3000
@@ -73,7 +81,6 @@ services:
     depends_on:
     - "db"
     volumes:
-    - ".:/go/src/github.com/opacity/storage-node"
     - "../storage-node-data/badger/prod:/var/lib/badger/prod"
     - "../storage-node-data/badger/test:/var/lib/badger/test"
     working_dir: "/go/src/github.com/opacity/storage-node"
@@ -118,7 +125,7 @@ services:
       - dbnet
 
 # In order for each service to connect to each other, They need to be on the same
-# network and use name like "app", "db", "prometheus" for reference. Ex: "db:3306", "app:3000".
+# network and use name like "storage-node", "db", "prometheus" for reference. Ex: "db:3306", "storage-node:3000".
 networks:
   promnet:
     driver: bridge
