@@ -39,5 +39,7 @@ phases:
 
 artifacts:
   files:
+    - "appspec.yml"
+    - "deploy_scripts/**/*"
     - '.env'
     - 'docker-compose.yml'
