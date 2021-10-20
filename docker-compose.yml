@@ -35,8 +35,6 @@ services:
     restart: "always"
     volumes:
       - ../storage-node-data/influxdb_data:/var/lib/influxdb
-      - ./influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
-      - ./influxdb/prometheus.iql:/docker-entrypoint-initdb.d/prometheus.iql:ro
     environment:
       - INFLUXDB_DB=prometheus
       - INFLUXDB_ADMIN_USER=${ADMIN_USER}
