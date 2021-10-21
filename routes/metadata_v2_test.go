@@ -26,30 +26,23 @@ func Test_Init_MetadataV2(t *testing.T) {
 }
 
 func Test_GetMetadataV2Handler_Returns_MetadataV2(t *testing.T) {
-	t.SkipNow()
+	accountID, privateKey := generateValidateAccountId(t)
+	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
+	publicKeyBin, _ := hex.DecodeString(publicKey)
 
-	ttl := utils.TestValueTimeToLive
-
-	testMetadataV2Key := utils.GenerateMetadataV2Key()
-	testMetadataV2Value := utils.GenerateMetadataV2Key()
-
-	if err := utils.BatchSet(&utils.KVPairs{testMetadataV2Key: testMetadataV2Value}, ttl); err != nil {
-		t.Fatalf("there should not have been an error")
-	}
+	testMetadataV2Key, testMetadataV2Value := GenerateMetadataV2(publicKeyBin, false, t)
 
 	getMetadataV2 := metadataV2KeyObject{
 		MetadataV2Key: testMetadataV2Key,
 		Timestamp:     time.Now().Unix(),
 	}
-
-	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, getMetadataV2)
+	v, b := returnValidVerificationAndRequestBody(t, getMetadataV2, privateKey)
 
 	get := metadataV2KeyReq{
 		verification: v,
 		requestBody:  b,
 	}
 
-	accountID, _ := utils.HashString(v.PublicKey)
 	CreatePaidAccountForTest(t, accountID)
 
 	w := httpPostRequestHelperForTest(t, MetadataV2GetPath, "v2", get)
@@ -438,7 +431,7 @@ func Test_Delete_MetadataV2_Success(t *testing.T) {
 	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
 	publicKeyBin, _ := hex.DecodeString(publicKey)
 
-	testMetadataV2Key, testMetadataV2Value := GenerateMetadataV2(publicKeyBin, t)
+	testMetadataV2Key, testMetadataV2Value := GenerateMetadataV2(publicKeyBin, false, t)
 
 	deleteMetadataV2Obj := metadataV2KeyObject{
 		MetadataV2Key: testMetadataV2Key,
@@ -474,7 +467,6 @@ func Test_Delete_MetadataV2_Success(t *testing.T) {
 }
 
 func Test_Delete_MetadataMultipleV2_Success(t *testing.T) {
-	setupTests(t)
 	numberOfMetadatas := 10
 	accountID, privateKey := generateValidateAccountId(t)
 	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)

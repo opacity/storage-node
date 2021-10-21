@@ -401,7 +401,7 @@ func abortIfNotTesting(t *testing.T) {
 	}
 }
 
-func GenerateMetadataV2(publicKeyBin []byte, t *testing.T) (testMetadataV2Key string, testMetadataV2Value string) {
+func GenerateMetadataV2(publicKeyBin []byte, isPublic bool, t *testing.T) (testMetadataV2Key string, testMetadataV2Value string) {
 	abortIfNotTesting(t)
 
 	ttl := utils.TestValueTimeToLive
