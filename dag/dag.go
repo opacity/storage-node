@@ -20,8 +20,6 @@ const (
 	DAGBinaryTypeEdge   dagBinaryType = iota
 )
 
-type dagDigestType uint8
-
 const (
 	DAGDigestTypeLeaf   = iota
 	DAGDigestTypeBranch = iota
@@ -233,8 +231,6 @@ func (dag *DAG) Dependencies(id uint32, seen []uint32) ([]uint32, error) {
 		parents[i] = parentEdges[i].Parent
 	}
 	sort.Slice(parents, func(i int, j int) bool { return parents[i] < parents[j] })
-
-	seen = append(seen, id)
 
 	for _, p := range parents {
 		pDeps, err := dag.Dependencies(p, nil)
