@@ -2,6 +2,7 @@ package dag
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
@@ -431,4 +432,9 @@ func (node *DAGVertex) Binary() []byte {
 	buf.Write(node.Data)
 
 	return buf.Bytes()
+}
+
+func DigestHash(b []byte) []byte {
+	s := sha256.Sum256(b)
+	return s[:]
 }

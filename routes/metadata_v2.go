@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
@@ -466,7 +465,7 @@ func updateMetadataV2(c *gin.Context) error {
 		}
 	}
 
-	vDigest, err := d.Digest(vert.ID, func(b []byte) []byte { s := sha256.Sum256(b); return s[:] })
+	vDigest, err := d.Digest(vert.ID, dag.DigestHash)
 
 	if err != nil {
 		return InternalErrorResponse(c, err)
@@ -479,7 +478,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	if secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) == false {
+	if !secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) {
 		err = fmt.Errorf("bad request, can't verify signature: %v", err)
 		return BadRequestResponse(c, err)
 	}
