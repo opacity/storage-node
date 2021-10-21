@@ -372,7 +372,7 @@ func updateMetadataV2(c *gin.Context) error {
 			return ForbiddenResponse(c, err)
 		}
 
-		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin, c)
+		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin)
 		permissionHashKey := getPermissionHashV2KeyForBadger(string(metadataV2KeyBin))
 
 		isPublicKey := getIsPublicV2KeyForBadger(string(metadataV2KeyBin))

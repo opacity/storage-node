@@ -294,7 +294,7 @@ func getPermissionHash(publicKey, key string, c *gin.Context) (string, error) {
 	return permissionHash, nil
 }
 
-func getPermissionHashV2(publicKey, key []byte, c *gin.Context) string {
+func getPermissionHashV2(publicKey, key []byte) string {
 	permissionHash := utils.HashStringV2(append(publicKey, key...))
 	return permissionHash
 }
@@ -333,7 +333,7 @@ func verifyPermissionsV2(publicKey []byte, key []byte, expectedPermissionHash st
 	if expectedPermissionHash == "" {
 		return ForbiddenResponse(c, errors.New("resource is ineligible for modification"))
 	}
-	permissionHash := getPermissionHashV2(publicKey, key, c)
+	permissionHash := getPermissionHashV2(publicKey, key)
 
 	if permissionHash != expectedPermissionHash {
 		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))

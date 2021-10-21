@@ -413,8 +413,7 @@ func GenerateMetadataV2(publicKeyBin []byte, t *testing.T) (testMetadataV2Key st
 		t.Fatalf("error decoding metadata v2 key")
 	}
 
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin, c)
+	permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin)
 	permissionHashKey := getPermissionHashV2KeyForBadger(string(testMetadataV2KeyBin))
 
 	if err := utils.BatchSet(&utils.KVPairs{
@@ -434,7 +433,6 @@ func GenerateMetadataMultipleV2(publicKeyBin []byte, numberOfMetadatas int, t *t
 		t.Fatalf("can't generate 0 metadatas")
 	}
 
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	metadataKvPairs := utils.KVPairs{}
 	generatedMetadatasSize := 0
 
@@ -451,7 +449,7 @@ func GenerateMetadataMultipleV2(publicKeyBin []byte, numberOfMetadatas int, t *t
 		metadataKvPairs[testMetadataV2KeyBinString] = testMetadataV2Value
 		metadataV2Keys = append(metadataV2Keys, testMetadataV2Key)
 
-		permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin, c)
+		permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin)
 		permissionHashKey := getPermissionHashV2KeyForBadger(testMetadataV2KeyBinString)
 		metadataKvPairs[permissionHashKey] = permissionHash
 	}
