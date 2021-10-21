@@ -465,7 +465,7 @@ func updateMetadataV2(c *gin.Context) error {
 		}
 	}
 
-	vDigest, err := d.Digest(vert.ID, dag.DigestHash)
+	vDigest, err := d.Digest(vert.ID, dag.DigestHashSHA256)
 
 	if err != nil {
 		return InternalErrorResponse(c, err)

@@ -120,7 +120,7 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 					continue
 				}
 				if !s.Field(i).Field(j).CanSet() {
-					return InternalErrorResponse(c, fmt.Errorf("Field is not settable, It should be upper case but has this: %v", nestField))
+					return InternalErrorResponse(c, fmt.Errorf("field is not settable, It should be upper case but has this: %v", nestField))
 				}
 				s.Field(i).Field(j).SetString(strV)
 			}
@@ -134,7 +134,7 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 			continue
 		}
 		if !s.Field(i).CanSet() {
-			return InternalErrorResponse(c, fmt.Errorf("Field is not settable, It should be upper case but has this: %v", field))
+			return InternalErrorResponse(c, fmt.Errorf("field is not settable, It should be upper case but has this: %v", field))
 		}
 		s.Field(i).SetString(strV)
 	}
@@ -181,7 +181,7 @@ func readFileFromForm(fileTag string, r *http.Request) (string, error) {
 	}()
 
 	if err != nil {
-		return "", fmt.Errorf("Unable to get file %v from POST form", fileTag)
+		return "", fmt.Errorf("unable to get file %v from POST form", fileTag)
 	}
 	var fileBytes bytes.Buffer
 	if _, err := io.Copy(&fileBytes, multiFile); err != nil {
@@ -232,7 +232,7 @@ func verifyRequest(hash []byte, verificationData verification, c *gin.Context) e
 		return BadRequestResponse(c, errors.New(errVerifying))
 	}
 
-	if verified != true {
+	if !verified {
 		return ForbiddenResponse(c, errors.New(signatureDidNotMatchResponse))
 	}
 	return nil

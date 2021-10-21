@@ -430,7 +430,7 @@ func (node *DAGVertex) Binary() []byte {
 	return buf.Bytes()
 }
 
-func DigestHash(b []byte) []byte {
+func DigestHashSHA256(b []byte) []byte {
 	s := sha256.Sum256(b)
 	return s[:]
 }
