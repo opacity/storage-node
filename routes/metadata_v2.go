@@ -19,13 +19,22 @@ const metadataIncorrectKeyLength = "bad request, incorrect key length"
 const MetadataExpirationOffset = 24 * time.Hour * 60
 
 // must be sorted alphabetically for JSON marshaling/stringifying
-type updateMetadataV2Object struct {
+type updateMetadataV2BaseObject struct {
 	IsPublic         bool     `json:"isPublic"`
 	MetadataV2Edges  []string `json:"metadataV2Edges" validate:"required,dive,base64url,len=12" example:"the edges to add to your account metadataV2 encoded to base64url"`
 	MetadataV2Key    string   `json:"metadataV2Key" validate:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
 	MetadataV2Sig    string   `json:"metadataV2Sig" validate:"required,base64url,len=88" example:"a signature encoded to base64url confirming the metadata change, the publickey will be a key for the metadataV2"`
 	MetadataV2Vertex string   `json:"metadataV2Vertex" validate:"required,base64url" example:"the vertex to add to your account metadataV2 encoded to base64url"`
-	Timestamp        int64    `json:"timestamp" validate:"required"`
+}
+
+type updateMetadataV2Object struct {
+	updateMetadataV2BaseObject
+	Timestamp int64 `json:"timestamp" validate:"required"`
+}
+
+type updateMetadataMultipleV2Object struct {
+	Metadatas []updateMetadataV2BaseObject `json:"metadatas" validate:"required"`
+	Timestamp int64                        `json:"timestamp" validate:"required"`
 }
 
 type updateMetadataV2Req struct {
@@ -34,10 +43,25 @@ type updateMetadataV2Req struct {
 	updateMetadataV2Object updateMetadataV2Object
 }
 
+type updateMetadataMultipleV2Req struct {
+	verification
+	requestBody
+	updateMetadataMultipleV2Object updateMetadataMultipleV2Object
+}
+
+type updateMetadataV2ResBase struct {
+	MetadataV2Key string `json:"metadataV2Key" validate:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
+	MetadataV2    string `json:"metadataV2" validate:"required,base64url" example:"your (updated) account metadataV2"`
+}
+
 type updateMetadataV2Res struct {
-	MetadataV2Key  string    `json:"metadataV2Key" validate:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
-	MetadataV2     string    `json:"metadataV2" validate:"required,base64url" example:"your (updated) account metadataV2"`
+	updateMetadataV2ResBase
 	ExpirationDate time.Time `json:"expirationDate" validate:"required,gte"`
+}
+
+type updateMetadataMultipleV2Res struct {
+	Metadatas      []updateMetadataV2ResBase `json:"metadatas" validate:"required"`
+	ExpirationDate time.Time                 `json:"expirationDate" validate:"required,gte"`
 }
 
 type metadataV2KeyObject struct {
@@ -82,6 +106,10 @@ var metadataV2DeletedRes = StatusRes{
 
 func (v *updateMetadataV2Req) getObjectRef() interface{} {
 	return &v.updateMetadataV2Object
+}
+
+func (v *updateMetadataMultipleV2Req) getObjectRef() interface{} {
+	return &v.updateMetadataMultipleV2Object
 }
 
 func (v *metadataV2KeyReq) getObjectRef() interface{} {
@@ -160,6 +188,37 @@ func GetMetadataV2PublicHandler() gin.HandlerFunc {
 /*UpdateMetadataV2Handler is a handler for updating the file metadataV2*/
 func UpdateMetadataV2Handler() gin.HandlerFunc {
 	return ginHandlerFunc(updateMetadataV2)
+}
+
+// UpdateMetadataMultipleV2Handler godoc
+// @Summary Update multiple metadataV2
+// @Accept json
+// @Produce json
+// @Param updateMetadataMultipleV2Req body routes.updateMetadataMultipleV2Req true "update metadataV2 objects"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description   "metadatas": [{
+// @description 	  "metadataV2Key": "public key for the metadataV2 encoded to base64",
+// @description 	  "metadataV2Vertex": "the vertex to add to your account metadataV2 encoded to base64",
+// @description 	  "metadataV2Edges": "the edges to add to your account metadataV2 encoded to base64",
+// @description 	  "metadataV2Sig": "a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2",
+// @description   },
+// @description		{ ... }]
+// @description 	"timestamp": 1557346389
+// @description }
+// @Success 200 {object} routes.updateMetadataMultipleV2Res
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 400 {string} string "bad request, unable to parse vertex: (with the error)"
+// @Failure 400 {string} string "bad request, unable to parse edge: (with the error)"
+// @Failure 400 {string} string "bad request, unable to add edge to dag: (with the error)"
+// @Failure 400 {string} string "bad request, can't verify signature: (with the error)"
+// @Failure 404 {string} string "no value found for that key, or account not found"
+// @Failure 403 {string} string "subscription expired, or the invoice response"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v2/metadata/add-multiple [post]
+/*UpdateMetadataMultipleV2Handler is a handler for updating multiple file metadataV2*/
+func UpdateMetadataMultipleV2Handler() gin.HandlerFunc {
+	return ginHandlerFunc(updateMetadataMultipleV2)
 }
 
 // DeleteMetadataV2Handler godoc
@@ -501,10 +560,16 @@ func updateMetadataV2(c *gin.Context) error {
 	}
 
 	return OkResponse(c, updateMetadataV2Res{
-		MetadataV2Key:  request.updateMetadataV2Object.MetadataV2Key,
-		MetadataV2:     newMetadataV2,
+		updateMetadataV2ResBase: updateMetadataV2ResBase{
+			MetadataV2Key: request.updateMetadataV2Object.MetadataV2Key,
+			MetadataV2:    newMetadataV2,
+		},
 		ExpirationDate: account.ExpirationDate().Add(MetadataExpirationOffset),
 	})
+}
+
+func updateMetadataMultipleV2(c *gin.Context) error {
+	return nil
 }
 
 func deleteMetadataV2(c *gin.Context) error {

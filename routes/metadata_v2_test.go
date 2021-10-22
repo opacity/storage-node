@@ -201,11 +201,13 @@ func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
 	testSig, _ := secp256k1.Sign(digest, privateKey.X.Bytes())
 
 	updateMetadataV2Obj := updateMetadataV2Object{
-		MetadataV2Key:    testMetadataV2Key,
-		MetadataV2Vertex: newVertex,
-		MetadataV2Edges:  []string{},
-		MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
-		Timestamp:        time.Now().Unix(),
+		updateMetadataV2BaseObject: updateMetadataV2BaseObject{
+			MetadataV2Key:    testMetadataV2Key,
+			MetadataV2Vertex: newVertex,
+			MetadataV2Edges:  []string{},
+			MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
+		},
+		Timestamp: time.Now().Unix(),
 	}
 
 	v, b := returnValidVerificationAndRequestBody(t, updateMetadataV2Obj, privateKey)
@@ -259,11 +261,13 @@ func Test_UpdateMetadataV2Handler_Can_AddMetadataV2(t *testing.T) {
 	testSig, _ := secp256k1.Sign(digest, testKey.D.Bytes())
 
 	updateMetadataV2Obj := updateMetadataV2Object{
-		MetadataV2Key:    testMetadataV2Key,
-		MetadataV2Vertex: base64.URLEncoding.EncodeToString(vert.Binary()),
-		MetadataV2Edges:  []string{},
-		MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
-		Timestamp:        time.Now().Unix(),
+		updateMetadataV2BaseObject: updateMetadataV2BaseObject{
+			MetadataV2Key:    testMetadataV2Key,
+			MetadataV2Vertex: base64.URLEncoding.EncodeToString(vert.Binary()),
+			MetadataV2Edges:  []string{},
+			MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
+		},
+		Timestamp: time.Now().Unix(),
 	}
 
 	v, b := returnValidVerificationAndRequestBody(t, updateMetadataV2Obj, privateKey)
@@ -301,11 +305,13 @@ func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 	}
 
 	updateMetadataV2Obj := updateMetadataV2Object{
-		MetadataV2Key:    testMetadataV2Key,
-		MetadataV2Vertex: newVertex,
-		MetadataV2Edges:  []string{},
-		MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
-		Timestamp:        time.Now().Unix(),
+		updateMetadataV2BaseObject: updateMetadataV2BaseObject{
+			MetadataV2Key:    testMetadataV2Key,
+			MetadataV2Vertex: newVertex,
+			MetadataV2Edges:  []string{},
+			MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
+		},
+		Timestamp: time.Now().Unix(),
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, updateMetadataV2Obj)
@@ -338,11 +344,13 @@ func Test_UpdateMetadataV2Handler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	testSig, _ := secp256k1.Sign(digest, testKey.X.Bytes())
 
 	updateMetadataV2Obj := updateMetadataV2Object{
-		MetadataV2Key:    testMetadataV2Key,
-		MetadataV2Vertex: newVertex,
-		MetadataV2Edges:  []string{},
-		MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
-		Timestamp:        time.Now().Unix(),
+		updateMetadataV2BaseObject: updateMetadataV2BaseObject{
+			MetadataV2Key:    testMetadataV2Key,
+			MetadataV2Vertex: newVertex,
+			MetadataV2Edges:  []string{},
+			MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
+		},
+		Timestamp: time.Now().Unix(),
 	}
 
 	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, updateMetadataV2Obj)
@@ -374,11 +382,13 @@ func Test_UpdateMetadataV2Handler_Error_If_Verification_Fails(t *testing.T) {
 	testSig, _ := secp256k1.Sign(digest, testKey.X.Bytes())
 
 	updateMetadataV2Obj := updateMetadataV2Object{
-		MetadataV2Key:    testMetadataV2Key,
-		MetadataV2Vertex: newVertex,
-		MetadataV2Edges:  []string{},
-		MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
-		Timestamp:        time.Now().Unix(),
+		updateMetadataV2BaseObject: updateMetadataV2BaseObject{
+			MetadataV2Key:    testMetadataV2Key,
+			MetadataV2Vertex: newVertex,
+			MetadataV2Edges:  []string{},
+			MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
+		},
+		Timestamp: time.Now().Unix(),
 	}
 
 	v, b, _, _ := returnInvalidVerificationAndRequestBody(t, updateMetadataV2Obj)
