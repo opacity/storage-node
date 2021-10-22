@@ -420,7 +420,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	d, err := dag.NewDAGFromBinary(dBin)
+	dagFromBinary, err := dag.NewDAGFromBinary(dBin)
 
 	if err != nil {
 		return InternalErrorResponse(c, err)
@@ -440,7 +440,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	d.Add(*vert)
+	dagFromBinary.Add(*vert)
 
 	for _, eB64 := range requestBodyParsed.MetadataV2Edges {
 		eBin, err := base64.URLEncoding.DecodeString(eB64)
@@ -457,7 +457,7 @@ func updateMetadataV2(c *gin.Context) error {
 			return BadRequestResponse(c, err)
 		}
 
-		err = d.AddEdge(*edge)
+		err = dagFromBinary.AddEdge(*edge)
 
 		if err != nil {
 			err = fmt.Errorf("bad request, unable to add edge to dag: %v", err)
@@ -465,7 +465,7 @@ func updateMetadataV2(c *gin.Context) error {
 		}
 	}
 
-	vDigest, err := d.Digest(vert.ID, dag.DigestHashSHA256)
+	vDigest, err := dagFromBinary.Digest(vert.ID, dag.DigestHashSHA256)
 
 	if err != nil {
 		return InternalErrorResponse(c, err)
@@ -487,7 +487,7 @@ func updateMetadataV2(c *gin.Context) error {
 		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
-	newMetadataV2 := base64.URLEncoding.EncodeToString(d.Binary())
+	newMetadataV2 := base64.URLEncoding.EncodeToString(dagFromBinary.Binary())
 
 	if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadataV2)), int64(len(newMetadataV2))); err != nil {
 		return ForbiddenResponse(c, err)

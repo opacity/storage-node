@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -413,12 +414,15 @@ func GenerateMetadataV2ForTest(publicKeyBin []byte, isPublic bool, t *testing.T)
 		t.Fatalf("error decoding metadata v2 key")
 	}
 
+	testMetadataV2KeyBinS := string(testMetadataV2KeyBin)
 	permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin)
-	permissionHashKey := getPermissionHashV2KeyForBadger(string(testMetadataV2KeyBin))
+	permissionHashKey := getPermissionHashV2KeyForBadger(testMetadataV2KeyBinS)
+	isPublicKey := getIsPublicV2KeyForBadger(testMetadataV2KeyBinS)
 
 	if err := utils.BatchSet(&utils.KVPairs{
-		string(testMetadataV2KeyBin): testMetadataV2Value,
-		permissionHashKey:            permissionHash,
+		testMetadataV2KeyBinS: testMetadataV2Value,
+		permissionHashKey:     permissionHash,
+		isPublicKey:           strconv.FormatBool(isPublic),
 	}, ttl); err != nil {
 		t.Fatalf("there should not have been an error while saving the metadata v2 test values")
 	}

@@ -6,15 +6,14 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
-	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/dag"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -30,7 +29,7 @@ func Test_GetMetadataV2Handler_Returns_MetadataV2(t *testing.T) {
 	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
 	publicKeyBin, _ := hex.DecodeString(publicKey)
 
-	testMetadataV2Key, testMetadataV2Value := GenerateMetadataV2(publicKeyBin, false, t)
+	testMetadataV2Key, testMetadataV2Value := GenerateMetadataV2ForTest(publicKeyBin, false, t)
 
 	getMetadataV2 := metadataV2KeyObject{
 		MetadataV2Key: testMetadataV2Key,
@@ -166,20 +165,40 @@ func Test_GetMetadataV2PublicHandler_Error_If_Not_In_KV_Store(t *testing.T) {
 
 func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
 	t.SkipNow()
+
 	ttl := utils.TestValueTimeToLive
 
-	d := dag.NewDAG()
-	vert := dag.NewDAGVertex(utils.RandByteSlice(32))
-
-	d.AddReduced(*vert)
+	accountID, privateKey := generateValidateAccountId(t)
+	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
+	publicKeyBin, _ := hex.DecodeString(publicKey)
 
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
-	testMetadataV2Value := utils.GenerateMetadataV2Key()
+	// testMetadataV2Value := utils.GenerateMetadataV2Key()
+
+	testMetadataV2KeyBin, _ := base64.URLEncoding.DecodeString(testMetadataV2Key)
+	testMetadataV2KeyBinS := string(testMetadataV2KeyBin)
+	permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin)
+	permissionHashKey := getPermissionHashV2KeyForBadger(testMetadataV2KeyBinS)
+	isPublicKey := getIsPublicV2KeyForBadger(testMetadataV2KeyBinS)
+
+	d := dag.NewDAG()
+
+	if err := utils.BatchSet(&utils.KVPairs{
+		string(testMetadataV2KeyBin): base64.URLEncoding.EncodeToString(d.Binary()),
+		// string(testMetadataV2KeyBin): testMetadataV2Value,
+		permissionHashKey: permissionHash,
+		isPublicKey:       "false",
+	}, ttl); err != nil {
+		t.Fatalf("there should not have been an error while saving the metadata v2 test values")
+	}
+
+	vert := dag.NewDAGVertex([]byte(utils.GenerateMetadataV2Key()))
+	d.AddReduced(*vert)
 	newVertex := base64.URLEncoding.EncodeToString(vert.Binary())
 
-	digest, _ := d.Digest(vert.ID, func(b []byte) []byte { s := sha256.Sum256(b); return s[:] })
-	testKey, _ := ecdsa.GenerateKey(secp256k1.S256(), rand.Reader)
-	testSig, _ := secp256k1.Sign(digest, testKey.X.Bytes())
+	digest, _ := d.Digest(vert.ID, dag.DigestHashSHA256)
+	// testKey, _ := ecdsa.GenerateKey(secp256k1.S256(), rand.Reader)
+	testSig, _ := secp256k1.Sign(digest, privateKey.X.Bytes())
 
 	updateMetadataV2Obj := updateMetadataV2Object{
 		MetadataV2Key:    testMetadataV2Key,
@@ -189,44 +208,76 @@ func Test_UpdateMetadataV2Handler_Can_Update_MetadataV2(t *testing.T) {
 		Timestamp:        time.Now().Unix(),
 	}
 
-	v, b, _ := returnValidVerificationAndRequestBodyWithRandomPrivateKey(t, updateMetadataV2Obj)
+	v, b := returnValidVerificationAndRequestBody(t, updateMetadataV2Obj, privateKey)
 
 	post := updateMetadataV2Req{
 		verification: v,
 		requestBody:  b,
 	}
 
-	accountID, _ := utils.HashString(v.PublicKey)
 	account := CreatePaidAccountForTest(t, accountID)
-	err := account.IncrementMetadataCount()
-	assert.Nil(t, err)
-	err = account.UpdateMetadataSizeInBytes(0, int64(len(testMetadataV2Value)))
-	assert.Nil(t, err)
-
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-
-	permissionHash, err := getPermissionHash(v.PublicKey, testMetadataV2Key, c)
-	assert.Nil(t, err)
-
-	permissionHashKey := getPermissionHashKeyForBadger(testMetadataV2Key)
-
-	if err := utils.BatchSet(&utils.KVPairs{
-		testMetadataV2Key: testMetadataV2Value,
-		permissionHashKey: permissionHash,
-	}, ttl); err != nil {
-		t.Fatalf("there should not have been an error")
-	}
+	assert.Nil(t, account.IncrementMetadataCount())
+	// err := account.UpdateMetadataSizeInBytes(0, int64(len(testMetadataV2Value)))
+	// assert.Nil(t, err)
 
 	w := httpPostRequestHelperForTest(t, MetadataV2AddPath, "v2", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Body.String(), newVertex)
 
-	metadataV2, _, _ := utils.GetValueFromKV(testMetadataV2Key)
+	metadataV2, _, _ := utils.GetValueFromKV(testMetadataV2KeyBinS)
 	assert.Equal(t, base64.RawURLEncoding.EncodeToString(d.Binary()), metadataV2)
 
 	accountFromDB, _ := models.GetAccountById(account.AccountID)
 	assert.Equal(t, int64(len(d.Binary())), accountFromDB.TotalMetadataSizeInBytes)
+}
+
+func Test_UpdateMetadataV2Handler_Can_AddMetadataV2(t *testing.T) {
+	t.SkipNow()
+	// setupTests(t)
+	models.DeleteAccountsForTest(t)
+
+	metadataPrivateKey, _ := utils.GenerateKey()
+
+	metadataPublicKey := utils.PubkeyCompressedToHex(metadataPrivateKey.PublicKey)
+
+	accountID, privateKey := generateValidateAccountId(t)
+	// publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
+	// publicKeyBin, _ := hex.DecodeString(publicKey)
+
+	// account := CreatePaidAccountForTest(t, accountID)
+	CreatePaidAccountForTest(t, accountID)
+
+	testMetadataV2Key := utils.HashStringV2([]byte(metadataPublicKey))
+
+	testDag := dag.NewDAG()
+	vert := dag.NewDAGVertex(utils.RandByteSlice(32))
+	testDag.Add(*vert)
+
+	digest, _ := testDag.Digest(vert.ID, dag.DigestHashSHA256)
+	testKey, _ := ecdsa.GenerateKey(secp256k1.S256(), rand.Reader)
+	testSig, _ := secp256k1.Sign(digest, testKey.D.Bytes())
+
+	updateMetadataV2Obj := updateMetadataV2Object{
+		MetadataV2Key:    testMetadataV2Key,
+		MetadataV2Vertex: base64.URLEncoding.EncodeToString(vert.Binary()),
+		MetadataV2Edges:  []string{},
+		MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
+		Timestamp:        time.Now().Unix(),
+	}
+
+	v, b := returnValidVerificationAndRequestBody(t, updateMetadataV2Obj, privateKey)
+
+	post := updateMetadataV2Req{
+		verification: v,
+		requestBody:  b,
+	}
+
+	w := httpPostRequestHelperForTest(t, MetadataV2AddPath, "v2", post)
+	// Check to see if the response was what you expected
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	fmt.Println(w.Body.String())
 }
 
 func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
@@ -274,8 +325,6 @@ func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_UpdateMetadataV2Handler_Error_If_Key_Does_Not_Exist(t *testing.T) {
-	t.SkipNow()
-
 	d := dag.NewDAG()
 	vert := dag.NewDAGVertex(utils.RandByteSlice(32))
 
@@ -284,7 +333,7 @@ func Test_UpdateMetadataV2Handler_Error_If_Key_Does_Not_Exist(t *testing.T) {
 	testMetadataV2Key := utils.GenerateMetadataV2Key()
 	newVertex := base64.URLEncoding.EncodeToString(vert.Binary())
 
-	digest, _ := d.Digest(vert.ID, func(b []byte) []byte { s := sha256.Sum256(b); return s[:] })
+	digest, _ := d.Digest(vert.ID, dag.DigestHashSHA256)
 	testKey, _ := ecdsa.GenerateKey(secp256k1.S256(), rand.Reader)
 	testSig, _ := secp256k1.Sign(digest, testKey.X.Bytes())
 
@@ -431,7 +480,7 @@ func Test_Delete_MetadataV2_Success(t *testing.T) {
 	publicKey := utils.PubkeyCompressedToHex(privateKey.PublicKey)
 	publicKeyBin, _ := hex.DecodeString(publicKey)
 
-	testMetadataV2Key, testMetadataV2Value := GenerateMetadataV2(publicKeyBin, false, t)
+	testMetadataV2Key, testMetadataV2Value := GenerateMetadataV2ForTest(publicKeyBin, false, t)
 
 	deleteMetadataV2Obj := metadataV2KeyObject{
 		MetadataV2Key: testMetadataV2Key,
