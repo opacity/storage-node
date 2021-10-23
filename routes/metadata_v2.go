@@ -209,11 +209,7 @@ func UpdateMetadataV2Handler() gin.HandlerFunc {
 // @description }
 // @Success 200 {object} routes.updateMetadataMultipleV2Res
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
-// @Failure 400 {string} string "bad request, unable to parse vertex: (with the error)"
-// @Failure 400 {string} string "bad request, unable to parse edge: (with the error)"
-// @Failure 400 {string} string "bad request, unable to add edge to dag: (with the error)"
 // @Failure 400 {string} string "bad request, can't verify signature: (with the error)"
-// @Failure 404 {string} string "no value found for that key, or account not found"
 // @Failure 403 {string} string "subscription expired, or the invoice response"
 // @Failure 500 {string} string "some information about the internal error"
 // @Router /api/v2/metadata/add-multiple [post]
