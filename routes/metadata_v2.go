@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
@@ -403,14 +404,8 @@ func updateMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	metadataV2KeyBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
-	if err != nil {
-		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-		return BadRequestResponse(c, err)
-	}
-
-	if cap(metadataV2KeyBin) != 33 {
-		return BadRequestResponse(c, errors.New(metadataIncorrectKeyLength))
+	if account.ExpirationDate().Before(time.Now()) {
+		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
 	publicKeyBin, err := hex.DecodeString(request.PublicKey)
@@ -423,11 +418,58 @@ func updateMetadataV2(c *gin.Context) error {
 	// be deleted too soon
 	ttl := time.Until(account.ExpirationDate().Add(MetadataExpirationOffset))
 
+	newMetadataV2, err := updateSetMetadata(
+		requestBodyParsed.MetadataV2Key,
+		publicKeyBin,
+		ttl,
+		account,
+		strconv.FormatBool(requestBodyParsed.IsPublic),
+		requestBodyParsed.MetadataV2Vertex,
+		requestBodyParsed.MetadataV2Edges,
+		requestBodyParsed.MetadataV2Sig,
+	)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "forbidden") {
+			return ForbiddenResponse(c, err)
+		}
+		if strings.Contains(err.Error(), "bad request") {
+			return BadRequestResponse(c, err)
+		}
+		if strings.Contains(err.Error(), "not found") {
+			return NotFoundResponse(c, err)
+		}
+
+		return InternalErrorResponse(c, err)
+	}
+
+	return OkResponse(c, updateMetadataV2Res{
+		updateMetadataV2ResBase: updateMetadataV2ResBase{
+			MetadataV2Key: request.updateMetadataV2Object.MetadataV2Key,
+			MetadataV2:    newMetadataV2,
+		},
+		ExpirationDate: account.ExpirationDate().Add(MetadataExpirationOffset),
+	})
+}
+
+func updateSetMetadata(metadataKey string, publicKeyBin []byte, ttl time.Duration, account models.Account, isPublic string, metadataVertex string, metadataEdges []string, metadataSig string) (newMetadataV2 string, err error) {
+	metadataV2KeyBin, err := base64.URLEncoding.DecodeString(metadataKey)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+		return
+	}
+
+	if cap(metadataV2KeyBin) != 33 {
+		err = fmt.Errorf("bad request, %s: %v", metadataIncorrectKeyLength, err)
+		return
+	}
+
 	oldMetadataV2, _, err := utils.GetValueFromKV(string(metadataV2KeyBin))
 
 	if err != nil {
 		if err = account.IncrementMetadataCount(); err != nil {
-			return ForbiddenResponse(c, err)
+			err = fmt.Errorf("forbidden %v", err)
+			return
 		}
 
 		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin)
@@ -440,10 +482,10 @@ func updateMetadataV2(c *gin.Context) error {
 		if err = utils.BatchSet(&utils.KVPairs{
 			string(metadataV2KeyBin): base64.URLEncoding.EncodeToString(d.Binary()),
 			permissionHashKey:        permissionHash,
-			isPublicKey:              strconv.FormatBool(requestBodyParsed.IsPublic),
+			isPublicKey:              isPublic,
 		}, ttl); err != nil {
 			account.DecrementMetadataCount()
-			return InternalErrorResponse(c, err)
+			return
 		}
 
 		oldMetadataV2 = base64.URLEncoding.EncodeToString(d.Binary())
@@ -453,119 +495,113 @@ func updateMetadataV2(c *gin.Context) error {
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
-		return NotFoundResponse(c, err)
+		err = fmt.Errorf("not found %v", err)
+		return
 	}
 
-	if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin,
-		permissionHashInBadger, c); err != nil {
-		return err
+	if err = verifyPermissionsV2Plain(publicKeyBin, metadataV2KeyBin, permissionHashInBadger); err != nil {
+		return
 	}
 
 	isPublicKey := getIsPublicV2KeyForBadger(string(metadataV2KeyBin))
 	isPublicInBadger, _, err := utils.GetValueFromKV(isPublicKey)
 
 	if err != nil {
-		return NotFoundResponse(c, err)
+		return
 	}
 
-	if isPublicInBadger != strconv.FormatBool(requestBodyParsed.IsPublic) {
-		return BadRequestResponse(c, errors.New("bad request, isPublic does not match"))
+	if isPublicInBadger != isPublic {
+		err = errors.New("bad request, isPublic does not match")
+		return
 	}
 
 	dBin, err := base64.URLEncoding.DecodeString(oldMetadataV2)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-		return BadRequestResponse(c, err)
+		return
 	}
 
 	dagFromBinary, err := dag.NewDAGFromBinary(dBin)
 
 	if err != nil {
-		return InternalErrorResponse(c, err)
+		return
 	}
 
-	vBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Vertex)
+	vBin, err := base64.URLEncoding.DecodeString(metadataVertex)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-		return BadRequestResponse(c, err)
+		return
 	}
 
 	vert, err := dag.NewDAGVertexFromBinary(vBin)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse vertex: %v", err)
-		return BadRequestResponse(c, err)
+		return
 	}
 
 	dagFromBinary.Add(*vert)
 
-	for _, eB64 := range requestBodyParsed.MetadataV2Edges {
-		eBin, err := base64.URLEncoding.DecodeString(eB64)
+	for _, eB64 := range metadataEdges {
+		var eBin []byte
+		eBin, err = base64.URLEncoding.DecodeString(eB64)
 
 		if err != nil {
 			err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-			return BadRequestResponse(c, err)
+			return
 		}
 
-		edge, err := dag.NewDAGEdgeFromBinary(eBin)
+		var edge *dag.DAGEdge
+		edge, err = dag.NewDAGEdgeFromBinary(eBin)
 
 		if err != nil {
 			err = fmt.Errorf("bad request, unable to parse edge: %v", err)
-			return BadRequestResponse(c, err)
+			return
 		}
 
 		err = dagFromBinary.AddEdge(*edge)
 
 		if err != nil {
 			err = fmt.Errorf("bad request, unable to add edge to dag: %v", err)
-			return BadRequestResponse(c, err)
+			return
 		}
 	}
 
 	vDigest, err := dagFromBinary.Digest(vert.ID, dag.DigestHashSHA256)
 
 	if err != nil {
-		return InternalErrorResponse(c, err)
+		return
 	}
 
-	metadataV2SigBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Sig)
+	metadataV2SigBin, err := base64.URLEncoding.DecodeString(metadataSig)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-		return BadRequestResponse(c, err)
+		return
 	}
 
 	if !secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) {
 		err = fmt.Errorf("bad request, can't verify signature: %v", err)
-		return BadRequestResponse(c, err)
+		return
 	}
 
-	if account.ExpirationDate().Before(time.Now()) {
-		return ForbiddenResponse(c, errors.New("subscription expired"))
+	newMetadataV2 = base64.URLEncoding.EncodeToString(dagFromBinary.Binary())
+
+	if err = account.UpdateMetadataSizeInBytes(int64(len(oldMetadataV2)), int64(len(newMetadataV2))); err != nil {
+		err = fmt.Errorf("forbidden: %v", err)
+		return
 	}
 
-	newMetadataV2 := base64.URLEncoding.EncodeToString(dagFromBinary.Binary())
-
-	if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadataV2)), int64(len(newMetadataV2))); err != nil {
-		return ForbiddenResponse(c, err)
-	}
-
-	if err := utils.BatchSet(&utils.KVPairs{
+	if err = utils.BatchSet(&utils.KVPairs{
 		string(metadataV2KeyBin): newMetadataV2,
 		permissionHashKey:        permissionHashInBadger,
 	}, ttl); err != nil {
-		return InternalErrorResponse(c, err)
+		return
 	}
 
-	return OkResponse(c, updateMetadataV2Res{
-		updateMetadataV2ResBase: updateMetadataV2ResBase{
-			MetadataV2Key: request.updateMetadataV2Object.MetadataV2Key,
-			MetadataV2:    newMetadataV2,
-		},
-		ExpirationDate: account.ExpirationDate().Add(MetadataExpirationOffset),
-	})
+	return newMetadataV2, err
 }
 
 func updateMetadataMultipleV2(c *gin.Context) error {

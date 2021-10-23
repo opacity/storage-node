@@ -340,3 +340,15 @@ func verifyPermissionsV2(publicKey []byte, key []byte, expectedPermissionHash st
 	}
 	return nil
 }
+
+func verifyPermissionsV2Plain(publicKey []byte, key []byte, expectedPermissionHash string) error {
+	if expectedPermissionHash == "" {
+		return errors.New("forbidden resource is ineligible for modification")
+	}
+	permissionHash := getPermissionHashV2(publicKey, key)
+
+	if permissionHash != expectedPermissionHash {
+		return errors.New("forbidden " + notAuthorizedResponse)
+	}
+	return nil
+}
