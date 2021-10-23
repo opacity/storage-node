@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/dag"
 	"github.com/opacity/storage-node/models"
@@ -565,23 +566,23 @@ func updateSetMetadata(metadataKey string, publicKeyBin []byte, ttl time.Duratio
 		}
 	}
 
-	// vDigest, err := dagFromBinary.Digest(vert.ID, dag.DigestHashSHA256)
+	vDigest, err := dagFromBinary.Digest(vert.ID, dag.DigestHashSHA256)
 
-	// if err != nil {
-	// 	return
-	// }
+	if err != nil {
+		return
+	}
 
-	// metadataV2SigBin, err := base64.URLEncoding.DecodeString(metadataSig)
+	metadataV2SigBin, err := base64.URLEncoding.DecodeString(metadataSig)
 
-	// if err != nil {
-	// 	err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-	// 	return
-	// }
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+		return
+	}
 
-	// if !secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) {
-	// 	err = fmt.Errorf("bad request, can't verify signature: %v", err)
-	// 	return
-	// }
+	if !secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) {
+		err = fmt.Errorf("bad request, can't verify signature: %v", err)
+		return
+	}
 
 	newMetadataV2 = base64.URLEncoding.EncodeToString(dagFromBinary.Binary())
 

@@ -378,6 +378,8 @@ func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
 }
 
 func Test_UpdateMetadataV2Handler_Error_If_Key_Does_Not_Exist(t *testing.T) {
+	t.SkipNow()
+
 	d := dag.NewDAG()
 	vert := dag.NewDAGVertex(utils.RandByteSlice(32))
 
