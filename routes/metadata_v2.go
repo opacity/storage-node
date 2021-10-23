@@ -1,12 +1,12 @@
 package routes
 
 import (
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
@@ -20,13 +20,22 @@ const metadataIncorrectKeyLength = "bad request, incorrect key length"
 const MetadataExpirationOffset = 24 * time.Hour * 60
 
 // must be sorted alphabetically for JSON marshaling/stringifying
-type updateMetadataV2Object struct {
+type updateMetadataV2BaseObject struct {
 	IsPublic         bool     `json:"isPublic"`
 	MetadataV2Edges  []string `json:"metadataV2Edges" validate:"required,dive,base64url,len=12" example:"the edges to add to your account metadataV2 encoded to base64url"`
 	MetadataV2Key    string   `json:"metadataV2Key" validate:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
 	MetadataV2Sig    string   `json:"metadataV2Sig" validate:"required,base64url,len=88" example:"a signature encoded to base64url confirming the metadata change, the publickey will be a key for the metadataV2"`
 	MetadataV2Vertex string   `json:"metadataV2Vertex" validate:"required,base64url" example:"the vertex to add to your account metadataV2 encoded to base64url"`
-	Timestamp        int64    `json:"timestamp" validate:"required"`
+}
+
+type updateMetadataV2Object struct {
+	updateMetadataV2BaseObject
+	Timestamp int64 `json:"timestamp" validate:"required"`
+}
+
+type updateMetadataMultipleV2Object struct {
+	Metadatas []updateMetadataV2BaseObject `json:"metadatas" validate:"required"`
+	Timestamp int64                        `json:"timestamp" validate:"required"`
 }
 
 type updateMetadataV2Req struct {
@@ -35,10 +44,26 @@ type updateMetadataV2Req struct {
 	updateMetadataV2Object updateMetadataV2Object
 }
 
+type updateMetadataMultipleV2Req struct {
+	verification
+	requestBody
+	updateMetadataMultipleV2Object updateMetadataMultipleV2Object
+}
+
+type updateMetadataV2ResBase struct {
+	MetadataV2Key string `json:"metadataV2Key" validate:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
+	MetadataV2    string `json:"metadataV2" validate:"required,base64url" example:"your (updated) account metadataV2"`
+}
+
 type updateMetadataV2Res struct {
-	MetadataV2Key  string    `json:"metadataV2Key" validate:"required,base64url,len=44" example:"public key for the metadataV2 encoded to base64url"`
-	MetadataV2     string    `json:"metadataV2" validate:"required,base64url" example:"your (updated) account metadataV2"`
+	updateMetadataV2ResBase
 	ExpirationDate time.Time `json:"expirationDate" validate:"required,gte"`
+}
+
+type updateMetadataMultipleV2Res struct {
+	Metadatas       []updateMetadataV2ResBase `json:"metadatas" validate:"required"`
+	FailedMetadatas map[string]string         `json:"failedMetadatas"`
+	ExpirationDate  time.Time                 `json:"expirationDate" validate:"required,gte"`
 }
 
 type metadataV2KeyObject struct {
@@ -83,6 +108,10 @@ var metadataV2DeletedRes = StatusRes{
 
 func (v *updateMetadataV2Req) getObjectRef() interface{} {
 	return &v.updateMetadataV2Object
+}
+
+func (v *updateMetadataMultipleV2Req) getObjectRef() interface{} {
+	return &v.updateMetadataMultipleV2Object
 }
 
 func (v *metadataV2KeyReq) getObjectRef() interface{} {
@@ -161,6 +190,33 @@ func GetMetadataV2PublicHandler() gin.HandlerFunc {
 /*UpdateMetadataV2Handler is a handler for updating the file metadataV2*/
 func UpdateMetadataV2Handler() gin.HandlerFunc {
 	return ginHandlerFunc(updateMetadataV2)
+}
+
+// UpdateMetadataMultipleV2Handler godoc
+// @Summary Update multiple metadataV2
+// @Accept json
+// @Produce json
+// @Param updateMetadataMultipleV2Req body routes.updateMetadataMultipleV2Req true "update metadataV2 objects"
+// @description requestBody should be a stringified version of (values are just examples):
+// @description {
+// @description   "metadatas": [{
+// @description 	  "metadataV2Key": "public key for the metadataV2 encoded to base64",
+// @description 	  "metadataV2Vertex": "the vertex to add to your account metadataV2 encoded to base64",
+// @description 	  "metadataV2Edges": "the edges to add to your account metadataV2 encoded to base64",
+// @description 	  "metadataV2Sig": "a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2",
+// @description   },
+// @description		{ ... }]
+// @description 	"timestamp": 1557346389
+// @description }
+// @Success 200 {object} routes.updateMetadataMultipleV2Res
+// @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
+// @Failure 400 {string} string "bad request, can't verify signature: (with the error)"
+// @Failure 403 {string} string "subscription expired, or the invoice response"
+// @Failure 500 {string} string "some information about the internal error"
+// @Router /api/v2/metadata/add-multiple [post]
+/*UpdateMetadataMultipleV2Handler is a handler for updating multiple file metadataV2*/
+func UpdateMetadataMultipleV2Handler() gin.HandlerFunc {
+	return ginHandlerFunc(updateMetadataMultipleV2)
 }
 
 // DeleteMetadataV2Handler godoc
@@ -345,14 +401,8 @@ func updateMetadataV2(c *gin.Context) error {
 		return err
 	}
 
-	metadataV2KeyBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Key)
-	if err != nil {
-		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-		return BadRequestResponse(c, err)
-	}
-
-	if cap(metadataV2KeyBin) != 33 {
-		return BadRequestResponse(c, errors.New(metadataIncorrectKeyLength))
+	if account.ExpirationDate().Before(time.Now()) {
+		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
 	publicKeyBin, err := hex.DecodeString(request.PublicKey)
@@ -365,14 +415,61 @@ func updateMetadataV2(c *gin.Context) error {
 	// be deleted too soon
 	ttl := time.Until(account.ExpirationDate().Add(MetadataExpirationOffset))
 
+	newMetadataV2, err := updateSetMetadata(
+		requestBodyParsed.MetadataV2Key,
+		publicKeyBin,
+		ttl,
+		account,
+		strconv.FormatBool(requestBodyParsed.IsPublic),
+		requestBodyParsed.MetadataV2Vertex,
+		requestBodyParsed.MetadataV2Edges,
+		requestBodyParsed.MetadataV2Sig,
+	)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "forbidden") {
+			return ForbiddenResponse(c, err)
+		}
+		if strings.Contains(err.Error(), "bad request") {
+			return BadRequestResponse(c, err)
+		}
+		if strings.Contains(err.Error(), "not found") {
+			return NotFoundResponse(c, err)
+		}
+
+		return InternalErrorResponse(c, err)
+	}
+
+	return OkResponse(c, updateMetadataV2Res{
+		updateMetadataV2ResBase: updateMetadataV2ResBase{
+			MetadataV2Key: request.updateMetadataV2Object.MetadataV2Key,
+			MetadataV2:    newMetadataV2,
+		},
+		ExpirationDate: account.ExpirationDate().Add(MetadataExpirationOffset),
+	})
+}
+
+func updateSetMetadata(metadataKey string, publicKeyBin []byte, ttl time.Duration, account models.Account, isPublic string, metadataVertex string, metadataEdges []string, metadataSig string) (newMetadataV2 string, err error) {
+	metadataV2KeyBin, err := base64.URLEncoding.DecodeString(metadataKey)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+		return
+	}
+
+	if cap(metadataV2KeyBin) != 33 {
+		err = fmt.Errorf("bad request, %s: %v", metadataIncorrectKeyLength, err)
+		return
+	}
+
 	oldMetadataV2, _, err := utils.GetValueFromKV(string(metadataV2KeyBin))
 
 	if err != nil {
 		if err = account.IncrementMetadataCount(); err != nil {
-			return ForbiddenResponse(c, err)
+			err = fmt.Errorf("forbidden %v", err)
+			return
 		}
 
-		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin, c)
+		permissionHash := getPermissionHashV2(publicKeyBin, metadataV2KeyBin)
 		permissionHashKey := getPermissionHashV2KeyForBadger(string(metadataV2KeyBin))
 
 		isPublicKey := getIsPublicV2KeyForBadger(string(metadataV2KeyBin))
@@ -382,10 +479,10 @@ func updateMetadataV2(c *gin.Context) error {
 		if err = utils.BatchSet(&utils.KVPairs{
 			string(metadataV2KeyBin): base64.URLEncoding.EncodeToString(d.Binary()),
 			permissionHashKey:        permissionHash,
-			isPublicKey:              strconv.FormatBool(requestBodyParsed.IsPublic),
+			isPublicKey:              isPublic,
 		}, ttl); err != nil {
 			account.DecrementMetadataCount()
-			return InternalErrorResponse(c, err)
+			return
 		}
 
 		oldMetadataV2 = base64.URLEncoding.EncodeToString(d.Binary())
@@ -395,116 +492,181 @@ func updateMetadataV2(c *gin.Context) error {
 	permissionHashInBadger, _, err := utils.GetValueFromKV(permissionHashKey)
 
 	if err != nil {
-		return NotFoundResponse(c, err)
+		err = fmt.Errorf("not found %v", err)
+		return
 	}
 
-	if err := verifyPermissionsV2(publicKeyBin, metadataV2KeyBin,
-		permissionHashInBadger, c); err != nil {
-		return err
+	if err = verifyPermissionsV2Plain(publicKeyBin, metadataV2KeyBin, permissionHashInBadger); err != nil {
+		return
 	}
 
 	isPublicKey := getIsPublicV2KeyForBadger(string(metadataV2KeyBin))
 	isPublicInBadger, _, err := utils.GetValueFromKV(isPublicKey)
 
 	if err != nil {
-		return NotFoundResponse(c, err)
+		return
 	}
 
-	if isPublicInBadger != strconv.FormatBool(requestBodyParsed.IsPublic) {
-		return BadRequestResponse(c, errors.New("bad request, isPublic does not match"))
+	if isPublicInBadger != isPublic {
+		err = errors.New("bad request, isPublic does not match")
+		return
 	}
 
 	dBin, err := base64.URLEncoding.DecodeString(oldMetadataV2)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-		return BadRequestResponse(c, err)
+		return
 	}
 
-	d, err := dag.NewDAGFromBinary(dBin)
+	dagFromBinary, err := dag.NewDAGFromBinary(dBin)
 
 	if err != nil {
-		return InternalErrorResponse(c, err)
+		return
 	}
 
-	vBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Vertex)
+	vBin, err := base64.URLEncoding.DecodeString(metadataVertex)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-		return BadRequestResponse(c, err)
+		return
 	}
 
 	vert, err := dag.NewDAGVertexFromBinary(vBin)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse vertex: %v", err)
-		return BadRequestResponse(c, err)
+		return
 	}
 
-	d.Add(*vert)
+	dagFromBinary.Add(*vert)
 
-	for _, eB64 := range requestBodyParsed.MetadataV2Edges {
-		eBin, err := base64.URLEncoding.DecodeString(eB64)
+	for _, eB64 := range metadataEdges {
+		var eBin []byte
+		eBin, err = base64.URLEncoding.DecodeString(eB64)
 
 		if err != nil {
 			err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-			return BadRequestResponse(c, err)
+			return
 		}
 
-		edge, err := dag.NewDAGEdgeFromBinary(eBin)
+		var edge *dag.DAGEdge
+		edge, err = dag.NewDAGEdgeFromBinary(eBin)
 
 		if err != nil {
 			err = fmt.Errorf("bad request, unable to parse edge: %v", err)
-			return BadRequestResponse(c, err)
+			return
 		}
 
-		err = d.AddEdge(*edge)
+		err = dagFromBinary.AddEdge(*edge)
 
 		if err != nil {
 			err = fmt.Errorf("bad request, unable to add edge to dag: %v", err)
-			return BadRequestResponse(c, err)
+			return
 		}
 	}
 
-	vDigest, err := d.Digest(vert.ID, func(b []byte) []byte { s := sha256.Sum256(b); return s[:] })
+	vDigest, err := dagFromBinary.Digest(vert.ID, dag.DigestHashSHA256)
 
 	if err != nil {
-		return InternalErrorResponse(c, err)
+		return
 	}
 
-	metadataV2SigBin, err := base64.URLEncoding.DecodeString(requestBodyParsed.MetadataV2Sig)
+	metadataV2SigBin, err := base64.URLEncoding.DecodeString(metadataSig)
 
 	if err != nil {
 		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-		return BadRequestResponse(c, err)
+		return
 	}
 
-	if secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) == false {
+	if !secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) {
 		err = fmt.Errorf("bad request, can't verify signature: %v", err)
-		return BadRequestResponse(c, err)
+		return
+	}
+
+	newMetadataV2 = base64.URLEncoding.EncodeToString(dagFromBinary.Binary())
+
+	if err = account.UpdateMetadataSizeInBytes(int64(len(oldMetadataV2)), int64(len(newMetadataV2))); err != nil {
+		err = fmt.Errorf("forbidden: %v", err)
+		return
+	}
+
+	if err = utils.BatchSet(&utils.KVPairs{
+		string(metadataV2KeyBin): newMetadataV2,
+		permissionHashKey:        permissionHashInBadger,
+	}, ttl); err != nil {
+		return
+	}
+
+	return newMetadataV2, err
+}
+
+func updateMetadataMultipleV2(c *gin.Context) error {
+	request := updateMetadataMultipleV2Req{}
+
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
+	}
+
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyIfPaidWithContext(account, c); err != nil {
+		return err
+	}
+
+	requestBodyParsed := updateMetadataMultipleV2Object{}
+
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
+		return err
 	}
 
 	if account.ExpirationDate().Before(time.Now()) {
 		return ForbiddenResponse(c, errors.New("subscription expired"))
 	}
 
-	newMetadataV2 := base64.URLEncoding.EncodeToString(d.Binary())
-
-	if err := account.UpdateMetadataSizeInBytes(int64(len(oldMetadataV2)), int64(len(newMetadataV2))); err != nil {
-		return ForbiddenResponse(c, err)
+	publicKeyBin, err := hex.DecodeString(request.PublicKey)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse hex: %v", err)
+		return BadRequestResponse(c, err)
 	}
 
-	if err := utils.BatchSet(&utils.KVPairs{
-		string(metadataV2KeyBin): newMetadataV2,
-		permissionHashKey:        permissionHashInBadger,
-	}, ttl); err != nil {
-		return InternalErrorResponse(c, err)
+	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
+	// be deleted too soon
+	ttl := time.Until(account.ExpirationDate().Add(MetadataExpirationOffset))
+
+	if len(request.updateMetadataMultipleV2Object.Metadatas) == 0 {
+		return BadRequestResponse(c, errors.New("no metadatas to get"))
 	}
 
-	return OkResponse(c, updateMetadataV2Res{
-		MetadataV2Key:  request.updateMetadataV2Object.MetadataV2Key,
-		MetadataV2:     newMetadataV2,
-		ExpirationDate: account.ExpirationDate().Add(MetadataExpirationOffset),
+	newMetadatas := make([]updateMetadataV2ResBase, 0)
+	failedMetadatas := make(map[string]string)
+	for _, metadata := range request.updateMetadataMultipleV2Object.Metadatas {
+		newMetadataV2, err := updateSetMetadata(
+			metadata.MetadataV2Key,
+			publicKeyBin,
+			ttl,
+			account,
+			strconv.FormatBool(metadata.IsPublic),
+			metadata.MetadataV2Vertex,
+			metadata.MetadataV2Edges,
+			metadata.MetadataV2Sig,
+		)
+		if err != nil {
+			failedMetadatas[metadata.MetadataV2Key] = err.Error()
+		}
+		newMetadatas = append(newMetadatas, updateMetadataV2ResBase{
+			MetadataV2Key: metadata.MetadataV2Key,
+			MetadataV2:    newMetadataV2,
+		})
+	}
+
+	return OkResponse(c, updateMetadataMultipleV2Res{
+		Metadatas:       newMetadatas,
+		FailedMetadatas: failedMetadatas,
+		ExpirationDate:  account.ExpirationDate().Add(MetadataExpirationOffset),
 	})
 }
 

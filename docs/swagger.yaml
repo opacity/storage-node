@@ -1,36 +1,4 @@
 definitions:
-  models.CreateShortlinkObj:
-    properties:
-      description:
-        example: lorem ipsum
-        maxLength: 65535
-        minLength: 1
-        type: string
-      file_id:
-        example: the id of the file
-        maxLength: 64
-        minLength: 64
-        type: string
-      fileExtension:
-        example: png
-        maxLength: 255
-        minLength: 1
-        type: string
-      mimeType:
-        example: image/png
-        maxLength: 255
-        minLength: 1
-        type: string
-      title:
-        example: LoremIpsum
-        maxLength: 65535
-        minLength: 1
-        type: string
-    required:
-    - description
-    - file_id
-    - title
-    type: object
   models.Invoice:
     properties:
       cost:
@@ -46,9 +14,6 @@ definitions:
     type: object
   routes.CreateShortlinkReq:
     properties:
-      createShortlinkObj:
-        $ref: '#/definitions/models.CreateShortlinkObj'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -85,29 +50,8 @@ definitions:
     required:
     - fileID
     type: object
-  routes.InitFileUploadObj:
-    properties:
-      endIndex:
-        example: 2
-        type: integer
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 64
-        minLength: 64
-        type: string
-      fileSizeInByte:
-        example: 200000000000006
-        type: integer
-    required:
-    - endIndex
-    - fileHandle
-    - fileSizeInByte
-    type: object
   routes.InitFileUploadReq:
     properties:
-      initFileUploadObj:
-        $ref: '#/definitions/routes.InitFileUploadObj'
-        type: object
       metadata:
         example: the metadata of the file you are about to upload, as an array of
           bytes
@@ -142,27 +86,9 @@ definitions:
     properties:
       plans:
         $ref: '#/definitions/utils.PlanResponseType'
-        type: object
-    type: object
-  routes.PrivateToPublicObj:
-    properties:
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 128
-        minLength: 128
-        type: string
-      fileSize:
-        example: 543534
-        type: integer
-    required:
-    - fileHandle
-    - fileSize
     type: object
   routes.PrivateToPublicReq:
     properties:
-      privateToPublicObj:
-        $ref: '#/definitions/routes.PrivateToPublicObj'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -193,14 +119,6 @@ definitions:
       s3_url:
         type: string
     type: object
-  routes.PublicShareObj:
-    properties:
-      shortlink:
-        example: the short link of the completed file
-        type: string
-    required:
-    - shortlink
-    type: object
   routes.PublicShareOpsReq:
     properties:
       publicKey:
@@ -208,9 +126,6 @@ definitions:
         maxLength: 66
         minLength: 66
         type: string
-      publicShareObj:
-        $ref: '#/definitions/routes.PublicShareObj'
-        type: object
       requestBody:
         example: look at description for example
         type: string
@@ -240,6 +155,8 @@ definitions:
     properties:
       address:
         type: string
+      chainId:
+        type: integer
       network:
         type: string
     type: object
@@ -248,20 +165,6 @@ definitions:
       status:
         example: status of the request
         type: string
-    type: object
-  routes.UploadFileObj:
-    properties:
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 64
-        minLength: 64
-        type: string
-      partIndex:
-        example: 1
-        type: integer
-    required:
-    - fileHandle
-    - partIndex
     type: object
   routes.UploadFileReq:
     properties:
@@ -286,24 +189,11 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
-      uploadFileObj:
-        $ref: '#/definitions/routes.UploadFileObj'
-        type: object
     required:
     - chunkData
     - publicKey
     - requestBody
     - signature
-    type: object
-  routes.UploadStatusObj:
-    properties:
-      fileHandle:
-        example: a deterministically created file handle
-        maxLength: 64
-        minLength: 64
-        type: string
-    required:
-    - fileHandle
     type: object
   routes.UploadStatusReq:
     properties:
@@ -325,34 +215,13 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
-      uploadStatusObj:
-        $ref: '#/definitions/routes.UploadStatusObj'
-        type: object
     required:
     - publicKey
     - requestBody
     - signature
     type: object
-  routes.accountCreateObj:
-    properties:
-      durationInMonths:
-        example: 12
-        minimum: 1
-        type: integer
-      storageLimit:
-        example: 100
-        maximum: 2048
-        minimum: 10
-        type: integer
-    required:
-    - durationInMonths
-    - storageLimit
-    type: object
   routes.accountCreateReq:
     properties:
-      accountCreateObj:
-        $ref: '#/definitions/routes.accountCreateObj'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -382,7 +251,6 @@ definitions:
         type: string
       invoice:
         $ref: '#/definitions/models.Invoice'
-        type: object
     required:
     - expirationDate
     type: object
@@ -390,7 +258,6 @@ definitions:
     properties:
       account:
         $ref: '#/definitions/routes.accountGetObj'
-        type: object
       error:
         example: the error encountered while checking
         type: string
@@ -399,12 +266,13 @@ definitions:
         type: string
       stripeData:
         $ref: '#/definitions/routes.stripeDataObj'
-        type: object
     required:
     - account
     type: object
   routes.accountGetObj:
     properties:
+      accountID:
+        type: string
       apiVersion:
         type: integer
       cost:
@@ -453,56 +321,25 @@ definitions:
     - monthsInSubscription
     - storageLimit
     type: object
-  routes.accountGetReqObj:
-    properties:
-      timestamp:
-        type: integer
-    required:
-    - timestamp
-    type: object
   routes.accountUnpaidRes:
     properties:
       account:
         $ref: '#/definitions/routes.accountGetObj'
-        type: object
       error:
         example: the error encountered while checking
         type: string
       invoice:
         $ref: '#/definitions/models.Invoice'
-        type: object
       paymentStatus:
         example: paid
         type: string
       stripeData:
         $ref: '#/definitions/routes.stripeDataObj'
-        type: object
     required:
     - account
     type: object
-  routes.checkRenewalStatusObject:
-    properties:
-      fileHandles:
-        example:
-        - an array containing all your file handles
-        items:
-          type: string
-        type: array
-      metadataKeys:
-        example:
-        - an array containing all your metadata keys
-        items:
-          type: string
-        type: array
-    required:
-    - fileHandles
-    - metadataKeys
-    type: object
   routes.checkRenewalStatusReq:
     properties:
-      checkRenewalStatusObject:
-        $ref: '#/definitions/routes.checkRenewalStatusObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -525,30 +362,9 @@ definitions:
     - publicKey
     - requestBody
     - signature
-    type: object
-  routes.checkRenewalV2StatusObject:
-    properties:
-      fileHandles:
-        example:
-        - an array containing all your file handles
-        items:
-          type: string
-        type: array
-      metadataKeys:
-        example:
-        - an array containing all your metadata keys
-        items:
-          type: string
-        type: array
-    required:
-    - fileHandles
-    - metadataKeys
     type: object
   routes.checkRenewalV2StatusReq:
     properties:
-      checkRenewalV2StatusObject:
-        $ref: '#/definitions/routes.checkRenewalV2StatusObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -571,40 +387,9 @@ definitions:
     - publicKey
     - requestBody
     - signature
-    type: object
-  routes.checkUpgradeStatusObject:
-    properties:
-      durationInMonths:
-        example: 12
-        minimum: 1
-        type: integer
-      fileHandles:
-        example:
-        - an array containing all your file handles
-        items:
-          type: string
-        type: array
-      metadataKeys:
-        example:
-        - an array containing all your metadata keys
-        items:
-          type: string
-        type: array
-      storageLimit:
-        example: 128
-        minimum: 128
-        type: integer
-    required:
-    - durationInMonths
-    - fileHandles
-    - metadataKeys
-    - storageLimit
     type: object
   routes.checkUpgradeStatusReq:
     properties:
-      checkUpgradeStatusObject:
-        $ref: '#/definitions/routes.checkUpgradeStatusObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -628,39 +413,8 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.checkUpgradeV2StatusObject:
-    properties:
-      durationInMonths:
-        example: 12
-        minimum: 1
-        type: integer
-      fileHandles:
-        example:
-        - an array containing all your file handles
-        items:
-          type: string
-        type: array
-      metadataKeys:
-        example:
-        - an array containing all your metadata keys
-        items:
-          type: string
-        type: array
-      storageLimit:
-        example: 128
-        minimum: 128
-        type: integer
-    required:
-    - durationInMonths
-    - fileHandles
-    - metadataKeys
-    - storageLimit
-    type: object
   routes.checkUpgradeV2StatusReq:
     properties:
-      checkUpgradeV2StatusObject:
-        $ref: '#/definitions/routes.checkUpgradeV2StatusObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -691,32 +445,8 @@ definitions:
     required:
     - expirationDate
     type: object
-  routes.createStripePaymentObject:
-    properties:
-      durationInMonths:
-        example: 12
-        minimum: 1
-        type: integer
-      storageLimit:
-        example: 128
-        minimum: 128
-        type: integer
-      stripeToken:
-        example: tok_KPte7942xySKBKyrBu11yEpf
-        type: string
-      timestamp:
-        type: integer
-      upgradeAccount:
-        type: boolean
-    required:
-    - stripeToken
-    - timestamp
-    type: object
   routes.createStripePaymentReq:
     properties:
-      createStripePaymentObject:
-        $ref: '#/definitions/routes.createStripePaymentObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -740,19 +470,8 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.deleteFileObj:
-    properties:
-      fileID:
-        example: the handle of the file
-        type: string
-    required:
-    - fileID
-    type: object
   routes.deleteFileReq:
     properties:
-      deleteFileObj:
-        $ref: '#/definitions/routes.deleteFileObj'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -778,22 +497,8 @@ definitions:
     type: object
   routes.deleteFileRes:
     type: object
-  routes.deleteFilesObj:
-    properties:
-      fileIDs:
-        example:
-        - the handle of the files
-        items:
-          type: string
-        type: array
-    required:
-    - fileIDs
-    type: object
   routes.deleteFilesReq:
     properties:
-      deleteFilesObj:
-        $ref: '#/definitions/routes.deleteFilesObj'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -843,9 +548,6 @@ definitions:
     type: object
   routes.getAccountDataReq:
     properties:
-      accountGetReqObj:
-        $ref: '#/definitions/routes.accountGetReqObj'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -909,13 +611,8 @@ definitions:
     - expirationDate
     - metadataV2
     type: object
-  routes.getRenewalAccountInvoiceObject:
-    type: object
   routes.getRenewalAccountInvoiceReq:
     properties:
-      getRenewalAccountInvoiceObject:
-        $ref: '#/definitions/routes.getRenewalAccountInvoiceObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -943,15 +640,9 @@ definitions:
     properties:
       opctInvoice:
         $ref: '#/definitions/models.Invoice'
-        type: object
-    type: object
-  routes.getRenewalV2AccountInvoiceObject:
     type: object
   routes.getRenewalV2AccountInvoiceReq:
     properties:
-      getRenewalV2AccountInvoiceObject:
-        $ref: '#/definitions/routes.getRenewalV2AccountInvoiceObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -979,27 +670,9 @@ definitions:
     properties:
       opctInvoice:
         $ref: '#/definitions/models.Invoice'
-        type: object
-    type: object
-  routes.getUpgradeAccountInvoiceObject:
-    properties:
-      durationInMonths:
-        example: 12
-        minimum: 1
-        type: integer
-      storageLimit:
-        example: 128
-        minimum: 128
-        type: integer
-    required:
-    - durationInMonths
-    - storageLimit
     type: object
   routes.getUpgradeAccountInvoiceReq:
     properties:
-      getUpgradeAccountInvoiceObject:
-        $ref: '#/definitions/routes.getUpgradeAccountInvoiceObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -1027,27 +700,9 @@ definitions:
     properties:
       opctInvoice:
         $ref: '#/definitions/models.Invoice'
-        type: object
-    type: object
-  routes.getUpgradeV2AccountInvoiceObject:
-    properties:
-      durationInMonths:
-        example: 12
-        minimum: 1
-        type: integer
-      storageLimit:
-        example: 128
-        minimum: 128
-        type: integer
-    required:
-    - durationInMonths
-    - storageLimit
     type: object
   routes.getUpgradeV2AccountInvoiceReq:
     properties:
-      getUpgradeV2AccountInvoiceObject:
-        $ref: '#/definitions/routes.getUpgradeV2AccountInvoiceObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -1075,25 +730,9 @@ definitions:
     properties:
       opctInvoice:
         $ref: '#/definitions/models.Invoice'
-        type: object
-    type: object
-  routes.metadataKeyObject:
-    properties:
-      metadataKey:
-        example: a 64-char hex string created deterministically, will be a key for
-          the metadata of one of your folders
-        type: string
-      timestamp:
-        type: integer
-    required:
-    - metadataKey
-    - timestamp
     type: object
   routes.metadataKeyReq:
     properties:
-      metadataKeyObject:
-        $ref: '#/definitions/routes.metadataKeyObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -1116,26 +755,9 @@ definitions:
     - publicKey
     - requestBody
     - signature
-    type: object
-  routes.metadataMultipleV2KeyObject:
-    properties:
-      metadataV2Keys:
-        example:
-        - public keys for the metadataV2 encoded to base64url
-        items:
-          type: string
-        type: array
-      timestamp:
-        type: integer
-    required:
-    - metadataV2Keys
-    - timestamp
     type: object
   routes.metadataMultipleV2KeyReq:
     properties:
-      metadataMultipleV2KeyObject:
-        $ref: '#/definitions/routes.metadataMultipleV2KeyObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -1159,22 +781,8 @@ definitions:
     - requestBody
     - signature
     type: object
-  routes.metadataV2KeyObject:
-    properties:
-      metadataV2Key:
-        example: public key for the metadataV2 encoded to base64url
-        type: string
-      timestamp:
-        type: integer
-    required:
-    - metadataV2Key
-    - timestamp
-    type: object
   routes.metadataV2KeyReq:
     properties:
-      metadataV2KeyObject:
-        $ref: '#/definitions/routes.metadataV2KeyObject'
-        type: object
       publicKey:
         example: a 66-character public key
         maxLength: 66
@@ -1200,9 +808,6 @@ definitions:
     type: object
   routes.metadataV2PublicKeyReq:
     properties:
-      metadataV2KeyObject:
-        $ref: '#/definitions/routes.metadataV2KeyObject'
-        type: object
       requestBody:
         example: look at description for example
         type: string
@@ -1242,21 +847,46 @@ definitions:
       stripeToken:
         type: string
     type: object
-  routes.updateMetadataObject:
+  routes.updateMetadataMultipleV2Req:
     properties:
-      metadata:
-        example: your (updated) account metadata
+      publicKey:
+        example: a 66-character public key
+        maxLength: 66
+        minLength: 66
         type: string
-      metadataKey:
-        example: a 64-char hex string created deterministically, will be a key for
-          the metadata of one of your folders
+      requestBody:
+        example: look at description for example
         type: string
-      timestamp:
-        type: integer
+      signature:
+        description: |-
+          signature without 0x prefix is broken into
+          R: sig[0:63]
+          S: sig[64:127]
+        example: a 128 character string created when you signed the request with your
+          private key or account handle
+        maxLength: 128
+        minLength: 128
+        type: string
     required:
-    - metadata
-    - metadataKey
-    - timestamp
+    - publicKey
+    - requestBody
+    - signature
+    type: object
+  routes.updateMetadataMultipleV2Res:
+    properties:
+      expirationDate:
+        type: string
+      failedMetadatas:
+        additionalProperties:
+          type: string
+        type: object
+      metadatas:
+        items:
+          $ref: '#/definitions/routes.updateMetadataV2ResBase'
+        type: array
+    required:
+    - expirationDate
+    - metadatas
     type: object
   routes.updateMetadataReq:
     properties:
@@ -1278,9 +908,6 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
-      updateMetadataObject:
-        $ref: '#/definitions/routes.updateMetadataObject'
-        type: object
     required:
     - publicKey
     - requestBody
@@ -1302,35 +929,6 @@ definitions:
     - metadata
     - metadataKey
     type: object
-  routes.updateMetadataV2Object:
-    properties:
-      isPublic:
-        type: boolean
-      metadataV2Edges:
-        example:
-        - the edges to add to your account metadataV2 encoded to base64url
-        items:
-          type: string
-        type: array
-      metadataV2Key:
-        example: public key for the metadataV2 encoded to base64url
-        type: string
-      metadataV2Sig:
-        example: a signature encoded to base64url confirming the metadata change,
-          the publickey will be a key for the metadataV2
-        type: string
-      metadataV2Vertex:
-        example: the vertex to add to your account metadataV2 encoded to base64url
-        type: string
-      timestamp:
-        type: integer
-    required:
-    - metadataV2Edges
-    - metadataV2Key
-    - metadataV2Sig
-    - metadataV2Vertex
-    - timestamp
-    type: object
   routes.updateMetadataV2Req:
     properties:
       publicKey:
@@ -1351,9 +949,6 @@ definitions:
         maxLength: 128
         minLength: 128
         type: string
-      updateMetadataV2Object:
-        $ref: '#/definitions/routes.updateMetadataV2Object'
-        type: object
     required:
     - publicKey
     - requestBody
@@ -1371,6 +966,18 @@ definitions:
         type: string
     required:
     - expirationDate
+    - metadataV2
+    - metadataV2Key
+    type: object
+  routes.updateMetadataV2ResBase:
+    properties:
+      metadataV2:
+        example: your (updated) account metadataV2
+        type: string
+      metadataV2Key:
+        example: public key for the metadataV2 encoded to base64url
+        type: string
+    required:
     - metadataV2
     - metadataV2Key
     type: object
@@ -2187,6 +1794,38 @@ paths:
           schema:
             type: string
       summary: deletes files
+  /api/v2/download/private:
+    post:
+      consumes:
+      - application/json
+      description: download a file without cryptographic verification
+      parameters:
+      - description: download object for non-signed requests
+        in: body
+        name: routes.DownloadFileObj
+        required: true
+        schema:
+          $ref: '#/definitions/routes.DownloadFileObj'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.downloadFileRes'
+        "400":
+          description: 'bad request, unable to parse request body: (with the error)'
+          schema:
+            type: string
+        "404":
+          description: such data does not exist
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: download a file without cryptographic verification
   /api/v2/download/public:
     post:
       consumes:
@@ -2303,6 +1942,49 @@ paths:
           schema:
             type: string
       summary: Update metadataV2
+  /api/v2/metadata/add-multiple:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        requestBody should be a stringified version of (values are just examples):
+        {
+        "metadatas": [{
+        "metadataV2Key": "public key for the metadataV2 encoded to base64",
+        "metadataV2Vertex": "the vertex to add to your account metadataV2 encoded to base64",
+        "metadataV2Edges": "the edges to add to your account metadataV2 encoded to base64",
+        "metadataV2Sig": "a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2",
+        },
+        { ... }]
+        "timestamp": 1557346389
+        }
+      parameters:
+      - description: update metadataV2 objects
+        in: body
+        name: updateMetadataMultipleV2Req
+        required: true
+        schema:
+          $ref: '#/definitions/routes.updateMetadataMultipleV2Req'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/routes.updateMetadataMultipleV2Res'
+        "400":
+          description: 'bad request, can''t verify signature: (with the error)'
+          schema:
+            type: string
+        "403":
+          description: subscription expired, or the invoice response
+          schema:
+            type: string
+        "500":
+          description: some information about the internal error
+          schema:
+            type: string
+      summary: Update multiple metadataV2
   /api/v2/metadata/delete:
     post:
       consumes:

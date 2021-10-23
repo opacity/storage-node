@@ -123,6 +123,9 @@ const (
 	/*MetadataV2AddPath is the path for setting metadata*/
 	MetadataV2AddPath = "/metadata/add"
 
+	/*MetadataMultipleV2AddPath is the path for setting multiple metadata*/
+	MetadataMultipleV2AddPath = "/metadata/add-multiple"
+
 	/*MetadataV2DeletePath is the path for deleting a metadata*/
 	MetadataV2DeletePath = "/metadata/delete"
 
@@ -272,6 +275,7 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	v2Router.POST(AccountUpgradeV2Path, CheckUpgradeV2StatusHandler())
 
 	v2Router.POST(MetadataV2AddPath, UpdateMetadataV2Handler())
+	v2Router.POST(MetadataMultipleV2AddPath, UpdateMetadataMultipleV2Handler())
 	v2Router.POST(MetadataV2GetPath, GetMetadataV2Handler())
 	v2Router.POST(MetadataV2GetPublicPath, GetMetadataV2PublicHandler())
 	v2Router.POST(MetadataV2DeletePath, DeleteMetadataV2Handler())

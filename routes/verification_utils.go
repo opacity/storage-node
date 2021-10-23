@@ -120,7 +120,7 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 					continue
 				}
 				if !s.Field(i).Field(j).CanSet() {
-					return InternalErrorResponse(c, fmt.Errorf("Field is not settable, It should be upper case but has this: %v", nestField))
+					return InternalErrorResponse(c, fmt.Errorf("field is not settable, It should be upper case but has this: %v", nestField))
 				}
 				s.Field(i).Field(j).SetString(strV)
 			}
@@ -134,7 +134,7 @@ func verifyAndParseFormRequest(dest interface{}, c *gin.Context) error {
 			continue
 		}
 		if !s.Field(i).CanSet() {
-			return InternalErrorResponse(c, fmt.Errorf("Field is not settable, It should be upper case but has this: %v", field))
+			return InternalErrorResponse(c, fmt.Errorf("field is not settable, It should be upper case but has this: %v", field))
 		}
 		s.Field(i).SetString(strV)
 	}
@@ -181,7 +181,7 @@ func readFileFromForm(fileTag string, r *http.Request) (string, error) {
 	}()
 
 	if err != nil {
-		return "", fmt.Errorf("Unable to get file %v from POST form", fileTag)
+		return "", fmt.Errorf("unable to get file %v from POST form", fileTag)
 	}
 	var fileBytes bytes.Buffer
 	if _, err := io.Copy(&fileBytes, multiFile); err != nil {
@@ -232,7 +232,7 @@ func verifyRequest(hash []byte, verificationData verification, c *gin.Context) e
 		return BadRequestResponse(c, errors.New(errVerifying))
 	}
 
-	if verified != true {
+	if !verified {
 		return ForbiddenResponse(c, errors.New(signatureDidNotMatchResponse))
 	}
 	return nil
@@ -294,7 +294,7 @@ func getPermissionHash(publicKey, key string, c *gin.Context) (string, error) {
 	return permissionHash, nil
 }
 
-func getPermissionHashV2(publicKey, key []byte, c *gin.Context) string {
+func getPermissionHashV2(publicKey, key []byte) string {
 	permissionHash := utils.HashStringV2(append(publicKey, key...))
 	return permissionHash
 }
@@ -333,10 +333,22 @@ func verifyPermissionsV2(publicKey []byte, key []byte, expectedPermissionHash st
 	if expectedPermissionHash == "" {
 		return ForbiddenResponse(c, errors.New("resource is ineligible for modification"))
 	}
-	permissionHash := getPermissionHashV2(publicKey, key, c)
+	permissionHash := getPermissionHashV2(publicKey, key)
 
 	if permissionHash != expectedPermissionHash {
 		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))
+	}
+	return nil
+}
+
+func verifyPermissionsV2Plain(publicKey []byte, key []byte, expectedPermissionHash string) error {
+	if expectedPermissionHash == "" {
+		return errors.New("forbidden resource is ineligible for modification")
+	}
+	permissionHash := getPermissionHashV2(publicKey, key)
+
+	if permissionHash != expectedPermissionHash {
+		return errors.New("forbidden " + notAuthorizedResponse)
 	}
 	return nil
 }
