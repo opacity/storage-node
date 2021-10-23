@@ -5,12 +5,10 @@ import (
 	"encoding/hex"
 	"math/big"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/services"
 	"github.com/opacity/storage-node/utils"
@@ -369,8 +367,7 @@ func makeMetadataV2ForTest(metadataKey string, key string) {
 	keyBytes, _ := base64.URLEncoding.DecodeString(key)
 	metadataKeyBytes, _ := base64.URLEncoding.DecodeString(metadataKey)
 
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	permissionHash := getPermissionHashV2(keyBytes, metadataKeyBytes, c)
+	permissionHash := getPermissionHashV2(keyBytes, metadataKeyBytes)
 
 	permissionHashKey := getPermissionHashV2KeyForBadger(metadataKey)
 	utils.BatchSet(&utils.KVPairs{

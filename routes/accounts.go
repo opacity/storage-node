@@ -44,6 +44,7 @@ type accountUnpaidRes struct {
 }
 
 type accountGetObj struct {
+	AccountID             string         `json:"accountID"`
 	CreatedAt             time.Time      `json:"createdAt"`
 	UpdatedAt             time.Time      `json:"updatedAt"`
 	ExpirationDate        time.Time      `json:"expirationDate" validate:"required"`
@@ -287,6 +288,7 @@ func checkAccountPaymentStatus(c *gin.Context) error {
 	res.PaymentStatus = createPaymentStatusResponse(paid, pending, chargePaid, accountStillActive)
 	res.Error = err
 	res.Account = accountGetObj{
+		AccountID:             account.AccountID,
 		CreatedAt:             account.CreatedAt,
 		UpdatedAt:             account.UpdatedAt,
 		ExpirationDate:        account.ExpirationDate(),

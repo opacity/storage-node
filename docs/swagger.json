@@ -1141,6 +1141,55 @@
                 }
             }
         },
+        "/api/v2/metadata/add-multiple": {
+            "post": {
+                "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadatas\": [{\n\"metadataV2Key\": \"public key for the metadataV2 encoded to base64\",\n\"metadataV2Vertex\": \"the vertex to add to your account metadataV2 encoded to base64\",\n\"metadataV2Edges\": \"the edges to add to your account metadataV2 encoded to base64\",\n\"metadataV2Sig\": \"a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2\",\n},\n{ ... }]\n\"timestamp\": 1557346389\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Update multiple metadataV2",
+                "parameters": [
+                    {
+                        "description": "update metadataV2 objects",
+                        "name": "updateMetadataMultipleV2Req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.updateMetadataMultipleV2Req"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.updateMetadataMultipleV2Res"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, can't verify signature: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "subscription expired, or the invoice response",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/metadata/delete": {
             "post": {
                 "description": "requestBody should be a stringified version of (values are just examples):\n{\n\"metadataV2Key\": \"public key for the metadataV2 encoded to base64\",\n\"timestamp\": 1557346389\n}",
@@ -2613,6 +2662,9 @@
                 "plan"
             ],
             "properties": {
+                "accountID": {
+                    "type": "string"
+                },
                 "apiVersion": {
                     "type": "integer"
                 },
@@ -3289,6 +3341,57 @@
                 }
             }
         },
+        "routes.updateMetadataMultipleV2Req": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.updateMetadataMultipleV2Res": {
+            "type": "object",
+            "required": [
+                "expirationDate",
+                "metadatas"
+            ],
+            "properties": {
+                "expirationDate": {
+                    "type": "string"
+                },
+                "failedMetadatas": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "metadatas": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/routes.updateMetadataV2ResBase"
+                    }
+                }
+            }
+        },
         "routes.updateMetadataReq": {
             "type": "object",
             "required": [
@@ -3375,6 +3478,23 @@
                 "expirationDate": {
                     "type": "string"
                 },
+                "metadataV2": {
+                    "type": "string",
+                    "example": "your (updated) account metadataV2"
+                },
+                "metadataV2Key": {
+                    "type": "string",
+                    "example": "public key for the metadataV2 encoded to base64url"
+                }
+            }
+        },
+        "routes.updateMetadataV2ResBase": {
+            "type": "object",
+            "required": [
+                "metadataV2",
+                "metadataV2Key"
+            ],
+            "properties": {
                 "metadataV2": {
                     "type": "string",
                     "example": "your (updated) account metadataV2"

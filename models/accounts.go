@@ -26,7 +26,8 @@ type Account struct {
 	AccountID                string            `gorm:"primary_key" json:"accountID" validate:"required,len=64"` // some hash of the user's master handle
 	CreatedAt                time.Time         `json:"createdAt"`
 	UpdatedAt                time.Time         `json:"updatedAt"`
-	MonthsInSubscription     int               `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription                                                           // how much storage they are allowed, in GB
+	RenewedAt                time.Time         `json:"renewedAt" gorm:"default:NULL"`
+	MonthsInSubscription     int               `json:"monthsInSubscription" validate:"required,gte=1" example:"12"`                                                        // number of months in their subscription
 	StorageUsedInByte        int64             `json:"storageUsedInByte" validate:"gte=0" example:"30"`                                                                    // how much storage they have used, in B
 	EthAddress               string            `json:"ethAddress" validate:"required,len=42" minLength:"42" maxLength:"42" example:"a 42-char eth address with 0x prefix"` // the eth address they will send payment to
 	EthPrivateKey            string            `json:"ethPrivateKey" validate:"required,len=96"`                                                                           // the private key of the eth address
@@ -407,6 +408,7 @@ func (account *Account) RenewAccount() error {
 		"months_in_subscription": account.MonthsInSubscription + int(account.PlanInfo.MonthsInSubscription),
 		"expired_at":             account.CreatedAt.AddDate(0, account.MonthsInSubscription+int(account.PlanInfo.MonthsInSubscription), 0),
 		"updated_at":             time.Now(),
+		"renewed_at":             time.Now(),
 	}).Error
 }
 
@@ -523,6 +525,13 @@ func CountPaidAccountsByPaymentMethodAndPlanType(planInfo utils.PlanInfo, paymen
 	count := 0
 	err := DB.Preload("PlanInfo").Model(&Account{}).Where("plan_info_id = ? AND payment_status >= ? AND payment_method = ?",
 		planInfo.ID, InitialPaymentReceived, paymentMethod).Count(&count).Error
+	utils.LogIfError(err, nil)
+	return count, err
+}
+
+func CountOfRenewedAccounts() (int, error) {
+	count := 0
+	err := DB.Model(&Account{}).Where("renewed_at IS NOT NULL").Count(&count).Error
 	utils.LogIfError(err, nil)
 	return count, err
 }
@@ -668,6 +677,22 @@ func GetAllExpiredAccounts(expiredTime time.Time) ([]Account, error) {
 		return nil, err
 	}
 	return accounts, nil
+}
+
+func CountOfExpiredAccounts() (int64, error) {
+	rows, err := DB.Where("expired_at < ?", time.Now()).Model(&Account{}).Select("count(account_id) AS total").Rows()
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	total := int64(0)
+	if rows.Next() {
+		if err := rows.Scan(&total); err != nil {
+			return 0, err
+		}
+	}
+	return total, nil
 }
 
 func DeleteExpiredAccounts(expiredTime time.Time) error {

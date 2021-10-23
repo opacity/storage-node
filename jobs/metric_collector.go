@@ -65,6 +65,21 @@ func (m metricCollector) accountsMetrics() {
 		utils.Metrics_Total_Collected_Accounts.Set(float64(collectedAccountsCount))
 	}
 
+	expiredAccountsCount, expiredAccountsErr := models.CountOfExpiredAccounts()
+	if expiredAccountsErr == nil {
+		utils.Metrics_Total_Expired_Accounts.Set(float64(expiredAccountsCount))
+	}
+
+	expiredArchivedAccountsCount, expiredArchivedAccountsErr := models.CountOfExpiredArchivedAccounts()
+	if expiredArchivedAccountsErr == nil {
+		utils.Metrics_Total_ExpiredArchived_Accounts.Set(float64(expiredArchivedAccountsCount))
+	}
+
+	renewedAccountsCount, renewedAccountsErr := models.CountOfRenewedAccounts()
+	if renewedAccountsErr == nil {
+		utils.Metrics_Total_Renewed_Accounts.Set(float64(renewedAccountsCount))
+	}
+
 	if utils.ReturnFirstError([]error{totalAccountErr, unpaidCountErr, collectedAccountErr}) == nil {
 		paidAccountsCount := accountsCount - unpaidAccountsCount
 		utils.Metrics_Total_Paid_Accounts_Map[utils.TotalLbl].Set(float64(paidAccountsCount))

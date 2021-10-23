@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -408,7 +409,7 @@ func abortIfNotTesting(t *testing.T) {
 	}
 }
 
-func GenerateMetadataV2(publicKeyBin []byte, t *testing.T) (testMetadataV2Key string, testMetadataV2Value string) {
+func GenerateMetadataV2ForTest(publicKeyBin []byte, isPublic bool, t *testing.T) (testMetadataV2Key string, testMetadataV2Value string) {
 	abortIfNotTesting(t)
 
 	ttl := utils.TestValueTimeToLive
@@ -420,13 +421,15 @@ func GenerateMetadataV2(publicKeyBin []byte, t *testing.T) (testMetadataV2Key st
 		t.Fatalf("error decoding metadata v2 key")
 	}
 
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
-	permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin, c)
-	permissionHashKey := getPermissionHashV2KeyForBadger(string(testMetadataV2KeyBin))
+	testMetadataV2KeyBinS := string(testMetadataV2KeyBin)
+	permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin)
+	permissionHashKey := getPermissionHashV2KeyForBadger(testMetadataV2KeyBinS)
+	isPublicKey := getIsPublicV2KeyForBadger(testMetadataV2KeyBinS)
 
 	if err := utils.BatchSet(&utils.KVPairs{
-		string(testMetadataV2KeyBin): testMetadataV2Value,
-		permissionHashKey:            permissionHash,
+		testMetadataV2KeyBinS: testMetadataV2Value,
+		permissionHashKey:     permissionHash,
+		isPublicKey:           strconv.FormatBool(isPublic),
 	}, ttl); err != nil {
 		t.Fatalf("there should not have been an error while saving the metadata v2 test values")
 	}
@@ -441,7 +444,6 @@ func GenerateMetadataMultipleV2(publicKeyBin []byte, numberOfMetadatas int, t *t
 		t.Fatalf("can't generate 0 metadatas")
 	}
 
-	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	metadataKvPairs := utils.KVPairs{}
 	generatedMetadatasSize := 0
 
@@ -458,7 +460,7 @@ func GenerateMetadataMultipleV2(publicKeyBin []byte, numberOfMetadatas int, t *t
 		metadataKvPairs[testMetadataV2KeyBinString] = testMetadataV2Value
 		metadataV2Keys = append(metadataV2Keys, testMetadataV2Key)
 
-		permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin, c)
+		permissionHash := getPermissionHashV2(publicKeyBin, testMetadataV2KeyBin)
 		permissionHashKey := getPermissionHashV2KeyForBadger(testMetadataV2KeyBinString)
 		metadataKvPairs[permissionHashKey] = permissionHash
 	}

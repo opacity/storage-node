@@ -50,4 +50,4 @@ before_install:
 install: true
 
 script:
-  - docker-compose exec app go test ./... -p 1
+  - docker-compose exec storage-node go test ./... -p 1

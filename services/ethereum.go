@@ -19,6 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 // needed as singleton in order to change it during tests
@@ -96,10 +98,14 @@ func (eth *Eth) SharedClient() (c *ethclient.Client) {
 		return eth.client
 	}
 
-	c, err := ethclient.Dial(eth.NodeUrl)
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 5
+	rpcClient, err := rpc.DialHTTPWithClient(eth.NodeUrl, retryClient.StandardClient())
 	if err != nil {
 		panic(err)
 	}
+	c = ethclient.NewClient(rpcClient)
+
 	// Sets Singleton
 	eth.client = c
 	return
