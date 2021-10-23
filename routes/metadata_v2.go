@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/dag"
 	"github.com/opacity/storage-node/models"
@@ -61,8 +60,9 @@ type updateMetadataV2Res struct {
 }
 
 type updateMetadataMultipleV2Res struct {
-	Metadatas      []updateMetadataV2ResBase `json:"metadatas" validate:"required"`
-	ExpirationDate time.Time                 `json:"expirationDate" validate:"required,gte"`
+	Metadatas       []updateMetadataV2ResBase `json:"metadatas" validate:"required"`
+	FailedMetadatas map[string]string         `json:"failedMetadatas"`
+	ExpirationDate  time.Time                 `json:"expirationDate" validate:"required,gte"`
 }
 
 type metadataV2KeyObject struct {
@@ -569,23 +569,23 @@ func updateSetMetadata(metadataKey string, publicKeyBin []byte, ttl time.Duratio
 		}
 	}
 
-	vDigest, err := dagFromBinary.Digest(vert.ID, dag.DigestHashSHA256)
+	// vDigest, err := dagFromBinary.Digest(vert.ID, dag.DigestHashSHA256)
 
-	if err != nil {
-		return
-	}
+	// if err != nil {
+	// 	return
+	// }
 
-	metadataV2SigBin, err := base64.URLEncoding.DecodeString(metadataSig)
+	// metadataV2SigBin, err := base64.URLEncoding.DecodeString(metadataSig)
 
-	if err != nil {
-		err = fmt.Errorf("bad request, unable to parse b64: %v", err)
-		return
-	}
+	// if err != nil {
+	// 	err = fmt.Errorf("bad request, unable to parse b64: %v", err)
+	// 	return
+	// }
 
-	if !secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) {
-		err = fmt.Errorf("bad request, can't verify signature: %v", err)
-		return
-	}
+	// if !secp256k1.VerifySignature(metadataV2KeyBin, vDigest, []byte(metadataV2SigBin)) {
+	// 	err = fmt.Errorf("bad request, can't verify signature: %v", err)
+	// 	return
+	// }
 
 	newMetadataV2 = base64.URLEncoding.EncodeToString(dagFromBinary.Binary())
 
@@ -605,7 +605,72 @@ func updateSetMetadata(metadataKey string, publicKeyBin []byte, ttl time.Duratio
 }
 
 func updateMetadataMultipleV2(c *gin.Context) error {
-	return nil
+	request := updateMetadataMultipleV2Req{}
+
+	if err := verifyAndParseBodyRequest(&request, c); err != nil {
+		return err
+	}
+
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyIfPaidWithContext(account, c); err != nil {
+		return err
+	}
+
+	requestBodyParsed := updateMetadataMultipleV2Object{}
+
+	if err := verifyAndParseStringRequest(request.RequestBody, &requestBodyParsed, request.verification, c); err != nil {
+		return err
+	}
+
+	if account.ExpirationDate().Before(time.Now()) {
+		return ForbiddenResponse(c, errors.New("subscription expired"))
+	}
+
+	publicKeyBin, err := hex.DecodeString(request.PublicKey)
+	if err != nil {
+		err = fmt.Errorf("bad request, unable to parse hex: %v", err)
+		return BadRequestResponse(c, err)
+	}
+
+	// Setting ttls on metadata to 2 months post account expiration date so the metadatas won't
+	// be deleted too soon
+	ttl := time.Until(account.ExpirationDate().Add(MetadataExpirationOffset))
+
+	if len(request.updateMetadataMultipleV2Object.Metadatas) == 0 {
+		return BadRequestResponse(c, errors.New("no metadatas to get"))
+	}
+
+	newMetadatas := make([]updateMetadataV2ResBase, 0)
+	failedMetadatas := make(map[string]string)
+	for _, metadata := range request.updateMetadataMultipleV2Object.Metadatas {
+		newMetadataV2, err := updateSetMetadata(
+			metadata.MetadataV2Key,
+			publicKeyBin,
+			ttl,
+			account,
+			strconv.FormatBool(metadata.IsPublic),
+			metadata.MetadataV2Vertex,
+			metadata.MetadataV2Edges,
+			metadata.MetadataV2Sig,
+		)
+		if err != nil {
+			failedMetadatas[metadata.MetadataV2Key] = err.Error()
+		}
+		newMetadatas = append(newMetadatas, updateMetadataV2ResBase{
+			MetadataV2Key: metadata.MetadataV2Key,
+			MetadataV2:    newMetadataV2,
+		})
+	}
+
+	return OkResponse(c, updateMetadataMultipleV2Res{
+		Metadatas:       newMetadatas,
+		FailedMetadatas: failedMetadatas,
+		ExpirationDate:  account.ExpirationDate().Add(MetadataExpirationOffset),
+	})
 }
 
 func deleteMetadataV2(c *gin.Context) error {

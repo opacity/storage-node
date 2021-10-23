@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
+	"fmt"
 	"math/big"
 	"net/http"
 	"testing"
@@ -283,13 +284,14 @@ func Test_UpdateMetadataV2Handler_Can_AddMetadataV2(t *testing.T) {
 
 func Test_UpdateMetadataV2Handler_Can_AddMetadataMultipleV2(t *testing.T) {
 	t.SkipNow()
+
 	models.DeleteAccountsForTest(t)
 	howManyMetadatas := 10
 
 	accountID, privateKey := generateValidateAccountId(t)
 	CreatePaidAccountForTest(t, accountID)
 
-	updateMetadataV2BaseObjects := make([]updateMetadataV2BaseObject, howManyMetadatas)
+	updateMetadataV2BaseObjects := new([]updateMetadataV2BaseObject)
 	for i := 0; i < howManyMetadatas; i++ {
 		testMetadataV2Key := utils.GenerateMetadataV2Key()
 
@@ -308,11 +310,11 @@ func Test_UpdateMetadataV2Handler_Can_AddMetadataMultipleV2(t *testing.T) {
 			MetadataV2Sig:    base64.URLEncoding.EncodeToString(testSig),
 		}
 
-		updateMetadataV2BaseObjects = append(updateMetadataV2BaseObjects, updateMetadataV2BaseObject)
+		*updateMetadataV2BaseObjects = append(*updateMetadataV2BaseObjects, updateMetadataV2BaseObject)
 	}
 
 	updateMetadataMultipleV2Object := updateMetadataMultipleV2Object{
-		Metadatas: updateMetadataV2BaseObjects,
+		Metadatas: *updateMetadataV2BaseObjects,
 		Timestamp: time.Now().Unix(),
 	}
 
@@ -326,6 +328,7 @@ func Test_UpdateMetadataV2Handler_Can_AddMetadataMultipleV2(t *testing.T) {
 	w := httpPostRequestHelperForTest(t, MetadataMultipleV2AddPath, "v2", post)
 	// Check to see if the response was what you expected
 	assert.Equal(t, http.StatusOK, w.Code)
+	fmt.Println(w.Body.String())
 }
 
 func Test_UpdateMetadataV2Handler_Error_If_Not_Paid(t *testing.T) {
