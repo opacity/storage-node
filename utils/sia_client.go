@@ -87,7 +87,6 @@ func GetSiaRenter() sia_api.RenterGET {
 }
 
 func SetSiaAllowance(funds, periodWeeks, hosts, renewWindowWeeks, expectedStorageTB, expectedDownloadTB, expectedUploadTB string) error {
-
 	hastings, err := sia_types.ParseCurrency(funds + "SC")
 	if err != nil {
 		return err
@@ -141,23 +140,7 @@ func SetSiaAllowance(funds, periodWeeks, hosts, renewWindowWeeks, expectedStorag
 	allowanceReq = allowanceReq.WithExpectedUpload(expectedUploadPerMonth)
 	allowanceReq = allowanceReq.WithExpectedDownload(expectedDownloadPerMonth)
 
-	// return allowanceReq.Send()
-	return nil
-}
-
-func parseTB(value string) (uint64, error) {
-	valueRat, ok := new(big.Rat).SetString(value)
-	if !ok {
-		return 0, errors.New("malformed value")
-	}
-	u := valueRat.Mul(valueRat, new(big.Rat).SetInt(big.NewInt(1e12))).RatString()
-	var uintValue uint64
-	_, err := fmt.Sscan(u, &uintValue)
-	if err != nil {
-		return 0, err
-	}
-
-	return uintValue, nil
+	return allowanceReq.Send()
 }
 
 func GetWalletInfo() sia_api.WalletGET {
@@ -175,4 +158,19 @@ func IsSiaSynced() bool {
 	}
 
 	return cg.Synced
+}
+
+func parseTB(value string) (uint64, error) {
+	valueRat, ok := new(big.Rat).SetString(value)
+	if !ok {
+		return 0, errors.New("malformed value")
+	}
+	u := valueRat.Mul(valueRat, new(big.Rat).SetInt(big.NewInt(1e12))).RatString()
+	var uintValue uint64
+	_, err := fmt.Sscan(u, &uintValue)
+	if err != nil {
+		return 0, err
+	}
+
+	return uintValue, nil
 }
