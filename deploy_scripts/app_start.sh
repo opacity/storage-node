@@ -22,3 +22,5 @@ docker-compose up -d
 now=$(date +%s)
 sentry-cli releases deploys "$VERSION" new -e $GO_ENV -t $((now-start)) -u $(aws ssm get-parameter --name /storage-node/$GO_ENV/FRONTEND_URL --with-decryption --output text --query Parameter.Value)
 sentry-cli releases finalize "$VERSION"
+
+docker image prune -f
