@@ -572,6 +572,11 @@ func (svc *s3Wrapper) GetBucketLifecycleConfiguration(input *s3.GetBucketLifecyc
 	return v.Rules, nil
 }
 
+func GetS3BucketUrl() string {
+	return fmt.Sprintf("https://s3.%s.amazonaws.com/%s/", Env.AwsRegion, Env.BucketName)
+}
+
+// @TODO: Complete this
 func (svc *s3Wrapper) DownloadS3ObjectInChunks(key, downloadRange string) {
 
 }

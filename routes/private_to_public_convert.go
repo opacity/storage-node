@@ -533,7 +533,7 @@ func RemoveIndexFromSliceString(s []string, index int) []string {
 }
 
 func getFileContentLength(fileID string) (int, error) {
-	resp, err := http.Head(models.GetBucketUrl() + fileID + "/file")
+	resp, err := http.Head(utils.GetS3BucketUrl() + fileID + "/file")
 
 	if err != nil {
 		return 0, err

@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -104,13 +103,8 @@ func CreatePublicShare(createShortlinkObj CreateShortlinkObj) (PublicShare, erro
 	return publicShare, nil
 }
 
-// Gets S3 bucket URL
-func GetBucketUrl() string {
-	return fmt.Sprintf("https://s3.%s.amazonaws.com/%s/", utils.Env.AwsRegion, utils.Env.BucketName)
-}
-
 func GetPublicFileDownloadData(fileID string) (fileURL, thumbnailURL string) {
-	bucketURL := GetBucketUrl()
+	bucketURL := utils.GetS3BucketUrl()
 
 	fileURL = bucketURL + GetFileDataPublicKey(fileID)
 	thumbnailURL = bucketURL + GetPublicThumbnailKey(fileID)
