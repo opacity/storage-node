@@ -222,7 +222,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	}
 
 	realSize, err := getFileContentLength(hash)
-	if err != nil {
+	if err != nil || realSize == 0 {
 		return InternalErrorResponse(c, err)
 	}
 

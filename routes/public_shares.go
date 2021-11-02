@@ -142,6 +142,11 @@ func createShortLinkWithContext(c *gin.Context) error {
 		return err
 	}
 
+	awsKey := models.GetFileDataPublicKey(request.createShortlinkObj.FileID)
+	if !utils.DoesDefaultBucketObjectExist(awsKey) {
+		return NotFoundResponse(c, errors.New("file does not exist"))
+	}
+
 	publicShare, err := models.CreatePublicShare(request.createShortlinkObj)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
