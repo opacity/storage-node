@@ -92,6 +92,11 @@ type StorageNodeEnv struct {
 
 	// Whether accepting credit cards is enabled
 	EnableCreditCards bool `env:"ENABLE_CREDIT_CARDS" envDefault:"false"`
+
+	// Guardian stuff
+	GuardianEndpoint        string `env:"GUARDIAN_ENDPOINT,notEmpty"`
+	GuardianAccessKeyID     string `env:"GUARDIAN_ACCESS_KEY_ID,notEmpty"`
+	GuardianSecretAccessKey string `env:"GUARDIAN_SECRET_ACCESS_KEY,notEmpty"`
 }
 
 /*Env is the environment for a particular node while the application is running*/
@@ -170,6 +175,7 @@ func runInitializations() {
 	InitKvStore()
 	newS3Session()
 	InitSiaClient()
+	// TODO: init minIO client
 }
 
 /*IsTestEnv returns whether we are in the test environment*/
@@ -207,6 +213,9 @@ func tryLookUp() error {
 	adminPassword := AppendLookupErrors("ADMIN_PASSWORD", &collectedErrors)
 	stripeKeyTest := AppendLookupErrors("STRIPE_KEY_TEST", &collectedErrors)
 	stripeKeyProd := AppendLookupErrors("STRIPE_KEY_PROD", &collectedErrors)
+	guardianEndpoint := AppendLookupErrors("GUARDIAN_ENDPOINT", &collectedErrors)
+	guardianAccessKeyID := AppendLookupErrors("GUARDIAN_ACCESS_KEY_ID", &collectedErrors)
+	guardianSecretAccessKey := AppendLookupErrors("GUARDIAN_SECRET_ACCESS_KEY", &collectedErrors)
 
 	accountRetentionDaysStr := AppendLookupErrors("ACCOUNT_RETENTION_DAYS", &collectedErrors)
 	accountRetentionDays, err := strconv.Atoi(accountRetentionDaysStr)
@@ -230,24 +239,27 @@ func tryLookUp() error {
 	siaNodeAddress, _ := os.LookupEnv("SIA_NODE_ADDRESS")
 
 	serverEnv := StorageNodeEnv{
-		ProdDatabaseURL:      prodDBUrl,
-		TestDatabaseURL:      testDBUrl,
-		SiaApiPassword:       siaApiPassword,
-		SiaNodeAddress:       siaNodeAddress,
-		EncryptionKey:        encryptionKey,
-		ContractAddress:      contractAddress,
-		EthNodeURL:           ethNodeURL,
-		MainWalletAddress:    mainWalletAddress,
-		MainWalletPrivateKey: mainWalletPrivateKey,
-		AccountRetentionDays: accountRetentionDays,
-		StripeRetentionDays:  stripeRetentionDays,
-		AwsRegion:            awsRegion,
-		BucketName:           bucketName,
-		AdminUser:            adminUser,
-		AdminPassword:        adminPassword,
-		StripeKeyTest:        stripeKeyTest,
-		StripeKeyProd:        stripeKeyProd,
-		EnableCreditCards:    enableCreditCards,
+		ProdDatabaseURL:         prodDBUrl,
+		TestDatabaseURL:         testDBUrl,
+		SiaApiPassword:          siaApiPassword,
+		SiaNodeAddress:          siaNodeAddress,
+		EncryptionKey:           encryptionKey,
+		ContractAddress:         contractAddress,
+		EthNodeURL:              ethNodeURL,
+		MainWalletAddress:       mainWalletAddress,
+		MainWalletPrivateKey:    mainWalletPrivateKey,
+		AccountRetentionDays:    accountRetentionDays,
+		StripeRetentionDays:     stripeRetentionDays,
+		AwsRegion:               awsRegion,
+		BucketName:              bucketName,
+		AdminUser:               adminUser,
+		AdminPassword:           adminPassword,
+		StripeKeyTest:           stripeKeyTest,
+		StripeKeyProd:           stripeKeyProd,
+		EnableCreditCards:       enableCreditCards,
+		GuardianEndpoint:        guardianEndpoint,
+		GuardianAccessKeyID:     guardianAccessKeyID,
+		GuardianSecretAccessKey: guardianSecretAccessKey,
 	}
 
 	Env = serverEnv
