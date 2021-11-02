@@ -34,6 +34,11 @@ const (
 	DefaultPartSize  = 80 * (DefaultBlockSize + BlockOverhead)
 )
 
+type FileMetadata struct {
+	Size     int    `json:"size"`
+	FileName string `json:"name"`
+}
+
 type DownloadProgress struct {
 	RawProgress        int
 	SizeWithEncryption int
@@ -361,6 +366,9 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 				}
 				firstRun = false
 				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
+				if err != nil {
+					return
+				}
 			}
 
 			uploadPart = append(uploadPart, b...)
@@ -382,9 +390,10 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 		}
 
 		if err == io.EOF {
-			completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber)
-			if uploadError != nil {
+			completedPart, err := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber)
+			if err != nil {
 				utils.AbortMultiPartUpload(awsKey, *uploadID)
+				return err
 			}
 
 			if generateThumbnail {
@@ -537,4 +546,18 @@ func getFileContentLength(fileID string) (int, error) {
 	}
 
 	return 0, err
+}
+
+func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
+	decryptedByteData, err := DecryptWithNonceSize(key, data)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(decryptedByteData, &fileMetadata)
+	if err != nil {
+		return
+	}
+
+	return
 }

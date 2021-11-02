@@ -18,11 +18,10 @@ const (
 )
 
 type createStripePaymentObject struct {
-	StripeToken      string `json:"stripeToken" validate:"required" example:"tok_KPte7942xySKBKyrBu11yEpf"`
-	Timestamp        int64  `json:"timestamp" validate:"required"`
-	UpgradeAccount   bool   `json:"upgradeAccount"`
-	StorageLimit     int    `json:"storageLimit" validate:"omitempty,gte=128" minimum:"128" example:"128"`
-	DurationInMonths int    `json:"durationInMonths" validate:"omitempty,gte=0" minimum:"1" example:"12"`
+	StripeToken    string `json:"stripeToken" validate:"required" example:"tok_KPte7942xySKBKyrBu11yEpf"`
+	Timestamp      int64  `json:"timestamp" validate:"required"`
+	UpgradeAccount bool   `json:"upgradeAccount"`
+	PlanID         uint   `json:"planId" validate:"required,gte=1" minimum:"1" example:"4"`
 }
 
 type createStripePaymentReq struct {
@@ -59,10 +58,11 @@ func (v *createStripePaymentReq) getObjectRef() interface{} {
 // @description {
 // @description 	"stripeToken": "tok_KPte7942xySKBKyrBu11yEpf",
 // @description 	"timestamp": 1659325302,
+// @description 	"planId": 1,
 // @description }
 // @Success 200 {object} routes.stripeDataRes
 // @Failure 400 {string} string "bad request, unable to parse request body: (with the error)"
-// @Failure 404 {string} string "no account with that id: (with your accountID)"
+// @Failure 404 {string} string "no account with that id: (with your accountID) or plan not found"
 // @Failure 403 {string} string "account is already paid for"
 // @Failure 500 {string} string "some information about the internal error"
 // @Router /api/v1/stripe/create [post]
@@ -91,13 +91,10 @@ func createStripePayment(c *gin.Context) error {
 		// TODO remove if / when we decide to support Stripe for upgrade
 		return BadRequestResponse(c, errors.New("stripe not supported for upgrades"))
 
-		// if err := verifyValidStorageLimit(request.createStripePaymentObject.StorageLimit, c); err != nil {
-		// 	return err
-		// }
 		//costInDollars, _ = account.UpgradeCostInUSD(request.createStripePaymentObject.StorageLimit,
 		//	request.createStripePaymentObject.DurationInMonths)
 	} else {
-		costInDollars = utils.Env.Plans[int(account.StorageLimit)].CostInUSD
+		costInDollars = account.PlanInfo.CostInUSD
 	}
 
 	if costInDollars <= float64(0.50) {
@@ -172,7 +169,7 @@ func createChargeAndStripePayment(c *gin.Context, costInDollars float64, account
 }
 
 func payUpgradeCostWithStripe(c *gin.Context, stripePayment models.StripePayment, account models.Account, createStripePaymentObject createStripePaymentObject, networkID uint) error {
-	if err := stripePayment.SendUpgradeOPCT(account, createStripePaymentObject.StorageLimit, networkID); err != nil {
+	if err := stripePayment.SendUpgradeOPCT(account, createStripePaymentObject.PlanID, networkID); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 	var paid bool

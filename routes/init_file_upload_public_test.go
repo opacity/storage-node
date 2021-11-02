@@ -13,6 +13,7 @@ import (
 func Test_Init_File_Upload_Public(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
+	models.SetTestPlans()
 	gin.SetMode(gin.TestMode)
 }
 
@@ -21,6 +22,7 @@ func Test_CreateInitFileUploadPulic(t *testing.T) {
 		FileID:         utils.GenerateFileHandle(),
 		ModifierHash:   utils.GenerateFileHandle(),
 		FileSizeInByte: 150,
+		StorageType:    models.S3,
 	}
 	assert.Nil(t, models.DB.Create(&completedFile).Error)
 

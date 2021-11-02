@@ -341,6 +341,14 @@ func verifyPermissionsV2(publicKey []byte, key []byte, expectedPermissionHash st
 	return nil
 }
 
+func verifyAccountPlan(account models.Account, storageType models.FileStorageType, c *gin.Context) error {
+	if account.PlanInfo.FileStorageType != utils.FileStorageType(storageType) {
+		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))
+	}
+
+	return nil
+}
+
 func verifyPermissionsV2Plain(publicKey []byte, key []byte, expectedPermissionHash string) error {
 	if expectedPermissionHash == "" {
 		return errors.New("forbidden resource is ineligible for modification")

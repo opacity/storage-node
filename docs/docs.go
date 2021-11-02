@@ -75,7 +75,7 @@ var doc = `{
         },
         "/api/v1/accounts": {
             "post": {
-                "description": "create an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n}",
+                "description": "create an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"planId\": 1,\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -103,6 +103,12 @@ var doc = `{
                     },
                     "400": {
                         "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "plan not found",
                         "schema": {
                             "type": "string"
                         }
@@ -608,7 +614,7 @@ var doc = `{
         },
         "/api/v1/stripe/create": {
             "post": {
-                "description": "create a stripe payment\nrequestBody should be a stringified version of (values are just examples):\n{\n\"stripeToken\": \"tok_KPte7942xySKBKyrBu11yEpf\",\n\"timestamp\": 1659325302,\n}",
+                "description": "create a stripe payment\nrequestBody should be a stringified version of (values are just examples):\n{\n\"stripeToken\": \"tok_KPte7942xySKBKyrBu11yEpf\",\n\"timestamp\": 1659325302,\n\"planId\": 1,\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -647,7 +653,7 @@ var doc = `{
                         }
                     },
                     "404": {
-                        "description": "no account with that id: (with your accountID)",
+                        "description": "no account with that id: (with your accountID) or plan not found",
                         "schema": {
                             "type": "string"
                         }
@@ -663,7 +669,7 @@ var doc = `{
         },
         "/api/v1/upgrade": {
             "post": {
-                "description": "check the upgrade status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
+                "description": "check the upgrade status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"planId\": 1,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -696,7 +702,7 @@ var doc = `{
                         }
                     },
                     "404": {
-                        "description": "no account with that id: (with your accountID)",
+                        "description": "no account with that id: (with your accountID) or plan not found",
                         "schema": {
                             "type": "string"
                         }
@@ -712,7 +718,7 @@ var doc = `{
         },
         "/api/v1/upgrade/invoice": {
             "post": {
-                "description": "get an invoice to upgrade an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n}",
+                "description": "get an invoice to upgrade an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"planId\": 1,\n}",
                 "consumes": [
                     "application/json"
                 ],
@@ -745,105 +751,7 @@ var doc = `{
                         }
                     },
                     "404": {
-                        "description": "no account with that id: (with your accountID)",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "some information about the internal error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/upgradeV2": {
-            "post": {
-                "description": "check the upgradeV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "check the upgradeV2 status",
-                "parameters": [
-                    {
-                        "description": "check upgradeV2 status object",
-                        "name": "checkUpgradeV2StatusReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/routes.checkUpgradeV2StatusReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routes.StatusRes"
-                        }
-                    },
-                    "400": {
-                        "description": "bad request, unable to parse request body: (with the error)",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "no account with that id: (with your accountID)",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "500": {
-                        "description": "some information about the internal error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/upgradeV2/invoice": {
-            "post": {
-                "description": "get an invoice to upgradeV2 an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"storageLimit\": 100,\n\"durationInMonths\": 12,\n}",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "get an invoice to upgradeV2 an account",
-                "parameters": [
-                    {
-                        "description": "get upgradeV2 invoice object",
-                        "name": "getUpgradeV2AccountInvoiceReq",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceRes"
-                        }
-                    },
-                    "400": {
-                        "description": "bad request, unable to parse request body: (with the error)",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "no account with that id: (with your accountID)",
+                        "description": "no account with that id: (with your accountID) or plan not found",
                         "schema": {
                             "type": "string"
                         }
@@ -1847,6 +1755,251 @@ var doc = `{
                 }
             }
         },
+        "/api/v2/sia/delete": {
+            "post": {
+                "description": "delete a Sia file\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"the handle of the file\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "delete a Sia file",
+                "parameters": [
+                    {
+                        "description": "file info object",
+                        "name": "routes.GenericSiaFileReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.GenericSiaFileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.deleteFileRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/sia/download": {
+            "post": {
+                "description": "download a Sia file\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "*/*"
+                ],
+                "summary": "download a Sia file",
+                "parameters": [
+                    {
+                        "description": "file info object",
+                        "name": "routes.GenericSiaFileReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.GenericSiaFileReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "such data does not exist",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/sia/init-upload": {
+            "post": {
+                "description": "start a Sia file upload\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n\"fileSizeInByte\": \"200000000000006\",\n}",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "start a Sia file upload",
+                "parameters": [
+                    {
+                        "description": "an object to start a Sia file upload",
+                        "name": "InitFileSiaUploadReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.InitFileSiaUploadReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/sia/upload": {
+            "post": {
+                "description": "upload a Sia file via a form\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "upload a Sia file",
+                "parameters": [
+                    {
+                        "description": "an object to upload a Sia file",
+                        "name": "UploadFileSiaReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.UploadFileSiaReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/sia/upload-status": {
+            "post": {
+                "description": "check status of a Sia upload\nrequestBody should be a stringified version of (values are just examples):\n{\n\"fileHandle\": \"a deterministically created file handle\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "check status of a Sia upload",
+                "parameters": [
+                    {
+                        "description": "an object to poll upload status for a Sia file",
+                        "name": "UploadStatusReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.UploadStatusReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "403": {
+                        "description": "signature did not match",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "file or account not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v2/smart-contracts": {
             "get": {
                 "description": "gets the smart contracts address and related info",
@@ -1869,6 +2022,104 @@ var doc = `{
                     },
                     "404": {
                         "description": "no account with that id: (with your accountID)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/upgradeV2": {
+            "post": {
+                "description": "check the upgradeV2 status\nrequestBody should be a stringified version of (values are just examples):\n{\n\"planId\": 1,\n\"metadataKeys\": \"[\"someKey\", \"someOtherKey]\",\n\"fileHandles\": \"[\"someHandle\", \"someOtherHandle]\",\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "check the upgradeV2 status",
+                "parameters": [
+                    {
+                        "description": "check upgradeV2 status object",
+                        "name": "checkUpgradeV2StatusReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.checkUpgradeV2StatusReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.StatusRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID) or plan not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v2/upgradeV2/invoice": {
+            "post": {
+                "description": "get an invoice to upgradeV2 an account\nrequestBody should be a stringified version of (values are just examples):\n{\n\"planId\": 1,\n}",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "get an invoice to upgradeV2 an account",
+                "parameters": [
+                    {
+                        "description": "get upgradeV2 invoice object",
+                        "name": "getUpgradeV2AccountInvoiceReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/routes.getUpgradeV2AccountInvoiceRes"
+                        }
+                    },
+                    "400": {
+                        "description": "bad request, unable to parse request body: (with the error)",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "no account with that id: (with your accountID) or plan not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "some information about the internal error",
                         "schema": {
                             "type": "string"
                         }
@@ -1989,7 +2240,16 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/routes.PlanResponse"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/utils.PlanInfo"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "no plans added",
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 }
@@ -2062,6 +2322,64 @@ var doc = `{
                 }
             }
         },
+        "routes.GenericSiaFileReq": {
+            "type": "object",
+            "required": [
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
+        "routes.InitFileSiaUploadReq": {
+            "type": "object",
+            "required": [
+                "metadataAsFile",
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "metadataAsFile": {
+                    "type": "string"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
         "routes.InitFileUploadReq": {
             "type": "object",
             "required": [
@@ -2094,14 +2412,6 @@ var doc = `{
                     "maxLength": 128,
                     "minLength": 128,
                     "example": "a 128 character string created when you signed the request with your private key or account handle"
-                }
-            }
-        },
-        "routes.PlanResponse": {
-            "type": "object",
-            "properties": {
-                "plans": {
-                    "$ref": "#/definitions/utils.PlanResponseType"
                 }
             }
         },
@@ -2236,6 +2546,38 @@ var doc = `{
                 }
             }
         },
+        "routes.UploadFileSiaReq": {
+            "type": "object",
+            "required": [
+                "fileData",
+                "publicKey",
+                "requestBody",
+                "signature"
+            ],
+            "properties": {
+                "fileData": {
+                    "type": "string",
+                    "example": "a binary string of the file data"
+                },
+                "publicKey": {
+                    "type": "string",
+                    "maxLength": 66,
+                    "minLength": 66,
+                    "example": "a 66-character public key"
+                },
+                "requestBody": {
+                    "type": "string",
+                    "example": "look at description for example"
+                },
+                "signature": {
+                    "description": "signature without 0x prefix is broken into\nR: sig[0:63]\nS: sig[64:127]",
+                    "type": "string",
+                    "maxLength": 128,
+                    "minLength": 128,
+                    "example": "a 128 character string created when you signed the request with your private key or account handle"
+                }
+            }
+        },
         "routes.UploadStatusReq": {
             "type": "object",
             "required": [
@@ -2333,7 +2675,7 @@ var doc = `{
                 "ethAddress",
                 "expirationDate",
                 "monthsInSubscription",
-                "storageLimit"
+                "plan"
             ],
             "properties": {
                 "accountID": {
@@ -2359,23 +2701,13 @@ var doc = `{
                 "expirationDate": {
                     "type": "string"
                 },
-                "maxFolders": {
-                    "type": "integer",
-                    "example": 2000
-                },
-                "maxMetadataSizeInMB": {
-                    "type": "integer",
-                    "example": 200
-                },
                 "monthsInSubscription": {
                     "description": "number of months in their subscription",
                     "type": "integer",
                     "example": 12
                 },
-                "storageLimit": {
-                    "description": "how much storage they are allowed, in GB",
-                    "type": "integer",
-                    "example": 100
+                "plan": {
+                    "$ref": "#/definitions/utils.PlanInfo"
                 },
                 "storageUsed": {
                     "description": "how much storage they have used, in GB",
@@ -3199,6 +3531,14 @@ var doc = `{
         },
         "utils.PlanInfo": {
             "type": "object",
+            "required": [
+                "maxFolders",
+                "maxMetadataSizeInMB",
+                "monthsInSubscription",
+                "name",
+                "storageInGB",
+                "storageType"
+            ],
             "properties": {
                 "cost": {
                     "type": "number"
@@ -3206,24 +3546,29 @@ var doc = `{
                 "costInUSD": {
                     "type": "number"
                 },
+                "id": {
+                    "type": "integer"
+                },
                 "maxFolders": {
                     "type": "integer"
                 },
                 "maxMetadataSizeInMB": {
                     "type": "integer"
                 },
+                "monthsInSubscription": {
+                    "description": "@TODO: Remove default value on monthly subscriptions feature",
+                    "type": "integer",
+                    "example": 12
+                },
                 "name": {
                     "type": "string"
                 },
                 "storageInGB": {
                     "type": "integer"
+                },
+                "storageType": {
+                    "type": "integer"
                 }
-            }
-        },
-        "utils.PlanResponseType": {
-            "type": "object",
-            "additionalProperties": {
-                "$ref": "#/definitions/utils.PlanInfo"
             }
         }
     }

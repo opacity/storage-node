@@ -64,6 +64,15 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return err
 	}
 
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyAccountPlan(account, models.S3, c); err != nil {
+		return err
+	}
+
 	fileID := request.uploadStatusPublicObj.FileHandle
 	completedFile, completedErr := models.GetCompletedFileByFileID(fileID)
 	if completedErr == nil && len(completedFile.FileID) != 0 {

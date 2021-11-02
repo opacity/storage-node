@@ -1,0 +1,79 @@
+[
+  {
+    "Id": 1,
+    "name": "Free",
+    "cost": 0,
+    "costInUSD": 0,
+    "storageInGB": 10,
+    "maxFolders": 200,
+    "maxMetadataSizeInMB": 20,
+    "monthsInSubscription": 12,
+    "storageType": 1
+  },
+  {
+    "Id": 2,
+    "name": "Basic",
+    "cost": 2,
+    "costInUSD": 19.99,
+    "storageInGB": 128,
+    "maxFolders": 2000,
+    "maxMetadataSizeInMB": 200,
+    "monthsInSubscription": 12,
+    "storageType": 1
+  },
+  {
+    "Id": 3,
+    "name": "Professional",
+    "cost": 16,
+    "costInUSD": 79.99,
+    "storageInGB": 1024,
+    "maxFolders": 16000,
+    "maxMetadataSizeInMB": 1600,
+    "monthsInSubscription": 12,
+    "storageType": 1
+  },
+  {
+    "Id": 4,
+    "name": "Business",
+    "cost": 32,
+    "costInUSD": 99.99,
+    "storageInGB": 2048,
+    "maxFolders": 32000,
+    "maxMetadataSizeInMB": 3200,
+    "monthsInSubscription": 12,
+    "storageType": 1
+  },
+  {
+    "Id": 5,
+    "name": "Custom10TB",
+    "cost": 150000,
+    "costInUSD": 550,
+    "storageInGB": 10000,
+    "maxFolders": 156000,
+    "maxMetadataSizeInMB": 15600,
+    "monthsInSubscription": 12,
+    "storageType": 1
+  },
+  {
+    "Id": 6,
+    "name": "Sia-Basic",
+    "cost": 2,
+    "costInUSD": 19.99,
+    "storageInGB": 128,
+    "maxFolders": 2000,
+    "maxMetadataSizeInMB": 200,
+    "monthsInSubscription": 12,
+    "storageType": 2
+  },
+  {
+    "Id": 7,
+    "name": "Sia-Professional",
+    "cost": 16,
+    "costInUSD": 79.99,
+    "storageInGB": 1024,
+    "maxFolders": 16000,
+    "maxMetadataSizeInMB": 1600,
+    "monthsInSubscription": 12,
+    "storageType": 2
+  }
+]

@@ -14,6 +14,7 @@ import (
 func Test_Init_UploadFilePublic(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
+	models.SetTestPlans()
 	gin.SetMode(gin.TestMode)
 }
 
@@ -23,6 +24,7 @@ func Test_UploadFilePublicStorageDoesNotCount(t *testing.T) {
 		FileID:         utils.GenerateFileHandle(),
 		ModifierHash:   utils.GenerateFileHandle(),
 		FileSizeInByte: 1003,
+		StorageType:    models.S3,
 	}
 	assert.Nil(t, models.DB.Create(&completedFile).Error)
 	accountID, privateKey := generateValidateAccountId(t)

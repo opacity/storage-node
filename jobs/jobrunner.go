@@ -33,7 +33,7 @@ func StartupJobs() {
 	for _, s := range jobs {
 		err := s.Run()
 		if err != nil {
-			utils.PanicOnError(errors.New(fmt.Sprintf("Abort!!!! Unable to startup process with error: %s", err)))
+			utils.PanicOnError(fmt.Errorf("abort!!!! Unable to startup process with error: %s", err))
 		}
 	}
 
@@ -47,16 +47,17 @@ func ScheduleBackgroundJobs() {
 	jobrunner.Start()
 	jobs := []BackgroundRunnable{
 		&pingStdOut{counter: 1},
-		s3Deleter{},
+		expiredCompletedFilesDeleter{},
 		s3ExpireAccess{},
 		metricCollector{},
 		unpaidAccountDeleter{},
 		tokenCollector{},
-		fileCleaner{},
+		uncompletedFileCleaner{},
 		stripePaymentDeleter{},
 		upgradeDeleter{},
 		renewalDeleter{},
 		expiredAccountDeleter{},
+		siaAdmin{},
 	}
 
 	for _, s := range jobs {

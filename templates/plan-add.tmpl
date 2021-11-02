@@ -94,6 +94,40 @@
               </div>
             </div>
 
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">Months in subscription</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <input class="input" disabled type="number" name="monthsInSubscription" value="12" required>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="field is-horizontal pb-1">
+              <div class="field-label is-normal">
+                <label class="label">File storage type</label>
+              </div>
+              <div class="field-body">
+                <div class="field">
+                  <p class="control">
+                    <div class="select is-link">
+                      <select required name="fileStorageType">
+                        {{with .fileStorageTypes}}
+                        {{range $fileStorageTypeName, $fileStorageTypeValue := .}}
+                        <option value="{{ $fileStorageTypeValue }}">{{ $fileStorageTypeName }}</option>
+                        {{end}}
+                        {{end}}
+                      </select>
+                    </div>
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div class="field is-grouped is-grouped-centered">
               <div class="control">
                 <button class="button is-link">Submit</button>

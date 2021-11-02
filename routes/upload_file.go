@@ -11,8 +11,8 @@ import (
 )
 
 type UploadFileObj struct {
-	FileHandle string `form:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-	PartIndex  int    `form:"partIndex" validate:"required,gte=1" example:"1"`
+	GenericFileActionObj
+	PartIndex int `form:"partIndex" validate:"required,gte=1" example:"1"`
 }
 
 type UploadFileReq struct {
@@ -61,6 +61,15 @@ func uploadFile(c *gin.Context) error {
 	request := UploadFileReq{}
 
 	if err := verifyAndParseFormRequest(&request, c); err != nil {
+		return err
+	}
+
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	if err := verifyAccountPlan(account, models.S3, c); err != nil {
 		return err
 	}
 

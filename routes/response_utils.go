@@ -23,7 +23,23 @@ type GenericRequest struct {
 	verification
 }
 
+type GenericFileActionObj struct {
+	FileHandle string `json:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
+}
+
+type GenericSiaFileReq struct {
+	verification
+	requestBody
+	genericFileActionObj GenericFileActionObj
+}
+
+func (v *GenericSiaFileReq) getObjectRef() interface{} {
+	return &v.genericFileActionObj
+}
+
 const noAccountWithThatID = "no account with that id"
+
+var PlanDoesNotExitErr = errors.New("the choosen plan does not exist")
 
 const REQUEST_UUID = "request_uuid"
 
@@ -69,6 +85,10 @@ func AccountNotFoundResponse(c *gin.Context, id string) error {
 
 func FileNotFoundResponse(c *gin.Context, fileId string) error {
 	return NotFoundResponse(c, fmt.Errorf("no file with that id: %s", fileId))
+}
+
+func SiaFileNotInitialised(c *gin.Context) error {
+	return NotFoundResponse(c, errors.New("sia file upload was not initialised"))
 }
 
 func ForbiddenResponse(c *gin.Context, err error) error {
@@ -210,20 +230,8 @@ func verifyIfPaidWithContext(account models.Account, c *gin.Context) error {
 	return nil
 }
 
-func verifyValidStorageLimit(storageLimit int, c *gin.Context) error {
-	_, ok := utils.Env.Plans[storageLimit]
-	if !ok {
-		return BadRequestResponse(c, models.ErrInvalidStorageLimit)
-	}
-	return nil
-}
-
-func verifyUpgradeEligible(account models.Account, newStorageLimit int, c *gin.Context) error {
-	err := verifyValidStorageLimit(newStorageLimit, c)
-	if err != nil {
-		return err
-	}
-	if newStorageLimit <= int(account.StorageLimit) {
+func verifyUpgradeEligible(account models.Account, newPlanInfo utils.PlanInfo, c *gin.Context) error {
+	if newPlanInfo.StorageInGB <= int(account.PlanInfo.StorageInGB) {
 		return BadRequestResponse(c, errors.New("cannot upgrade to storage limit lower than current limit"))
 	}
 	return nil

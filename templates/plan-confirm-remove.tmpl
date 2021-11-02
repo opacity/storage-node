@@ -14,7 +14,7 @@
       </h1>
       <div id="plan">
         <div class="box">
-          <form action="/admin/plans/remove/{{ .plan.StorageInGB }}" method="POST">
+          <form action="/admin/plans/remove/{{ .plan.ID }}" method="POST">
           
             <p>Confirm the removal of plan {{ .plan.Name }}?</p>
 

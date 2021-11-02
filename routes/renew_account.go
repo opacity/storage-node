@@ -127,7 +127,7 @@ func getAccountRenewalInvoice(c *gin.Context) error {
 		EthPrivateKey:    hex.EncodeToString(encryptedKeyInBytes),
 		PaymentStatus:    models.InitialPaymentInProgress,
 		OpctCost:         renewalCostInOPCT,
-		DurationInMonths: 12,
+		DurationInMonths: int(account.PlanInfo.MonthsInSubscription),
 	}
 
 	renewalInDB, err := models.GetOrCreateRenewal(renewal)

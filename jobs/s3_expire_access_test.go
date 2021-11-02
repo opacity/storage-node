@@ -12,6 +12,7 @@ import (
 func Test_Init_S3_Life_Cycle(t *testing.T) {
 	utils.SetTesting("../.env")
 	models.Connect(utils.Env.DatabaseURL)
+	models.SetTestPlans()
 }
 
 func Test_Delete_S3Object(t *testing.T) {

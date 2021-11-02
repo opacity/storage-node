@@ -93,12 +93,22 @@ var (
 
 	Metrics_Completed_Files_Count_SQL = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "storagenode_completed_files_count_sql",
-		Help: "Total number of completed files in SQL database",
+		Help: "Total number of completed files in SQL database on S3",
+	})
+
+	Metrics_Completed_Files_Count_SQL_Sia = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "storagenode_completed_files_count_sql_sia",
+		Help: "Total number of completed files in SQL database on Sia",
 	})
 
 	Metrics_Uploaded_File_Size_MB_SQL = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "storagenode_uploaded_file_size_mb_sql",
-		Help: "Totals all the file sizes of rows in completed_files table in SQL, as MB",
+		Help: "Totals all the file sizes of rows in completed_files table in SQL, as MB on S3",
+	})
+
+	Metrics_Uploaded_File_Size_MB_SQL_Sia = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "storagenode_uploaded_file_size_mb_sql_sia",
+		Help: "Totals all the file sizes of rows in completed_files table in SQL, as MB on Sia",
 	})
 
 	// TODO:  use AWS cloudwatch to get these last two metrics
@@ -113,18 +123,6 @@ var (
 	//	Help: "Total data uploaded to S3 bucket, as MB",
 	//})
 )
-
-func CreatePlanMetrics() {
-	Metrics_Percent_Of_Space_Used_Map[TotalLbl] = Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": TotalLbl})
-	Metrics_Total_Paid_Accounts_Map[TotalLbl] = Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": TotalLbl})
-	Metrics_Total_Stripe_Paid_Accounts_Map[TotalLbl] = Metrics_Total_Stripe_Paid_Accounts.With(prometheus.Labels{"plan_type": TotalLbl})
-	for _, plan := range Env.Plans {
-		name := plan.Name
-		Metrics_Percent_Of_Space_Used_Map[name] = Metrics_Percent_Of_Space_Used.With(prometheus.Labels{"plan_type": name})
-		Metrics_Total_Paid_Accounts_Map[name] = Metrics_Total_Paid_Accounts.With(prometheus.Labels{"plan_type": name})
-		Metrics_Total_Stripe_Paid_Accounts_Map[name] = Metrics_Total_Stripe_Paid_Accounts.With(prometheus.Labels{"plan_type": name})
-	}
-}
 
 func GetMetricCounter(m prometheus.Counter) float64 {
 	pb := &dto.Metric{}

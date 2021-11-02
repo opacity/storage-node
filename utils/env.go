@@ -1,10 +1,10 @@
 package utils
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"math/big"
+	"time"
 
 	"os"
 
@@ -20,24 +20,26 @@ const defaultAccountRetentionDays = 7
 const defaultStripeRetentionDays = 30
 const TestNetworkID = 999
 
-const DefaultPlansJson = `{
-	"10":{"name":"Free","cost":0,"costInUSD":0.00,"storageInGB":10,"maxFolders":200,"maxMetadataSizeInMB":20},
-	"128":{"name":"Basic","cost":2,"costInUSD":39.99,"storageInGB":128,"maxFolders":2000,"maxMetadataSizeInMB":200},
-	"1024":{"name":"Professional","cost":16,"costInUSD":99.99,"storageInGB":1024,"maxFolders":16000,"maxMetadataSizeInMB":1600},
-	"2048":{"name":"Business","cost":32,"costInUSD":119.99,"storageInGB":2048,"maxFolders":32000,"maxMetadataSizeInMB":3200},
-	"10000":{"name":"Custom10TB","cost":150000,"costInUSD":550.00,"storageInGB":10000,"maxFolders":156000,"maxMetadataSizeInMB":15600}
-}`
+type FileStorageType int
+
+const (
+	S3 FileStorageType = iota + 1
+	Sia
+	Skynet
+)
 
 type PlanInfo struct {
-	Name                string  `gorm:"primary_key" json:"name"`
+	ID                  uint    `gorm:"primary_key" json:"id"`
+	Name                string  `json:"name" validate:"required"`
 	Cost                float64 `json:"cost"`
 	CostInUSD           float64 `json:"costInUSD"`
-	StorageInGB         int     `json:"storageInGB"`
-	MaxFolders          int     `json:"maxFolders"`
-	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB"`
+	StorageInGB         int     `json:"storageInGB" validate:"required,gte=1"`
+	MaxFolders          int     `json:"maxFolders" validate:"required,gte=1"`
+	MaxMetadataSizeInMB int64   `json:"maxMetadataSizeInMB" validate:"required,gte=1"`
+	// @TODO: Remove default value on monthly subscriptions feature
+	MonthsInSubscription uint            `json:"monthsInSubscription" gorm:"default:12" validate:"required,gte=1" example:"12"`
+	FileStorageType      FileStorageType `json:"storageType" gorm:"default:1" validate:"required,gte=1"`
 }
-
-type PlanResponseType map[int]PlanInfo
 
 /*StorageNodeEnv represents what our storage node environment should look like*/
 type StorageNodeEnv struct {
@@ -45,6 +47,10 @@ type StorageNodeEnv struct {
 	ProdDatabaseURL string `env:"PROD_DATABASE_URL" envDefault:""`
 	TestDatabaseURL string `env:"TEST_DATABASE_URL" envDefault:""`
 	DatabaseURL     string `envDefault:""`
+
+	// Sia
+	SiaApiPassword string `env:"SIA_API_PASSWORD,notEmpty"`
+	SiaNodeAddress string `env:"SIA_NODE_ADDRESS" envDefault:"sia:9980"`
 
 	// Key to encrypt the eth private keys that we store in the accounts table
 	EncryptionKey string `env:"ENCRYPTION_KEY,notEmpty"`
@@ -79,8 +85,6 @@ type StorageNodeEnv struct {
 	// Debug purpose
 	SlackDebugUrl string `env:"SLACK_DEBUG_URL" envDefault:""`
 	DisableDbConn bool   `env:"DISABLE_DB_CONN" envDefault:"false"`
-
-	Plans PlanResponseType
 
 	// Stripe Keys
 	StripeKeyTest string `env:"STRIPE_KEY_TEST" envDefault:"Unknown"`
@@ -130,8 +134,6 @@ func SetTesting(filenames ...string) {
 	Env.GoEnv = "test"
 	os.Setenv("GO_ENV", Env.GoEnv)
 	initEnv(filenames...)
-	err := json.Unmarshal([]byte(DefaultPlansJson), &Env.Plans)
-	LogIfError(err, nil)
 	Env.DatabaseURL = Env.TestDatabaseURL
 
 	services.EthOpsWrapper = services.EthOps{
@@ -167,6 +169,7 @@ func SetTesting(filenames ...string) {
 func runInitializations() {
 	InitKvStore()
 	newS3Session()
+	InitSiaClient()
 }
 
 /*IsTestEnv returns whether we are in the test environment*/
@@ -192,6 +195,7 @@ func tryLookUp() error {
 	var collectedErrors []error
 	prodDBUrl := AppendLookupErrors("PROD_DATABASE_URL", &collectedErrors)
 	testDBUrl := AppendLookupErrors("TEST_DATABASE_URL", &collectedErrors)
+	siaApiPassword := AppendLookupErrors("SIA_API_PASSWORD", &collectedErrors)
 	encryptionKey := AppendLookupErrors("ENCRYPTION_KEY", &collectedErrors)
 	contractAddress := AppendLookupErrors("TOKEN_CONTRACT_ADDRESS", &collectedErrors)
 	ethNodeURL := AppendLookupErrors("ETH_NODE_URL", &collectedErrors)
@@ -223,9 +227,13 @@ func tryLookUp() error {
 	enableCreditCardsStr, _ := os.LookupEnv("ENABLE_CREDIT_CARDS")
 	enableCreditCards := enableCreditCardsStr == "true"
 
+	siaNodeAddress, _ := os.LookupEnv("SIA_NODE_ADDRESS")
+
 	serverEnv := StorageNodeEnv{
 		ProdDatabaseURL:      prodDBUrl,
 		TestDatabaseURL:      testDBUrl,
+		SiaApiPassword:       siaApiPassword,
+		SiaNodeAddress:       siaNodeAddress,
 		EncryptionKey:        encryptionKey,
 		ContractAddress:      contractAddress,
 		EthNodeURL:           ethNodeURL,
@@ -254,4 +262,16 @@ func AppendLookupErrors(property string, collectedErrors *[]error) string {
 		AppendIfError(errors.New("in tryLookup, failed to load .env variable: "+property), collectedErrors)
 	}
 	return value
+}
+
+// Temporary func @TODO: remove after migration
+func SetPlansMigration(done bool) error {
+	return BatchSet(&KVPairs{"planMigrationDone": strconv.FormatBool(done)}, time.Hour*24*90)
+}
+
+// Temporary func @TODO: remove after migration
+func GetPlansMigrationDone() (done bool) {
+	planMigrationDoneValue, _, _ := GetValueFromKV("planMigrationDone")
+	done, _ = strconv.ParseBool(planMigrationDoneValue)
+	return
 }

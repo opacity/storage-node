@@ -6,14 +6,10 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type UploadStatusObj struct {
-	FileHandle string `json:"fileHandle" validate:"required,len=64" minLength:"64" maxLength:"64" example:"a deterministically created file handle"`
-}
-
 type UploadStatusReq struct {
 	verification
 	requestBody
-	uploadStatusObj UploadStatusObj
+	uploadStatusObj GenericFileActionObj
 }
 
 type missingChunksRes struct {
@@ -56,6 +52,10 @@ func checkUploadStatus(c *gin.Context) error {
 
 	account, err := request.getAccount(c)
 	if err != nil {
+		return err
+	}
+
+	if err := verifyAccountPlan(account, models.S3, c); err != nil {
 		return err
 	}
 

@@ -75,6 +75,10 @@ func DeleteFileByID(fileID, publicKey string, account models.Account, c *gin.Con
 		return err
 	}
 
+	if err := verifyAccountPlan(account, models.S3, c); err != nil {
+		return err
+	}
+
 	if err := verifyPermissions(publicKey, fileID, completedFile.ModifierHash, c); err != nil {
 		return err
 	}

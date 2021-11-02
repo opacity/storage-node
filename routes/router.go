@@ -8,6 +8,7 @@ import (
 	"time"
 
 	_ "github.com/opacity/storage-node/docs"
+	"github.com/opacity/storage-node/models"
 
 	sentrygin "github.com/getsentry/sentry-go/gin"
 	"github.com/gin-contrib/cors"
@@ -32,6 +33,10 @@ import (
 var (
 	uptime time.Time
 )
+
+type PlanResponse struct {
+	Plans []utils.PlanInfo `json:"plans"`
+}
 
 const (
 	/*V1Path is a router group for the v1 version of storage node*/
@@ -93,8 +98,11 @@ const (
 )
 
 const (
-	/*V2Path is a router group for the v1 version of storage node*/
+	/*V2Path is a router group for the v2 version of storage node*/
 	V2Path = "/api/v2"
+
+	/*Sia is a router group for Sia paths*/
+	SiaPathPrefix = "/sia"
 
 	/*AccountUpgradeV2InvoicePath is the path for getting an invoice to upgrade an account*/
 	AccountUpgradeV2InvoicePath = "/upgrade/invoice"
@@ -176,11 +184,6 @@ var errMaintenance = errors.New("maintenance in progress, currently rejecting wr
 // StatusRes ...
 type StatusRes struct {
 	Status string `json:"status" example:"status of the request"`
-}
-
-// PlanResponse ...
-type PlanResponse struct {
-	Plans utils.PlanResponseType `json:"plans"`
 }
 
 func init() {
@@ -297,6 +300,13 @@ func setupV2Paths(v2Router *gin.RouterGroup) {
 	publicShareRouterGroup.POST(PublicShareViewsCountPath, ViewsCountHandler())
 	publicShareRouterGroup.POST(PublicShareRevokePath, RevokePublicShareHandler())
 
+	siaRouterGroup := v2Router.Group(SiaPathPrefix)
+	siaRouterGroup.POST(InitUploadPath, InitFileSiaUploadHandler())
+	siaRouterGroup.POST(UploadPath, UploadFileSiaHandler())
+	siaRouterGroup.POST(UploadStatusPath, CheckUploadStatusSiaHandler())
+	siaRouterGroup.POST(DownloadPath, DownloadFileSiaHandler())
+	siaRouterGroup.POST(DeletePath, DeleteFileSiaHandler())
+
 	v2Router.POST(DeleteV2Path, DeleteFilesHandler())
 
 	v2Router.GET(SmartContractsV2Path, SmartContractsHandler())
@@ -320,8 +330,11 @@ func setupAdminPaths(router *gin.Engine) {
 	})
 	g.POST("/delete", AdminDeleteFileHandler())
 
+	g.GET("/sia-stats", jobs.AdminSiaStatsHandler)
+
 	setupAdminPlansPaths(g)
 	setupAdminSmartContractPaths(g)
+	setupAdminSiaPaths(g)
 
 	// Load template file location relative to the current working directory
 	// Unable to find the file.
@@ -332,19 +345,15 @@ func setupAdminPaths(router *gin.Engine) {
 func setupAdminPlansPaths(adminGroup *gin.RouterGroup) {
 	plansGroup := adminGroup.Group("/plans")
 
-	plansGroup.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "plans-list.tmpl", gin.H{
-			"title": "Change plans",
-			"plans": utils.Env.Plans,
-		})
-	})
+	plansGroup.GET("/", AdminPlansGetAllHandler())
 	plansGroup.GET("/edit/:plan", AdminPlansGetHandler())
 	plansGroup.GET("/confirm-remove/:plan", AdminPlansRemoveConfirmHandler())
 	plansGroup.POST("/remove/:plan", AdminPlansRemoveHandler())
 	plansGroup.POST("/", AdminPlansChangeHandler())
 	plansGroup.GET("/add", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "plan-add.tmpl", gin.H{
-			"title": "Add plan",
+			"title":            "Add plan",
+			"fileStorageTypes": GetFileStorageTypesMap(),
 		})
 	})
 	plansGroup.POST("/add", AdminPlansAddHandler())
@@ -367,12 +376,20 @@ func setupAdminSmartContractPaths(adminGroup *gin.RouterGroup) {
 	smartContractGroup.POST("/add", AdminSmartContractAddHandler())
 }
 
+func setupAdminSiaPaths(adminGroup *gin.RouterGroup) {
+	siaAdminGroup := adminGroup.Group(SiaPathPrefix)
+
+	siaAdminGroup.GET("/", AdminSiaAllowanceGetHandler())
+	siaAdminGroup.POST("/", AdminSiaAllowanceChangeHandler())
+}
+
 // GetPlansHandler godoc
 // @Summary get the plans we sell
 // @Description get the plans we sell
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} routes.PlanResponse
+// @Success 200 {array} utils.PlanInfo
+// @Failure 404 {string} string "no plans added"
 // @Router /plans [get]
 /*GetPlansHandler is a handler for getting the plans*/
 func GetPlansHandler() gin.HandlerFunc {
@@ -380,7 +397,9 @@ func GetPlansHandler() gin.HandlerFunc {
 }
 
 func getPlans(c *gin.Context) error {
-	return OkResponse(c, PlanResponse{
-		Plans: utils.Env.Plans,
-	})
+	plans, err := models.GetAllPlans()
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+	return OkResponse(c, PlanResponse{Plans: plans})
 }
