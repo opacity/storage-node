@@ -95,6 +95,7 @@ type StorageNodeEnv struct {
 
 	// Guardian stuff
 	GuardianEndpoint        string `env:"GUARDIAN_ENDPOINT,notEmpty"`
+	GuardianBucketName      string `env:"GUARDIAN_BUCKET_NAME,notEmpty"`
 	GuardianAccessKeyID     string `env:"GUARDIAN_ACCESS_KEY_ID,notEmpty"`
 	GuardianSecretAccessKey string `env:"GUARDIAN_SECRET_ACCESS_KEY,notEmpty"`
 }
@@ -214,6 +215,7 @@ func tryLookUp() error {
 	stripeKeyTest := AppendLookupErrors("STRIPE_KEY_TEST", &collectedErrors)
 	stripeKeyProd := AppendLookupErrors("STRIPE_KEY_PROD", &collectedErrors)
 	guardianEndpoint := AppendLookupErrors("GUARDIAN_ENDPOINT", &collectedErrors)
+	guardianBucketName := AppendLookupErrors("GUARDIAN_BUCKET_NAME", &collectedErrors)
 	guardianAccessKeyID := AppendLookupErrors("GUARDIAN_ACCESS_KEY_ID", &collectedErrors)
 	guardianSecretAccessKey := AppendLookupErrors("GUARDIAN_SECRET_ACCESS_KEY", &collectedErrors)
 
@@ -258,6 +260,7 @@ func tryLookUp() error {
 		StripeKeyProd:           stripeKeyProd,
 		EnableCreditCards:       enableCreditCards,
 		GuardianEndpoint:        guardianEndpoint,
+		GuardianBucketName:      guardianBucketName,
 		GuardianAccessKeyID:     guardianAccessKeyID,
 		GuardianSecretAccessKey: guardianSecretAccessKey,
 	}
