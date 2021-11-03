@@ -26,6 +26,7 @@ const (
 	S3 FileStorageType = iota + 1
 	Sia
 	Skynet
+	Galaxy
 )
 
 type PlanInfo struct {

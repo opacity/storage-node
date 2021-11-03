@@ -240,6 +240,8 @@ func FileStorageTypeToString(fst utils.FileStorageType) string {
 		return "Sia"
 	case utils.Skynet:
 		return "Skynet"
+	case utils.Galaxy:
+		return "Galaxy"
 	default:
 		return "unkown"
 	}
