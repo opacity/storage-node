@@ -134,7 +134,7 @@ func checkUploadStatusPublic(c *gin.Context) error {
 func GeneratePublicThumbnail(fileID string, mimeType string) error {
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
 	fileDataPublicKey := models.GetFileDataPublicKey(fileID)
-	publicFileObj, err := utils.GetBucketObject(fileDataPublicKey, "", true)
+	publicFileObj, err := utils.GetBucketObject(fileDataPublicKey, "")
 	if err != nil {
 		return err
 	}

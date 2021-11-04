@@ -306,7 +306,7 @@ func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, d
 		}
 
 		downloadRange := "bytes=" + strconv.Itoa(offset) + "-" + strconv.Itoa(limit-1)
-		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(fileID), downloadRange, false)
+		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(fileID), downloadRange)
 		if err != nil {
 			return err
 		}
