@@ -5,6 +5,8 @@ import (
 
 	"github.com/opacity/storage-node/services"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 )
@@ -21,14 +23,29 @@ const (
 )
 
 var s3Svc *services.S3Wrapper
+var minIoSvc *services.S3Wrapper
 
-func newS3Session() {
+func newStorageSession() {
 	s3Svc = &services.S3Wrapper{
 		S3: s3.New(session.Must(session.NewSessionWithOptions(session.Options{
 			SharedConfigState: session.SharedConfigEnable,
 		}))),
 		MaxMultiPartRetries: MaxMultiPartRetries,
 		AwsPagingSize:       AwsPagingSize,
+	}
+
+	s3Config := &aws.Config{
+		Credentials: credentials.NewStaticCredentials(Env.GuardianAccessKeyID, Env.GuardianSecretAccessKey, ""),
+		Endpoint:    aws.String(Env.GuardianEndpoint),
+		// @TODO: Is Region needed?
+		Region:           aws.String("us-east-1"),
+		DisableSSL:       aws.Bool(true),
+		S3ForcePathStyle: aws.Bool(true),
+	}
+	newMinIOSession, newMinIOSessionErr := session.NewSession(s3Config)
+
+	minIoSvc = &services.S3Wrapper{
+		S3: s3.New(session.Must(newMinIOSession, newMinIOSessionErr)),
 	}
 }
 

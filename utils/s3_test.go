@@ -137,7 +137,7 @@ func failedMultipartUploadForTest(t *testing.T) {
 
 /*verifyFileIsNotOnS3 checks that the file is not on S3*/
 func verifyFileIsNotOnS3(keyOnAws string, t *testing.T) {
-	newS3Session()
+	newStorageSession()
 
 	_, errGetObject := s3Svc.S3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(Env.BucketName),
@@ -149,7 +149,7 @@ func verifyFileIsNotOnS3(keyOnAws string, t *testing.T) {
 
 /*verifyFileIsOnS3 checks that the file is on S3*/
 func verifyFileIsOnS3(keyOnAws string, t *testing.T) {
-	newS3Session()
+	newStorageSession()
 
 	_, errGetObject := s3Svc.S3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(Env.BucketName),
@@ -160,7 +160,7 @@ func verifyFileIsOnS3(keyOnAws string, t *testing.T) {
 
 /*removeFileFromS3 removes the file from S3 and then verifies it is no longer on S3.*/
 func removeFileFromS3(keyOnAws string, t *testing.T) {
-	newS3Session()
+	newStorageSession()
 
 	_, err := s3Svc.S3.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: aws.String(Env.BucketName),

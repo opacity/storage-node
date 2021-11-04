@@ -175,7 +175,7 @@ func SetTesting(filenames ...string) {
 
 func runInitializations() {
 	InitKvStore()
-	newS3Session()
+	newStorageSession()
 	InitSiaClient()
 	// TODO: init minIO client
 }
