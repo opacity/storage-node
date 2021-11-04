@@ -3,7 +3,6 @@ package routes
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -44,20 +43,9 @@ func downloadPublicFile(c *gin.Context) error {
 	}
 
 	fileURL, thumbnailURL := models.GetPublicFileDownloadData(request.FileID)
-	thumbnailURL = checkFileThumbnail(thumbnailURL)
 
 	return OkResponse(c, downloadPublicFileRes{
 		FileDownloadUrl:          fileURL,
 		FileDownloadThumbnailUrl: thumbnailURL,
 	})
-}
-
-func checkFileThumbnail(thumbnailURL string) string {
-	resp, err := http.Head(thumbnailURL)
-
-	if err == nil && resp.StatusCode == http.StatusOK {
-		return thumbnailURL
-	}
-
-	return "https://s3.us-east-2.amazonaws.com/opacity-public/thumbnail_default.png"
 }

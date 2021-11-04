@@ -107,7 +107,11 @@ func GetPublicFileDownloadData(fileID string) (fileURL, thumbnailURL string) {
 	bucketURL := utils.GetS3BucketUrl()
 
 	fileURL = bucketURL + GetFileDataPublicKey(fileID)
-	thumbnailURL = bucketURL + GetPublicThumbnailKey(fileID)
+	thumbnailKey := GetPublicThumbnailKey(fileID)
+	thumbnailURL = "https://s3.us-east-2.amazonaws.com/opacity-public/thumbnail_default.png"
+	if utils.DoesDefaultBucketObjectExist(thumbnailKey) {
+		thumbnailURL = bucketURL + thumbnailKey
+	}
 
 	return
 }
