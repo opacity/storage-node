@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
@@ -226,9 +225,9 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 
-	realSize, err := getFileContentLength(hash)
-	if err != nil || realSize == 0 {
-		return InternalErrorResponse(c, err)
+	realSize := int(utils.GetDefaultBucketObjectSize(hash))
+	if realSize <= 0 {
+		return InternalErrorResponse(c, errors.New("object size error"))
 	}
 
 	fileSize := request.privateToPublicObj.FileSize
@@ -530,22 +529,6 @@ func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentTy
 
 func RemoveIndexFromSliceString(s []string, index int) []string {
 	return append(s[:index], s[index+1:]...)
-}
-
-func getFileContentLength(fileID string) (int, error) {
-	resp, err := http.Head(utils.GetS3BucketUrl() + fileID + "/file")
-
-	if err != nil {
-		return 0, err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		return int(resp.ContentLength), nil
-	}
-
-	return 0, err
 }
 
 func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {
