@@ -53,6 +53,10 @@ func IsS3Enabled() bool {
 	return s3Svc.S3 != nil
 }
 
+func IsMinIoEnable() bool {
+	return minIoSvc.S3 != nil
+}
+
 func DoesDefaultBucketObjectExist(objectKey string, storageType FileStorageType) bool {
 	if storageType == Galaxy {
 		minIoSvc.DoesObjectExist(Env.GuardianBucketName, objectKey)
@@ -77,17 +81,21 @@ func GetBucketObject(objectKey, downloadRange string, storageType FileStorageTyp
 
 func GetDefaultBucketObjectSize(objectKey string, storageType FileStorageType) int64 {
 	if storageType == Galaxy {
-		minIoSvc.GetObjectSizeInByte(Env.BucketName, objectKey)
+		minIoSvc.GetObjectSizeInByte(Env.GuardianBucketName, objectKey)
 	}
 
 	return s3Svc.GetObjectSizeInByte(Env.BucketName, objectKey)
 }
 
 // Set Object operation on defaultBucketName
-func SetDefaultBucketObject(objectKey, data, fileContentType string) error {
+func SetDefaultBucketObject(objectKey, data, fileContentType string, storageType FileStorageType) error {
 	if fileContentType == "" {
 		fileContentType = DefaultFileContentType
 	}
+	if storageType == Galaxy {
+		minIoSvc.SetObject(Env.GuardianBucketName, objectKey, data, fileContentType)
+	}
+
 	return s3Svc.SetObject(Env.BucketName, objectKey, data, fileContentType)
 }
 
