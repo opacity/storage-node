@@ -227,6 +227,7 @@ func GetFileStorageTypesMap() map[string]utils.FileStorageType {
 		"S3":     utils.S3,
 		"Sia":    utils.Sia,
 		"Skynet": utils.Skynet,
+		"Galaxy": utils.Galaxy,
 	}
 
 	return fileTypes
