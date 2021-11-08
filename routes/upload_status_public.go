@@ -69,14 +69,12 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyAccountPlan(account, models.S3, c); err != nil {
-		return err
-	}
+	storageType := account.PlanInfo.FileStorageType
 
 	fileID := request.uploadStatusPublicObj.FileHandle
 	completedFile, completedErr := models.GetCompletedFileByFileID(fileID)
 	if completedErr == nil && len(completedFile.FileID) != 0 {
-		if utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(fileID)) {
+		if utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(fileID), storageType) {
 			return OkResponse(c, fileUploadCompletedRes)
 		}
 	}

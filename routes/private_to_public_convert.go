@@ -221,7 +221,14 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	key := request.privateToPublicObj.FileHandle[64:]
 	encryptionKey, _ := hex.DecodeString(key)
 
-	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(hash)) {
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	storageType := account.PlanInfo.FileStorageType
+
+	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(hash), storageType) {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 

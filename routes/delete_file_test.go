@@ -42,8 +42,8 @@ func Test_Successful_File_Deletion_Request(t *testing.T) {
 	// check that StorageUsedInByte has been deducted after deletion
 	assert.True(t, updatedAccount.StorageUsedInByte == defaultStorageUsedInByteForTest)
 	// check that object is not on S3 anymore
-	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID)))
-	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)))
+	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID), utils.S3))
+	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID), utils.S3))
 	// check that completed file row in SQL table is gone
 	completedFile, err := models.GetCompletedFileByFileID(fileID)
 	assert.NotNil(t, err)
@@ -86,8 +86,8 @@ func Test_Successful_Multiple_File_Deletion_Request(t *testing.T) {
 	assert.True(t, updatedAccount.StorageUsedInByte == defaultStorageUsedInByteForTest)
 	for _, fileID := range fileIDs {
 		// check that object is not on S3 anymore
-		assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID)))
-		assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)))
+		assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID), utils.S3))
+		assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID), utils.S3))
 		// check that completed file row in SQL table is gone
 		completedFile, err := models.GetCompletedFileByFileID(fileID)
 		assert.NotNil(t, err)
@@ -99,8 +99,8 @@ func checkPrerequisites(t *testing.T, account models.Account, fileID string) {
 	// check that StorageUsedInByte has increased after the upload
 	assert.True(t, account.StorageUsedInByte > defaultStorageUsedInByteForTest)
 	// check that object exists on S3
-	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID)))
-	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)))
+	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(fileID), utils.S3))
+	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID), utils.S3))
 	// check that a completed file entry exists
 	completedFile, err := models.GetCompletedFileByFileID(fileID)
 	assert.Nil(t, err)

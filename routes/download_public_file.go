@@ -30,6 +30,7 @@ func DownloadPublicFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(downloadPublicFile)
 }
 
+// @TODO: Is this really needed?
 func downloadPublicFile(c *gin.Context) error {
 	request := DownloadFileObj{}
 
@@ -38,7 +39,8 @@ func downloadPublicFile(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(request.FileID)) {
+	// @TODO: Remove default S3
+	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(request.FileID), utils.S3) {
 		return NotFoundResponse(c, errors.New("such data does not exist"))
 	}
 

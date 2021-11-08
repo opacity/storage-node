@@ -53,7 +53,10 @@ func IsS3Enabled() bool {
 	return s3Svc.S3 != nil
 }
 
-func DoesDefaultBucketObjectExist(objectKey string) bool {
+func DoesDefaultBucketObjectExist(objectKey string, storageType FileStorageType) bool {
+	if storageType == Galaxy {
+		minIoSvc.DoesObjectExist(Env.GuardianBucketName, objectKey)
+	}
 	return s3Svc.DoesObjectExist(Env.BucketName, objectKey)
 }
 

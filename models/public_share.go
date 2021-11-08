@@ -12,14 +12,15 @@ import (
 
 // PublicShare ...
 type PublicShare struct {
-	PublicID      string    `gorm:"UNIQUE_INDEX:idx_publicshare;primary_key;autoIncrement:false" json:"public_id" validate:"required"`
-	CreatedAt     time.Time `json:"createdAt"`
-	ViewsCount    int       `gorm:"not null" json:"views_count"`
-	Title         string    `gorm:"not null;size:65535" json:"title"`
-	Description   string    `gorm:"not null;size:65535" json:"description"`
-	MimeType      string    `gorm:"not null;size:255" json:"mimeType"`
-	FileExtension string    `gorm:"not null;size:255" json:"fileExtension"`
-	FileID        string    `gorm:"not null" json:"file_id" validate:"required,len=64" minLength:"64" maxLength:"64"`
+	PublicID        string                `gorm:"UNIQUE_INDEX:idx_publicshare;primary_key;autoIncrement:false" json:"public_id" validate:"required"`
+	CreatedAt       time.Time             `json:"createdAt"`
+	ViewsCount      int                   `gorm:"not null" json:"views_count"`
+	Title           string                `gorm:"not null;size:65535" json:"title"`
+	Description     string                `gorm:"not null;size:65535" json:"description"`
+	MimeType        string                `gorm:"not null;size:255" json:"mimeType"`
+	FileExtension   string                `gorm:"not null;size:255" json:"fileExtension"`
+	FileID          string                `gorm:"not null" json:"file_id" validate:"required,len=64" minLength:"64" maxLength:"64"`
+	FileStorageType utils.FileStorageType `gorm:"not null;default:1" json:"storage_type" validate:"required,len=1"`
 }
 
 // CreateShortlinkObj...

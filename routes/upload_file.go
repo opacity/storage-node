@@ -69,7 +69,7 @@ func uploadFile(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyAccountPlan(account, models.S3, c); err != nil {
+	if err := verifyAccountPlan(account, utils.S3, c); err != nil {
 		return err
 	}
 

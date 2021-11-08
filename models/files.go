@@ -252,7 +252,7 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 		ExpiredAt:      file.ExpiredAt,
 		FileSizeInByte: objectSize,
 		ModifierHash:   file.ModifierHash,
-		StorageType:    S3,
+		StorageType:    utils.S3,
 	}
 	if err := DB.Save(&completedFile).Error; err != nil {
 		return CompletedFile{}, err

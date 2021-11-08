@@ -9,23 +9,15 @@ import (
 	"github.com/opacity/storage-node/utils"
 )
 
-type FileStorageType int
-
-const (
-	S3 FileStorageType = iota + 1
-	Sia
-	Skynet
-)
-
 type CompletedFile struct {
-	FileID         string          `gorm:"primary_key" json:"fileID" validate:"required,len=64" minLength:"64" maxLength:"64"`
-	CreatedAt      time.Time       `json:"createdAt"`
-	UpdatedAt      time.Time       `json:"updatedAt"`
-	ExpiredAt      time.Time       `json:"expiredAt"`
-	FileSizeInByte int64           `json:"fileSizeInByte" validate:"required"`
-	StorageType    FileStorageType `json:"storageType" validate:"required,gte=1" gorm:"default:1"`
-	ModifierHash   string          `json:"modifierHash" validate:"required,len=64" minLength:"64" maxLength:"64"`
-	ApiVersion     int             `json:"apiVersion" validate:"omitempty,gte=1" gorm:"default:1"`
+	FileID         string                `gorm:"primary_key" json:"fileID" validate:"required,len=64" minLength:"64" maxLength:"64"`
+	CreatedAt      time.Time             `json:"createdAt"`
+	UpdatedAt      time.Time             `json:"updatedAt"`
+	ExpiredAt      time.Time             `json:"expiredAt"`
+	FileSizeInByte int64                 `json:"fileSizeInByte" validate:"required"`
+	StorageType    utils.FileStorageType `json:"storageType" validate:"required,gte=1" gorm:"default:1"`
+	ModifierHash   string                `json:"modifierHash" validate:"required,len=64" minLength:"64" maxLength:"64"`
+	ApiVersion     int                   `json:"apiVersion" validate:"omitempty,gte=1" gorm:"default:1"`
 }
 
 /*BeforeCreate - callback called before the row is created*/
@@ -38,7 +30,7 @@ func (completedFile *CompletedFile) BeforeUpdate(scope *gorm.Scope) error {
 	return utils.Validator.Struct(completedFile)
 }
 
-func GetAllExpiredCompletedFilesByStorageType(expiredTime time.Time, storageType FileStorageType) ([]string, error) {
+func GetAllExpiredCompletedFilesByStorageType(expiredTime time.Time, storageType utils.FileStorageType) ([]string, error) {
 	files := []CompletedFile{}
 	if err := DB.Where("expired_at < ? AND storage_type = ?", expiredTime, storageType).Find(&files).Error; err != nil {
 		utils.LogIfError(err, nil)
@@ -70,7 +62,7 @@ func DeleteAllCompletedFiles(fileIDs []string) error {
 	return nil
 }
 
-func GetTotalFileSizeInByteByStorageType(storageType FileStorageType) (int64, error) {
+func GetTotalFileSizeInByteByStorageType(storageType utils.FileStorageType) (int64, error) {
 	rows, err := DB.Where("storage_type = ?", storageType).Model(&CompletedFile{}).Select("sum(file_size_in_byte) AS total").Rows()
 	if err != nil {
 		return 0, err

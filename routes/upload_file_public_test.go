@@ -24,7 +24,7 @@ func Test_UploadFilePublicStorageDoesNotCount(t *testing.T) {
 		FileID:         utils.GenerateFileHandle(),
 		ModifierHash:   utils.GenerateFileHandle(),
 		FileSizeInByte: 1003,
-		StorageType:    models.S3,
+		StorageType:    utils.S3,
 	}
 	assert.Nil(t, models.DB.Create(&completedFile).Error)
 	accountID, privateKey := generateValidateAccountId(t)

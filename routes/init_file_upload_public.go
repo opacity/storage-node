@@ -52,7 +52,7 @@ func initFileUploadPublicWithRequest(request InitFileUploadReq, c *gin.Context) 
 		return err
 	}
 
-	if err := verifyAccountPlan(account, models.S3, c); err != nil {
+	if err := verifyAccountPlan(account, utils.S3, c); err != nil {
 		return err
 	}
 

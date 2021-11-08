@@ -47,7 +47,7 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 		FileID:         uploadObj.FileHandle,
 		FileSizeInByte: 100,
 		ModifierHash:   utils.RandHexString(64),
-		StorageType:    models.S3,
+		StorageType:    utils.S3,
 	}
 	assert.Nil(t, models.DB.Create(&compeletedFile).Error)
 	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), "hello world!", ""))
