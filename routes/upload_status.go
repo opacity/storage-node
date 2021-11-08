@@ -73,7 +73,7 @@ func checkUploadStatus(c *gin.Context) error {
 		return err
 	}
 
-	completedFile, err = file.FinishUpload()
+	completedFile, err = file.FinishUpload(storageType)
 	if err != nil {
 		if err == models.ErrIncompleteUpload {
 			incompleteIndexes, err := models.GetIncompleteIndexesAsArray(file.FileID, file.EndIndex)

@@ -105,7 +105,7 @@ func checkPrerequisites(t *testing.T, account models.Account, fileID string) {
 	completedFile, err := models.GetCompletedFileByFileID(fileID)
 	assert.Nil(t, err)
 	// check that the FileSizeInBytes matches the size on S3
-	assert.True(t, utils.GetDefaultBucketObjectSize(models.GetFileDataKey(fileID)) == completedFile.FileSizeInByte)
+	assert.True(t, utils.GetDefaultBucketObjectSize(models.GetFileDataKey(fileID), utils.S3) == completedFile.FileSizeInByte)
 	filesInDB := []models.File{}
 	models.DB.Where("file_id = ?", fileID).Find(&filesInDB)
 	// check that there is no "files" row in SQL associated with this ID

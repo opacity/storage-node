@@ -114,7 +114,7 @@ func checkUploadStatusPublic(c *gin.Context) error {
 	}
 
 	if request.uploadStatusPublicObj.MimeType != "" {
-		if err := GeneratePublicThumbnail(completedFile.FileID, request.uploadStatusPublicObj.MimeType); err != nil {
+		if err := GeneratePublicThumbnail(completedFile.FileID, request.uploadStatusPublicObj.MimeType, completedFile.StorageType); err != nil {
 			return InternalErrorResponse(c, err)
 		}
 		if err := utils.SetDefaultObjectCannedAcl(models.GetPublicThumbnailKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
@@ -129,10 +129,10 @@ func checkUploadStatusPublic(c *gin.Context) error {
 	})
 }
 
-func GeneratePublicThumbnail(fileID string, mimeType string) error {
+func GeneratePublicThumbnail(fileID string, mimeType string, storageType utils.FileStorageType) error {
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
 	fileDataPublicKey := models.GetFileDataPublicKey(fileID)
-	publicFileObj, err := utils.GetBucketObject(fileDataPublicKey, "")
+	publicFileObj, err := utils.GetBucketObject(fileDataPublicKey, "", storageType)
 	if err != nil {
 		return err
 	}

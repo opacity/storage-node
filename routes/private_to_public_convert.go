@@ -39,6 +39,7 @@ type FileMetadata struct {
 }
 
 type DownloadProgress struct {
+	StorageType        utils.FileStorageType
 	RawProgress        int
 	SizeWithEncryption int
 	PartSize           int
@@ -232,7 +233,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 
-	realSize := int(utils.GetDefaultBucketObjectSize(hash))
+	realSize := int(utils.GetDefaultBucketObjectSize(hash, storageType))
 	if realSize <= 0 {
 		return InternalErrorResponse(c, errors.New("object size error"))
 	}
@@ -241,6 +242,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	numberOfParts := ((fileSize-1)/DefaultPartSize + 1)
 
 	downloadProgress := &DownloadProgress{
+		StorageType:        storageType,
 		SizeWithEncryption: realSize,
 		PartSize:           DefaultPartSize,
 	}
@@ -312,7 +314,7 @@ func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, d
 		}
 
 		downloadRange := "bytes=" + strconv.Itoa(offset) + "-" + strconv.Itoa(limit-1)
-		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(fileID), downloadRange)
+		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(fileID), downloadRange, downloadProgress.StorageType)
 		if err != nil {
 			return err
 		}

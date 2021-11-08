@@ -68,11 +68,18 @@ func GetDefaultBucketObject(objectKey string, storageType FileStorageType) (stri
 	return s3Svc.GetObjectAsString(Env.BucketName, objectKey, "")
 }
 
-func GetBucketObject(objectKey, downloadRange string) (*s3.GetObjectOutput, error) {
+func GetBucketObject(objectKey, downloadRange string, storageType FileStorageType) (*s3.GetObjectOutput, error) {
+	if storageType == Galaxy {
+		minIoSvc.GetObjectAsString(Env.GuardianBucketName, objectKey, downloadRange)
+	}
 	return s3Svc.GetObjectOutput(Env.BucketName, objectKey, downloadRange)
 }
 
-func GetDefaultBucketObjectSize(objectKey string) int64 {
+func GetDefaultBucketObjectSize(objectKey string, storageType FileStorageType) int64 {
+	if storageType == Galaxy {
+		minIoSvc.GetObjectSizeInByte(Env.BucketName, objectKey)
+	}
+
 	return s3Svc.GetObjectSizeInByte(Env.BucketName, objectKey)
 }
 

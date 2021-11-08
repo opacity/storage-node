@@ -230,7 +230,7 @@ func (file *File) UploadCompleted() bool {
 }
 
 /*FinishUpload - finishes the upload*/
-func (file *File) FinishUpload() (CompletedFile, error) {
+func (file *File) FinishUpload(storageType utils.FileStorageType) (CompletedFile, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
 		return CompletedFile{}, ErrIncompleteUpload
@@ -246,13 +246,13 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 		return CompletedFile{}, err
 	}
 
-	objectSize := utils.GetDefaultBucketObjectSize(objectKey)
+	objectSize := utils.GetDefaultBucketObjectSize(objectKey, storageType)
 	completedFile := CompletedFile{
 		FileID:         file.FileID,
 		ExpiredAt:      file.ExpiredAt,
 		FileSizeInByte: objectSize,
 		ModifierHash:   file.ModifierHash,
-		StorageType:    utils.S3,
+		StorageType:    storageType,
 	}
 	if err := DB.Save(&completedFile).Error; err != nil {
 		return CompletedFile{}, err
