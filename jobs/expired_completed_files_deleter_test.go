@@ -30,7 +30,7 @@ func Test_DeleteAllExpiredCompletedFilesS3(t *testing.T) {
 		FileSizeInByte: 123,
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
-	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s1FileID), "foo1", ""))
+	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s1FileID), "foo1", "", utils.S3))
 
 	s = models.CompletedFile{
 		FileID:         s2FileID,
@@ -40,7 +40,7 @@ func Test_DeleteAllExpiredCompletedFilesS3(t *testing.T) {
 		FileSizeInByte: 123,
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
-	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s2FileID), "foo2", ""))
+	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s2FileID), "foo2", "", utils.S3))
 
 	s = models.CompletedFile{
 		FileID:         s3FileID,
@@ -50,7 +50,7 @@ func Test_DeleteAllExpiredCompletedFilesS3(t *testing.T) {
 		FileSizeInByte: 123,
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
-	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s3FileID), "foo3", ""))
+	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s3FileID), "foo3", "", utils.S3))
 
 	testSubject := expiredCompletedFilesDeleter{}
 	testSubject.Run()

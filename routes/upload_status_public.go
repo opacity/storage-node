@@ -153,7 +153,7 @@ func GeneratePublicThumbnail(fileID string, mimeType string, storageType utils.F
 
 	distThumbnailString := distThumbnailWriter.String()
 
-	return utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, mimeType)
+	return utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, mimeType, storageType)
 }
 
 func SplitMime(s string) (string, string) {

@@ -20,6 +20,7 @@ func FreeUploadFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(freeUploadFile)
 }
 
+// @TODO: Investigate if and how this is used
 func freeUploadFile(c *gin.Context) error {
 	request := freeUploadFileReq{}
 	if err := utils.ParseRequestBody(c.Request, &request); err != nil {
@@ -29,7 +30,7 @@ func freeUploadFile(c *gin.Context) error {
 
 	objectKey := fmt.Sprintf("%s%s", "free_upload/", request.UploadID)
 
-	if err := utils.SetDefaultBucketObject(objectKey, request.FileData, ""); err != nil {
+	if err := utils.SetDefaultBucketObject(objectKey, request.FileData, "", utils.S3); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 

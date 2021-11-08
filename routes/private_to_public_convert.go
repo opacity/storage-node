@@ -258,7 +258,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	sentryMainSpan := sentry.TransactionFromContext(c.Request.Context())
 
 	g.Go(func() error {
-		return UploadPublicFileAndGenerateThumb(decryptProgress, hash, sentryMainSpan)
+		return UploadPublicFileAndGenerateThumb(decryptProgress, hash, sentryMainSpan, storageType)
 	})
 	g.Go(func() error {
 		return ReadAndDecryptPrivateFile(downloadProgress, decryptProgress, sentryMainSpan)
@@ -344,7 +344,7 @@ func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, d
 	return nil
 }
 
-func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string, sentryMainSpan *sentry.Span) (err error) {
+func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string, sentryMainSpan *sentry.Span, storageType utils.FileStorageType) (err error) {
 	awsKey := models.GetFileDataPublicKey(hash)
 	uploadID := new(string)
 	var completedParts []*s3.CompletedPart
@@ -406,7 +406,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 
 			if generateThumbnail {
 				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
-				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType, sentrySpanUpload)
+				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType, sentrySpanUpload, storageType)
 			}
 
 			sentrySpanUpload.Finish()
@@ -450,7 +450,7 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 	return nil
 }
 
-func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentType string, sentryMainSpan *sentry.Span) error {
+func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentType string, sentryMainSpan *sentry.Span, storageType utils.FileStorageType) error {
 	sentrySpanGenerateThumbnail := sentryMainSpan.StartChild("thumbnail-generation")
 	sentrySpanGenerateThumbnail.SetTag("content-type", fileContentType)
 	defer sentrySpanGenerateThumbnail.Finish()
@@ -527,7 +527,7 @@ func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentTy
 
 	if buf.Len() != 0 {
 		// thumbnail is always image/jpeg
-		if err := utils.SetDefaultBucketObject(thumbnailKey, buf.String(), "image/jpeg"); err != nil {
+		if err := utils.SetDefaultBucketObject(thumbnailKey, buf.String(), "image/jpeg", storageType); err != nil {
 			return err
 		}
 		return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)

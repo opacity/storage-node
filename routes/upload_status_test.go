@@ -50,7 +50,7 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 		StorageType:    utils.S3,
 	}
 	assert.Nil(t, models.DB.Create(&compeletedFile).Error)
-	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), "hello world!", ""))
+	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), "hello world!", "", utils.S3))
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, "v1", req)
 
