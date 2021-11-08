@@ -61,7 +61,7 @@ type updateMetadataV2Res struct {
 }
 
 type updateMetadataMultipleV2Res struct {
-	Metadatas       []updateMetadataV2ResBase `json:"metadatas" validate:"required"`
+	Metadatas       []updateMetadataV2ResBase `json:"metadatas"`
 	FailedMetadatas map[string]string         `json:"failedMetadatas"`
 	ExpirationDate  time.Time                 `json:"expirationDate" validate:"required,gte"`
 }
@@ -205,7 +205,8 @@ func UpdateMetadataV2Handler() gin.HandlerFunc {
 // @description 	  "metadataV2Edges": "the edges to add to your account metadataV2 encoded to base64",
 // @description 	  "metadataV2Sig": "a signature encoded to base64 confirming the metadata change, the publickey will be a key for the metadataV2",
 // @description   },
-// @description		{ ... }]
+// @description		{ ... }],
+// @description   "failedMetadatas": ["metadata key": "error value", ...]
 // @description 	"timestamp": 1557346389
 // @description }
 // @Success 200 {object} routes.updateMetadataMultipleV2Res
@@ -642,6 +643,9 @@ func updateMetadataMultipleV2(c *gin.Context) error {
 	}
 
 	newMetadatas := make([]updateMetadataV2ResBase, 0)
+	successMetadatasKeys := make([]string, 0)
+	successMetadatasPermissionHashes := make([]string, 0)
+	successMetadatasLen := 0
 	failedMetadatas := make(map[string]string)
 	for _, metadata := range request.updateMetadataMultipleV2Object.Metadatas {
 		newMetadataV2, err := updateSetMetadata(
@@ -656,10 +660,32 @@ func updateMetadataMultipleV2(c *gin.Context) error {
 		)
 		if err != nil {
 			failedMetadatas[metadata.MetadataV2Key] = err.Error()
+			break
 		}
+		successMetadatasKeys = append(successMetadatasKeys, metadata.MetadataV2Key)
+		successMetadatasPermissionHashes = append(successMetadatasPermissionHashes, metadata.MetadataV2Key)
+		successMetadatasLen += len(newMetadataV2)
 		newMetadatas = append(newMetadatas, updateMetadataV2ResBase{
 			MetadataV2Key: metadata.MetadataV2Key,
 			MetadataV2:    newMetadataV2,
+		})
+	}
+
+	// Revert if failure
+	if len(successMetadatasKeys) > 0 {
+		if err := account.RemoveMetadataMultiple(int64(successMetadatasLen), len(successMetadatasKeys)); err != nil {
+			return InternalErrorResponse(c, err)
+		}
+		deleteKeys := append(successMetadatasKeys, successMetadatasPermissionHashes...)
+		deleteKeysKV := utils.KVKeys(deleteKeys)
+		if err = utils.BatchDelete(&deleteKeysKV); err != nil {
+			return InternalErrorResponse(c, err)
+		}
+
+		return OkResponse(c, updateMetadataMultipleV2Res{
+			Metadatas:       []updateMetadataV2ResBase{},
+			FailedMetadatas: failedMetadatas,
+			ExpirationDate:  account.ExpirationDate().Add(MetadataExpirationOffset),
 		})
 	}
 
