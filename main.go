@@ -58,11 +58,11 @@ func main() {
 		models.Connect(utils.Env.DatabaseURL)
 	}
 
-	migratePlanIds := utils.GetPlansMigrationDone()
-	if !migratePlanIds {
-		err = models.MigratePlanIds()
-		utils.PanicOnError(err)
-	}
+	// migratePlanIds := utils.GetPlansMigrationDone()
+	models.MigratePlanIds()
+	// if !migratePlanIds {
+	// 	utils.PanicOnError(err)
+	// }
 
 	jobs.CreatePlanMetrics()
 

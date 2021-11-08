@@ -61,7 +61,10 @@ func DoesDefaultBucketObjectExist(objectKey string, storageType FileStorageType)
 }
 
 // Get Object operation on defaultBucketName
-func GetDefaultBucketObject(objectKey string) (string, error) {
+func GetDefaultBucketObject(objectKey string, storageType FileStorageType) (string, error) {
+	if storageType == Galaxy {
+		minIoSvc.GetObjectAsString(Env.GuardianBucketName, objectKey, "")
+	}
 	return s3Svc.GetObjectAsString(Env.BucketName, objectKey, "")
 }
 
