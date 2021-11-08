@@ -672,7 +672,7 @@ func updateMetadataMultipleV2(c *gin.Context) error {
 	}
 
 	// Revert if failure
-	if len(successMetadatasKeys) > 0 {
+	if len(failedMetadatas) > 0 {
 		if err := account.RemoveMetadataMultiple(int64(successMetadatasLen), len(successMetadatasKeys)); err != nil {
 			return InternalErrorResponse(c, err)
 		}
