@@ -43,7 +43,12 @@ func downloadFile(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	fileURL, err := GetBaseFileDownloadURL(request.FileID)
+	completedFile, err := models.GetCompletedFileByFileID(request.FileID)
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	fileURL, err := GetBaseFileDownloadURL(request.FileID, completedFile.StorageType)
 	if err != nil {
 		if err.Error() == "such data does not exist" {
 			return NotFoundResponse(c, err)
@@ -56,9 +61,9 @@ func downloadFile(c *gin.Context) error {
 	})
 }
 
-func GetBaseFileDownloadURL(fileID string) (string, error) {
+func GetBaseFileDownloadURL(fileID string, storageType utils.FileStorageType) (string, error) {
 	fileDataKey := models.GetFileDataKey(fileID)
-	if !utils.DoesDefaultBucketObjectExist(fileDataKey) {
+	if !utils.DoesDefaultBucketObjectExist(fileDataKey, storageType) {
 		return "", errors.New("such data does not exist")
 	}
 
@@ -70,5 +75,5 @@ func GetBaseFileDownloadURL(fileID string) (string, error) {
 		return "", err
 	}
 
-	return utils.GetS3BucketUrl() + fileID, nil
+	return utils.GetStorageURL(storageType) + fileID, nil
 }

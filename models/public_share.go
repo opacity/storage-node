@@ -104,14 +104,14 @@ func CreatePublicShare(createShortlinkObj CreateShortlinkObj) (PublicShare, erro
 	return publicShare, nil
 }
 
-func GetPublicFileDownloadData(fileID string) (fileURL, thumbnailURL string) {
-	bucketURL := utils.GetS3BucketUrl()
+func GetPublicFileDownloadData(fileID string, storageType utils.FileStorageType) (fileURL, thumbnailURL string) {
+	storageURL := utils.GetStorageURL(storageType)
 
-	fileURL = bucketURL + GetFileDataPublicKey(fileID)
+	fileURL = storageURL + GetFileDataPublicKey(fileID)
 	thumbnailKey := GetPublicThumbnailKey(fileID)
 	thumbnailURL = "https://s3.us-east-2.amazonaws.com/opacity-public/thumbnail_default.png"
-	if utils.DoesDefaultBucketObjectExist(thumbnailKey) {
-		thumbnailURL = bucketURL + thumbnailKey
+	if utils.DoesDefaultBucketObjectExist(thumbnailKey, storageType) {
+		thumbnailURL = storageURL + thumbnailKey
 	}
 
 	return

@@ -181,7 +181,7 @@ func shortlinkURL(c *gin.Context) error {
 		return InternalErrorResponse(c, errors.New("there was an error parsing your request"))
 	}
 
-	fileURL, thumbnailURL := models.GetPublicFileDownloadData(publicShare.FileID)
+	fileURL, thumbnailURL := models.GetPublicFileDownloadData(publicShare.FileID, publicShare.FileStorageType)
 
 	return OkResponse(c, PublicFileDownloadResp{
 		S3URL:          fileURL,

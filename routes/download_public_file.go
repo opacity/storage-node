@@ -39,12 +39,17 @@ func downloadPublicFile(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
+	completedFile, err := models.GetCompletedFileByFileID(request.FileID)
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
 	// @TODO: Remove default S3
-	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(request.FileID), utils.S3) {
+	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(request.FileID), completedFile.StorageType) {
 		return NotFoundResponse(c, errors.New("such data does not exist"))
 	}
 
-	fileURL, thumbnailURL := models.GetPublicFileDownloadData(request.FileID)
+	fileURL, thumbnailURL := models.GetPublicFileDownloadData(request.FileID, completedFile.StorageType)
 
 	return OkResponse(c, downloadPublicFileRes{
 		FileDownloadUrl:          fileURL,

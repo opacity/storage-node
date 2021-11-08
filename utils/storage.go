@@ -135,6 +135,9 @@ func DeleteDefaultBucketObjects(objectKeys []string) error {
 	return s3Svc.DeleteObjects(Env.BucketName, objectKeys)
 }
 
-func GetS3BucketUrl() string {
+func GetStorageURL(storageType FileStorageType) string {
+	if storageType == Galaxy {
+		return fmt.Sprintf("http://%s/%s/", Env.GuardianEndpoint, Env.GuardianBucketName)
+	}
 	return fmt.Sprintf("https://s3.%s.amazonaws.com/%s/", Env.AwsRegion, Env.BucketName)
 }
