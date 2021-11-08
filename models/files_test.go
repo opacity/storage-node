@@ -361,7 +361,7 @@ func Test_FinishUpload(t *testing.T) {
 	assert.Equal(t, file.ExpiredAt, completedFiles[0].ExpiredAt)
 
 	// Clean up
-	err = utils.DeleteDefaultBucketObject(aws.StringValue(objectKey))
+	err = utils.DeleteDefaultBucketObject(aws.StringValue(objectKey), utils.S3)
 	assert.Nil(t, err)
 }
 

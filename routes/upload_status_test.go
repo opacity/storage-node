@@ -58,7 +58,7 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "File is uploaded")
 
 	// clean up
-	utils.DeleteDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle))
+	utils.DeleteDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), utils.S3)
 }
 
 func Test_MissingIndexes(t *testing.T) {

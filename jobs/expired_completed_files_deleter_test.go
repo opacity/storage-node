@@ -65,5 +65,5 @@ func Test_DeleteAllExpiredCompletedFilesS3(t *testing.T) {
 	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(s2FileID), utils.S3))
 	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(s3FileID), utils.S3))
 
-	assert.Nil(t, utils.DeleteDefaultBucketObject(models.GetFileMetadataKey(s3FileID)))
+	assert.Nil(t, utils.DeleteDefaultBucketObject(models.GetFileMetadataKey(s3FileID), utils.S3))
 }

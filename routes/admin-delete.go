@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/hex"
 	"errors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
 	"github.com/opacity/storage-node/utils"
@@ -38,7 +39,7 @@ func adminDeleteFile(c *gin.Context) error {
 		}
 	}
 
-	if err := utils.DeleteDefaultBucketObjectKeys(fileId); err != nil {
+	if err := utils.DeleteDefaultBucketObjectKeys(fileId, completedFile.StorageType); err != nil {
 		utils.AppendIfError(err, &collectedErrors)
 	}
 

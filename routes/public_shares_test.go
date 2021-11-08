@@ -55,7 +55,7 @@ func Test_GetUrl_PublicShares(t *testing.T) {
 	t.Cleanup(func() {
 		cleanUpBeforeTest(t)
 		ps.RemovePublicShare()
-		utils.DeleteDefaultBucketObjectKeys(ps.FileID)
+		utils.DeleteDefaultBucketObjectKeys(ps.FileID, utils.S3)
 	})
 }
 
@@ -74,7 +74,7 @@ func Test_ViewsCountIncreases_PublicShares(t *testing.T) {
 	t.Cleanup(func() {
 		cleanUpBeforeTest(t)
 		ps.RemovePublicShare()
-		utils.DeleteDefaultBucketObjectKeys(ps.FileID)
+		utils.DeleteDefaultBucketObjectKeys(ps.FileID, utils.S3)
 	})
 }
 

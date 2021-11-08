@@ -96,11 +96,12 @@ func CreateTestPublicShare(t *testing.T) PublicShare {
 func CreatePublicShareObj() PublicShare {
 	shortID, _ := shortid.Generate()
 	return PublicShare{
-		PublicID:    shortID,
-		ViewsCount:  0,
-		Title:       "LoremTitle",
-		Description: "Sed felis eget velit aliquet sagittis id consectetur purus ut. Sed libero enim sed faucibus turpis. Leo urna molestie at elementum. Sed egestas egestas fringilla phasellus faucibus.",
-		FileID:      utils.GenerateFileHandle(),
+		PublicID:        shortID,
+		ViewsCount:      0,
+		Title:           "LoremTitle",
+		Description:     "Sed felis eget velit aliquet sagittis id consectetur purus ut. Sed libero enim sed faucibus turpis. Leo urna molestie at elementum. Sed egestas egestas fringilla phasellus faucibus.",
+		FileID:          utils.GenerateFileHandle(),
+		FileStorageType: utils.S3,
 	}
 }
 
@@ -138,7 +139,7 @@ func MultipartUploadOfSingleChunk(t *testing.T, f *File) (*s3.CompletedPart, err
 	file.Read(buffer)
 
 	awsObjKey := aws.StringValue(f.AwsObjectKey) + "/file"
-	key, uploadID, err := utils.CreateMultiPartUpload(awsObjKey, "")
+	key, uploadID, err := utils.CreateMultiPartUpload(awsObjKey, "", utils.S3)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +149,7 @@ func MultipartUploadOfSingleChunk(t *testing.T, f *File) (*s3.CompletedPart, err
 	}
 
 	completedPart, err := utils.UploadMultiPartPart(awsObjKey, aws.StringValue(f.AwsUploadID),
-		buffer, FirstChunkIndex)
+		buffer, FirstChunkIndex, utils.S3)
 	return completedPart, err
 }
 

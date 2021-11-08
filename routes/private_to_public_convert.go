@@ -373,7 +373,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 					generateThumbnail = true
 				}
 				firstRun = false
-				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
+				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType, storageType)
 				if err != nil {
 					return
 				}
@@ -382,9 +382,9 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 			uploadPart = append(uploadPart, b...)
 
 			if int64(len(uploadPart)) == utils.MinMultiPartSize {
-				completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber)
+				completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber, storageType)
 				if uploadError != nil {
-					utils.AbortMultiPartUpload(awsKey, *uploadID)
+					utils.AbortMultiPartUpload(awsKey, *uploadID, storageType)
 				}
 				completedParts = append(completedParts, completedPart)
 
@@ -398,9 +398,9 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 		}
 
 		if err == io.EOF {
-			completedPart, err := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber)
+			completedPart, err := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber, storageType)
 			if err != nil {
-				utils.AbortMultiPartUpload(awsKey, *uploadID)
+				utils.AbortMultiPartUpload(awsKey, *uploadID, storageType)
 				return err
 			}
 
@@ -415,11 +415,11 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 		}
 	}
 
-	if _, err = utils.CompleteMultiPartUpload(awsKey, *uploadID, completedParts); err != nil {
+	if _, err = utils.CompleteMultiPartUpload(awsKey, *uploadID, completedParts, storageType); err != nil {
 		return
 	}
 
-	return utils.SetDefaultObjectCannedAcl(awsKey, utils.CannedAcl_PublicRead)
+	return utils.SetDefaultObjectCannedAcl(awsKey, utils.CannedAcl_PublicRead, storageType)
 
 }
 
@@ -530,7 +530,7 @@ func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentTy
 		if err := utils.SetDefaultBucketObject(thumbnailKey, buf.String(), "image/jpeg", storageType); err != nil {
 			return err
 		}
-		return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)
+		return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead, storageType)
 	}
 
 	return nil

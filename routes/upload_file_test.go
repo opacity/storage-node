@@ -123,7 +123,7 @@ func Test_Upload_Completed_Of_File(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%s%s", chunkData1, chunkData2), data)
 
 	// clean up
-	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId))
+	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId), utils.S3)
 }
 
 func Test_Upload_Completed_No_In_Order(t *testing.T) {
@@ -171,7 +171,7 @@ func Test_Upload_Completed_No_In_Order(t *testing.T) {
 
 	assert.Equal(t, fmt.Sprintf("%s%s%s", chunkData1, chunkData2, chunkData3), data)
 	// clean up
-	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId))
+	utils.DeleteDefaultBucketObject(models.GetFileDataKey(fileId), utils.S3)
 }
 
 func initFileUpload(t *testing.T, endIndex int, privateKey *ecdsa.PrivateKey) string {

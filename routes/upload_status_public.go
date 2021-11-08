@@ -88,7 +88,7 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return err
 	}
 
-	publicShare, err := file.FinishUploadPublic(request.uploadStatusPublicObj.Title, request.uploadStatusPublicObj.Description)
+	publicShare, err := file.FinishUploadPublic(request.uploadStatusPublicObj.Title, request.uploadStatusPublicObj.Description, storageType)
 	if err != nil {
 		if err == models.ErrIncompleteUpload {
 			incompleteIndexes, err := models.GetIncompleteIndexesAsArray(file.FileID, file.EndIndex)
@@ -109,7 +109,7 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataPublicKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataPublicKey(completedFile.FileID), utils.CannedAcl_PublicRead, completedFile.StorageType); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
@@ -117,7 +117,7 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		if err := GeneratePublicThumbnail(completedFile.FileID, request.uploadStatusPublicObj.MimeType, completedFile.StorageType); err != nil {
 			return InternalErrorResponse(c, err)
 		}
-		if err := utils.SetDefaultObjectCannedAcl(models.GetPublicThumbnailKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
+		if err := utils.SetDefaultObjectCannedAcl(models.GetPublicThumbnailKey(completedFile.FileID), utils.CannedAcl_PublicRead, completedFile.StorageType); err != nil {
 			return InternalErrorResponse(c, err)
 		}
 

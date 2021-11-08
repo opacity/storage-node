@@ -242,7 +242,7 @@ func (file *File) FinishUpload(storageType utils.FileStorageType) (CompletedFile
 	}
 
 	objectKey := aws.StringValue(file.AwsObjectKey)
-	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
+	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts, storageType); err != nil {
 		return CompletedFile{}, err
 	}
 
@@ -266,7 +266,7 @@ func (file *File) FinishUpload(storageType utils.FileStorageType) (CompletedFile
 }
 
 /*FinishUploadPublic - finishes the public upload*/
-func (file *File) FinishUploadPublic(title, description string) (PublicShare, error) {
+func (file *File) FinishUploadPublic(title, description string, storageType utils.FileStorageType) (PublicShare, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
 		return PublicShare{}, ErrIncompleteUpload
@@ -278,7 +278,7 @@ func (file *File) FinishUploadPublic(title, description string) (PublicShare, er
 	}
 
 	objectKey := aws.StringValue(file.AwsObjectKey)
-	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
+	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts, storageType); err != nil {
 		return PublicShare{}, err
 	}
 	createShortlinkObj := CreateShortlinkObj{

@@ -52,11 +52,9 @@ func initFileUploadPublicWithRequest(request InitFileUploadReq, c *gin.Context) 
 		return err
 	}
 
-	if err := verifyAccountPlan(account, utils.S3, c); err != nil {
-		return err
-	}
+	storageType := account.PlanInfo.FileStorageType
 
-	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataPublicKey(request.initFileUploadObj.FileHandle), "")
+	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataPublicKey(request.initFileUploadObj.FileHandle), "", storageType)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}

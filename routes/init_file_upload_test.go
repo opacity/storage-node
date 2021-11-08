@@ -57,7 +57,7 @@ func Test_initFileUploadWithPaidAccount(t *testing.T) {
 	assert.NotNil(t, file.AwsObjectKey)
 	assert.NotNil(t, file.ModifierHash)
 
-	assert.Nil(t, utils.DeleteDefaultBucketObjectKeys(file.FileID))
+	assert.Nil(t, utils.DeleteDefaultBucketObjectKeys(file.FileID, utils.S3))
 }
 
 func Test_initFileUploadWithPaidAccount_MissingFormAndFormFile(t *testing.T) {

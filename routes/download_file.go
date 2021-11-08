@@ -67,11 +67,11 @@ func GetBaseFileDownloadURL(fileID string, storageType utils.FileStorageType) (s
 		return "", errors.New("such data does not exist")
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(fileDataKey, utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(fileDataKey, utils.CannedAcl_PublicRead, storageType); err != nil {
 		return "", err
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(fileID), utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(fileID), utils.CannedAcl_PublicRead, storageType); err != nil {
 		return "", err
 	}
 

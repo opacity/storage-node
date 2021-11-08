@@ -2,6 +2,7 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/opacity/storage-node/utils"
 )
 
 // UploadFilePublicHandler godoc
@@ -35,5 +36,6 @@ func uploadFilePublic(c *gin.Context) error {
 		return err
 	}
 
-	return uploadChunk(request, c)
+	// @TODO: Investigate if an how this endpoint is used
+	return uploadChunk(request, c, utils.S3)
 }
