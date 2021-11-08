@@ -40,12 +40,14 @@ func newStorageSession() {
 		// @TODO: Is Region needed?
 		Region:           aws.String("us-east-1"),
 		DisableSSL:       aws.Bool(true),
-		S3ForcePathStyle: aws.Bool(false),
+		S3ForcePathStyle: aws.Bool(true),
 	}
 	newMinIOSession, newMinIOSessionErr := session.NewSession(minIoConfig)
 
 	minIoSvc = &services.S3Wrapper{
-		S3: s3.New(session.Must(newMinIOSession, newMinIOSessionErr)),
+		S3:                  s3.New(session.Must(newMinIOSession, newMinIOSessionErr)),
+		MaxMultiPartRetries: MaxMultiPartRetries,
+		AwsPagingSize:       AwsPagingSize,
 	}
 }
 
@@ -202,7 +204,7 @@ func DeleteDefaultBucketObjects(objectKeys []string, storageType FileStorageType
 
 func GetStorageURL(storageType FileStorageType) string {
 	if storageType == Galaxy {
-		return fmt.Sprintf("http://%s/%s/", Env.GuardianEndpoint, Env.GuardianBucketName)
+		return fmt.Sprintf("%s/%s/", Env.GuardianEndpoint, Env.GuardianBucketName)
 	}
 	return fmt.Sprintf("https://s3.%s.amazonaws.com/%s/", Env.AwsRegion, Env.BucketName)
 }
