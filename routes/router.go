@@ -212,7 +212,7 @@ func returnEngine() *gin.Engine {
 	}
 	config := cors.DefaultConfig()
 
-	config.AllowOrigins = append(config.AllowOrigins, "dev2.opacity.io", "opacity.io", "127.0.0.1", "localhost")
+	config.AllowOrigins = append(config.AllowOrigins, "https://dev2.opacity.io", "https://opacity.io", "http://127.0.0.1:4444", "http://localhost:4444")
 	config.AllowHeaders = append(config.AllowHeaders, "sentry-trace")
 	router.Use(cors.New(config))
 
