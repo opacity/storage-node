@@ -51,6 +51,8 @@ func BadRequestResponse(c *gin.Context, err error) error {
 	c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
 	utils.Metrics_400_Response_Counter.Inc()
 
+	sentryCaptureException(c, err)
+
 	return err
 }
 
