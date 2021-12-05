@@ -212,8 +212,7 @@ func returnEngine() *gin.Engine {
 	}
 	config := cors.DefaultConfig()
 
-	// TODO:  update to only allow our frontend and localhost
-	config.AllowAllOrigins = true
+	config.AllowOrigins = append(config.AllowOrigins, "dev2.opacity.io", "opacity.io", "127.0.0.1", "localhost")
 	config.AllowHeaders = append(config.AllowHeaders, "sentry-trace")
 	router.Use(cors.New(config))
 
