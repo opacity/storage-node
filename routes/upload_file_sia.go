@@ -65,8 +65,9 @@ func uploadFileSia(c *gin.Context) error {
 		return err
 	}
 
-	// Fire and forget
-	go utils.UploadSiaFile(request.FileData, fileID, false)
+	if err := utils.UploadSiaFile(request.FileData, fileID, false); err != nil {
+		return InternalErrorResponse(c, err)
+	}
 
 	return OkResponse(c, StatusRes{
 		Status: "Sia file started uploading",
