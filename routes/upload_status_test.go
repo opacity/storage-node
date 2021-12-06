@@ -47,10 +47,10 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 		FileID:         uploadObj.FileHandle,
 		FileSizeInByte: 100,
 		ModifierHash:   utils.RandHexString(64),
-		StorageType:    models.S3,
+		StorageType:    utils.S3,
 	}
 	assert.Nil(t, models.DB.Create(&compeletedFile).Error)
-	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), "hello world!", ""))
+	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), "hello world!", "", utils.S3))
 
 	w := httpPostRequestHelperForTest(t, UploadStatusPath, "v1", req)
 
@@ -58,7 +58,7 @@ func Test_CheckFileIsCompleted(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "File is uploaded")
 
 	// clean up
-	utils.DeleteDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle))
+	utils.DeleteDefaultBucketObject(models.GetFileDataKey(uploadObj.FileHandle), utils.S3)
 }
 
 func Test_MissingIndexes(t *testing.T) {

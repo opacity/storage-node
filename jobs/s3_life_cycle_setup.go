@@ -23,7 +23,7 @@ func (e s3LifeCycleSetup) Run() error {
 
 	lifecycles := getLifecyclesMap()
 
-	rules, err := utils.GetDefaultBucketLifecycle()
+	rules, err := utils.GetDefaultBucketLifecycle(utils.S3)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (e s3LifeCycleSetup) Run() error {
 			rules = append(rules, &v)
 		}
 	}
-	return utils.SetDefaultBucketLifecycle(rules)
+	return utils.SetDefaultBucketLifecycle(rules, utils.S3)
 }
 
 func getLifecyclesMap() map[string]s3.LifecycleRule {

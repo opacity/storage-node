@@ -84,7 +84,7 @@ func startUploadForTest(t *testing.T) (string, string, []byte, int64) {
 
 	awsKey := awsTestDirPath + fileName
 
-	_, uploadID, err := CreateMultiPartUpload(awsKey, "")
+	_, uploadID, err := CreateMultiPartUpload(awsKey, "", S3)
 	assert.Nil(t, err)
 
 	return awsKey, aws.StringValue(uploadID), buffer, size
@@ -105,9 +105,9 @@ func successfulMultipartUploadForTest(t *testing.T) {
 		} else {
 			partLength = MinMultiPartSize
 		}
-		completedPart, uploadPartErr := svc.UploadPartOfMultiPartUpload(key, uploadID, buffer[curr:curr+partLength], partNumber)
+		completedPart, uploadPartErr := s3Svc.UploadPartOfMultiPartUpload(Env.BucketName, key, uploadID, buffer[curr:curr+partLength], partNumber)
 		if uploadPartErr != nil {
-			cancelErr := svc.CancelMultipartUpload(key, uploadID)
+			cancelErr := s3Svc.CancelMultipartUpload(Env.BucketName, key, uploadID)
 			assert.Nil(t, CollectErrors([]error{uploadPartErr, cancelErr}))
 		}
 		remaining -= partLength
@@ -115,7 +115,7 @@ func successfulMultipartUploadForTest(t *testing.T) {
 		completedParts = append(completedParts, completedPart)
 	}
 
-	_, err := svc.FinishMultipartUpload(key, uploadID, completedParts)
+	_, err := s3Svc.FinishMultipartUpload(Env.BucketName, key, uploadID, completedParts)
 	assert.Nil(t, err)
 }
 
@@ -129,17 +129,17 @@ func failedMultipartUploadForTest(t *testing.T) {
 	curr = 0
 	partLength = size
 
-	_, uploadPartErr := svc.UploadPartOfMultiPartUpload(key, uploadID, buffer[curr:curr+partLength], partNumber)
+	_, uploadPartErr := s3Svc.UploadPartOfMultiPartUpload(Env.BucketName, key, uploadID, buffer[curr:curr+partLength], partNumber)
 	assert.Nil(t, uploadPartErr)
-	cancelErr := svc.CancelMultipartUpload(key, uploadID)
+	cancelErr := s3Svc.CancelMultipartUpload(Env.BucketName, key, uploadID)
 	assert.Nil(t, cancelErr)
 }
 
 /*verifyFileIsNotOnS3 checks that the file is not on S3*/
 func verifyFileIsNotOnS3(keyOnAws string, t *testing.T) {
-	newS3Session()
+	newStorageSession()
 
-	_, errGetObject := svc.s3.GetObject(&s3.GetObjectInput{
+	_, errGetObject := s3Svc.S3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(Env.BucketName),
 		Key:    aws.String(keyOnAws),
 	})
@@ -149,9 +149,9 @@ func verifyFileIsNotOnS3(keyOnAws string, t *testing.T) {
 
 /*verifyFileIsOnS3 checks that the file is on S3*/
 func verifyFileIsOnS3(keyOnAws string, t *testing.T) {
-	newS3Session()
+	newStorageSession()
 
-	_, errGetObject := svc.s3.GetObject(&s3.GetObjectInput{
+	_, errGetObject := s3Svc.S3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(Env.BucketName),
 		Key:    aws.String(keyOnAws),
 	})
@@ -160,9 +160,9 @@ func verifyFileIsOnS3(keyOnAws string, t *testing.T) {
 
 /*removeFileFromS3 removes the file from S3 and then verifies it is no longer on S3.*/
 func removeFileFromS3(keyOnAws string, t *testing.T) {
-	newS3Session()
+	newStorageSession()
 
-	_, err := svc.s3.DeleteObject(&s3.DeleteObjectInput{
+	_, err := s3Svc.S3.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: aws.String(Env.BucketName),
 		Key:    aws.String(keyOnAws),
 	})

@@ -47,7 +47,7 @@ func (f uncompletedFileCleaner) Run() {
 	}
 
 	utils.LogIfError(models.DeleteAllCompletedUploadIndexes(fileIDs), nil)
-	utils.LogIfError(utils.DeleteDefaultBucketObjects(metadataIDs), nil)
+	utils.LogIfError(utils.DeleteDefaultBucketObjects(metadataIDs, utils.S3), nil)
 }
 
 func (f uncompletedFileCleaner) Runnable() bool {

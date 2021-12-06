@@ -136,7 +136,7 @@ func performanceTest(numUploadsToDo int, t *testing.T) (numUploadsAttempted int,
 				//}()
 			}
 
-			err = utils.DeleteDefaultBucketObject(fileHandle)
+			err = utils.DeleteDefaultBucketObject(fileHandle, utils.S3)
 			assert.Nil(t, err)
 		}()
 	}

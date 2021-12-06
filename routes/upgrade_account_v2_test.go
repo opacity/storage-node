@@ -354,7 +354,7 @@ func makeCompletedFileV2ForTest(handle string, expirationDate time.Time, key str
 		FileID:         handle,
 		FileSizeInByte: 150,
 		ExpiredAt:      expirationDate,
-		StorageType:    models.S3,
+		StorageType:    utils.S3,
 	}
 	modifierHash, _ := utils.HashString(key + completedFile.FileID)
 	completedFile.ModifierHash = modifierHash

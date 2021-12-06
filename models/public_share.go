@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -13,14 +12,15 @@ import (
 
 // PublicShare ...
 type PublicShare struct {
-	PublicID      string    `gorm:"UNIQUE_INDEX:idx_publicshare;primary_key;autoIncrement:false" json:"public_id" validate:"required"`
-	CreatedAt     time.Time `json:"createdAt"`
-	ViewsCount    int       `gorm:"not null" json:"views_count"`
-	Title         string    `gorm:"not null;size:65535" json:"title"`
-	Description   string    `gorm:"not null;size:65535" json:"description"`
-	MimeType      string    `gorm:"not null;size:255" json:"mimeType"`
-	FileExtension string    `gorm:"not null;size:255" json:"fileExtension"`
-	FileID        string    `gorm:"not null" json:"file_id" validate:"required,len=64" minLength:"64" maxLength:"64"`
+	PublicID        string                `gorm:"UNIQUE_INDEX:idx_publicshare;primary_key;autoIncrement:false" json:"public_id" validate:"required"`
+	CreatedAt       time.Time             `json:"createdAt"`
+	ViewsCount      int                   `gorm:"not null" json:"views_count"`
+	Title           string                `gorm:"not null;size:65535" json:"title"`
+	Description     string                `gorm:"not null;size:65535" json:"description"`
+	MimeType        string                `gorm:"not null;size:255" json:"mimeType"`
+	FileExtension   string                `gorm:"not null;size:255" json:"fileExtension"`
+	FileID          string                `gorm:"not null" json:"file_id" validate:"required,len=64" minLength:"64" maxLength:"64"`
+	FileStorageType utils.FileStorageType `gorm:"not null;default:1" json:"storage_type" validate:"required,len=1"`
 }
 
 // CreateShortlinkObj...
@@ -104,16 +104,15 @@ func CreatePublicShare(createShortlinkObj CreateShortlinkObj) (PublicShare, erro
 	return publicShare, nil
 }
 
-// Gets S3 bucket URL
-func GetBucketUrl() string {
-	return fmt.Sprintf("https://s3.%s.amazonaws.com/%s/", utils.Env.AwsRegion, utils.Env.BucketName)
-}
+func GetPublicFileDownloadData(fileID string, storageType utils.FileStorageType) (fileURL, thumbnailURL string) {
+	storageURL := utils.GetStorageURL(storageType)
 
-func GetPublicFileDownloadData(fileID string) (fileURL, thumbnailURL string) {
-	bucketURL := GetBucketUrl()
-
-	fileURL = bucketURL + GetFileDataPublicKey(fileID)
-	thumbnailURL = bucketURL + GetPublicThumbnailKey(fileID)
+	fileURL = storageURL + GetFileDataPublicKey(fileID)
+	thumbnailKey := GetPublicThumbnailKey(fileID)
+	thumbnailURL = "https://s3.us-east-2.amazonaws.com/opacity-public/thumbnail_default.png"
+	if utils.DoesDefaultBucketObjectExist(thumbnailKey, storageType) {
+		thumbnailURL = storageURL + thumbnailKey
+	}
 
 	return
 }

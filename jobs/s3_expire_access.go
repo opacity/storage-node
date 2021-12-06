@@ -27,7 +27,7 @@ func (e s3ExpireAccess) Run() {
 	}
 
 	for _, v := range expired {
-		if err := utils.DeleteDefaultBucketObject(v.ObjectName); err == nil {
+		if err := utils.DeleteDefaultBucketObject(v.ObjectName, utils.S3); err == nil {
 			models.DB.Delete(&v)
 		}
 	}

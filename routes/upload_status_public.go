@@ -69,14 +69,12 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyAccountPlan(account, models.S3, c); err != nil {
-		return err
-	}
+	storageType := account.PlanInfo.FileStorageType
 
 	fileID := request.uploadStatusPublicObj.FileHandle
 	completedFile, completedErr := models.GetCompletedFileByFileID(fileID)
 	if completedErr == nil && len(completedFile.FileID) != 0 {
-		if utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(fileID)) {
+		if utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(fileID), storageType) {
 			return OkResponse(c, fileUploadCompletedRes)
 		}
 	}
@@ -90,7 +88,7 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return err
 	}
 
-	publicShare, err := file.FinishUploadPublic(request.uploadStatusPublicObj.Title, request.uploadStatusPublicObj.Description)
+	publicShare, err := file.FinishUploadPublic(request.uploadStatusPublicObj.Title, request.uploadStatusPublicObj.Description, storageType)
 	if err != nil {
 		if err == models.ErrIncompleteUpload {
 			incompleteIndexes, err := models.GetIncompleteIndexesAsArray(file.FileID, file.EndIndex)
@@ -111,15 +109,15 @@ func checkUploadStatusPublic(c *gin.Context) error {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataPublicKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataPublicKey(completedFile.FileID), utils.CannedAcl_PublicRead, completedFile.StorageType); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
 	if request.uploadStatusPublicObj.MimeType != "" {
-		if err := GeneratePublicThumbnail(completedFile.FileID, request.uploadStatusPublicObj.MimeType); err != nil {
+		if err := GeneratePublicThumbnail(completedFile.FileID, request.uploadStatusPublicObj.MimeType, completedFile.StorageType); err != nil {
 			return InternalErrorResponse(c, err)
 		}
-		if err := utils.SetDefaultObjectCannedAcl(models.GetPublicThumbnailKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
+		if err := utils.SetDefaultObjectCannedAcl(models.GetPublicThumbnailKey(completedFile.FileID), utils.CannedAcl_PublicRead, completedFile.StorageType); err != nil {
 			return InternalErrorResponse(c, err)
 		}
 
@@ -131,10 +129,10 @@ func checkUploadStatusPublic(c *gin.Context) error {
 	})
 }
 
-func GeneratePublicThumbnail(fileID string, mimeType string) error {
+func GeneratePublicThumbnail(fileID string, mimeType string, storageType utils.FileStorageType) error {
 	thumbnailKey := models.GetPublicThumbnailKey(fileID)
 	fileDataPublicKey := models.GetFileDataPublicKey(fileID)
-	publicFileObj, err := utils.GetBucketObject(fileDataPublicKey, "", true)
+	publicFileObj, err := utils.GetBucketObject(fileDataPublicKey, "", storageType)
 	if err != nil {
 		return err
 	}
@@ -155,7 +153,7 @@ func GeneratePublicThumbnail(fileID string, mimeType string) error {
 
 	distThumbnailString := distThumbnailWriter.String()
 
-	return utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, mimeType)
+	return utils.SetDefaultBucketObject(thumbnailKey, distThumbnailString, mimeType, storageType)
 }
 
 func SplitMime(s string) (string, string) {

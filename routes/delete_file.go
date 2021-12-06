@@ -75,7 +75,7 @@ func DeleteFileByID(fileID, publicKey string, account models.Account, c *gin.Con
 		return err
 	}
 
-	if err := verifyAccountPlan(account, models.S3, c); err != nil {
+	if err := verifyAccountPlan(account, utils.S3, c); err != nil {
 		return err
 	}
 
@@ -91,7 +91,7 @@ func DeleteFileByID(fileID, publicKey string, account models.Account, c *gin.Con
 		return err
 	}
 
-	if err := utils.DeleteDefaultBucketObjectKeys(fileID); err != nil {
+	if err := utils.DeleteDefaultBucketObjectKeys(fileID, completedFile.StorageType); err != nil {
 		return err
 	}
 

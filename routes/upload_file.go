@@ -69,14 +69,12 @@ func uploadFile(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyAccountPlan(account, models.S3, c); err != nil {
-		return err
-	}
+	storageType := account.PlanInfo.FileStorageType
 
-	return uploadChunk(request, c)
+	return uploadChunk(request, c, storageType)
 }
 
-func uploadChunk(request UploadFileReq, c *gin.Context) error {
+func uploadChunk(request UploadFileReq, c *gin.Context, storageType utils.FileStorageType) error {
 	fileID := request.uploadFileObj.FileHandle
 	file, err := models.GetFileById(fileID)
 	if err != nil || len(file.FileID) == 0 {
@@ -94,7 +92,7 @@ func uploadChunk(request UploadFileReq, c *gin.Context) error {
 		return BadRequestResponse(c, fmt.Errorf("upload chunk is %v and does not meet min fileSize %v", fileSize, utils.MinMultiPartSize))
 	}
 
-	completedPart, multipartErr := handleChunkData(file, request.uploadFileObj.PartIndex, []byte(request.ChunkData))
+	completedPart, multipartErr := handleChunkData(file, request.uploadFileObj.PartIndex, []byte(request.ChunkData), storageType)
 	if multipartErr != nil {
 		return InternalErrorResponse(c, multipartErr)
 	}
@@ -107,7 +105,7 @@ func uploadChunk(request UploadFileReq, c *gin.Context) error {
 	return OkResponse(c, chunkUploadCompletedRes)
 }
 
-func handleChunkData(file models.File, chunkIndex int, chunkData []byte) (*s3.CompletedPart, error) {
+func handleChunkData(file models.File, chunkIndex int, chunkData []byte, storageType utils.FileStorageType) (*s3.CompletedPart, error) {
 	return utils.UploadMultiPartPart(aws.StringValue(file.AwsObjectKey), aws.StringValue(file.AwsUploadID),
-		chunkData, chunkIndex)
+		chunkData, chunkIndex, storageType)
 }

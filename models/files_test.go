@@ -351,7 +351,7 @@ func Test_FinishUpload(t *testing.T) {
 	DB.Find(&completedFiles, "file_id = ?", file.FileID)
 	assert.Equal(t, 0, len(completedFiles))
 
-	file.FinishUpload()
+	file.FinishUpload(utils.S3)
 	actualFiles = []File{}
 	DB.Find(&actualFiles, "file_id = ?", file.FileID)
 	assert.Equal(t, 0, len(actualFiles))
@@ -361,7 +361,7 @@ func Test_FinishUpload(t *testing.T) {
 	assert.Equal(t, file.ExpiredAt, completedFiles[0].ExpiredAt)
 
 	// Clean up
-	err = utils.DeleteDefaultBucketObject(aws.StringValue(objectKey))
+	err = utils.DeleteDefaultBucketObject(aws.StringValue(objectKey), utils.S3)
 	assert.Nil(t, err)
 }
 

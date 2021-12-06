@@ -22,7 +22,7 @@ func Test_CreateInitFileUploadPulic(t *testing.T) {
 		FileID:         utils.GenerateFileHandle(),
 		ModifierHash:   utils.GenerateFileHandle(),
 		FileSizeInByte: 150,
-		StorageType:    models.S3,
+		StorageType:    utils.S3,
 	}
 	assert.Nil(t, models.DB.Create(&completedFile).Error)
 

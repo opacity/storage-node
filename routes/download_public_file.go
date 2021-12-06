@@ -3,7 +3,6 @@ package routes
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/opacity/storage-node/models"
@@ -31,6 +30,7 @@ func DownloadPublicFileHandler() gin.HandlerFunc {
 	return ginHandlerFunc(downloadPublicFile)
 }
 
+// @TODO: Is this really needed?
 func downloadPublicFile(c *gin.Context) error {
 	request := DownloadFileObj{}
 
@@ -39,25 +39,20 @@ func downloadPublicFile(c *gin.Context) error {
 		return BadRequestResponse(c, err)
 	}
 
-	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(request.FileID)) {
+	completedFile, err := models.GetCompletedFileByFileID(request.FileID)
+	if err != nil {
+		return NotFoundResponse(c, err)
+	}
+
+	// @TODO: Remove default S3
+	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataPublicKey(request.FileID), completedFile.StorageType) {
 		return NotFoundResponse(c, errors.New("such data does not exist"))
 	}
 
-	fileURL, thumbnailURL := models.GetPublicFileDownloadData(request.FileID)
-	thumbnailURL = checkFileThumbnail(thumbnailURL)
+	fileURL, thumbnailURL := models.GetPublicFileDownloadData(request.FileID, completedFile.StorageType)
 
 	return OkResponse(c, downloadPublicFileRes{
 		FileDownloadUrl:          fileURL,
 		FileDownloadThumbnailUrl: thumbnailURL,
 	})
-}
-
-func checkFileThumbnail(thumbnailURL string) string {
-	resp, err := http.Head(thumbnailURL)
-
-	if err == nil && resp.StatusCode == http.StatusOK {
-		return thumbnailURL
-	}
-
-	return "https://s3.us-east-2.amazonaws.com/opacity-public/thumbnail_default.png"
 }

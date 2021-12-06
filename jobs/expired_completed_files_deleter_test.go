@@ -26,31 +26,31 @@ func Test_DeleteAllExpiredCompletedFilesS3(t *testing.T) {
 		FileID:         s1FileID,
 		ModifierHash:   utils.GenerateFileHandle(),
 		ExpiredAt:      time.Date(2009, 1, 1, 12, 0, 0, 0, time.UTC), // past
-		StorageType:    models.S3,
+		StorageType:    utils.S3,
 		FileSizeInByte: 123,
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
-	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s1FileID), "foo1", ""))
+	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s1FileID), "foo1", "", utils.S3))
 
 	s = models.CompletedFile{
 		FileID:         s2FileID,
 		ModifierHash:   utils.GenerateFileHandle(),
 		ExpiredAt:      time.Now().Add(-24 * time.Hour * 61), // past
-		StorageType:    models.S3,
+		StorageType:    utils.S3,
 		FileSizeInByte: 123,
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
-	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s2FileID), "foo2", ""))
+	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s2FileID), "foo2", "", utils.S3))
 
 	s = models.CompletedFile{
 		FileID:         s3FileID,
 		ModifierHash:   utils.GenerateFileHandle(),
 		ExpiredAt:      time.Now().Add(-24 * time.Hour * 59), // past, but not old enough to be deleted
-		StorageType:    models.S3,
+		StorageType:    utils.S3,
 		FileSizeInByte: 123,
 	}
 	assert.Nil(t, models.DB.Create(&s).Error)
-	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s3FileID), "foo3", ""))
+	assert.Nil(t, utils.SetDefaultBucketObject(models.GetFileMetadataKey(s3FileID), "foo3", "", utils.S3))
 
 	testSubject := expiredCompletedFilesDeleter{}
 	testSubject.Run()
@@ -61,9 +61,9 @@ func Test_DeleteAllExpiredCompletedFilesS3(t *testing.T) {
 	assert.Equal(t, 1, len(result))
 	assert.Equal(t, s3FileID, result[0].FileID)
 
-	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(s1FileID)))
-	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(s2FileID)))
-	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(s3FileID)))
+	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(s1FileID), utils.S3))
+	assert.False(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(s2FileID), utils.S3))
+	assert.True(t, utils.DoesDefaultBucketObjectExist(models.GetFileMetadataKey(s3FileID), utils.S3))
 
-	assert.Nil(t, utils.DeleteDefaultBucketObject(models.GetFileMetadataKey(s3FileID)))
+	assert.Nil(t, utils.DeleteDefaultBucketObject(models.GetFileMetadataKey(s3FileID), utils.S3))
 }

@@ -230,7 +230,7 @@ func (file *File) UploadCompleted() bool {
 }
 
 /*FinishUpload - finishes the upload*/
-func (file *File) FinishUpload() (CompletedFile, error) {
+func (file *File) FinishUpload(storageType utils.FileStorageType) (CompletedFile, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
 		return CompletedFile{}, ErrIncompleteUpload
@@ -242,17 +242,17 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 	}
 
 	objectKey := aws.StringValue(file.AwsObjectKey)
-	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
+	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts, storageType); err != nil {
 		return CompletedFile{}, err
 	}
 
-	objectSize := utils.GetDefaultBucketObjectSize(objectKey)
+	objectSize := utils.GetDefaultBucketObjectSize(objectKey, storageType)
 	completedFile := CompletedFile{
 		FileID:         file.FileID,
 		ExpiredAt:      file.ExpiredAt,
 		FileSizeInByte: objectSize,
 		ModifierHash:   file.ModifierHash,
-		StorageType:    S3,
+		StorageType:    storageType,
 	}
 	if err := DB.Save(&completedFile).Error; err != nil {
 		return CompletedFile{}, err
@@ -266,7 +266,7 @@ func (file *File) FinishUpload() (CompletedFile, error) {
 }
 
 /*FinishUploadPublic - finishes the public upload*/
-func (file *File) FinishUploadPublic(title, description string) (PublicShare, error) {
+func (file *File) FinishUploadPublic(title, description string, storageType utils.FileStorageType) (PublicShare, error) {
 	allChunksUploaded := file.UploadCompleted()
 	if !allChunksUploaded {
 		return PublicShare{}, ErrIncompleteUpload
@@ -278,7 +278,7 @@ func (file *File) FinishUploadPublic(title, description string) (PublicShare, er
 	}
 
 	objectKey := aws.StringValue(file.AwsObjectKey)
-	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts); err != nil {
+	if _, err := utils.CompleteMultiPartUpload(objectKey, aws.StringValue(file.AwsUploadID), completedParts, storageType); err != nil {
 		return PublicShare{}, err
 	}
 	createShortlinkObj := CreateShortlinkObj{

@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
@@ -40,6 +39,7 @@ type FileMetadata struct {
 }
 
 type DownloadProgress struct {
+	StorageType        utils.FileStorageType
 	RawProgress        int
 	SizeWithEncryption int
 	PartSize           int
@@ -222,19 +222,27 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	key := request.privateToPublicObj.FileHandle[64:]
 	encryptionKey, _ := hex.DecodeString(key)
 
-	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(hash)) {
+	account, err := request.getAccount(c)
+	if err != nil {
+		return err
+	}
+
+	storageType := account.PlanInfo.FileStorageType
+
+	if !utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(hash), storageType) {
 		return NotFoundResponse(c, errors.New("the data does not exist"))
 	}
 
-	realSize, err := getFileContentLength(hash)
-	if err != nil {
-		return InternalErrorResponse(c, err)
+	realSize := int(utils.GetDefaultBucketObjectSize(hash, storageType))
+	if realSize <= 0 {
+		return InternalErrorResponse(c, errors.New("object size error"))
 	}
 
 	fileSize := request.privateToPublicObj.FileSize
 	numberOfParts := ((fileSize-1)/DefaultPartSize + 1)
 
 	downloadProgress := &DownloadProgress{
+		StorageType:        storageType,
 		SizeWithEncryption: realSize,
 		PartSize:           DefaultPartSize,
 	}
@@ -250,7 +258,7 @@ func privateToPublicConvertWithContext(c *gin.Context) error {
 	sentryMainSpan := sentry.TransactionFromContext(c.Request.Context())
 
 	g.Go(func() error {
-		return UploadPublicFileAndGenerateThumb(decryptProgress, hash, sentryMainSpan)
+		return UploadPublicFileAndGenerateThumb(decryptProgress, hash, sentryMainSpan, storageType)
 	})
 	g.Go(func() error {
 		return ReadAndDecryptPrivateFile(downloadProgress, decryptProgress, sentryMainSpan)
@@ -306,7 +314,7 @@ func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, d
 		}
 
 		downloadRange := "bytes=" + strconv.Itoa(offset) + "-" + strconv.Itoa(limit-1)
-		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(fileID), downloadRange, false)
+		fileChunkObjOutput, err := utils.GetBucketObject(models.GetFileDataKey(fileID), downloadRange, downloadProgress.StorageType)
 		if err != nil {
 			return err
 		}
@@ -336,7 +344,7 @@ func DownloadPrivateFile(fileID string, numberOfParts, sizeWithEncryption int, d
 	return nil
 }
 
-func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string, sentryMainSpan *sentry.Span) (err error) {
+func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash string, sentryMainSpan *sentry.Span, storageType utils.FileStorageType) (err error) {
 	awsKey := models.GetFileDataPublicKey(hash)
 	uploadID := new(string)
 	var completedParts []*s3.CompletedPart
@@ -365,7 +373,7 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 					generateThumbnail = true
 				}
 				firstRun = false
-				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType)
+				_, uploadID, err = utils.CreateMultiPartUpload(awsKey, fileContentType, storageType)
 				if err != nil {
 					return
 				}
@@ -374,9 +382,9 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 			uploadPart = append(uploadPart, b...)
 
 			if int64(len(uploadPart)) == utils.MinMultiPartSize {
-				completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber)
+				completedPart, uploadError := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber, storageType)
 				if uploadError != nil {
-					utils.AbortMultiPartUpload(awsKey, *uploadID)
+					utils.AbortMultiPartUpload(awsKey, *uploadID, storageType)
 				}
 				completedParts = append(completedParts, completedPart)
 
@@ -390,15 +398,15 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 		}
 
 		if err == io.EOF {
-			completedPart, err := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber)
+			completedPart, err := utils.UploadMultiPartPart(awsKey, *uploadID, uploadPart, uploadPartNumber, storageType)
 			if err != nil {
-				utils.AbortMultiPartUpload(awsKey, *uploadID)
+				utils.AbortMultiPartUpload(awsKey, *uploadID, storageType)
 				return err
 			}
 
 			if generateThumbnail {
 				partForThumbnailBuf = append(partForThumbnailBuf, uploadPart...)
-				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType, sentrySpanUpload)
+				generatePublicShareThumbnail(hash, partForThumbnailBuf, fileContentType, sentrySpanUpload, storageType)
 			}
 
 			sentrySpanUpload.Finish()
@@ -407,11 +415,11 @@ func UploadPublicFileAndGenerateThumb(decryptProgress *DecryptProgress, hash str
 		}
 	}
 
-	if _, err = utils.CompleteMultiPartUpload(awsKey, *uploadID, completedParts); err != nil {
+	if _, err = utils.CompleteMultiPartUpload(awsKey, *uploadID, completedParts, storageType); err != nil {
 		return
 	}
 
-	return utils.SetDefaultObjectCannedAcl(awsKey, utils.CannedAcl_PublicRead)
+	return utils.SetDefaultObjectCannedAcl(awsKey, utils.CannedAcl_PublicRead, storageType)
 
 }
 
@@ -442,7 +450,7 @@ func ReadAndDecryptPrivateFile(downloadProgress *DownloadProgress, decryptProgre
 	return nil
 }
 
-func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentType string, sentryMainSpan *sentry.Span) error {
+func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentType string, sentryMainSpan *sentry.Span, storageType utils.FileStorageType) error {
 	sentrySpanGenerateThumbnail := sentryMainSpan.StartChild("thumbnail-generation")
 	sentrySpanGenerateThumbnail.SetTag("content-type", fileContentType)
 	defer sentrySpanGenerateThumbnail.Finish()
@@ -519,10 +527,10 @@ func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentTy
 
 	if buf.Len() != 0 {
 		// thumbnail is always image/jpeg
-		if err := utils.SetDefaultBucketObject(thumbnailKey, buf.String(), "image/jpeg"); err != nil {
+		if err := utils.SetDefaultBucketObject(thumbnailKey, buf.String(), "image/jpeg", storageType); err != nil {
 			return err
 		}
-		return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead)
+		return utils.SetDefaultObjectCannedAcl(thumbnailKey, utils.CannedAcl_PublicRead, storageType)
 	}
 
 	return nil
@@ -530,22 +538,6 @@ func generatePublicShareThumbnail(fileID string, fileBytes []byte, fileContentTy
 
 func RemoveIndexFromSliceString(s []string, index int) []string {
 	return append(s[:index], s[index+1:]...)
-}
-
-func getFileContentLength(fileID string) (int, error) {
-	resp, err := http.Head(models.GetBucketUrl() + fileID + "/file")
-
-	if err != nil {
-		return 0, err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode == http.StatusOK {
-		return int(resp.ContentLength), nil
-	}
-
-	return 0, err
 }
 
 func DecryptMetadata(key []byte, data []byte) (fileMetadata FileMetadata, err error) {

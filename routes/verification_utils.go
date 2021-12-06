@@ -341,8 +341,9 @@ func verifyPermissionsV2(publicKey []byte, key []byte, expectedPermissionHash st
 	return nil
 }
 
-func verifyAccountPlan(account models.Account, storageType models.FileStorageType, c *gin.Context) error {
-	if account.PlanInfo.FileStorageType != utils.FileStorageType(storageType) {
+// @TODO: is this needed?
+func verifyAccountPlan(account models.Account, storageType utils.FileStorageType, c *gin.Context) error {
+	if account.PlanInfo.FileStorageType != storageType {
 		return ForbiddenResponse(c, errors.New(notAuthorizedResponse))
 	}
 

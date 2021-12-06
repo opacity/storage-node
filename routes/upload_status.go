@@ -55,14 +55,12 @@ func checkUploadStatus(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyAccountPlan(account, models.S3, c); err != nil {
-		return err
-	}
+	storageType := account.PlanInfo.FileStorageType
 
 	fileID := request.uploadStatusObj.FileHandle
 	completedFile, completedErr := models.GetCompletedFileByFileID(fileID)
 	if completedErr == nil && len(completedFile.FileID) != 0 &&
-		utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID)) {
+		utils.DoesDefaultBucketObjectExist(models.GetFileDataKey(fileID), storageType) {
 		return OkResponse(c, fileUploadCompletedRes)
 	}
 
@@ -75,7 +73,7 @@ func checkUploadStatus(c *gin.Context) error {
 		return err
 	}
 
-	completedFile, err = file.FinishUpload()
+	completedFile, err = file.FinishUpload(storageType)
 	if err != nil {
 		if err == models.ErrIncompleteUpload {
 			incompleteIndexes, err := models.GetIncompleteIndexesAsArray(file.FileID, file.EndIndex)
@@ -97,16 +95,16 @@ func checkUploadStatus(c *gin.Context) error {
 	}
 
 	if err := account.UseStorageSpaceInByte(completedFile.FileSizeInByte); err != nil {
-		errS3 := utils.DeleteDefaultBucketObjectKeys(completedFile.FileID)
+		errS3 := utils.DeleteDefaultBucketObjectKeys(completedFile.FileID, completedFile.StorageType)
 		errSql := models.DB.Delete(&completedFile).Error
 		return InternalErrorResponse(c, utils.CollectErrors([]error{err, errS3, errSql}))
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileDataKey(completedFile.FileID), utils.CannedAcl_PublicRead, completedFile.StorageType); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(completedFile.FileID), utils.CannedAcl_PublicRead); err != nil {
+	if err := utils.SetDefaultObjectCannedAcl(models.GetFileMetadataKey(completedFile.FileID), utils.CannedAcl_PublicRead, completedFile.StorageType); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 

@@ -42,7 +42,7 @@ func checkUploadStatusSia(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyAccountPlan(account, models.Sia, c); err != nil {
+	if err := verifyAccountPlan(account, utils.Sia, c); err != nil {
 		return err
 	}
 
@@ -75,7 +75,7 @@ func checkUploadStatusSia(c *gin.Context) error {
 			ExpiredAt:      siaProgressFile.ExpiredAt,
 			FileSizeInByte: int64(siaFileMetadata.File.Filesize),
 			ModifierHash:   siaProgressFile.ModifierHash,
-			StorageType:    models.Sia,
+			StorageType:    utils.Sia,
 			ApiVersion:     2,
 		}
 		if err := models.DB.Save(&completedFile).Error; err != nil {

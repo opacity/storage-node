@@ -43,7 +43,7 @@ func downloadFileSia(c *gin.Context) error {
 		return err
 	}
 
-	if err := verifyAccountPlan(account, models.Sia, c); err != nil {
+	if err := verifyAccountPlan(account, utils.Sia, c); err != nil {
 		return err
 	}
 

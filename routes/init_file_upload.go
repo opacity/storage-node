@@ -70,20 +70,18 @@ func initFileUploadWithRequest(request InitFileUploadReq, c *gin.Context) error 
 		return err
 	}
 
-	if err := verifyAccountPlan(account, models.S3, c); err != nil {
-		return err
-	}
+	storageType := account.PlanInfo.FileStorageType
 
 	if err := CheckHaveEnoughStorageSpace(account, request.initFileUploadObj.FileSizeInByte, c); err != nil {
 		return err
 	}
 
-	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataKey(request.initFileUploadObj.FileHandle), "")
+	objKey, uploadID, err := utils.CreateMultiPartUpload(models.GetFileDataKey(request.initFileUploadObj.FileHandle), "", storageType)
 	if err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
-	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(request.initFileUploadObj.FileHandle), request.MetadataAsFile, ""); err != nil {
+	if err := utils.SetDefaultBucketObject(models.GetFileMetadataKey(request.initFileUploadObj.FileHandle), request.MetadataAsFile, "", storageType); err != nil {
 		return InternalErrorResponse(c, err)
 	}
 
