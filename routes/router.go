@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	_ "github.com/opacity/storage-node/docs"
@@ -198,8 +199,7 @@ func CreateRoutes() {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Listen and Serve
-	err := router.Run(":443")
-	// err := router.Run(":" + os.Getenv("PORT"))
+	err := router.Run(":" + os.Getenv("PORT"))
 	utils.LogIfError(err, map[string]interface{}{"error": err})
 }
 
