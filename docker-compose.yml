@@ -75,9 +75,11 @@ services:
     image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/storage-node:${IMAGE_TAG}
     restart: "always"
     ports:
-    - ${APP_PORT:-3000}:3000
+    - ${APP_PORT:-443}:443
     env_file:
       - ".env"
+    environment:
+      - PORT=443
     depends_on:
     - "db"
     volumes:
@@ -135,6 +137,5 @@ networks:
 volumes:
   prometheus_data: {}
   influxdb_data: {}
-  prometheus_data: {}
 # grafana_data: {}
 
