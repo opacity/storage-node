@@ -213,7 +213,11 @@ func returnEngine() *gin.Engine {
 	config := cors.DefaultConfig()
 
 	config.AllowAllOrigins = true
-	config.AllowHeaders = append(config.AllowHeaders, "sentry-trace")
+	config.AllowCredentials = true
+	config.AllowWildcard = true
+	config.AllowMethods = append(config.AllowMethods, "GET", "POST", "PUT", "OPTIONS", "DELETE", "HEAD", "*")
+	config.AllowHeaders = append(config.AllowHeaders, "sentry-trace", "Authorization", "*")
+	config.ExposeHeaders = append(config.ExposeHeaders, "*")
 	router.Use(cors.New(config))
 
 	// Test app is running
