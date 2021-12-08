@@ -203,6 +203,13 @@ func CreateRoutes() {
 	utils.LogIfError(err, map[string]interface{}{"error": err})
 }
 
+func noCache() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Cache-Control", "No-Store")
+		c.Next()
+	}
+}
+
 func returnEngine() *gin.Engine {
 	router := gin.Default()
 	if utils.Env.GoEnv == "production" || utils.Env.GoEnv == "dev2" {
@@ -219,6 +226,7 @@ func returnEngine() *gin.Engine {
 	config.AllowHeaders = append(config.AllowHeaders, "sentry-trace", "Authorization", "*")
 	config.ExposeHeaders = append(config.ExposeHeaders, "*")
 	router.Use(cors.New(config))
+	router.Use(noCache())
 
 	// Test app is running
 	router.GET("/", func(c *gin.Context) {
