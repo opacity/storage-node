@@ -199,7 +199,17 @@ func CreateRoutes() {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Listen and Serve
-	err := router.Run(":" + os.Getenv("PORT"))
+	s := &http.Server{
+		Addr:              ":" + os.Getenv("PORT"),
+		Handler:           router,
+		ReadTimeout:       0,
+		ReadHeaderTimeout: 0,
+		WriteTimeout:      0,
+		MaxHeaderBytes:    1 << 22, // ~4 MB
+	}
+	s.SetKeepAlivesEnabled(true)
+
+	err := s.ListenAndServe()
 	utils.LogIfError(err, map[string]interface{}{"error": err})
 }
 
