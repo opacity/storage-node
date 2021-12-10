@@ -211,7 +211,6 @@ func CreateRoutes() {
 
 	var err error
 	if utils.Env.GoEnv == "dev2" {
-		s.Addr = ":https"
 		err = s.ListenAndServeTLS("/certs/fullchain.pem", "/certs/privkey.pem")
 	} else {
 		err = s.ListenAndServe()
