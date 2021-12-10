@@ -75,7 +75,7 @@ services:
     image: 174232317769.dkr.ecr.${AWS_REGION}.amazonaws.com/storage-node:${IMAGE_TAG}
     restart: "always"
     ports:
-    - ${APP_PORT:-3000}:3000
+    - 443:3000
     env_file:
       - ".env"
     depends_on:
