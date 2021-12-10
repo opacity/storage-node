@@ -83,6 +83,7 @@ services:
     volumes:
     - "../storage-node-data/badger/prod:/var/lib/badger/prod"
     - "../storage-node-data/badger/test:/var/lib/badger/test"
+    - "../storage-node-data/certs:/certs"
     working_dir: "/go/src/github.com/opacity/storage-node"
     command: >
       bash -c "
