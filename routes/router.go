@@ -199,21 +199,11 @@ func CreateRoutes() {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Listen and Serve
-	s := &http.Server{
-		Addr:              ":" + os.Getenv("PORT"),
-		Handler:           router,
-		ReadTimeout:       0,
-		ReadHeaderTimeout: 0,
-		WriteTimeout:      0,
-		MaxHeaderBytes:    1 << 22, // ~4 MB
-	}
-	s.SetKeepAlivesEnabled(true)
-
 	var err error
 	if utils.Env.GoEnv == "dev2" {
-		err = s.ListenAndServeTLS("/certs/fullchain.pem", "/certs/privkey.pem")
+		err = router.RunTLS(":"+os.Getenv("PORT"), "/certs/fullchain.pem", "/certs/privkey.pem")
 	} else {
-		err = s.ListenAndServe()
+		err = router.Run(":" + os.Getenv("PORT"))
 	}
 	utils.LogIfError(err, map[string]interface{}{"error": err})
 }
