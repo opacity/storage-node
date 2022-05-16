@@ -4,17 +4,16 @@ go 1.17
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/aws/aws-sdk-go v1.40.50
 	github.com/bamzi/jobrunner v1.0.0
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
 	github.com/caarlos0/env/v6 v6.7.1
 	github.com/cespare/cp v1.1.1 // indirect
-	github.com/deckarep/golang-set v1.7.1 // indirect
+	github.com/deckarep/golang-set v1.8.0 // indirect
 	github.com/denisenkom/go-mssqldb v0.11.0 // indirect
 	github.com/dgraph-io/badger v1.6.2
 	github.com/disintegration/imaging v1.6.2
-	github.com/ethereum/go-ethereum v1.10.8
+	github.com/ethereum/go-ethereum v1.10.17
 	github.com/fjl/memsize v0.0.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.3.1
 	github.com/getsentry/sentry-go v0.11.0
@@ -54,6 +53,8 @@ require (
 	golang.org/x/tools v0.1.6 // indirect
 )
 
+require github.com/hashicorp/go-retryablehttp v0.7.0
+
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
@@ -61,8 +62,10 @@ require (
 	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/VictoriaMetrics/fastcache v1.7.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/btcsuite/btcd/btcec/v2 v2.1.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dgryski/go-farm v0.0.0-20200201041132-a6ae2369ad13 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
@@ -76,16 +79,12 @@ require (
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
-	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
-	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/karalabe/usb v0.0.0-20210518091819-4ea20957c210 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/mattn/go-isatty v0.0.14 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
