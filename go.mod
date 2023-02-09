@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 	github.com/aws/aws-sdk-go v1.40.50
 	github.com/bamzi/jobrunner v1.0.0
 	github.com/btcsuite/btcd v0.22.0-beta // indirect
@@ -19,7 +18,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.3.1
 	github.com/getsentry/sentry-go v0.11.0
 	github.com/gin-contrib/cors v1.3.1
-	github.com/gin-gonic/gin v1.7.4
+	github.com/gin-gonic/gin v1.7.7
 	github.com/go-openapi/spec v0.20.3 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/validator/v10 v10.9.0
@@ -54,6 +53,8 @@ require (
 	golang.org/x/tools v0.1.6 // indirect
 )
 
+require github.com/hashicorp/go-retryablehttp v0.7.0
+
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
@@ -80,7 +81,6 @@ require (
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
-	github.com/hashicorp/go-retryablehttp v0.7.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
